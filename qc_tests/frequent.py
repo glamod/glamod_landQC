@@ -18,6 +18,7 @@ import qc_utils as utils
 ROLLING = 7
 MIN_OBS = 10
 BIN_WIDTH = 1.0
+RATIO = 0.5
 
 #************************************************************************
 def identify_values(obs_var, station, config_file, plots=False, diagnostics=False):
@@ -44,7 +45,7 @@ def identify_values(obs_var, station, config_file, plots=False, diagnostics=Fals
 
         month_data = obs_var.data[locs]
 
-        bins = utils.create_bins(month_data, width)
+        bins = utils.create_bins(month_data, BIN_WIDTH)
         hist, bin_edges = np.histogram(month_data, bins)
 
         # diagnostic plots
@@ -61,7 +62,6 @@ def identify_values(obs_var, station, config_file, plots=False, diagnostics=Fals
         # Scan through the histogram
         #   check if a bin is the maximum of a local area ("ROLLING")
         suspect = []
-        ROLLING = 7
         for b, bar in enumerate(hist):
             if (b > ROLLING//2) and (b <= (len(hist) - ROLLING//2)):
                 
@@ -70,7 +70,7 @@ def identify_values(obs_var, station, config_file, plots=False, diagnostics=Fals
                 # if sufficient obs, maximum and contains > 50%, but not all, of the data
                 if bar >= MIN_OBS:
                     if bar == target_bins.max():
-                        if (bar/target_bins.sum()) > 0.5:
+                        if (bar/target_bins.sum()) > RATIO:
                             suspect += [bins[b]]
 
         # diagnostic plots
@@ -130,12 +130,11 @@ def frequent_values(obs_var, station, config_file, plots=False, diagnostics=Fals
 
             month_flags = np.array(["" for i in range(month_data.shape[0])])
 
-            bins = utils.create_bins(month_data, BIN_WIDTH)
+            bins = utils.create_bins(month_data, width)
             hist, bin_edges = np.histogram(month_data, bins)
            
             # Scan through the histogram
             #   check if a bin is the maximum of a local area ("ROLLING")
-            ROLLING = 7
             for b, bar in enumerate(hist):
                 if (b > ROLLING//2) and (b <= (len(hist) - ROLLING//2)):
 
@@ -144,7 +143,7 @@ def frequent_values(obs_var, station, config_file, plots=False, diagnostics=Fals
                     # if sufficient obs, maximum and contains > 50% of data
                     if bar > MIN_OBS:
                         if bar == target_bins.max():
-                            if (bar/target_bins.sum()) > 0.5:
+                            if (bar/target_bins.sum()) > RATIO:
                                 # this bin meets all the criteria
                                 if bins[b] in suspect_bins:
                                     # find observations (month & year) to flag!

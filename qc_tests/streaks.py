@@ -23,6 +23,14 @@ import qc_utils as utils
 
 #************************************************************************
 def prepare_data_repeating_string(obs_var, times, plots=False, diagnostics=False):
+    """
+    Prepare the data for repeating strings
+
+    :param MetVar obs_var: meteorological variable object
+    :param array times: array of times (usually in minutes)
+    :param bool plots: turn on plots
+    :param bool diagnostics: turn on diagnostic output
+    """
 
     # want locations where first differences are zero
     value_diffs = np.ma.diff(obs_var.data)
@@ -35,7 +43,7 @@ def prepare_data_repeating_string(obs_var, times, plots=False, diagnostics=False
     strings, = np.where(grouped_diffs[:, 0] == 0)
     repeated_string_lengths = grouped_diffs[strings, 1] + 1
  
-    return repeated_string_lengths # prepare_data_repeating_string
+    return repeated_string_lengths, grouped_diffs, strings # prepare_data_repeating_string
 
 #************************************************************************
 def get_repeating_string_threshold(obs_var, times, config_file, plots=False, diagnostics=False):
@@ -51,7 +59,7 @@ def get_repeating_string_threshold(obs_var, times, config_file, plots=False, dia
 
     # TODO - how to cope with varying time or measurement resolutions
 
-    repeated_string_lengths = prepare_data_repeating_string(obs_var, times, plots=plots, diagnostics=diagnostics)
+    repeated_string_lengths, grouped_diffs, strings = prepare_data_repeating_string(obs_var, times, plots=plots, diagnostics=diagnostics)
 
     # bin width is 1 as dealing in time index.
     # minimum bin value is 2 as this is the shortest string possible
@@ -80,7 +88,7 @@ def repeating_value(obs_var, times, config_file, plots=False, diagnostics=False)
 
     flags = np.array(["" for i in range(obs_var.data.shape[0])])
 
-    # retrieve the threshold
+    # retrieve the threshold and store in another dictionary
     threshold = {}
     try:
         th = utils.read_qc_config(config_file, "STREAK-{}".format(obs_var.name), "Straight")
@@ -90,7 +98,7 @@ def repeating_value(obs_var, times, config_file, plots=False, diagnostics=False)
         print("Threshold missing in config file")
         sys.exit(1)
 
-    repeated_string_lengths = prepare_data_repeating_string(obs_var, times, plots=plots, diagnostics=diagnostics)
+    repeated_string_lengths, grouped_diffs, strings = prepare_data_repeating_string(obs_var, times, plots=plots, diagnostics=diagnostics)
 
     # above threshold
     bad, = np.where(repeated_string_lengths > threshold["Straight"])

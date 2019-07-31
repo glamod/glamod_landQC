@@ -18,7 +18,7 @@ MIN_NOBS = 100
 
 
 #*********************************************
-CONFIG_FILE = "/data/users/rdunn/Copernicus/c3s311a_lot2/qc/configuration.txt"
+CONFIG_FILE = "/data/users/rdunn/Copernicus/c3s311a_lot2/glamod_landQC/configuration.txt"
 
 if not os.path.exists(CONFIG_FILE):
     print("Configuration file missing - {}".format(CONFIG_FILE))

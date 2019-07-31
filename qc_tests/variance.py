@@ -21,6 +21,16 @@ MIN_VALUES = 30
 DATA_COUNT_THRESHOLD = 120
 #************************************************************************
 def prepare_data(obs_var, station, month, diagnostics=False, winsorize=True):
+    """
+    Calculate the monthly variances
+
+    :param MetVar obs_var: meteorological variable object
+    :param Station station: station object
+    :param int month: which month to run on
+    :param bool plots: turn on plots
+    :param bool diagnostics: turn on diagnostic output
+    :param bool winsorize: apply winsorization at 5%/95%
+    """
 
     anomalies = np.ma.zeros(obs_var.data.shape[0])
     anomalies.mask = np.ones(anomalies.shape[0])
@@ -111,6 +121,7 @@ def variance_check(obs_var, station, config_file, plots=False, diagnostics=False
     :param bool diagnostics: turn on diagnostic output
     :param bool winsorize: apply winsorization at 5%/95%
     """
+
     flags = np.array(["" for i in range(obs_var.data.shape[0])])
 
     # get hourly climatology for each month

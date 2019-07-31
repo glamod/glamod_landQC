@@ -85,6 +85,16 @@ def low_pass_filter(normed_anomalies, station, monthly_anoms, month):
 
 #************************************************************************
 def prepare_data(obs_var, station, month, diagnostics=False, winsorize=True):
+    """
+    Prepare the data for the climatological check.  Makes anonmalies and applies low-pass filter
+
+    :param MetVar obs_var: meteorological variable object
+    :param Station station: station object
+    :param int month: which month to run on
+    :param bool plots: turn on plots
+    :param bool diagnostics: turn on diagnostic output
+    :param bool winsorize: apply winsorization at 5%/95%
+    """
 
     anomalies = np.ma.zeros(obs_var.data.shape[0])
     anomalies.mask = np.ones(anomalies.shape[0])

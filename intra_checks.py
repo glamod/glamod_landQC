@@ -29,9 +29,6 @@ import io_utils as io
 import qc_tests
 #************************************************************************
 
-# TODO - Sphinx
-
-
 # Temporary stuff
 IFF_LOC = "/data/users/rdunn/Copernicus/c3s311a_lot2/iff"
 
@@ -53,12 +50,11 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
 
     for st, station_id in enumerate(station_list):
 
-        # config file?
+        # set up config file to hold thresholds etc
         config_file = "{}.config".format(station_id)
 
-
         # set up the stations
-        # TODO - read in a station list correctly!
+        # TODO - read in a station list correctly - these are dummies
         lat = 52
         lon = 0.1
         elev = 10
@@ -106,27 +102,24 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         # TODO - sort updating vs not of config files
         # TODO - use suite config file to store all settings for tests
 
-#        qc_tests.streaks.rsc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_file, plots=plots, diagnostics=diagnostics)
+        qc_tests.streaks.rsc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_file, plots=plots, diagnostics=diagnostics)
 
-#        qc_tests.spike.sc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_file, plots=plots, diagnostics=diagnostics)
+        qc_tests.spike.sc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_file, plots=plots, diagnostics=diagnostics)
 
-#        qc_tests.world_records.wrc(station, ["temperature", "dew_point_temperature", "sea_level_pressure", "wind_speed"], plots=plots, diagnostics=diagnostics)
+        qc_tests.world_records.wrc(station, ["temperature", "dew_point_temperature", "sea_level_pressure", "wind_speed"], plots=plots, diagnostics=diagnostics)
 
-#        qc_tests.humidity.hcc(station, plots=plots, diagnostics=diagnostics)
+        qc_tests.humidity.hcc(station, plots=plots, diagnostics=diagnostics)
 
-#        qc_tests.frequent.fvc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_file, plots=plots, diagnostics=diagnostics)
+        qc_tests.frequent.fvc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_file, plots=plots, diagnostics=diagnostics)
 
-#        qc_tests.pressure.pcc(station, config_file, plots=plots, diagnostics=diagnostics)
+        qc_tests.pressure.pcc(station, config_file, plots=plots, diagnostics=diagnostics)
 
-#        station.temperature.data[::100] += 40
-
-#        qc_tests.distribution.dgc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_file, plots=plots, diagnostics=diagnostics)
+        qc_tests.distribution.dgc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_file, plots=plots, diagnostics=diagnostics)
 
         # not run on pressure data in HadISD.
-#        qc_tests.climatological.coc(station, ["temperature", "dew_point_temperature"], config_file, plots=plots, diagnostics=diagnostics)
+        qc_tests.climatological.coc(station, ["temperature", "dew_point_temperature"], config_file, plots=plots, diagnostics=diagnostics)
 
-#        station.temperature.data[-200:] *= 2
-#        qc_tests.variance.evc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_file, plots=plots, diagnostics=diagnostics)
+        qc_tests.variance.evc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_file, plots=plots, diagnostics=diagnostics)
 
         #*************************
         # Output of QFF

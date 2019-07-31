@@ -170,6 +170,16 @@ def monthly_gap(obs_var, station, config_file, plots=False, diagnostics=False):
 
 #************************************************************************
 def prepare_all_data(obs_var, station, month, config_file, diagnostics=False):
+    """
+    Extract data for the month, make & store or read average and spread.
+    Use to calculate normalised anomalies.
+
+    :param MetVar obs_var: meteorological variable object
+    :param Station station: station object
+    :param int month: month to process
+    :param str config_file: configuration file to store critical values
+    :param bool diagnostics: turn on diagnostic output
+    """
 
     month_locs, = np.where(station.months == month)
 
@@ -190,6 +200,16 @@ def prepare_all_data(obs_var, station, month, config_file, diagnostics=False):
 
 #************************************************************************
 def find_thresholds(obs_var, station, config_file, plots=False, diagnostics=False):
+    """
+    Extract data for month and find thresholds in distribution and store.
+
+    :param MetVar obs_var: meteorological variable object
+    :param Station station: station object
+    :param int month: month to process
+    :param str config_file: configuration file to store critical values
+    :param bool diagnostics: turn on diagnostic output
+    """
+
   
     for month in range(1, 13):
 
@@ -288,6 +308,15 @@ def find_gap(hist, bins, threshold, upwards=True, gap_size=GAP_SIZE):
 
 #************************************************************************
 def all_obs_gap(obs_var, station, config_file, plots=False, diagnostics=False):
+    """
+    Extract data for month and find secondary populations in distribution.
+
+    :param MetVar obs_var: meteorological variable object
+    :param Station station: station object
+    :param str config_file: configuration file to store critical values
+    :param bool plots: turn on plots
+    :param bool diagnostics: turn on diagnostic output
+    """
 
     flags = np.array(["" for i in range(obs_var.data.shape[0])])
     
