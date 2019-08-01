@@ -151,14 +151,14 @@ def hourly_repeat():
 
 
 #************************************************************************
-def rsc(station, var_list, config_file, logfile="", plots=False, diagnostics=False):
+def rsc(station, var_list, config_file, full=False, plots=False, diagnostics=False):
     """
     Run through the variables and pass to the Repeating Streak Checks
 
     :param Station station: Station Object for the station
     :param list var_list: list of variables to test
     :param str configfile: string for configuration file
-    :param str logfile: string for log file
+    :param bool full: run a full update (recalculate thresholds)
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
@@ -167,8 +167,10 @@ def rsc(station, var_list, config_file, logfile="", plots=False, diagnostics=Fal
 
         obs_var = getattr(station, var)
 
-        # repeating (straight) strings        
-        get_repeating_string_threshold(obs_var, station.times, config_file, plots=plots, diagnostics=diagnostics)
+        # repeating (straight) strings
+        if full:
+            get_repeating_string_threshold(obs_var, station.times, config_file, plots=plots, diagnostics=diagnostics)
+
         repeating_value(obs_var, station.times, config_file, plots=plots, diagnostics=diagnostics)
 
         # more short strings than reasonable

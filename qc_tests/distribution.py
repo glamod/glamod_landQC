@@ -169,7 +169,7 @@ def monthly_gap(obs_var, station, config_file, plots=False, diagnostics=False):
     return # monthly_gap
 
 #************************************************************************
-def prepare_all_data(obs_var, station, month, config_file, diagnostics=False):
+def prepare_all_data(obs_var, station, month, config_file, full=False, diagnostics=False):
     """
     Extract data for the month, make & store or read average and spread.
     Use to calculate normalised anomalies.
@@ -185,14 +185,19 @@ def prepare_all_data(obs_var, station, month, config_file, diagnostics=False):
 
     all_month_data = obs_var.data[month_locs]
 
-    # have data, now to standardise
-    climatology = utils.average(all_month_data) # mean
-    spread = utils.spread(all_month_data) # IQR currently
+    if full:
+        # have data, now to standardise
+        climatology = utils.average(all_month_data) # mean
+        spread = utils.spread(all_month_data) # IQR currently
  
-# TODO - allow to read in the scaling too
-    # write out the scaling...
-    utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-clim".format(month), "{}".format(climatology), diagnostics=diagnostics)
-    utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-spread".format(month), "{}".format(spread), diagnostics=diagnostics)
+        # TODO - allow to read in the scaling too
+        # write out the scaling...
+        utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-clim".format(month), "{}".format(climatology), diagnostics=diagnostics)
+        utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-spread".format(month), "{}".format(spread), diagnostics=diagnostics)
+        
+    else:
+        climatology = float(utils.read_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-clim".format(month)))
+        spread = float(utils.read_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-spread".format(month)))        
 
     normalised_anomalies = (all_month_data - climatology)/spread  
 
@@ -213,12 +218,12 @@ def find_thresholds(obs_var, station, config_file, plots=False, diagnostics=Fals
   
     for month in range(1, 13):
 
-        normalised_anomalies = prepare_all_data(obs_var, station, month, config_file, diagnostics = diagnostics)
+        normalised_anomalies = prepare_all_data(obs_var, station, month, config_file, full=True, diagnostics=diagnostics)
 
         bins = utils.create_bins(normalised_anomalies, BIN_WIDTH)
         hist, bin_edges = np.histogram(normalised_anomalies, bins)
 
-        gaussian_fit = utils.fit_gaussian(bins[1:], hist, max(hist), mu = bins[np.argmax(hist)], sig = utils.spread(normalised_anomalies), skew = skew(normalised_anomalies))
+        gaussian_fit = utils.fit_gaussian(bins[1:], hist, max(hist), mu = bins[np.argmax(hist)], sig = utils.spread(normalised_anomalies), skew = skew(normalised_anomalies.compressed()))
 
         fitted_curve = utils.skew_gaussian(bins[1:], gaussian_fit)
 
@@ -322,7 +327,7 @@ def all_obs_gap(obs_var, station, config_file, plots=False, diagnostics=False):
     
     for month in range(1, 13):
 
-        normalised_anomalies = prepare_all_data(obs_var, station, month, config_file, diagnostics = diagnostics)
+        normalised_anomalies = prepare_all_data(obs_var, station, month, config_file, full=False, diagnostics=diagnostics)
 
         bins = utils.create_bins(normalised_anomalies, BIN_WIDTH)
         hist, bin_edges = np.histogram(normalised_anomalies, bins)
@@ -339,7 +344,7 @@ def all_obs_gap(obs_var, station, config_file, plots=False, diagnostics=False):
             gap_start = find_gap(hist, bins, upper_threshold)
 
             if gap_start != 0:
-                bad_locs, = np.where(normalised_anomalies > gap_start) # all years for one month
+                bad_locs, = np.ma.where(normalised_anomalies > gap_start) # all years for one month
 
                 month_flags = np.array(["" for i in range(month_locs.shape[0])])
                 month_flags[bad_locs] = "d"
@@ -349,7 +354,7 @@ def all_obs_gap(obs_var, station, config_file, plots=False, diagnostics=False):
             gap_start = find_gap(hist, bins, lower_threshold, upwards=False)
 
             if gap_start != 0:
-                bad_locs, = np.where(normalised_anomalies < gap_start) # all years for one month
+                bad_locs, = np.ma.where(normalised_anomalies < gap_start) # all years for one month
 
                 month_flags = np.array(["" for i in range(month_locs.shape[0])])
                 month_flags[bad_locs] = "d"
@@ -374,14 +379,14 @@ def all_obs_gap(obs_var, station, config_file, plots=False, diagnostics=False):
     return # all_obs_gap
 
 #************************************************************************
-def dgc(station, var_list, config_file, logfile="", plots=False, diagnostics=False):
+def dgc(station, var_list, config_file, full=False, plots=False, diagnostics=False):
     """
     Run through the variables and pass to the Distributional Gap Checks
 
     :param Station station: Station Object for the station
     :param list var_list: list of variables to test
     :param str configfile: string for configuration file
-    :param str logfile: string for log file
+    :param bool full: run a full update (recalculate thresholds)
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
@@ -390,12 +395,14 @@ def dgc(station, var_list, config_file, logfile="", plots=False, diagnostics=Fal
 
         obs_var = getattr(station, var)
 
-        # monthly gap  
-        find_monthly_scaling(obs_var, station, config_file, diagnostics=diagnostics)
+        # monthly gap
+        if full:
+            find_monthly_scaling(obs_var, station, config_file, diagnostics=diagnostics)
         monthly_gap(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
         
-        # all observations gap  
-        find_thresholds(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
+        # all observations gap
+        if full:
+            find_thresholds(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
         all_obs_gap(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
 
 

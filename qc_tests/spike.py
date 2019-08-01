@@ -144,14 +144,14 @@ def identify_spikes(obs_var, times, config_file, plots=False, diagnostics=False)
 
 
 #************************************************************************
-def sc(station, var_list, config_file, logfile="", plots=False, diagnostics=False):
+def sc(station, var_list, config_file, full=False, plots=False, diagnostics=False):
     """
     Run through the variables and pass to the World Record Check
 
     :param Station station: Station Object for the station
     :param list var_list: list of variables to test
     :param str configfile: string for configuration file
-    :param str logfile: string for log file
+    :param bool full: run a full update (recalculate thresholds)
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
@@ -159,8 +159,9 @@ def sc(station, var_list, config_file, logfile="", plots=False, diagnostics=Fals
 
         obs_var = getattr(station, var)
 
-        # decide here whether to recalculate
-        get_critical_values(obs_var, station.times, config_file, plots=plots, diagnostics=diagnostics)
+        # decide whether to recalculate
+        if full:
+            get_critical_values(obs_var, station.times, config_file, plots=plots, diagnostics=diagnostics)
 
         identify_spikes(obs_var, station.times, config_file, plots=plots, diagnostics=diagnostics)
 

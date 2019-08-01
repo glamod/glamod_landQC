@@ -18,11 +18,13 @@ MIN_NOBS = 100
 
 
 #*********************************************
-CONFIG_FILE = "/data/users/rdunn/Copernicus/c3s311a_lot2/glamod_landQC/configuration.txt"
+CONFIG_FILE = "./configuration.txt"
 
-if not os.path.exists(CONFIG_FILE):
-    print("Configuration file missing - {}".format(CONFIG_FILE))
-    sys.exit
+if not os.path.exists(os.path.join(os.path.dirname(__file__), CONFIG_FILE)):
+    print("Configuration file missing - {}".format(os.path.join(os.path.dirname(__file__), CONFIG_FILE)))
+    sys.exit()
+else:
+    CONFIG_FILE = os.path.join(os.path.dirname(__file__), CONFIG_FILE)
 
 
 config = configparser.ConfigParser()
@@ -149,8 +151,8 @@ def write_qc_config(config_filename, section, field, value, diagnostics=False):
             # Write changes to file (replaces entire file)
             with open(config_filename, 'w') as conf:
                 config_object.write(conf)
-            if diagnostics:
-                print("Updating file")
+#            if diagnostics:
+#                print("Updating file")
 
         except KeyError:
             # section doesn't exist
@@ -159,8 +161,8 @@ def write_qc_config(config_filename, section, field, value, diagnostics=False):
             # Write changes back to file
             with open(config_filename, 'w') as conf:
                 config_object.write(conf)
-            if diagnostics:
-                print("Making section")
+#            if diagnostics:
+#                print("Making section")
 
         except configparser.NoOptionError:
             # field doesn't exist
@@ -168,8 +170,8 @@ def write_qc_config(config_filename, section, field, value, diagnostics=False):
             # Write changes back to file
             with open(config_filename, 'w') as conf:
                 config_object.write(conf)
-            if diagnostics:
-                print("Making field")
+#            if diagnostics:
+#                print("Making field")
 
     return # write_qc_config
 

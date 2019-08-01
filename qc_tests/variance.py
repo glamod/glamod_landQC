@@ -155,14 +155,14 @@ def variance_check(obs_var, station, config_file, plots=False, diagnostics=False
     return # variance_check
 
 #************************************************************************
-def evc(station, var_list, config_file, logfile="", plots=False, diagnostics=False):
+def evc(station, var_list, config_file, full=False, plots=False, diagnostics=False):
     """
     Run through the variables and pass to the Excess Variance Check
 
     :param Station station: Station Object for the station
     :param list var_list: list of variables to test
     :param str configfile: string for configuration file
-    :param str logfile: string for log file
+    :param bool full: run a full update (recalculate thresholds)
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
@@ -171,7 +171,8 @@ def evc(station, var_list, config_file, logfile="", plots=False, diagnostics=Fal
 
         obs_var = getattr(station, var)
 
-        find_thresholds(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
+        if full:
+            find_thresholds(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
         variance_check(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
 
 

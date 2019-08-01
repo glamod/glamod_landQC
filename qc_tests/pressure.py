@@ -65,12 +65,13 @@ def pressure_offset(sealp, stnlp, plots=False, diagnostics=False):
     return # pressure_offset
 
 #************************************************************************
-def pcc(station, logfile="", plots=False, diagnostics=False):
+def pcc(station, config_file, full=False, plots=False, diagnostics=False):
     """
     Extract the variables and pass to the Pressure Cross Checks
 
     :param Station station: Station Object for the station
-    :param str logfile: string for log file
+    :param str configfile: string for configuration file (unused here)
+    :param bool full: run a full update (unused here)
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """

@@ -73,12 +73,13 @@ def dew_point_depression(temperatures, dewpoints, plots=False, diagnostics=False
     return # dew_point_depression
 
 #************************************************************************
-def hcc(station, logfile="", plots=False, diagnostics=False):
+def hcc(station, config_file, full=False, plots=False, diagnostics=False):
     """
     Extract the variables and pass to the Humidity Cross Checks
 
     :param Station station: Station Object for the station
-    :param str logfile: string for log file
+    :param str configfile: string for configuration file (unused here)
+    :param bool full: run a full update (unused here)
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """

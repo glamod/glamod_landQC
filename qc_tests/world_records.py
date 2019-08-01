@@ -54,13 +54,13 @@ def record_check(obs_var, plots=False, diagnostics=False):
     return flags # record_check
 
 #************************************************************************
-def wrc(station, var_list, logfile = "", plots = False, diagnostics = False):
+def wrc(station, var_list, full=False, plots=False, diagnostics=False):
     """
     Run through the variables and pass to the World Record Check
 
     :param Station station: Station Object for the station
     :param list var_list: list of variables to test
-    :param str logfile: string for log file
+    :param bool full: run a full update (unused here)
     :param book plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """

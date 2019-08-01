@@ -315,14 +315,14 @@ def monthly_clim(obs_var, station, config_file, logfile="", plots=False, diagnos
 
 
 #************************************************************************
-def coc(station, var_list, config_file, logfile="", plots=False, diagnostics=False):
+def coc(station, var_list, config_file, full=False, plots=False, diagnostics=False):
     """
     Run through the variables and pass to the Climatological Outlier Checks
 
     :param Station station: Station Object for the station
     :param list var_list: list of variables to test
     :param str configfile: string for configuration file
-    :param str logfile: string for log file
+    :param bool full: run a full update (recalculate thresholds)
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
@@ -331,7 +331,8 @@ def coc(station, var_list, config_file, logfile="", plots=False, diagnostics=Fal
 
         obs_var = getattr(station, var)
 
-        find_month_thresholds(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
+        if full:
+            find_month_thresholds(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
 
         monthly_clim(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
 
