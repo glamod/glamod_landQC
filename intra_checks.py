@@ -78,6 +78,7 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         # store extra information to enable easy extraction later
         station.years = station_df["Year"].fillna(utils.MDI).to_numpy()
         station.months = station_df["Month"].fillna(utils.MDI).to_numpy()
+        station.days = station_df["Day"].fillna(utils.MDI).to_numpy()
         station.hours = station_df["Hour"].fillna(utils.MDI).to_numpy()
 
         #*************************
@@ -87,44 +88,50 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         HadISD tests and order
 
         Duplicated months
-        Odd Clusters of data
+        Odd Clusters of data - need to address output with buddy checks in due course.
         Frequent Values - tick
         Diurnal Cycle
-        Gaps in distributions
+        Gaps in distributions - partial tick
         World Records - tick
         Repeated values (streaks or just too common short ones) - partial tick
-        Climatology
+        Climatology - partial tick
         Spike - tick
-        Humidity Cross checks - super saturation, dewpoint depression, dewpoint cut off - tick
-        Cloud logical checks
-        Excess Variance
-        Winds (logical wind & wind rose)
+        Humidity Cross checks - super saturation, dewpoint depression, dewpoint cut off - tick (dewpoint cut off not applied)
+        Cloud logical checks - clouds not in C3S 311a @Aug 2019
+        Excess Variance - tick
+        Winds (logical wind & wind rose) - logical tick.  Not sure if wind rose is robust enough
         Logical SLP/StnLP - tick
-        Precipitation logical checks
+        Precipitation logical checks - precip not in C3S 311a @Aug 2019
         """
         #*************************
 
-        # TODO - sort updating vs not of config files
         # TODO - use suite config file to store all settings for tests
-
-        qc_tests.streaks.rsc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_file, full=full, plots=plots, diagnostics=diagnostics)
-
-        qc_tests.spike.sc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_file, full=full, plots=plots, diagnostics=diagnostics)
-
-        qc_tests.world_records.wrc(station, ["temperature", "dew_point_temperature", "sea_level_pressure", "wind_speed"], full=full, plots=plots, diagnostics=diagnostics)
-
-        qc_tests.humidity.hcc(station, config_file, full=full, plots=plots, diagnostics=diagnostics)
+        qc_tests.odd_cluster.occ(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_file, full=full, plots=plots, diagnostics=diagnostics)
 
         qc_tests.frequent.fvc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_file, full=full, plots=plots, diagnostics=diagnostics)
 
-        qc_tests.pressure.pcc(station, config_file, full=full, plots=plots, diagnostics=diagnostics)
+        # HadISD only runs on stations where latitude higher than 60(N/S)
+        qc_tests.diurnal.dcc(station, config_file, full=full, plots=plots, diagnostics=diagnostics)
 
         qc_tests.distribution.dgc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_file, full=full, plots=plots, diagnostics=diagnostics)
+
+        qc_tests.world_records.wrc(station, ["temperature", "dew_point_temperature", "sea_level_pressure", "wind_speed"], full=full, plots=plots, diagnostics=diagnostics)
+
+        qc_tests.streaks.rsc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_file, full=full, plots=plots, diagnostics=diagnostics)
 
         # not run on pressure data in HadISD.
         qc_tests.climatological.coc(station, ["temperature", "dew_point_temperature"], config_file, full=full, plots=plots, diagnostics=diagnostics)
 
+        qc_tests.spike.sc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_file, full=full, plots=plots, diagnostics=diagnostics)
+
+        qc_tests.humidity.hcc(station, config_file, full=full, plots=plots, diagnostics=diagnostics)
+
         qc_tests.variance.evc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_file, full=full, plots=plots, diagnostics=diagnostics)
+
+        qc_tests.pressure.pcc(station, config_file, full=full, plots=plots, diagnostics=diagnostics)
+
+        qc_tests.winds.wcc(station, config_file, fix=False, full=full, plots=plots, diagnostics=diagnostics)
+
 
         #*************************
         # Output of QFF

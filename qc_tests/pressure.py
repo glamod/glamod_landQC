@@ -86,5 +86,5 @@ def pcc(station, config_file, full=False, plots=False, diagnostics=False):
 #************************************************************************
 if __name__ == "__main__":
     
-    print("humidity cross checks")
+    print("pressure cross checks")
 #************************************************************************

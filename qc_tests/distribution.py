@@ -411,5 +411,5 @@ def dgc(station, var_list, config_file, full=False, plots=False, diagnostics=Fal
 #************************************************************************
 if __name__ == "__main__":
     
-    print("checking frequent values")
+    print("checking gaps in distributions")
 #************************************************************************
