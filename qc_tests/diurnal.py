@@ -299,8 +299,6 @@ def diurnal_cycle_check(obs_var, station, config_file, plots=False, diagnostics=
             print("Diurnal Check {}".format(obs_var.name))
             print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
             
-    input("stop")
-
     return # diurnal_cycle_check
 
 

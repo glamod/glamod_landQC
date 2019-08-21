@@ -14,6 +14,8 @@ import datetime as dt
 
 import qc_utils as utils
 #************************************************************************
+STORM_THRESHOLD = 5
+
 
 MIN_OBS = 28*2 # two obs per day for the month (minimum subdaily)
 SPREAD_LIMIT = 2 # two IQR/MAD/STD
@@ -190,7 +192,6 @@ def prepare_all_data(obs_var, station, month, config_file, full=False, diagnosti
         climatology = utils.average(all_month_data) # mean
         spread = utils.spread(all_month_data) # IQR currently
  
-        # TODO - allow to read in the scaling too
         # write out the scaling...
         utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-clim".format(month), "{}".format(climatology), diagnostics=diagnostics)
         utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-spread".format(month), "{}".format(spread), diagnostics=diagnostics)
@@ -312,6 +313,21 @@ def find_gap(hist, bins, threshold, upwards=True, gap_size=GAP_SIZE):
     return gap_start # find_gap
 
 #************************************************************************
+def expand_around_storms(storms, maximum, pad=6):
+    """
+    Pad storm signal by N=6 hours
+
+    """
+    for i in range(pad):
+
+        if storms[0]-1 >=0:
+            storms = np.insert(storms, 0, storms[0]-1)
+        if storms[-1]+1 < maximum:
+            storms = np.append(storms, storms[-1]+1)
+
+    return np.unique(storms) # expand_around_storms
+
+#************************************************************************
 def all_obs_gap(obs_var, station, config_file, plots=False, diagnostics=False):
     """
     Extract data for month and find secondary populations in distribution.
@@ -358,15 +374,75 @@ def all_obs_gap(obs_var, station, config_file, plots=False, diagnostics=False):
 
                 month_flags = np.array(["" for i in range(month_locs.shape[0])])
                 month_flags[bad_locs] = "d"
+
+                # TODO - can this bit be refactored
+                # for pressure data, see if the flagged obs correspond with high winds
+                # could be a storm signal
+                if obs_var.name in ["station_level_pressure", "sea_level_pressure"]:
+                    wind_monthly_data = prepare_monthly_data(station.wind_speed, station, month)
+                    wind_monthly_average = utils.average(wind_monthly_data)
+                    wind_monthly_spread = utils.spread(wind_monthly_data)
+
+                    pressure_monthly_data = prepare_monthly_data(obs_var, station, month)
+                    pressure_monthly_average = utils.average(pressure_monthly_data)
+                    pressure_monthly_spread = utils.spread(pressure_monthly_data)
+
+                    # already a single calendar month, so go through each year
+                    all_years = np.unique(station.years)
+                    for year in all_years:
+                    
+                        # what's best - extract only when necessary but repeatedly if so, or always, but once
+                        this_year_locs = np.where(station.years[month_locs] == year)
+                    
+                        if "d" not in month_flags[this_year_locs]:
+                            # skip if you get the chance
+                            continue
+
+                        wind_data = station.wind_speed.data[month_locs][this_year_locs]
+                        pressure_data = obs_var.data[month_locs][this_year_locs]
+
+                        storms = np.ma.where(np.logical_and((((wind_data - wind_monthly_average)/wind_monthly_spread) > STORM_THRESHOLD), (((pressure_monthly_average - pressure_data)/pressure_monthly_spread) > STORM_THRESHOLD)))
+                        
+                        # more than one entry - check if separate events
+                        if len(storms) >= 2:
+                            # find where separation more than the usual obs separation
+                            storm_1diffs = np.ma.diff(storms)
+                            separations, = np.where(storm_1diffs > np.median(np.diff(wind_data)))
+
+                            if len(separations) != 0:
+                                # multiple storm signals 
+                                storm_start = 0
+                                storm_finish = separations[0] + 1                                           
+                                first_storm = expand_around_storms(storms[storm_start: storm_finish], len(wind_data))
+                                final_storm_locs = copy.deepcopy(first_storm)
+
+                                for j in range(len(separations)):
+                                    # then do the rest in a loop
+
+                                    if j+1 == len(separations):
+                                        # final one
+                                        this_storm = expand_around_storms(storms[separations[j]+1: ], len(wind_data))
+                                    else:
+                                        this_storm = expand_around_storms(storms[separations[j]+1: separations[j+1]+1], len(wind_data))
+
+                                    final_storm_locs = np.append(final_storm_locs, this_storm)
+                                
+                            else:
+                                # locations separated at same interval as data
+                                final_storm_locs = expand_around_storms(storms, len(wind_data))
+
+                        # single entry
+                        elif len(storms) != 0:
+                            # expand around the storm signal (rather than 
+                            #  just unflagging what could be the peak and 
+                            #  leaving the entry/exit flagged)
+                            final_storm_locs = expand_around_storms(storms, len(wind_data))
+
+                        # unset the flags
+                        month_flags[this_year_locs][final_storm_locs] = ""
+                            
+                # having checked for storms now store final flags
                 flags[month_locs] = month_flags
-
-            # TODO SLP/STNLP storms
-            # wind speeds
-#            month_locs, = np.where(station.months == month)
-#            wind_data = station.wind_speed.data[month_locs]
-#            wind_average = utils.average(wind_data)
-#            wind_spread = utils.spread(wind_data)
-
                         
     # append flags to object
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)

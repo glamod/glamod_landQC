@@ -203,8 +203,6 @@ def find_month_thresholds(obs_var, station, config_file, plots=False, diagnostic
         utils.write_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-uthresh".format(month), "{}".format(upper_threshold), diagnostics=diagnostics)
         utils.write_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-lthresh".format(month), "{}".format(lower_threshold), diagnostics=diagnostics)
           
-        # FINISH OFF
-
     return # find_month_thresholds
 
 #************************************************************************
@@ -292,7 +290,7 @@ def monthly_clim(obs_var, station, config_file, logfile="", plots=False, diagnos
             if gap_start != 0:
                 bad_locs, = np.ma.where(normalised_anomalies > gap_start) # all years for one month
 
-                flags[bad_locs] = "d"
+                flags[bad_locs] = "C"
                                        
         if lowercount > 0:
             gap_start = find_gap(hist, bins, lower_threshold, upwards=False)
@@ -300,7 +298,7 @@ def monthly_clim(obs_var, station, config_file, logfile="", plots=False, diagnos
             if gap_start != 0:
                 bad_locs, = np.ma.where(normalised_anomalies < gap_start) # all years for one month
 
-                flags[bad_locs] = "d"
+                flags[bad_locs] = "C"
 
     # append flags to object
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)

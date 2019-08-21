@@ -216,26 +216,6 @@ def populate_station(station, df, obs_var_list):
 
     return # populate_station
 
-#************************************************************************
-def fulltimes(station, datetimes, obs_var_list):
-    """
-    Expand time axis into hours and have no gaps
-    """
-
-    # start on full year
-    start = np.datetime64("{}-01-01".format(datetimes[0].year))
-
-    # there can be observations not on the full hour
-    differences = (datetimes - start)/np.timedelta64(1, "m") # convert to integer minutes
-
-    for variable in obs_var_list:
-
-        
-        print("sort")
-
-
-    return # fulltimes
-
 #*********************************************
 def IQR(data, percentile = 0.25):
     ''' Calculate the IQR of the data '''

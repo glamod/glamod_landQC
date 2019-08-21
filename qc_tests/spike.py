@@ -137,8 +137,9 @@ def identify_spikes(obs_var, times, config_file, plots=False, diagnostics=False)
 
         if diagnostics:
 
-            print("Time Difference: {} minutes".format(t_diff))
-            print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
+            print("Spike {}".format(obs_var.name))
+            print("   Time Difference: {} minutes".format(t_diff))
+            print("      Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
 
     return # identify_spikes
 

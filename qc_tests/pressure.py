@@ -39,13 +39,14 @@ def pressure_offset(sealp, stnlp, plots=False, diagnostics=False):
     low, = np.ma.where(difference < (average_difference - THRESHOLD*range_difference))
 
     if len(high) != 0:
-        flags[high] = "P"
+        flags[high] = "p"
         if diagnostics:
-            print("Number of high differences {}".format(len(high)))
+            print("Pressure".format(stnlp.name))
+            print("   Number of high differences {}".format(len(high)))
     if len(low) != 0:
-        flags[low] = "P"
+        flags[low] = "p"
         if diagnostics:
-            print("Number of low differences {}".format(len(low)))
+            print("   Number of low differences {}".format(len(low)))
 
     if plots:
         import matplotlib.pyplot as plt
@@ -59,7 +60,7 @@ def pressure_offset(sealp, stnlp, plots=False, diagnostics=False):
         plt.xlabel("Difference (hPa)")
         plt.show()
 
-    # only flag the dewpoints
+    # only flag the station level pressure
     stnlp.flags = utils.insert_flags(stnlp.flags, flags)
 
     return # pressure_offset

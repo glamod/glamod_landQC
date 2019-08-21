@@ -48,7 +48,7 @@ def record_check(obs_var, plots=False, diagnostics=False):
     flags[too_low] = "W"
 
     if diagnostics:
-        print("{} records".format(obs_var.name))
+        print("World Records {}".format(obs_var.name))
         print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
 
     return flags # record_check

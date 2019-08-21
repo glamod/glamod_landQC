@@ -91,14 +91,14 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         Odd Clusters of data - need to address output with buddy checks in due course.
         Frequent Values - tick
         Diurnal Cycle
-        Gaps in distributions - partial tick
+        Gaps in distributions - tick
         World Records - tick
         Repeated values (streaks or just too common short ones) - partial tick
-        Climatology - partial tick
+        Climatology - tick
         Spike - tick
         Humidity Cross checks - super saturation, dewpoint depression, dewpoint cut off - tick (dewpoint cut off not applied)
         Cloud logical checks - clouds not in C3S 311a @Aug 2019
-        Excess Variance - tick
+        Excess Variance - partial tick
         Winds (logical wind & wind rose) - logical tick.  Not sure if wind rose is robust enough
         Logical SLP/StnLP - tick
         Precipitation logical checks - precip not in C3S 311a @Aug 2019
@@ -111,6 +111,7 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         qc_tests.frequent.fvc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_file, full=full, plots=plots, diagnostics=diagnostics)
 
         # HadISD only runs on stations where latitude higher than 60(N/S)
+        # Takes a long time, this one
         qc_tests.diurnal.dcc(station, config_file, full=full, plots=plots, diagnostics=diagnostics)
 
         qc_tests.distribution.dgc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_file, full=full, plots=plots, diagnostics=diagnostics)

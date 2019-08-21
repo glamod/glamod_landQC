@@ -29,7 +29,7 @@ def super_saturation_check(temperatures, dewpoints, plots=False, diagnostics=Fal
 
     sss, = np.ma.where(dewpoints.data > temperatures.data)
 
-    flags[sss] = "H"
+    flags[sss] = "h"
 
     # only flag the dewpoints
     dewpoints.flags = utils.insert_flags(dewpoints.flags, flags)
@@ -60,7 +60,7 @@ def dew_point_depression(temperatures, dewpoints, plots=False, diagnostics=False
 
     # TODO - decide on whether to only flag after a set number of instances.
 
-    flags[locs] = "H"
+    flags[locs] = "h"
 
     # only flag the dewpoints
     dewpoints.flags = utils.insert_flags(dewpoints.flags, flags)

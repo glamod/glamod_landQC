@@ -40,27 +40,27 @@ def logical_checks(speed, direction, fix=False, plots=False, diagnostics=False):
         direction.data[fix_zero_direction] = 0
         direction.data.mask[fix_zero_direction] = False
     else:
-        dflags[fix_zero_direction] = "W"
+        dflags[fix_zero_direction] = "w"
 
     # negative speeds (can't fix)
     negative_speed = np.ma.where(speed.data < 0)
-    sflags[negative_speed] = "W"
+    sflags[negative_speed] = "w"
 
     # negative directions (don't try to adjust)
     negative_direction = np.ma.where(direction.data < 0)
-    dflags[negative_direction] = "W"
+    dflags[negative_direction] = "w"
 
     # wrapped directions (don't try to adjust)
     wrapped_direction = np.ma.where(direction.data > 360)
-    dflags[wrapped_direction] = "W"
+    dflags[wrapped_direction] = "w"
     
     # no direction possible if speed == 0
     bad_direction = np.ma.where(np.logical_and(speed.data == 0, direction.data != 0))
-    dflags[bad_direction] = "W"
+    dflags[bad_direction] = "w"
 
     # northerlies given as 360, not 0 --> calm
     bad_speed = np.ma.where(np.logical_and(direction.data == 0, speed.data != 0))
-    sflags[bad_speed] = "W"
+    sflags[bad_speed] = "w"
     
     # copy flags into attribute
     speed.flags = utils.insert_flags(speed.flags, sflags)
