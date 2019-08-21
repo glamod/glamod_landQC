@@ -45,6 +45,11 @@ def identify_values(obs_var, station, config_file, plots=False, diagnostics=Fals
 
         month_data = obs_var.data[locs]
 
+        if len(month_data.compressed()) < MIN_OBS:
+            # insufficient data, so write out empty config and move on
+            utils.write_qc_config(config_file, "FREQUENT-{}".format(obs_var.name), "{}".format(month), "[{}]".format(",".join(str(s) for s in [])), diagnostics=diagnostics)
+            continue
+
         bins = utils.create_bins(month_data, BIN_WIDTH)
         hist, bin_edges = np.histogram(month_data, bins)
 

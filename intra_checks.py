@@ -49,25 +49,34 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
     """
 
     # Need codes to process IDs and any inventory
-    station_list = ["WMO02474-1_220.psv"]
+    # these are just for testing!
+    import glob
+    station_list = glob.glob(r'{}/*.psv'.format(IFF_LOC))
+    station_list = [stn.split("/")[-1] for stn in station_list]
+#    station_list = ["WMO02474-1_220.psv"]
     obs_var_list = setup.obs_var_list
 
     for st, station_id in enumerate(station_list):
-        print(station_id)
+        print("{} {}".format(dt.datetime.now(), station_id))
 
         # set up config file to hold thresholds etc
         config_file = os.path.join(CONF_LOC, "{}.config".format(station_id))
 
         # set up the stations
         # TODO - read in a station list correctly - these are dummies
-        lat = 52
-        lon = 0.1
-        elev = 10
-        station = utils.Station(station_id, lat, lon, elev)
+#        lat = 52
+#        lon = 0.1
+#        elev = 10
+#        station = utils.Station(station_id, lat, lon, elev)
 
         #*************************
         # read MFF 
         station_df = io.read(os.path.join(IFF_LOC, station_id[:-4]))
+
+        # TEMPORARY
+        # extract geo metadata from DF
+        station = utils.Station(station_id, station_df["Latitude"][0], station_df["Longitude"][0], station_df["Elevation"][0])
+
         # convert to datetimes
         datetimes = pd.to_datetime(station_df[["Year", "Month", "Day", "Hour", "Minute"]])
 
@@ -112,7 +121,7 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
 
         # HadISD only runs on stations where latitude higher than 60(N/S)
         # Takes a long time, this one
-        qc_tests.diurnal.dcc(station, config_file, full=full, plots=plots, diagnostics=diagnostics)
+#        qc_tests.diurnal.dcc(station, config_file, full=full, plots=plots, diagnostics=diagnostics)
 
         qc_tests.distribution.dgc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_file, full=full, plots=plots, diagnostics=diagnostics)
 
@@ -161,7 +170,7 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         # write out the dataframe to output format
         io.write(os.path.join(QFF_LOC, "{}_QC".format(station_id[:-4])), station_df)
 
-        input("end")
+#        input("end")
 
     return # run_checks
 

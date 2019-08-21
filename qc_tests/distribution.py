@@ -11,12 +11,14 @@ import numpy as np
 import scipy as sp
 from scipy.stats import skew
 import datetime as dt
+import copy
 
 import qc_utils as utils
 #************************************************************************
 STORM_THRESHOLD = 5
 
-
+OBS_LIMIT = 50 
+VALID_MONTHS = 5
 MIN_OBS = 28*2 # two obs per day for the month (minimum subdaily)
 SPREAD_LIMIT = 2 # two IQR/MAD/STD
 BIN_WIDTH = 0.25
@@ -69,15 +71,22 @@ def find_monthly_scaling(obs_var, station, config_file, diagnostics=False):
 
         month_averages = prepare_monthly_data(obs_var, station, month, diagnostics = diagnostics)
 
-        # have months, now to standardise
-        climatology = utils.average(month_averages) # mean
-        spread = utils.spread(month_averages) # IQR currently
-        if spread < SPREAD_LIMIT:
-            spread = SPREAD_LIMIT
+        if len(month_averages.compressed()) >= VALID_MONTHS:
 
-        # write out the scaling...
-        utils.write_qc_config(config_file, "MDISTRIBUTION-{}".format(obs_var.name), "{}-clim".format(month), "{}".format(climatology), diagnostics=diagnostics)
-        utils.write_qc_config(config_file, "MDISTRIBUTION-{}".format(obs_var.name), "{}-spread".format(month), "{}".format(spread), diagnostics=diagnostics)
+            # have months, now to standardise
+            climatology = utils.average(month_averages) # mean
+            spread = utils.spread(month_averages) # IQR currently
+            if spread < SPREAD_LIMIT:
+                spread = SPREAD_LIMIT
+
+            # write out the scaling...
+            utils.write_qc_config(config_file, "MDISTRIBUTION-{}".format(obs_var.name), "{}-clim".format(month), "{}".format(climatology), diagnostics=diagnostics)
+            utils.write_qc_config(config_file, "MDISTRIBUTION-{}".format(obs_var.name), "{}-spread".format(month), "{}".format(spread), diagnostics=diagnostics)
+
+        else:
+            utils.write_qc_config(config_file, "MDISTRIBUTION-{}".format(obs_var.name), "{}-clim".format(month), "{}".format(utils.MDI), diagnostics=diagnostics)
+            utils.write_qc_config(config_file, "MDISTRIBUTION-{}".format(obs_var.name), "{}-spread".format(month), "{}".format(utils.MDI), diagnostics=diagnostics)
+
 
     return # find_monthly_scaling
 
@@ -103,6 +112,10 @@ def monthly_gap(obs_var, station, config_file, plots=False, diagnostics=False):
         # read in the scaling
         climatology = float(utils.read_qc_config(config_file, "MDISTRIBUTION-{}".format(obs_var.name), "{}-clim".format(month)))
         spread = float(utils.read_qc_config(config_file, "MDISTRIBUTION-{}".format(obs_var.name), "{}-spread".format(month)))
+
+        if climatology == utils.MDI and spread == utils.MDI:
+            # these weren't calculable, move on
+            continue
 
         standardised_months = (month_averages - climatology) / spread
 
@@ -188,10 +201,15 @@ def prepare_all_data(obs_var, station, month, config_file, full=False, diagnosti
     all_month_data = obs_var.data[month_locs]
 
     if full:
-        # have data, now to standardise
-        climatology = utils.average(all_month_data) # mean
-        spread = utils.spread(all_month_data) # IQR currently
- 
+
+        if len(all_month_data.compressed()) > OBS_LIMIT:
+            # have data, now to standardise
+            climatology = utils.average(all_month_data) # mean
+            spread = utils.spread(all_month_data) # IQR currently
+        else:
+            climatology = utils.MDI
+            spread = utils.MDI
+
         # write out the scaling...
         utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-clim".format(month), "{}".format(climatology), diagnostics=diagnostics)
         utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-spread".format(month), "{}".format(spread), diagnostics=diagnostics)
@@ -200,9 +218,11 @@ def prepare_all_data(obs_var, station, month, config_file, full=False, diagnosti
         climatology = float(utils.read_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-clim".format(month)))
         spread = float(utils.read_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-spread".format(month)))        
 
-    normalised_anomalies = (all_month_data - climatology)/spread  
-
-    return normalised_anomalies # prepare_all_data
+    if climatology == utils.MDI and spread == utils.MDI:
+        # these weren't calculable, move on
+        return np.ma.array([utils.MDI])
+    else:
+        return (all_month_data - climatology)/spread  # prepare_all_data
 
 #************************************************************************
 def find_thresholds(obs_var, station, config_file, plots=False, diagnostics=False):
@@ -220,6 +240,12 @@ def find_thresholds(obs_var, station, config_file, plots=False, diagnostics=Fals
     for month in range(1, 13):
 
         normalised_anomalies = prepare_all_data(obs_var, station, month, config_file, full=True, diagnostics=diagnostics)
+
+        if len(normalised_anomalies.compressed()) == 1 and normalised_anomalies[0] == utils.MDI:
+            # scaling not possible for this month
+            utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-uthresh".format(month), "{}".format(utils.MDI), diagnostics=diagnostics)
+            utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-lthresh".format(month), "{}".format(utils.MDI), diagnostics=diagnostics)
+            continue
 
         bins = utils.create_bins(normalised_anomalies, BIN_WIDTH)
         hist, bin_edges = np.histogram(normalised_anomalies, bins)
@@ -351,6 +377,10 @@ def all_obs_gap(obs_var, station, config_file, plots=False, diagnostics=False):
         upper_threshold = float(utils.read_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-uthresh".format(month)))
         lower_threshold = float(utils.read_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-lthresh".format(month)))
 
+        if upper_threshold == utils.MDI and lower_threshold == utils.MDI:
+            # these weren't able to be calculated, move on
+            continue
+
         # now to find the gaps
         uppercount = len(np.where(normalised_anomalies > upper_threshold)[0])
         lowercount = len(np.where(normalised_anomalies < lower_threshold)[0])
@@ -401,7 +431,7 @@ def all_obs_gap(obs_var, station, config_file, plots=False, diagnostics=False):
                         wind_data = station.wind_speed.data[month_locs][this_year_locs]
                         pressure_data = obs_var.data[month_locs][this_year_locs]
 
-                        storms = np.ma.where(np.logical_and((((wind_data - wind_monthly_average)/wind_monthly_spread) > STORM_THRESHOLD), (((pressure_monthly_average - pressure_data)/pressure_monthly_spread) > STORM_THRESHOLD)))
+                        storms, = np.ma.where(np.logical_and((((wind_data - wind_monthly_average)/wind_monthly_spread) > STORM_THRESHOLD), (((pressure_monthly_average - pressure_data)/pressure_monthly_spread) > STORM_THRESHOLD)))
                         
                         # more than one entry - check if separate events
                         if len(storms) >= 2:
@@ -439,7 +469,8 @@ def all_obs_gap(obs_var, station, config_file, plots=False, diagnostics=False):
                             final_storm_locs = expand_around_storms(storms, len(wind_data))
 
                         # unset the flags
-                        month_flags[this_year_locs][final_storm_locs] = ""
+                        if len(storms) > 0:
+                            month_flags[this_year_locs][final_storm_locs] = ""
                             
                 # having checked for storms now store final flags
                 flags[month_locs] = month_flags

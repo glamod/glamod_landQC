@@ -15,7 +15,7 @@ import datetime as dt
 import qc_utils as utils
 #************************************************************************
 STORM_THRESHOLD = 4
-
+MIN_VARIANCES = 10
 SPREAD_THRESHOLD = 8.
 MIN_VALUES = 30
 DATA_COUNT_THRESHOLD = 120
@@ -53,16 +53,20 @@ def prepare_data(obs_var, station, month, diagnostics=False, winsorize=True):
             if len(hour_data.compressed()) > 10:
                 hour_data = utils.winsorize(hour_data, 50)
 
-        if len(hour_data) >= DATA_COUNT_THRESHOLD:
+        if len(hour_data.compressed()) >= DATA_COUNT_THRESHOLD:
             hourly_clims[hour] = np.ma.mean(hour_data)
             hourly_clims.mask[hour] = False
 
         # make anomalies - keeping the order
         anomalies[hlocs] = obs_var.data[hlocs] - hourly_clims[hour]
 
-    # for the month, normalise anomalies by spread
-    spread = utils.spread(anomalies[mlocs])
-    if spread < 1.5:
+
+    if len(anomalies[mlocs].compressed()) >= MIN_VARIANCES:
+        # for the month, normalise anomalies by spread
+        spread = utils.spread(anomalies[mlocs])
+        if spread < 1.5:
+            spread = 1.5
+    else:
         spread = 1.5
 
     normed_anomalies[mlocs] = anomalies[mlocs] / spread
@@ -101,8 +105,12 @@ def find_thresholds(obs_var, station, config_file, plots=False, diagnostics=Fals
 
         variances = prepare_data(obs_var, station, month, diagnostics=diagnostics, winsorize=winsorize)
 
-        average_variance = utils.average(variances)
-        variance_spread = utils.spread(variances)
+        if len(variances.compressed()) >= MIN_VARIANCES:
+            average_variance = utils.average(variances)
+            variance_spread = utils.spread(variances)
+        else:
+            average_variance = utils.MDI
+            variance_spread = utils.MDI
 
         utils.write_qc_config(config_file, "VARIANCE-{}".format(obs_var.name), "{}-average".format(month), "{}".format(average_variance), diagnostics=diagnostics)
         utils.write_qc_config(config_file, "VARIANCE-{}".format(obs_var.name), "{}-spread".format(month), "{}".format(variance_spread), diagnostics=diagnostics)
@@ -131,6 +139,10 @@ def variance_check(obs_var, station, config_file, plots=False, diagnostics=False
 
         average_variance = float(utils.read_qc_config(config_file, "VARIANCE-{}".format(obs_var.name), "{}-average".format(month)))
         variance_spread = float(utils.read_qc_config(config_file, "VARIANCE-{}".format(obs_var.name), "{}-spread".format(month)))
+
+        if average_variance == utils.MDI and variance_spread == utils.MDI:
+            # couldn't be calculated, mpve on
+            continue
 
         bad_years, = np.where(np.abs(variances - average_variance) / variance_spread > SPREAD_THRESHOLD)
 
