@@ -169,7 +169,7 @@ def monthly_gap(obs_var, station, config_file, plots=False, diagnostics=False):
         for bad_month_id in bad:
              # year ID for this set of calendar months
              for year in all_years:
-                 if year in bad_month_id:
+                 if year == bad_month_id:
                      locs, = np.where(np.logical_and(station.months == month, station.years == year))
                      flags[locs] = "D"
 
