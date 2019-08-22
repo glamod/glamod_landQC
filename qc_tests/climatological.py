@@ -7,10 +7,7 @@ A low pass filter reduces the effect of long-term changes.
 
 """
 #************************************************************************
-import sys
 import numpy as np
-import scipy as sp
-import datetime as dt
 
 import qc_utils as utils
 #************************************************************************
@@ -32,7 +29,7 @@ def get_weights(monthly_anoms, monthly_subset, filter_subset):
         weights - float
     '''
 
-    filterweights = np.array([1.,2.,3.,2.,1.])
+    filterweights = np.array([1., 2., 3., 2., 1.])
 
     if np.sum(filterweights[filter_subset] * np.ceil(monthly_anoms[monthly_subset] - np.floor(monthly_anoms[monthly_subset]))) == 0:
         weights = 0
@@ -59,17 +56,17 @@ def low_pass_filter(normed_anomalies, station, monthly_anoms, month):
     for year in range(all_years.shape[0]):
         
         if year == 0:
-            monthly_range = np.arange(0,3)
-            filter_range = np.arange(2,5)
+            monthly_range = np.arange(0, 3)
+            filter_range = np.arange(2, 5)
         elif year == 1:
-            monthly_range = np.arange(0,4)
-            filter_range = np.arange(1,5)
+            monthly_range = np.arange(0, 4)
+            filter_range = np.arange(1, 5)
         elif year == all_years.shape[0] - 2:
-            monthly_range = np.arange(-4,0,-1)
-            filter_range = np.arange(0,4)
+            monthly_range = np.arange(-4, 0, -1)
+            filter_range = np.arange(0, 4)
         elif year == all_years.shape[0] - 1:
-            monthly_range = np.arange(-3,0,-1)
-            filter_range = np.arange(0,3)
+            monthly_range = np.arange(-3, 0, -1)
+            filter_range = np.arange(0, 3)
         else:
             monthly_range = np.arange(year-2, year+3)
             filter_range = np.arange(5)
@@ -166,7 +163,7 @@ def find_month_thresholds(obs_var, station, config_file, plots=False, diagnostic
         bins = utils.create_bins(normalised_anomalies, BIN_WIDTH)
         hist, bin_edges = np.histogram(normalised_anomalies.compressed(), bins)
 
-        gaussian_fit = utils.fit_gaussian(bins[1:], hist, max(hist), mu = bins[np.argmax(hist)], sig = utils.spread(normalised_anomalies))
+        gaussian_fit = utils.fit_gaussian(bins[1:], hist, max(hist), mu=bins[np.argmax(hist)], sig=utils.spread(normalised_anomalies))
 
         fitted_curve = utils.gaussian(bins[1:], gaussian_fit)
 
@@ -301,10 +298,15 @@ def coc(station, var_list, config_file, full=False, plots=False, diagnostics=Fal
 
         obs_var = getattr(station, var)
 
+        # no point plotting twice!
+        cplots = plots
+        if plots and full:
+            cplots = False
+
         if full:
             find_month_thresholds(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
 
-        monthly_clim(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
+        monthly_clim(obs_var, station, config_file, plots=cplots, diagnostics=diagnostics)
 
     return # coc
 

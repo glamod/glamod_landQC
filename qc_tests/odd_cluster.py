@@ -5,10 +5,7 @@ Odd Cluster Checks
 Find isolated data (single points and small runs)
 """
 #************************************************************************
-import sys
 import numpy as np
-import scipy as sp
-import datetime as dt
 
 import qc_utils as utils
 #************************************************************************
@@ -34,13 +31,13 @@ def plot_cluster(station, obs_var, oc_start, oc_end):
     
     # sort the padding
     if oc_start == 0:
-        start == 0
+        start = 0
     else:
         start = oc_start - 20
         if start < 0:
-            start == 0
+            start = 0
     if oc_end == -1:
-        end == -1
+        end = -1
     else:
         end = oc_end + 20
         if end > len(station.times):

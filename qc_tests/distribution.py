@@ -6,12 +6,9 @@ Distributional Gap Checks
 2. Check distribution of all observations and look for distinct populations
 """
 #************************************************************************
-import sys
-import numpy as np
-import scipy as sp
-from scipy.stats import skew
-import datetime as dt
 import copy
+import numpy as np
+from scipy.stats import skew
 
 import qc_utils as utils
 #************************************************************************
@@ -69,7 +66,7 @@ def find_monthly_scaling(obs_var, station, config_file, diagnostics=False):
     
     for month in range(1, 13):
 
-        month_averages = prepare_monthly_data(obs_var, station, month, diagnostics = diagnostics)
+        month_averages = prepare_monthly_data(obs_var, station, month, diagnostics=diagnostics)
 
         if len(month_averages.compressed()) >= VALID_MONTHS:
 
@@ -107,7 +104,7 @@ def monthly_gap(obs_var, station, config_file, plots=False, diagnostics=False):
     
     for month in range(1, 13):
 
-        month_averages = prepare_monthly_data(obs_var, station, month, diagnostics = diagnostics)
+        month_averages = prepare_monthly_data(obs_var, station, month, diagnostics=diagnostics)
 
         # read in the scaling
         climatology = float(utils.read_qc_config(config_file, "MDISTRIBUTION-{}".format(obs_var.name), "{}-clim".format(month)))
@@ -126,11 +123,11 @@ def monthly_gap(obs_var, station, config_file, plots=False, diagnostics=False):
         bad, = np.where(np.abs(standardised_months) >= LARGE_LIMIT)
         # now follow flag locations back up through the process
         for bad_month_id in bad:
-             # year ID for this set of calendar months
-             for year in all_years:
-                 if year == bad_month_id:
-                     locs, = np.where(np.logical_and(station.months == month, station.years == year))
-                     flags[locs] = "D"
+            # year ID for this set of calendar months
+            for year in all_years:
+                if year == bad_month_id:
+                    locs, = np.where(np.logical_and(station.months == month, station.years == year))
+                    flags[locs] = "D"
 
         # walk distribution from centre to find assymetry
         sort_order = standardised_months.argsort()
@@ -163,12 +160,12 @@ def monthly_gap(obs_var, station, config_file, plots=False, diagnostics=False):
     
         # now follow flag locations back up through the process
         for bad_month_id in bad:
-             # year ID for this set of calendar months
-             for year in all_years:
-                 if year == bad_month_id:
-                     locs, = np.where(np.logical_and(station.months == month, station.years == year))
-                     flags[locs] = "D"
-
+            # year ID for this set of calendar months
+            for year in all_years:
+                if year == bad_month_id:
+                    locs, = np.where(np.logical_and(station.months == month, station.years == year))
+                    flags[locs] = "D"
+                    
         if plots:
             import matplotlib.pyplot as plt
             
@@ -260,7 +257,8 @@ def find_thresholds(obs_var, station, config_file, plots=False, diagnostics=Fals
         bins = utils.create_bins(normalised_anomalies, BIN_WIDTH)
         hist, bin_edges = np.histogram(normalised_anomalies, bins)
 
-        gaussian_fit = utils.fit_gaussian(bins[1:], hist, max(hist), mu = bins[np.argmax(hist)], sig = utils.spread(normalised_anomalies), skew = skew(normalised_anomalies.compressed()))
+        gaussian_fit = utils.fit_gaussian(bins[1:], hist, max(hist), mu=bins[np.argmax(hist)], \
+                                          sig=utils.spread(normalised_anomalies), skew=skew(normalised_anomalies.compressed()))
 
         fitted_curve = utils.skew_gaussian(bins[1:], gaussian_fit)
 
@@ -305,7 +303,7 @@ def expand_around_storms(storms, maximum, pad=6):
     """
     for i in range(pad):
 
-        if storms[0]-1 >=0:
+        if storms[0]-1 >= 0:
             storms = np.insert(storms, 0, storms[0]-1)
         if storms[-1]+1 < maximum:
             storms = np.append(storms, storms[-1]+1)
@@ -483,6 +481,7 @@ def dgc(station, var_list, config_file, full=False, plots=False, diagnostics=Fal
 
         obs_var = getattr(station, var)
         
+        # no point plotting twice!
         gplots = plots
         if plots and full:
             gplots = False

@@ -5,10 +5,7 @@ Frequent Value Check
 Check for observation values which occur much more frequently than expected.
 """
 #************************************************************************
-import sys
 import numpy as np
-import scipy as sp
-import datetime as dt
 
 import qc_utils as utils
 #************************************************************************
@@ -204,14 +201,16 @@ def fvc(station, var_list, config_file, full=False, plots=False, diagnostics=Fal
 
         obs_var = getattr(station, var)
 
+        # no point plotting twice!
+        fplots = plots
+        if plots and full:
+            fplots = False
+
         # Frequent Values  
         if full:
             identify_values(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
 
-        if full and plots:
-            # no point plotting twice!
-            plots = False
-        frequent_values(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
+        frequent_values(obs_var, station, config_file, plots=fplots, diagnostics=diagnostics)
 
 
     return # fvc

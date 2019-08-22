@@ -5,10 +5,7 @@ Pressure Cross Checks
 Check for observations where difference between station and sea level pressure
 falls outside of the expected range.
 """
-import sys
 import numpy as np
-import scipy as sp
-import datetime as dt
 
 import qc_utils as utils
 #************************************************************************
@@ -56,9 +53,9 @@ def pressure_offset(sealp, stnlp, plots=False, diagnostics=False):
             bins = np.arange(np.round(average_difference)-1, np.round(average_difference)+1, 0.1)
             import matplotlib.pyplot as plt
             plt.clf()
-            plt.hist(difference.compressed(), bins = bins)
-            plt.axvline(x = (average_difference + (THRESHOLD*range_difference)), ls = "--", c = "r")
-            plt.axvline(x = (average_difference - (THRESHOLD*range_difference)), ls = "--", c = "r")
+            plt.hist(difference.compressed(), bins=bins)
+            plt.axvline(x=(average_difference + (THRESHOLD*range_difference)), ls="--", c="r")
+            plt.axvline(x=(average_difference - (THRESHOLD*range_difference)), ls="--", c="r")
             plt.xlim([bins[0] - 1, bins[-1] + 1])
             plt.ylabel("Observations")
             plt.xlabel("Difference (hPa)")

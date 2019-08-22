@@ -5,10 +5,6 @@ Spike Check
 Checks for short (<=3) observations which are far above/below their immediate neighbours.
 """
 import numpy as np
-import math
-import scipy as sp
-import datetime as dt
-import copy
 
 import qc_utils as utils
 #************************************************************************

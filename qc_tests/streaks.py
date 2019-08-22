@@ -12,10 +12,8 @@ Repeated Streaks Check
 """
 #************************************************************************
 import sys
-import numpy as np
-import scipy as sp
-import datetime as dt
 import itertools
+import numpy as np
 
 
 import qc_utils as utils

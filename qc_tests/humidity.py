@@ -6,10 +6,7 @@ Humidity Cross Checks
 2. Check and flag instances of dew point depression
 """
 #************************************************************************
-import sys
 import numpy as np
-import scipy as sp
-import datetime as dt
 
 import qc_utils as utils
 

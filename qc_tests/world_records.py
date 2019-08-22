@@ -6,8 +6,6 @@ Check for exceedence of world records
 """
 #************************************************************************
 import numpy as np
-import scipy as sp
-import datetime as dt
 
 import qc_utils as utils
 

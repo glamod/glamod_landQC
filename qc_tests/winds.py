@@ -4,10 +4,7 @@ Wind Cross Checks
 
 Cross checks on speed and direction.
 """
-import sys
 import numpy as np
-import scipy as sp
-import datetime as dt
 
 import qc_utils as utils
 #************************************************************************

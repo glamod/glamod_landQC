@@ -514,10 +514,10 @@ def fit_gaussian(x, y, norm, mu=MDI, sig=MDI, skew=MDI):
         sig=np.ma.std(x)
     if skew == MDI:
         p0 = np.array([norm, mu, sig])
-        result=least_squares(residuals_gaussian, p0, args=(y, x), max_nfev=10000, verbose=0, method="lm")
+        result = least_squares(residuals_gaussian, p0, args=(y, x), max_nfev=10000, verbose=0, method="lm")
     else:
         p0 = np.array([norm, mu, sig, skew])
-        result=least_squares(residuals_skew_gaussian, p0, args=(y, x), max_nfev=10000, verbose=0, method="lm")
+        result = least_squares(residuals_skew_gaussian, p0, args=(y, x), max_nfev=10000, verbose=0, method="lm")
     return result.x # fit_gaussian
 
 #************************************************************************

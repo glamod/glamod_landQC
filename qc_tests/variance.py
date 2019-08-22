@@ -8,9 +8,6 @@ Checks for months with higher/lower variance than expected
 #************************************************************************
 import sys
 import numpy as np
-import scipy as sp
-from scipy.stats import skew
-import datetime as dt
 
 import qc_utils as utils
 #************************************************************************
@@ -177,8 +174,8 @@ def variance_check(obs_var, station, config_file, plots=False, diagnostics=False
                     diffs = np.ma.diff(pressure_data)
 
                     # count up the largest number of sequential negative and positive differences
-                    negs, poss = 0,0
-                    biggest_neg, biggest_pos = 0,0
+                    negs, poss = 0, 0
+                    biggest_neg, biggest_pos = 0, 0
                             
                     for diff in diffs:
                                 

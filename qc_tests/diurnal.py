@@ -5,11 +5,8 @@ Diurnal Cycle Checks
 Check whether diurnal cycle is consistent across the record
 """
 #************************************************************************
-import sys
-import numpy as np
-import scipy as sp
 import datetime as dt
-import calendar
+import numpy as np
 
 import qc_utils as utils
 
@@ -22,7 +19,7 @@ THRESHOLD = 0.33
 MISSING = -99
 
 # sine curve spanning y=0 to y=1 . Working in minutes since 00:00
-SINE_CURVE = (np.sin(2.*np.pi* np.arange((24*60),dtype=(np.float64)) / (24.*60.)) + 1.)/2.
+SINE_CURVE = (np.sin(2.*np.pi* np.arange((24*60), dtype=(np.float64)) / (24.*60.)) + 1.)/2.
 
 
 #************************************************************************
@@ -207,7 +204,7 @@ def find_offset(obs_var, station, config_file, plots=False, diagnostics=False):
     '''Build up range of cycles incl, uncertainty to find where best of best located'''
 
     hours = np.arange(24)
-    hour_matches=np.zeros(24)
+    hour_matches = np.zeros(24)
     diurnal_peak = MISSING
     number_estimates = 0
     for h in range(6):
@@ -215,7 +212,7 @@ def find_offset(obs_var, station, config_file, plots=False, diagnostics=False):
             '''Store lowest uncertainty best fit as first guess'''
             if diurnal_peak == MISSING: 
                 diurnal_peak = best_fits[h]
-                hours = np.roll(hours,11-int(diurnal_peak))
+                hours = np.roll(hours, 11-int(diurnal_peak))
                 hour_matches[11-(h+1):11+(h+2)] = 1
                 number_estimates += 1
 
@@ -223,7 +220,7 @@ def find_offset(obs_var, station, config_file, plots=False, diagnostics=False):
             centre, = np.where(hours == best_fits[h])
 
             if (centre[0] - h + 1) >= 0:
-                if (centre[0] + h + 1 ) <=23:
+                if (centre[0] + h + 1) <= 23:
                     hour_matches[centre[0] - (h + 1) : centre[0] + h + 2] += 1
                 else:
                     hour_matches[centre[0] - (h + 1) : ] += 1
@@ -285,7 +282,7 @@ def diurnal_cycle_check(obs_var, station, config_file, plots=False, diagnostics=
         # find the bad days in the times array
         for day in bad_locs:
 
-            this_day = day_counter_start + dt.timedelta(days = int(day))
+            this_day = day_counter_start + dt.timedelta(days=int(day))
 
             locs, = np.where(np.logical_and.reduce((station.years == this_day.year, station.months == this_day.month, station.days == this_day.day)))
 
