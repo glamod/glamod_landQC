@@ -39,8 +39,8 @@ def pressure_offset(sealp, stnlp, plots=False, diagnostics=False):
         average_difference = utils.average(difference)
         range_difference = utils.spread(difference)
 
-        high, = np.ma.where(difference > (average_difference + THRESHOLD*range_difference))
-        low, = np.ma.where(difference < (average_difference - THRESHOLD*range_difference))
+        high, = np.ma.where(difference > (average_difference + (THRESHOLD*range_difference)))
+        low, = np.ma.where(difference < (average_difference - (THRESHOLD*range_difference)))
 
         if len(high) != 0:
             flags[high] = "p"
@@ -53,13 +53,13 @@ def pressure_offset(sealp, stnlp, plots=False, diagnostics=False):
                 print("   Number of low differences {}".format(len(low)))
 
         if plots:
+            bins = np.arange(np.round(average_difference)-1, np.round(average_difference)+1, 0.1)
             import matplotlib.pyplot as plt
-            plt.ion()
             plt.clf()
-            plt.hist(difference.compressed(), bins = np.arange(np.round(average_difference)-10, np.round(average_difference)+10, 0.1))
-            plt.axvline(x = (average_difference + THRESHOLD*range_difference), ls = "--", c = "r")
-            plt.axvline(x = (average_difference - THRESHOLD*range_difference), ls = "--", c = "r")
-            plt.xlim([average_difference - 11, average_difference + 11])
+            plt.hist(difference.compressed(), bins = bins)
+            plt.axvline(x = (average_difference + (THRESHOLD*range_difference)), ls = "--", c = "r")
+            plt.axvline(x = (average_difference - (THRESHOLD*range_difference)), ls = "--", c = "r")
+            plt.xlim([bins[0] - 1, bins[-1] + 1])
             plt.ylabel("Observations")
             plt.xlabel("Difference (hPa)")
             plt.show()

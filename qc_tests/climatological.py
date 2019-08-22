@@ -173,7 +173,6 @@ def find_month_thresholds(obs_var, station, config_file, plots=False, diagnostic
         # diagnostic plots
         if plots:
             import matplotlib.pyplot as plt
-            plt.ion()
             plt.clf()
             plt.step(bins[1:], hist, color='k', where="pre")
             plt.yscale("log")
@@ -206,57 +205,6 @@ def find_month_thresholds(obs_var, station, config_file, plots=False, diagnostic
     return # find_month_thresholds
 
 #************************************************************************
-def find_gap(hist, bins, threshold, upwards=True, gap_size=GAP_SIZE):
-    '''
-    Walk the bins of the distribution to find a gap and return where it starts
-   
-    :param array hist: histogram values
-    :param array bins: bin values
-    :param flt threshold: limiting value
-    :param int gap_size: gap size to record
-    :returns:
-        flt: gap_start
-    '''
-
-    # start in the centre
-    start = np.argmax(hist)
-       
-    n = 0
-    gap_length = 0
-    gap_start = 0
-    while True:
-        # if bin is zero - could be a gap
-        if hist[start + n] == 0:
-            gap_length += 1
-            if gap_start == 0:
-                # plus 1 to get upper bin boundary
-                if (upwards and bins[start + n + 1] >= threshold):
-                    gap_start = bins[start + n + 1]
-                elif (not upwards and bins[start + n] <= threshold):
-                    gap_start = bins[start + n]
-                
-        # bin has value
-        else:
-            # gap too short
-            if gap_length < gap_size:
-                gap_length = 0
-                
-            # found a gap
-            elif gap_length >= gap_size and gap_start != 0:
-                break
-        # escape if gone off the end of the distribution
-        if (start + n == len(hist) - 1) or (start + n == 0):
-            break
-        
-        # increment counters
-        if upwards:
-            n += 1
-        else:
-            n -= 1
-
-    return gap_start # find_gap
-
-#************************************************************************
 def monthly_clim(obs_var, station, config_file, logfile="", plots=False, diagnostics=False, winsorize=True):
     """
     Run through the variables and pass to the Distributional Gap Checks
@@ -272,10 +220,13 @@ def monthly_clim(obs_var, station, config_file, logfile="", plots=False, diagnos
     
     for month in range(1, 13):
 
+        month_locs, = np.where(station.months == month)
+
+        # note these are for the whole record, just this month is unmasked
         normalised_anomalies = prepare_data(obs_var, station, month, diagnostics=diagnostics, winsorize=winsorize)
         
         bins = utils.create_bins(normalised_anomalies, BIN_WIDTH)
-        hist, bin_edges = np.histogram(normalised_anomalies, bins)
+        hist, bin_edges = np.histogram(normalised_anomalies.compressed(), bins)
 
         upper_threshold = float(utils.read_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-uthresh".format(month)))
         lower_threshold = float(utils.read_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-lthresh".format(month)))
@@ -285,20 +236,42 @@ def monthly_clim(obs_var, station, config_file, logfile="", plots=False, diagnos
         lowercount = len(np.where(normalised_anomalies < lower_threshold)[0])
         
         if uppercount > 0:
-            gap_start = find_gap(hist, bins, upper_threshold)
+            gap_start = utils.find_gap(hist, bins, upper_threshold, GAP_SIZE)
 
             if gap_start != 0:
                 bad_locs, = np.ma.where(normalised_anomalies > gap_start) # all years for one month
 
+                # normalised_anomalies are for the whole record, just this month is unmasked
                 flags[bad_locs] = "C"
                                        
         if lowercount > 0:
-            gap_start = find_gap(hist, bins, lower_threshold, upwards=False)
+            gap_start = utils.find_gap(hist, bins, lower_threshold, GAP_SIZE, upwards=False)
 
             if gap_start != 0:
                 bad_locs, = np.ma.where(normalised_anomalies < gap_start) # all years for one month
 
                 flags[bad_locs] = "C"
+
+        # diagnostic plots
+        if plots:
+            import matplotlib.pyplot as plt
+            plt.clf()
+            plt.step(bins[1:], hist, color='k', where="pre")
+            plt.yscale("log")
+
+            plt.ylabel("Number of Observations")
+            plt.xlabel("Scaled {}".format(obs_var.name.capitalize()))
+            plt.title("{} - month {}".format(station.id, month))
+
+            plt.ylim([0.1, max(hist)*2])
+            plt.axvline(upper_threshold, c="r")
+            plt.axvline(lower_threshold, c="r")
+
+            bad_locs, = np.where(flags[month_locs] == "C")
+            bad_hist, dummy = np.histogram(normalised_anomalies[month_locs][bad_locs], bins)
+            plt.step(bins[1:], bad_hist, color='r', where="pre")
+
+            plt.show()
 
     # append flags to object
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
@@ -307,7 +280,6 @@ def monthly_clim(obs_var, station, config_file, logfile="", plots=False, diagnos
         
         print("Climatological {}".format(obs_var.name))
         print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
-
 
     return # monthly_clim
 

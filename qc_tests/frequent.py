@@ -157,7 +157,26 @@ def frequent_values(obs_var, station, config_file, plots=False, diagnostics=Fals
 
             # copy flags for all years into main array
             flags[locs] = month_flags
-                                    
+
+        # diagnostic plots
+        if plots:
+            import matplotlib.pyplot as plt
+            
+            plt.step(bins[1:], hist, color='k', where="pre")
+            plt.yscale("log")
+
+            plt.ylabel("Number of Observations")
+            plt.xlabel(obs_var.name.capitalize())
+            plt.title("{} - month {}".format(station.id, month))
+
+            bad_hist = np.copy(hist)
+            for b, bar in enumerate(bad_hist):
+                if bins[b] not in suspect_bins:
+                    bad_hist[b] = 0
+
+            plt.step(bins[1:], bad_hist, color='r', where="pre")
+            plt.show()       
+                                   
     # append flags to object
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
@@ -189,6 +208,9 @@ def fvc(station, var_list, config_file, full=False, plots=False, diagnostics=Fal
         if full:
             identify_values(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
 
+        if full and plots:
+            # no point plotting twice!
+            plots = False
         frequent_values(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
 
 

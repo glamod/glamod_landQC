@@ -63,7 +63,7 @@ def get_repeating_string_threshold(obs_var, times, config_file, plots=False, dia
 
     # bin width is 1 as dealing in time index.
     # minimum bin value is 2 as this is the shortest string possible
-    threshold = utils.get_critical_values(repeated_string_lengths, binmin=2, binwidth=1.0, plots=plots, diagnostics=diagnostics)
+    threshold = utils.get_critical_values(repeated_string_lengths, binmin=2, binwidth=1.0, plots=plots, diagnostics=diagnostics, title=obs_var.name.capitalize(), xlabel="Repeating string length")
 
     # write out the thresholds...
     utils.write_qc_config(config_file, "STREAK-{}".format(obs_var.name), "Straight", "{}".format(threshold), diagnostics=diagnostics)

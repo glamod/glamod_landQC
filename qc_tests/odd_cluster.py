@@ -18,6 +18,44 @@ MAX_LENGTH_TIME = 24 # within a max of Y hours
 MIN_SEPARATION = 48 # separated by Z hours on either side from other data
 
 
+#*********************************************
+def plot_cluster(station, obs_var, oc_start, oc_end):
+    '''
+    Plot each odd cluster highlighted against surrounding data
+
+    :param Station station: station object
+    :param MetVar obs_var: Meteorological variable object
+    :param int oc_start: start of cluster in data array index
+    :param int oc_end: end of cluster in data array index
+    
+    :returns:
+    '''
+    import matplotlib.pyplot as plt
+    
+    # sort the padding
+    if oc_start == 0:
+        start == 0
+    else:
+        start = oc_start - 20
+        if start < 0:
+            start == 0
+    if oc_end == -1:
+        end == -1
+    else:
+        end = oc_end + 20
+        if end > len(station.times):
+            end = len(station.times)        
+    
+    # simple plot
+    plt.clf()
+    plt.plot(station.times[start: end], obs_var.data[start, end], 'bo')
+    plt.plot(station.times[oc_start: oc_end], obs_var.data[oc_start: oc_end], 'ro')
+
+    plt.ylabel(obs_var.name.capitalize())
+    plt.show()
+
+    return # plot_cluster
+
 #************************************************************************
 def flag_clusters(obs_var, station, plots=False, diagnostics=False):
 
@@ -38,6 +76,9 @@ def flag_clusters(obs_var, station, plots=False, diagnostics=False):
                 if len(flags[:cluster_end+1]) < MAX_LENGTH_OBS:
                     flags[:cluster_end+1] = "o"
 
+                    if plots:
+                        plot_cluster(station, obs_var, 0, cluster_end+1)
+
         elif ce == len(potential_cluster_ends) - 1:
 
             # check if cluster at end of series (long gap before last few points)
@@ -47,6 +88,10 @@ def flag_clusters(obs_var, station, plots=False, diagnostics=False):
                 if len(flags[cluster_end+1:]) < MAX_LENGTH_OBS:
                     flags[cluster_end+1:] = "o"
 
+                    if plots:
+                        plot_cluster(station, obs_var, cluster_end+1, -1)
+
+
         if ce > 0:
             # check for cluster in series.
             #  use previous gap > MIN_SEPARATION to define cluster and check length
@@ -55,6 +100,9 @@ def flag_clusters(obs_var, station, plots=False, diagnostics=False):
                 # could be a cluster
                 if len(flags[potential_cluster_ends[ce-1]+1: cluster_end+1]) < MAX_LENGTH_OBS:
                     flags[potential_cluster_ends[ce-1]+1: cluster_end+1] = "o"
+
+                    if plots:
+                        plot_cluster(station, obs_var, potential_cluster_ends[ce-1]+1, cluster_end+1)
 
     # append flags to object
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)

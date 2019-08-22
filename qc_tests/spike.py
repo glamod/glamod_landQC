@@ -47,7 +47,7 @@ def get_critical_values(obs_var, times, config_file, plots=False, diagnostics=Fa
             first_differences = value_diffs[locs]
 
             # fit decay curve to one-sided distribution
-            c_value = utils.get_critical_values(first_differences.compressed(), binmin=0, binwidth=0.5, plots=plots, diagnostics=diagnostics)
+            c_value = utils.get_critical_values(first_differences.compressed(), binmin=0, binwidth=0.5, plots=plots, diagnostics=diagnostics, xlabel="First differences", title="Spike - {} - {}h".format(obs_var.name.capitalize(), t_diff))
 
             # write out the thresholds...
             utils.write_qc_config(config_file, "SPIKE-{}".format(obs_var.name), "{}".format(t_diff), "{}".format(c_value), diagnostics=diagnostics)

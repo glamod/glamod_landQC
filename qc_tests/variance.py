@@ -134,7 +134,8 @@ def variance_check(obs_var, station, config_file, plots=False, diagnostics=False
 
     # get hourly climatology for each month
     for month in range(1, 13):
-
+        month_locs, = np.where(station.months == month)
+            
         variances = prepare_data(obs_var, station, month, diagnostics=diagnostics, winsorize=winsorize)
 
         average_variance = float(utils.read_qc_config(config_file, "VARIANCE-{}".format(obs_var.name), "{}-average".format(month)))
@@ -148,8 +149,6 @@ def variance_check(obs_var, station, config_file, plots=False, diagnostics=False
 
         # prepare wind and pressure data in case needed to check for storms
         if obs_var.name in ["station_level_pressure", "sea_level_pressure"]:
-            month_locs, = np.where(station.months == month)
-
             wind_monthly_data = station.wind_speed.data[month_locs]
             wind_average = utils.average(wind_monthly_data)
             wind_spread = utils.spread(wind_monthly_data)
@@ -201,6 +200,31 @@ def variance_check(obs_var, station, config_file, plots=False, diagnostics=False
                         
             # and set the flags
             flags[ym_locs] = "V"
+
+        # diagnostic plots
+        if plots:
+            import matplotlib.pyplot as plt
+
+            scaled_variances = ((variances - average_variance) / variance_spread)
+            bins = utils.create_bins(scaled_variances, 0.25)
+            hist, bin_edges = np.histogram(scaled_variances, bins)
+
+            plt.clf()
+            plt.step(bins[1:], hist, color='k', where="pre")
+            plt.yscale("log")
+
+            plt.ylabel("Number of Months")
+            plt.xlabel("Scaled {} Variances".format(obs_var.name.capitalize()))
+            plt.title("{} - month {}".format(station.id, month))
+
+            plt.ylim([0.1, max(hist)*2])
+            plt.axvline(SPREAD_THRESHOLD, c="r")
+            plt.axvline(-SPREAD_THRESHOLD, c="r")
+
+            bad_hist, dummy = np.histogram(scaled_variances[bad_years], bins)
+            plt.step(bins[1:], bad_hist, color='r', where="pre")
+
+            plt.show()
 
     # append flags to object
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)

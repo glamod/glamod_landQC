@@ -9,7 +9,7 @@ import scipy.special
 
 import configparser
 import json
-from scipy.optimize import leastsq,fsolve
+from scipy.optimize import least_squares
 
 
 UNIT_DICT = {"temperature" : "degrees C", "dew_point_temperature" :  "degrees C", "wind_direction" :  "degrees", "wind_speed" : "meters per second", "sea_level_pressure" : "hPa hectopascals", "station_level_pressure" : "hPa hectopascals"}
@@ -313,7 +313,9 @@ def get_critical_values(indata, binmin = 0, binwidth = 1, plots = False, diagnos
             b = 1
 
             p0 = np.array([a,b])
-            fit,success=leastsq(residuals_linear, p0, args=(hist, edges), maxfev=10000,full_output=False)
+            result=least_squares(residuals_linear, p0, args=(hist, edges), max_nfev=10000, verbose=0, method="lm")
+
+            fit = result.x
 
             fit_curve = linear(full_edges, fit)
 
@@ -496,7 +498,7 @@ def residuals_gaussian(p, Y, X):
     return err # residuals_gaussian
 
 #*********************************************
-def fit_gaussian(x, y, norm, mu=False, sig=False, skew=False):
+def fit_gaussian(x, y, norm, mu=MDI, sig=MDI, skew=MDI):
     '''
     Fit a gaussian to the data provided
     Inputs:
@@ -506,15 +508,69 @@ def fit_gaussian(x, y, norm, mu=False, sig=False, skew=False):
     Outputs:
       fit - array of [norm,mu,sigma,(skew)]
     '''
-    if not mu:
+    if mu == MDI:
         mu=np.ma.mean(x)
-    if not sig:
+    if sig == MDI:
         sig=np.ma.std(x)
-    if not skew:
+    if skew == MDI:
         p0 = np.array([norm, mu, sig])
-        fit, success=leastsq(residuals_gaussian, p0, args=(y, x), maxfev=10000, full_output=False)
+        result=least_squares(residuals_gaussian, p0, args=(y, x), max_nfev=10000, verbose=0, method="lm")
     else:
         p0 = np.array([norm, mu, sig, skew])
-        fit, success=leastsq(residuals_skew_gaussian, p0, args=(y,x ), maxfev=10000, full_output=False)
+        result=least_squares(residuals_skew_gaussian, p0, args=(y, x), max_nfev=10000, verbose=0, method="lm")
+    return result.x # fit_gaussian
 
-    return fit # fit_gaussian
+#************************************************************************
+def find_gap(hist, bins, threshold, gap_size, upwards=True):
+    '''
+    Walk the bins of the distribution to find a gap and return where it starts
+   
+    :param array hist: histogram values
+    :param array bins: bin values
+    :param flt threshold: limiting value
+    :param int gap_size: gap size to record
+    :param bool upwards: for positive part of x-axis
+    :returns:
+        flt: gap_start
+    '''
+
+    # start in the centre
+    start = np.argmax(hist)
+       
+    n = 0
+    gap_length = 0
+    gap_start = 0
+    while True:
+        # if bin is zero - could be a gap
+        if hist[start + n] == 0:
+            gap_length += 1
+            if gap_start == 0:
+                # plus 1 to get upper bin boundary
+                if (upwards and bins[start + n + 1] >= threshold):
+                    gap_start = bins[start + n + 1]
+                elif (not upwards and bins[start + n] <= threshold):
+                    gap_start = bins[start + n]
+                
+        # bin has value
+        else:
+            # gap too short
+            if gap_length < gap_size:
+                gap_length = 0
+                gap_start = 0
+                
+            # found a gap
+            elif gap_length >= gap_size and gap_start != 0:
+                break
+        
+        # increment counters
+        if upwards:
+            n += 1
+        else:
+            n -= 1
+
+        # escape if gone off the end of the distribution
+        if (start + n == len(hist) - 1) or (start + n == 0):
+            gap_start = 0
+            break
+
+    return gap_start # find_gap
