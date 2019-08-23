@@ -11,6 +11,39 @@ import qc_utils as utils
 
 MAX_SPIKE_LENGTH = 3
 
+#*********************************************
+def plot_spike(times, obs_var, spike_start, spike_length):
+    '''
+    Plot each spike against surrounding data
+
+    :param array times: datetime array
+    :param MetVar obs_var: Meteorological variable object
+    :param int spike_start: the location of the spike
+    :param int spike_length: the length of the spike
+
+    :returns:
+    '''
+    import matplotlib.pyplot as plt
+        
+    # simple plot
+    plt.clf()
+    pad_start = spike_start-24
+    if pad_start < 0:
+        pad_start = 0
+    pad_end = spike_start+spike_length+24
+    if pad_end > len(obs_var.data):
+        pad_end = len(obs_var.data)
+
+    plt.plot(times[pad_start: pad_end], obs_var.data[pad_start: pad_end], 'k-', marker=".")        
+
+    plt.plot(times[spike_start: spike_start+spike_length], obs_var.data[spike_start: spike_start+spike_length], 'r*', ms=10)    
+
+    plt.ylabel(obs_var.name.capitalize())
+    plt.show()
+    input("stop")
+
+    return # plot_spike
+
 #************************************************************************
 def get_critical_values(obs_var, times, config_file, plots=False, diagnostics=False):
     """
@@ -51,10 +84,11 @@ def get_critical_values(obs_var, times, config_file, plots=False, diagnostics=Fa
     return # get_critical_values
 
 #************************************************************************
-def identify_spikes(obs_var, times, config_file, plots=False, diagnostics=False):
+def identify_spikes(station, obs_var, times, config_file, plots=False, diagnostics=False):
     """
     Use config_file to read in critical values, and then assess to find spikes
 
+    :param Station station: station object
     :param MetVar obs_var: meteorological variable object
     :param array times: array of times (usually in minutes)
     :param str config_file: configuration file to store critical values
@@ -128,6 +162,10 @@ def identify_spikes(obs_var, times, config_file, plots=False, diagnostics=False)
             # if the spike is still set, set the flags
             if is_spike:
                 flags[possible_spike+1 : possible_spike+1+spike_len] = "S"
+
+                # diagnostic plots
+                if plots:
+                    plot_spike(times, obs_var, possible_spike+1, spike_len)
                      
         obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
@@ -160,7 +198,7 @@ def sc(station, var_list, config_file, full=False, plots=False, diagnostics=Fals
         if full:
             get_critical_values(obs_var, station.times, config_file, plots=plots, diagnostics=diagnostics)
 
-        identify_spikes(obs_var, station.times, config_file, plots=plots, diagnostics=diagnostics)
+        identify_spikes(station, obs_var, station.times, config_file, plots=plots, diagnostics=diagnostics)
 
     return  # sc
 

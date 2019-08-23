@@ -11,11 +11,45 @@ import numpy as np
 import qc_utils as utils
 
 
+#*********************************************
+def plot_humidities(T, D, times, bad):
+    '''
+    Plot each observation of SSS or DPD against surrounding data
+
+    :param MetVar T: Meteorological variable object - temperatures
+    :param MetVar D: Meteorological variable object - dewpoints
+    :param array times: datetime array
+    :param int bad: the location of SSS or DPD
+
+    :returns:
+    '''
+    import matplotlib.pyplot as plt
+        
+    pad_start = bad - 24
+    if pad_start < 0:
+        pad_start = 0
+    pad_end = bad + 24
+    if pad_end > len(obs_var.data):
+        pad_end = len(obs_var.data)
+
+    # simple plot
+    plt.clf()
+    plt.plot(times[pad_start : pad_end], T.data[pad_start : pad_end], 'k-', marker=".", label=T.name.capitalize())
+    plt.plot(times[pad_start : pad_end], D.data[pad_start : pad_end], 'b-', marker=".", label=D.name.capitalize())
+    plt.plot(times[bad], D.data[bad], 'r*', ms=10)    
+
+    plt.legend(loc = "upper right")
+    plt.ylabel(T.units)
+    plt.show()
+
+    return # plot_humidities
+
 #************************************************************************
-def super_saturation_check(temperatures, dewpoints, plots=False, diagnostics=False):
+def super_saturation_check(times, temperatures, dewpoints, plots=False, diagnostics=False):
     """
     Flag locations where dewpoint is greater than air temperature
 
+    :param array times: datetime array
     :param MetVar temperatures: temperatures object
     :param MetVar dewpoints: dewpoints object
     :param bool plots: turn on plots
@@ -30,6 +64,13 @@ def super_saturation_check(temperatures, dewpoints, plots=False, diagnostics=Fal
 
     # only flag the dewpoints
     dewpoints.flags = utils.insert_flags(dewpoints.flags, flags)
+
+    # TODO - what if enough of a month is flagged...
+
+    # diagnostic plots
+    if plots:
+        for bad in sss:
+            plot_humidities(temperatures, dewpoints, times, bad)
         
     if diagnostics:
         
@@ -39,10 +80,11 @@ def super_saturation_check(temperatures, dewpoints, plots=False, diagnostics=Fal
     return # super_saturation_check
 
 #************************************************************************
-def dew_point_depression(temperatures, dewpoints, plots=False, diagnostics=False):
+def dew_point_depression(times, temperatures, dewpoints, plots=False, diagnostics=False):
     """
     Flag locations where dewpoint equals air temperature
 
+    :param array times: datetime array
     :param MetVar temperatures: temperatures object
     :param MetVar dewpoints: dewpoints object
     :param bool plots: turn on plots
@@ -62,6 +104,11 @@ def dew_point_depression(temperatures, dewpoints, plots=False, diagnostics=False
     # only flag the dewpoints
     dewpoints.flags = utils.insert_flags(dewpoints.flags, flags)
         
+    # diagnostic plots
+    if plots:
+        for bad in locs:
+            plot_humidities(temperatures, dewpoints, times, bad)
+
     if diagnostics:
         
         print("Dewpoint Depression {}".format(dewpoints.name))
@@ -85,12 +132,12 @@ def hcc(station, config_file, full=False, plots=False, diagnostics=False):
     dewpoints = getattr(station, "dew_point_temperature")
 
     # Super Saturation
-    super_saturation_check(temperatures, dewpoints, plots=plots, diagnostics=diagnostics)
+    super_saturation_check(station.times, temperatures, dewpoints, plots=plots, diagnostics=diagnostics)
 
     # Dew Point Depression
     #    Note, won't have cloud-base or past-significant-weather
     #    Note, currently don't have precipitation information
-    dew_point_depression(temperatures, dewpoints, plots=plots, diagnostics=diagnostics)
+    dew_point_depression(station.times, temperatures, dewpoints, plots=plots, diagnostics=diagnostics)
 
     # dew point cut-offs (HadISD) not run
     #  greater chance of removing good observations 

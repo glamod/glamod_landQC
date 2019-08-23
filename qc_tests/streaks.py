@@ -19,6 +19,37 @@ import numpy as np
 import qc_utils as utils
 
 
+#*********************************************
+def plot_streak(times, obs_var, streak_start, streak_end):
+    '''
+    Plot each streak against surrounding data
+
+    :param array times: datetime array
+    :param MetVar obs_var: Meteorological variable object
+    :param int streak_start: the location of the streak
+    :param int streak_end: the end of the streak
+
+    :returns:
+    '''
+    import matplotlib.pyplot as plt
+        
+    pad_start = streak_start - 48
+    if pad_start < 0:
+        pad_start = 0
+    pad_end = streak_end + 48
+    if pad_end > len(obs_var.data):
+        pad_end = len(obs_var.data)
+
+    # simple plot
+    plt.clf()
+    plt.plot(times[pad_start: pad_end], obs_var.data[pad_start: pad_end], 'ko', )
+    plt.plot(times[streak_start: streak_end], obs_var.data[streak_start: streak_end], 'ro')    
+
+    plt.ylabel(obs_var.units)
+    plt.show()
+
+    return # plot_streak
+
 #************************************************************************
 def prepare_data_repeating_string(obs_var, times, plots=False, diagnostics=False):
     """
@@ -108,6 +139,9 @@ def repeating_value(obs_var, times, config_file, plots=False, diagnostics=False)
 
         flags[start : end] = "K"
 
+        if plots:
+            plot_streak(times, obs_var, start, end)
+
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
     if diagnostics:
@@ -179,6 +213,7 @@ def rsc(station, var_list, config_file, full=False, plots=False, diagnostics=Fal
 
         # repeats of whole day
         # day_repeat()
+
 
     return # rsc
 

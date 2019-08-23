@@ -16,11 +16,11 @@ MIN_SEPARATION = 48 # separated by Z hours on either side from other data
 
 
 #*********************************************
-def plot_cluster(station, obs_var, oc_start, oc_end):
+def plot_cluster(times, obs_var, oc_start, oc_end):
     '''
     Plot each odd cluster highlighted against surrounding data
 
-    :param Station station: station object
+    :param array times: datetime array
     :param MetVar obs_var: Meteorological variable object
     :param int oc_start: start of cluster in data array index
     :param int oc_end: end of cluster in data array index
@@ -40,13 +40,13 @@ def plot_cluster(station, obs_var, oc_start, oc_end):
         end = -1
     else:
         end = oc_end + 20
-        if end > len(station.times):
-            end = len(station.times)        
+        if end > len(times):
+            end = len(times)        
     
     # simple plot
     plt.clf()
-    plt.plot(station.times[start: end], obs_var.data[start, end], 'bo')
-    plt.plot(station.times[oc_start: oc_end], obs_var.data[oc_start: oc_end], 'ro')
+    plt.plot(times[start: end], obs_var.data[start, end], 'bo')
+    plt.plot(times[oc_start: oc_end], obs_var.data[oc_start: oc_end], 'ro')
 
     plt.ylabel(obs_var.name.capitalize())
     plt.show()
@@ -55,6 +55,9 @@ def plot_cluster(station, obs_var, oc_start, oc_end):
 
 #************************************************************************
 def flag_clusters(obs_var, station, plots=False, diagnostics=False):
+    """
+# TODO - docstring
+    """
 
     flags = np.array(["" for i in range(obs_var.data.shape[0])])
 
@@ -99,7 +102,7 @@ def flag_clusters(obs_var, station, plots=False, diagnostics=False):
                     flags[potential_cluster_ends[ce-1]+1: cluster_end+1] = "o"
 
                     if plots:
-                        plot_cluster(station, obs_var, potential_cluster_ends[ce-1]+1, cluster_end+1)
+                        plot_cluster(station.times, obs_var, potential_cluster_ends[ce-1]+1, cluster_end+1)
 
     # append flags to object
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
