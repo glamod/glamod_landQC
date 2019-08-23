@@ -14,6 +14,7 @@ import qc_utils as utils
 THRESHOLD = 4 # min spread of 1hPa, so only outside +/-4hPa flagged.
 
 MIN_OBS = 10
+MIN_SPREAD = 1.0
 
 #*********************************************
 def plot_pressure(sealp, stnlp, times, bad):
@@ -51,7 +52,34 @@ def plot_pressure(sealp, stnlp, times, bad):
     return # plot_pressure
 
 #************************************************************************
-def pressure_offset(sealp, stnlp, times, plots=False, diagnostics=False):
+def identify_values(sealp, stnlp, times, config_file, plots=False, diagnostics=False):
+    """
+    Find average and spread of differences
+
+    :param MetVar sealp: sea level pressure object
+    :param MetVar stnlp: station level pressure object
+    :param array times: datetime array
+    :param str configfile: string for configuration file
+    :param bool plots: turn on plots
+    :param bool diagnostics: turn on diagnostic output
+    """
+
+    difference = sealp.data - stnlp.data
+
+    if len(difference.compressed()) >= MIN_OBS:
+
+        average = utils.average(difference)
+        spread = utils.spread(difference)
+        if spread < MIN_SPREAD: # less than XhPa
+            spread = MIN_SPREAD
+
+        utils.write_qc_config(config_file, "PRESSURE", "average", "{}".format(average), diagnostics=diagnostics)
+        utils.write_qc_config(config_file, "PRESSURE", "spread", "{}".format(spread), diagnostics=diagnostics)
+
+    return # identify_values
+
+#************************************************************************
+def pressure_offset(sealp, stnlp, times, config_file, plots=False, diagnostics=False):
     """
     Flag locations where difference between station and sea-level pressure
     falls outside of bounds
@@ -59,6 +87,7 @@ def pressure_offset(sealp, stnlp, times, plots=False, diagnostics=False):
     :param MetVar sealp: sea level pressure object
     :param MetVar stnlp: station level pressure object
     :param array times: datetime array
+    :param str configfile: string for configuration file
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
@@ -69,22 +98,30 @@ def pressure_offset(sealp, stnlp, times, plots=False, diagnostics=False):
 
     if len(difference.compressed()) >= MIN_OBS:
 
-        average_difference = utils.average(difference)
-        range_difference = utils.spread(difference)
-        if range_difference < 1.0: # less than 1hPa
-            range_difference = 1.0
+        try:
+            average = float(utils.read_qc_config(config_file, "PRESSURE", "average"))
+            spread = float(utils.read_qc_config(config_file, "PRESSURE", "spread"))
+        except KeyError:
+            print("Information missing in config file")
+            average = utils.average(difference)
+            spread = utils.spread(difference)
+            if spread < MIN_SPREAD: # less than XhPa
+                spread = MIN_SPREAD
 
-        high, = np.ma.where(difference > (average_difference + (THRESHOLD*range_difference)))
-        low, = np.ma.where(difference < (average_difference - (THRESHOLD*range_difference)))
+            utils.write_qc_config(config_file, "PRESSURE", "average", "{}".format(average), diagnostics=diagnostics)
+            utils.write_qc_config(config_file, "PRESSURE", "spread", "{}".format(spread), diagnostics=diagnostics)
+
+        high, = np.ma.where(difference > (average + (THRESHOLD*spread)))
+        low, = np.ma.where(difference < (average - (THRESHOLD*spread)))
 
         # diagnostic plots
         if plots:
-            bins = np.arange(np.round(average_difference)-1, np.round(average_difference)+1, 0.1)
+            bins = np.aspread(np.round(average)-1, np.round(average)+1, 0.1)
             import matplotlib.pyplot as plt
             plt.clf()
             plt.hist(difference.compressed(), bins=bins)
-            plt.axvline(x=(average_difference + (THRESHOLD*range_difference)), ls="--", c="r")
-            plt.axvline(x=(average_difference - (THRESHOLD*range_difference)), ls="--", c="r")
+            plt.axvline(x=(average + (THRESHOLD*spread)), ls="--", c="r")
+            plt.axvline(x=(average - (THRESHOLD*spread)), ls="--", c="r")
             plt.xlim([bins[0] - 1, bins[-1] + 1])
             plt.ylabel("Observations")
             plt.xlabel("Difference (hPa)")
@@ -119,8 +156,8 @@ def pcc(station, config_file, full=False, plots=False, diagnostics=False):
     Extract the variables and pass to the Pressure Cross Checks
 
     :param Station station: Station Object for the station
-    :param str configfile: string for configuration file (unused here)
-    :param bool full: run a full update (unused here)
+    :param str configfile: string for configuration file
+    :param bool full: run a full update
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
@@ -128,7 +165,9 @@ def pcc(station, config_file, full=False, plots=False, diagnostics=False):
     sealp = getattr(station, "sea_level_pressure")
     stnlp = getattr(station, "station_level_pressure")
 
-    pressure_offset(sealp, stnlp, station.times, plots=plots, diagnostics=diagnostics)
+    if full:
+        identify_values(sealp, stnlp, station.times, config_file, plots=plots, diagnostics=diagnostics)
+    pressure_offset(sealp, stnlp, station.times, config_file, plots=plots, diagnostics=diagnostics)
 
     return # pcc
 

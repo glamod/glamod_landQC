@@ -84,11 +84,10 @@ def get_critical_values(obs_var, times, config_file, plots=False, diagnostics=Fa
     return # get_critical_values
 
 #************************************************************************
-def identify_spikes(station, obs_var, times, config_file, plots=False, diagnostics=False):
+def identify_spikes(obs_var, times, config_file, plots=False, diagnostics=False):
     """
     Use config_file to read in critical values, and then assess to find spikes
 
-    :param Station station: station object
     :param MetVar obs_var: meteorological variable object
     :param array times: array of times (usually in minutes)
     :param str config_file: configuration file to store critical values
@@ -117,6 +116,17 @@ def identify_spikes(station, obs_var, times, config_file, plots=False, diagnosti
         except KeyError:
             # no critical value for this time difference
             pass
+
+    # if none have been read, give an option to calculate in case that was the reason for none
+    if len(critical_values) == 0:
+        get_critical_values(obs_var, times, config_file, plots=plots, diagnostics=diagnostics)
+        try:
+            c_value = utils.read_qc_config(config_file, "SPIKE-{}".format(obs_var.name), "{}".format(t_diff))
+            critical_values[t_diff] = float(c_value)
+        except KeyError:
+            # no critical value for this time difference
+            pass
+        
 
     # pre select for each time difference that can be tested
     for t_diff in unique_diffs:
@@ -198,7 +208,7 @@ def sc(station, var_list, config_file, full=False, plots=False, diagnostics=Fals
         if full:
             get_critical_values(obs_var, station.times, config_file, plots=plots, diagnostics=diagnostics)
 
-        identify_spikes(station, obs_var, station.times, config_file, plots=plots, diagnostics=diagnostics)
+        identify_spikes(obs_var, station.times, config_file, plots=plots, diagnostics=diagnostics)
 
     return  # sc
 

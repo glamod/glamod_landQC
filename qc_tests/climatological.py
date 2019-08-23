@@ -225,8 +225,14 @@ def monthly_clim(obs_var, station, config_file, logfile="", plots=False, diagnos
         bins = utils.create_bins(normalised_anomalies, BIN_WIDTH)
         hist, bin_edges = np.histogram(normalised_anomalies.compressed(), bins)
 
-        upper_threshold = float(utils.read_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-uthresh".format(month)))
-        lower_threshold = float(utils.read_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-lthresh".format(month)))
+        try:
+            upper_threshold = float(utils.read_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-uthresh".format(month)))
+            lower_threshold = float(utils.read_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-lthresh".format(month)))
+        except KeyError:
+            print("Information missing in config file")
+            find_month_thresholds(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
+            upper_threshold = float(utils.read_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-uthresh".format(month)))
+            lower_threshold = float(utils.read_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-lthresh".format(month)))
 
         # now to find the gaps
         uppercount = len(np.where(normalised_anomalies > upper_threshold)[0])
@@ -305,7 +311,6 @@ def coc(station, var_list, config_file, full=False, plots=False, diagnostics=Fal
 
         if full:
             find_month_thresholds(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
-
         monthly_clim(obs_var, station, config_file, plots=cplots, diagnostics=diagnostics)
 
     return # coc

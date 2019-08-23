@@ -107,8 +107,15 @@ def monthly_gap(obs_var, station, config_file, plots=False, diagnostics=False):
         month_averages = prepare_monthly_data(obs_var, station, month, diagnostics=diagnostics)
 
         # read in the scaling
-        climatology = float(utils.read_qc_config(config_file, "MDISTRIBUTION-{}".format(obs_var.name), "{}-clim".format(month)))
-        spread = float(utils.read_qc_config(config_file, "MDISTRIBUTION-{}".format(obs_var.name), "{}-spread".format(month)))
+        try:
+            climatology = float(utils.read_qc_config(config_file, "MDISTRIBUTION-{}".format(obs_var.name), "{}-clim".format(month)))
+            spread = float(utils.read_qc_config(config_file, "MDISTRIBUTION-{}".format(obs_var.name), "{}-spread".format(month)))
+        except KeyError:
+            print("Information missing in config file")
+            find_monthly_scaling(obs_var, station, config_file, diagnostics=diagnostics)
+            climatology = float(utils.read_qc_config(config_file, "MDISTRIBUTION-{}".format(obs_var.name), "{}-clim".format(month)))
+            spread = float(utils.read_qc_config(config_file, "MDISTRIBUTION-{}".format(obs_var.name), "{}-spread".format(month)))
+
 
         if climatology == utils.MDI and spread == utils.MDI:
             # these weren't calculable, move on
@@ -222,8 +229,25 @@ def prepare_all_data(obs_var, station, month, config_file, full=False, diagnosti
         utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-spread".format(month), "{}".format(spread), diagnostics=diagnostics)
         
     else:
-        climatology = float(utils.read_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-clim".format(month)))
-        spread = float(utils.read_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-spread".format(month)))        
+
+        try:
+            climatology = float(utils.read_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-clim".format(month)))
+            spread = float(utils.read_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-spread".format(month)))        
+        except KeyError:
+            
+            if len(all_month_data.compressed()) > OBS_LIMIT:
+                # have data, now to standardise
+                climatology = utils.average(all_month_data) # mean
+                spread = utils.spread(all_month_data) # IQR currently
+            else:
+                climatology = utils.MDI
+                spread = utils.MDI
+
+             # write out the scaling...
+            utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-clim".format(month), "{}".format(climatology), diagnostics=diagnostics)
+            utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-spread".format(month), "{}".format(spread), diagnostics=diagnostics)
+        
+           
 
     if climatology == utils.MDI and spread == utils.MDI:
         # these weren't calculable, move on
@@ -331,8 +355,15 @@ def all_obs_gap(obs_var, station, config_file, plots=False, diagnostics=False):
         bins = utils.create_bins(normalised_anomalies, BIN_WIDTH)
         hist, bin_edges = np.histogram(normalised_anomalies, bins)
 
-        upper_threshold = float(utils.read_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-uthresh".format(month)))
-        lower_threshold = float(utils.read_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-lthresh".format(month)))
+        try:
+            upper_threshold = float(utils.read_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-uthresh".format(month)))
+            lower_threshold = float(utils.read_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-lthresh".format(month)))
+        except KeyError:
+            print("Information missing in config file")
+            find_thresholds(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
+            upper_threshold = float(utils.read_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-uthresh".format(month)))
+            lower_threshold = float(utils.read_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-lthresh".format(month)))
+            
 
         if upper_threshold == utils.MDI and lower_threshold == utils.MDI:
             # these weren't able to be calculated, move on

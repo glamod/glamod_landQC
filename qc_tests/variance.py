@@ -135,8 +135,15 @@ def variance_check(obs_var, station, config_file, plots=False, diagnostics=False
             
         variances = prepare_data(obs_var, station, month, diagnostics=diagnostics, winsorize=winsorize)
 
-        average_variance = float(utils.read_qc_config(config_file, "VARIANCE-{}".format(obs_var.name), "{}-average".format(month)))
-        variance_spread = float(utils.read_qc_config(config_file, "VARIANCE-{}".format(obs_var.name), "{}-spread".format(month)))
+        try:
+            average_variance = float(utils.read_qc_config(config_file, "VARIANCE-{}".format(obs_var.name), "{}-average".format(month)))
+            variance_spread = float(utils.read_qc_config(config_file, "VARIANCE-{}".format(obs_var.name), "{}-spread".format(month)))
+        except KeyError:
+            print("Information missing in config file")
+            find_thresholds(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
+            average_variance = float(utils.read_qc_config(config_file, "VARIANCE-{}".format(obs_var.name), "{}-average".format(month)))
+            variance_spread = float(utils.read_qc_config(config_file, "VARIANCE-{}".format(obs_var.name), "{}-spread".format(month)))
+            
 
         if average_variance == utils.MDI and variance_spread == utils.MDI:
             # couldn't be calculated, mpve on

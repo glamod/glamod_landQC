@@ -113,9 +113,15 @@ def frequent_values(obs_var, station, config_file, plots=False, diagnostics=Fals
     for month in range(1, 13):
 
         # read in bin-width and suspect bins for this month
-        width = float(utils.read_qc_config(config_file, "FREQUENT-{}".format(obs_var.name), "width"))
-        suspect_bins = utils.read_qc_config(config_file, "FREQUENT-{}".format(obs_var.name), "{}".format(month), islist=True)
-
+        try:
+            width = float(utils.read_qc_config(config_file, "FREQUENT-{}".format(obs_var.name), "width"))
+            suspect_bins = utils.read_qc_config(config_file, "FREQUENT-{}".format(obs_var.name), "{}".format(month), islist=True)
+        except KeyError:
+            print("Information missing in config file")
+            identify_values(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
+            width = float(utils.read_qc_config(config_file, "FREQUENT-{}".format(obs_var.name), "width"))
+            suspect_bins = utils.read_qc_config(config_file, "FREQUENT-{}".format(obs_var.name), "{}".format(month), islist=True)
+ 
         # skip on if nothing to find
         if len(suspect_bins) == 0:
             continue

@@ -125,7 +125,9 @@ def repeating_value(obs_var, times, config_file, plots=False, diagnostics=False)
     except KeyError:
         # no threshold set
         print("Threshold missing in config file")
-        sys.exit(1)
+        get_repeating_string_threshold(obs_var, times, config_file, plots=plots, diagnostics=diagnostics)
+        th = utils.read_qc_config(config_file, "STREAK-{}".format(obs_var.name), "Straight")
+        threshold["Straight"] = float(th)
 
     repeated_string_lengths, grouped_diffs, strings = prepare_data_repeating_string(obs_var, times, plots=plots, diagnostics=diagnostics)
 
