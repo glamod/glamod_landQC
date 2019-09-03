@@ -170,7 +170,7 @@ def variance_check(obs_var, station, config_file, plots=False, diagnostics=False
                 wind_data = station.wind_speed.data[ym_locs]
                 pressure_data = obs_var.data[ym_locs]
                 
-                high_winds, = np.ma.where((winds_data - wind_average)/wind_spread > STORM_THRESHOLD)
+                high_winds, = np.ma.where((wind_data - wind_average)/wind_spread > STORM_THRESHOLD)
                 low_pressures, = np.ma.where((pressure_average - pressure_data)/pressure_spread > STORM_THRESHOLD)
 
                 match = np.in1d(high_winds, low_pressures)
