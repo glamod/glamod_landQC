@@ -19,8 +19,8 @@ Input arguments:
 '''
 #************************************************************************
 import os
-import numpy as np
 import datetime as dt
+import numpy as np
 import pandas as pd
 
 # internal utils
@@ -53,12 +53,16 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
     import glob
     station_list = glob.glob(r'{}/*.psv'.format(IFF_LOC))
     station_list = [stn.split("/")[-1] for stn in station_list]
-#    station_list = ["WMO02474-1_220.psv"]
+
     obs_var_list = setup.obs_var_list
 
     for st, station_id in enumerate(station_list):
         print("{} {}".format(dt.datetime.now(), station_id))
 
+        # for diagnostics
+#        if station_id != "WMO17310-1_220.psv": continue
+
+        startT = dt.datetime.now()
         # set up config file to hold thresholds etc
         config_file = os.path.join(CONF_LOC, "{}.config".format(station_id))
 
@@ -70,7 +74,7 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
 #        station = utils.Station(station_id, lat, lon, elev)
 
         #*************************
-        # read MFF 
+        # read MFF
         station_df = io.read(os.path.join(IFF_LOC, station_id[:-4]))
 
         # TEMPORARY
@@ -83,7 +87,7 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         # convert dataframe to station and MetVar objects for internal processing
         utils.populate_station(station, station_df, obs_var_list)
         station.times = datetimes
-        
+
         # store extra information to enable easy extraction later
         station.years = station_df["Year"].fillna(utils.MDI).to_numpy()
         station.months = station_df["Month"].fillna(utils.MDI).to_numpy()
@@ -113,35 +117,47 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         Precipitation logical checks - precip not in C3S 311a @Aug 2019
         """
         #*************************
-
+        print("O", dt.datetime.now()-startT)
         # TODO - use suite config file to store all settings for tests
-        qc_tests.odd_cluster.occ(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_file, full=full, plots=plots, diagnostics=diagnostics)
+        qc_tests.odd_cluster.occ(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed"], config_file, full=full, plots=plots, diagnostics=diagnostics)
 
+        print("F", dt.datetime.now()-startT)
         qc_tests.frequent.fvc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_file, full=full, plots=plots, diagnostics=diagnostics)
 
         # HadISD only runs on stations where latitude higher than 60(N/S)
         # Takes a long time, this one
 #        qc_tests.diurnal.dcc(station, config_file, full=full, plots=plots, diagnostics=diagnostics)
 
+        print("D", dt.datetime.now()-startT)
         qc_tests.distribution.dgc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_file, full=full, plots=plots, diagnostics=diagnostics)
 
+        print("W", dt.datetime.now()-startT)
         qc_tests.world_records.wrc(station, ["temperature", "dew_point_temperature", "sea_level_pressure", "wind_speed"], full=full, plots=plots, diagnostics=diagnostics)
 
-        qc_tests.streaks.rsc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_file, full=full, plots=plots, diagnostics=diagnostics)
+        # could run on wind direction?
+        print("K", dt.datetime.now()-startT)
+        qc_tests.streaks.rsc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed"], config_file, full=full, plots=plots, diagnostics=diagnostics)
 
         # not run on pressure data in HadISD.
+        print("C", dt.datetime.now()-startT)
         qc_tests.climatological.coc(station, ["temperature", "dew_point_temperature"], config_file, full=full, plots=plots, diagnostics=diagnostics)
 
-        qc_tests.spike.sc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_file, full=full, plots=plots, diagnostics=diagnostics)
+        print("S", dt.datetime.now()-startT)
+        qc_tests.spike.sc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed"], config_file, full=full, plots=plots, diagnostics=diagnostics)
 
+        print("H", dt.datetime.now()-startT)
         qc_tests.humidity.hcc(station, config_file, full=full, plots=plots, diagnostics=diagnostics)
 
-        qc_tests.variance.evc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_file, full=full, plots=plots, diagnostics=diagnostics)
+        print("V", dt.datetime.now()-startT)
+        qc_tests.variance.evc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed"], config_file, full=full, plots=plots, diagnostics=diagnostics)
 
+        print("P", dt.datetime.now()-startT)
         qc_tests.pressure.pcc(station, config_file, full=full, plots=plots, diagnostics=diagnostics)
 
+        print("w", dt.datetime.now()-startT)
         qc_tests.winds.wcc(station, config_file, fix=False, full=full, plots=plots, diagnostics=diagnostics)
 
+        print(dt.datetime.now()-startT)
 
         #*************************
         # Output of QFF
@@ -156,7 +172,7 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         for c, column in enumerate(station_df.columns):
             if column in obs_var_list:
                 new_column_indices += [c + 2] # 2 offset rightwards from variable's column
-                
+
         # reverse order so can insert without messing up the indices
         new_column_indices.reverse()
         for index in new_column_indices:
@@ -166,16 +182,20 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         for var in obs_var_list:
             obs_var = getattr(station, var)
             station_df["{} QC flags".format(var)] = obs_var.flags
-        
+
         # write out the dataframe to output format
         io.write(os.path.join(QFF_LOC, "{}_QC".format(station_id[:-4])), station_df)
 
-#        input("end")
+        print(dt.datetime.now()-startT)
 
+        if diagnostics or plots:
+#            input("end")
+            break
+        break
     return # run_checks
 
 #************************************************************************
-if __name__=="__main__":
+if __name__ == "__main__":
 
     import argparse
 
@@ -193,10 +213,10 @@ if __name__=="__main__":
                         help='Run plots (will not write out file)')
     args = parser.parse_args()
 
-    run_checks(restart_id=args.restart_id, 
-                    end_id=args.end_id, 
-                    diagnostics=args.diagnostics,
-                    plots=args.plots,
-                    full=args.full)
+    run_checks(restart_id=args.restart_id,
+               end_id=args.end_id,
+               diagnostics=args.diagnostics,
+               plots=args.plots,
+               full=args.full)
 
 #************************************************************************

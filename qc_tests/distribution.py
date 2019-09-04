@@ -155,10 +155,10 @@ def monthly_gap(obs_var, station, config_file, plots=False, diagnostics=False):
                         # flag everything further from this bin for that tail
                         if suspect_months[0] == max(suspect_months):
                             # LHS has issue
-                            bad = sort_order[:mid_point - iter]
+                            bad = sort_order[:mid_point - step]
                         elif suspect_months[1] == max(suspect_months):
                             # RHS has issue
-                            bad = sort_order[mid_point + iter:]
+                            bad = sort_order[mid_point + step:]
 
             step += 1
             if step == mid_point:

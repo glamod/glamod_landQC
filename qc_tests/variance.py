@@ -152,12 +152,15 @@ def variance_check(obs_var, station, config_file, plots=False, diagnostics=False
         bad_years, = np.where(np.abs(variances - average_variance) / variance_spread > SPREAD_THRESHOLD)
 
         # prepare wind and pressure data in case needed to check for storms
-        if obs_var.name in ["station_level_pressure", "sea_level_pressure"]:
+        if obs_var.name in ["station_level_pressure", "sea_level_pressure", "wind_speed"]:
             wind_monthly_data = station.wind_speed.data[month_locs]
             wind_average = utils.average(wind_monthly_data)
             wind_spread = utils.spread(wind_monthly_data)
 
-            pressure_monthly_data = obs_var.data[month_locs]
+            if obs_var.name in ["station_level_pressure", "sea_level_pressure"]:
+                pressure_monthly_data = obs_var.data[month_locs]
+            else:
+                pressure_monthly_data = station.sea_level_pressure.data[month_locs]
             pressure_average = utils.average(pressure_monthly_data)
             pressure_spread = utils.spread(pressure_monthly_data)
 
@@ -166,9 +169,13 @@ def variance_check(obs_var, station, config_file, plots=False, diagnostics=False
             
             ym_locs, = np.where(np.logical_and(station.months == month, station.years == all_years[year]))
 
-            if obs_var.name in ["station_level_pressure", "sea_level_pressure"]:
+            if obs_var.name in ["station_level_pressure", "sea_level_pressure", "wind_speed"]:
                 wind_data = station.wind_speed.data[ym_locs]
-                pressure_data = obs_var.data[ym_locs]
+                if obs_var.name in ["station_level_pressure", "sea_level_pressure"]:
+                    pressure_data = obs_var.data[ym_locs]
+                else:
+                    pressure_data = station.sea_level_pressure.data[ym_locs]
+                    
                 
                 high_winds, = np.ma.where((wind_data - wind_average)/wind_spread > STORM_THRESHOLD)
                 low_pressures, = np.ma.where((pressure_average - pressure_data)/pressure_spread > STORM_THRESHOLD)
@@ -178,32 +185,43 @@ def variance_check(obs_var, station, config_file, plots=False, diagnostics=False
                 if len(match) > 0:
                     # this could be a storm, either at tropical station (relatively constant pressure)
                     # or out of season in mid-latitudes.
-                    diffs = np.ma.diff(pressure_data)
+                    couldbe_storm = True
 
-                    # count up the largest number of sequential negative and positive differences
-                    negs, poss = 0, 0
-                    biggest_neg, biggest_pos = 0, 0
-                            
-                    for diff in diffs:
-                                
-                        if diff > 0:
-                            if negs > biggest_neg: biggest_neg = negs
-                            negs = 0
-                            poss += 1
-                        else:
-                            if poss > biggest_pos: biggest_pos = poss
-                            poss = 0
-                            negs += 1
- 
-                    if (biggest_neg < 10) and (biggest_pos < 10):
-                        # insufficient to identify as a storm (HadISD values)
-                        pass
+                if obs_var.name in ["station_level_pressure", "sea_level_pressure"]:
+                    diffs = np.ma.diff(pressure_data)
+                elif obs_var.name == "wind_speed":
+                    diffs = np.ma.diff(wind_data)
+                    
+
+                # count up the largest number of sequential negative and positive differences
+                negs, poss = 0, 0
+                biggest_neg, biggest_pos = 0, 0
+
+                for diff in diffs:
+
+                    if diff > 0:
+                        if negs > biggest_neg: biggest_neg = negs
+                        negs = 0
+                        poss += 1
                     else:
-                        # zero length array to flag
-                        ym_locs = np.ma.array([])
+                        if poss > biggest_pos: biggest_pos = poss
+                        poss = 0
+                        negs += 1
+
+                if (biggest_neg < 10) and (biggest_pos < 10):
+                    # insufficient to identify as a storm (HadISD values)
+                    # leave flags set
+                    pass
+                else:
+                    # could be a storm, so better to leave this month unflagged
+                    # zero length array to flag
+                    ym_locs = np.ma.array([])
                         
-            # and set the flags
-            flags[ym_locs] = "V"
+
+            # copy over the flags, if any
+            if len(ym_locs) != 0:
+                # and set the flags
+                flags[ym_locs] = "V"
 
         # diagnostic plots
         if plots:
