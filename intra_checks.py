@@ -60,7 +60,7 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         print("{} {}".format(dt.datetime.now(), station_id))
 
         # for diagnostics
-#        if station_id != "WMO17310-1_220.psv": continue
+#        if station_id != "ICAOKAYE-1_223.psv": continue
 
         startT = dt.datetime.now()
         # set up config file to hold thresholds etc
@@ -141,6 +141,9 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         # not run on pressure data in HadISD.
         print("C", dt.datetime.now()-startT)
         qc_tests.climatological.coc(station, ["temperature", "dew_point_temperature"], config_file, full=full, plots=plots, diagnostics=diagnostics)
+
+        print("T", dt.datetime.now()-startT)
+        qc_tests.timestamp.tsc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed"], config_file, full=full, plots=plots, diagnostics=diagnostics)
 
         print("S", dt.datetime.now()-startT)
         qc_tests.spike.sc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed"], config_file, full=full, plots=plots, diagnostics=diagnostics)

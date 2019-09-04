@@ -63,6 +63,9 @@ in turn.  There will be buddy checks in future releases.
 .. automodule:: qc_tests.pressure
    :members: pcc
 
+.. automodule:: qc_tests.timestamp
+   :members: tsc
+
 .. automodule:: qc_tests.spike
    :members: sc
 

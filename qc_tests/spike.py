@@ -68,6 +68,12 @@ def get_critical_values(obs_var, times, config_file, plots=False, diagnostics=Fa
 
     for t_diff in unique_diffs:
 
+        if t_diff == 0:
+            # not a spike or jump, but 2 values at the same time.
+            #  should be zero value difference, so fitting histogram not going to work
+            #  handled in separate test
+            continue
+
         locs, = np.where(time_diffs == t_diff)
 
         first_differences = value_diffs[locs]
@@ -97,8 +103,6 @@ def identify_spikes(obs_var, times, config_file, plots=False, diagnostics=False)
 
     # TODO check works with missing data (compressed?)
     # TODO monthly?
-    # TODO sort diagnostic output
-    # TODO sort plotting output
 
    
     time_diffs = np.ma.diff(times)/np.timedelta64(1, "m") # presuming minutes
@@ -120,16 +124,25 @@ def identify_spikes(obs_var, times, config_file, plots=False, diagnostics=False)
     # if none have been read, give an option to calculate in case that was the reason for none
     if len(critical_values) == 0:
         get_critical_values(obs_var, times, config_file, plots=plots, diagnostics=diagnostics)
-        try:
-            c_value = utils.read_qc_config(config_file, "SPIKE-{}".format(obs_var.name), "{}".format(t_diff))
-            critical_values[t_diff] = float(c_value)
-        except KeyError:
-            # no critical value for this time difference
-            pass
-        
+
+        # and try again
+        for t_diff in unique_diffs:
+            try:
+                c_value = utils.read_qc_config(config_file, "SPIKE-{}".format(obs_var.name), "{}".format(t_diff))
+                critical_values[t_diff] = float(c_value)
+            except KeyError:
+                # no critical value for this time difference
+                pass
+
 
     # pre select for each time difference that can be tested
     for t_diff in unique_diffs:
+        if t_diff == 0:
+            # not a spike or jump, but 2 values at the same time.
+            #  should be zero value difference, so fitting histogram not going to work
+            #  handled in separate test
+            continue
+
         # new blank flag array
         flags = np.array(["" for i in range(obs_var.data.shape[0])])
         
@@ -191,7 +204,7 @@ def identify_spikes(obs_var, times, config_file, plots=False, diagnostics=False)
 #************************************************************************
 def sc(station, var_list, config_file, full=False, plots=False, diagnostics=False):
     """
-    Run through the variables and pass to the World Record Check
+    Run through the variables and pass to the Spike Check
 
     :param Station station: Station Object for the station
     :param list var_list: list of variables to test
