@@ -29,8 +29,8 @@ def plot_humidities(T, D, times, bad):
     if pad_start < 0:
         pad_start = 0
     pad_end = bad + 24
-    if pad_end > len(obs_var.data):
-        pad_end = len(obs_var.data)
+    if pad_end > len(T.data):
+        pad_end = len(T.data)
 
     # simple plot
     plt.clf()
