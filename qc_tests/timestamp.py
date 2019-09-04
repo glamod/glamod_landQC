@@ -87,7 +87,8 @@ def tsc(station, var_list, config_file, full=False, plots=False, diagnostics=Fal
     :param bool full: run a full update (recalculate thresholds)
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
-    """m
+    """
+
     for var in var_list:
 
         obs_var = getattr(station, var)
