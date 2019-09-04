@@ -191,7 +191,7 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         if diagnostics or plots:
 #            input("end")
             break
-        break
+        
     return # run_checks
 
 #************************************************************************
