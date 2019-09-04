@@ -306,6 +306,11 @@ def get_critical_values(indata, binmin = 0, binwidth = 1, plots = False, diagnos
             edges = full_edges[:limit]
             hist  = np.log10(full_hist[:limit])
 
+            # remove inf's
+            goods, = np.where(full_hist[:limit] != 0)
+            edges = edges[goods]
+            hist = hist[goods]
+
             # Working in log-yscale from hereon
 
             # a 10^-bx
