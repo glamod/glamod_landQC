@@ -202,10 +202,19 @@ def populate_station(station, df, obs_var_list):
         this_var = Meteorological_Variable(variable, MDI, UNIT_DICT[variable], (float))
     
         # store the data
-# TO DO
 #        this_var.data = df[variable].to_numpy()
         indata = df[variable].fillna(MDI).to_numpy()
+        indata = indata.astype(float)
         this_var.data = np.ma.masked_where(indata == MDI, indata)
+        if len(this_var.data.mask.shape) == 0:
+            # single mask value, replace with arrage of True/False's
+            if this_var.data.mask:
+                # True
+                this_var.data.mask = np.ones(this_var.data.shape)
+            else:
+                # False
+                this_var.data.mask = np.zeros(this_var.data.shape)
+            
         this_var.data.fill_value = MDI
 
         # empty flag array
@@ -289,10 +298,10 @@ def get_critical_values(indata, binmin = 0, binwidth = 1, plots = False, diagnos
 
         if len(full_hist) > 1:
 
-            # use only the central section (as long as it's not just 2 bins)
+            # use only the central section (as long as it's not just 5 bins)
             i = 0
             limit = 0
-            while limit < 2:
+            while limit < 5:
                 # count outwards until there is a zero-valued bin
                 try:
                     limit = np.argwhere(full_hist == 0)[i][0]
@@ -304,12 +313,16 @@ def get_critical_values(indata, binmin = 0, binwidth = 1, plots = False, diagnos
 
             # use this central section for fitting
             edges = full_edges[:limit]
-            hist  = np.log10(full_hist[:limit])
+            central_hist = full_hist[:limit]
 
             # remove inf's
-            goods, = np.where(full_hist[:limit] != 0)
+            goods, = np.where(central_hist != 0)
+            hist = central_hist[goods]
             edges = edges[goods]
-            hist = hist[goods]
+
+            # and take log10
+            hist  = np.log10(hist)
+
 
             # Working in log-yscale from hereon
 

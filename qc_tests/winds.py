@@ -21,9 +21,9 @@ def logical_checks(speed, direction, fix=False, plots=False, diagnostics=False):
 
     From Table 2 - DeGaetano, JOAT, 14, 308-317, 1997
 
-    :param Station station: station object
-    :param array flag_col: which columns to use in QC flag array
-    :param file logfile: logfile to output to
+    :param MetVar speed: wind speed object
+    :param MetVar direction: wind direction object
+    :param bool fix: fix the zero speed no direction entries [False]
     :param bool plots: do plots?
     :param bool diagnostics: do diagnostics?
 
@@ -90,7 +90,7 @@ def wcc(station, config_file, fix=False, full=False, plots=False, diagnostics=Fa
 
     :param Station station: Station Object for the station
     :param str configfile: string for configuration file (unused here)
-    :param bool fix: repair/amend values as a result of logical checks
+    :param bool fix: repair/amend values as a result of logical checks [False]
     :param bool full: run a full update (unused here)
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output

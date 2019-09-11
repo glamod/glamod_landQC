@@ -18,6 +18,8 @@ import numpy as np
 
 import qc_utils as utils
 
+DATA_COUNT_THRESHOLD = 120
+
 
 #*********************************************
 def plot_streak(times, obs_var, streak_start, streak_end):
@@ -66,7 +68,7 @@ def prepare_data_repeating_string(obs_var, times, plots=False, diagnostics=False
 
     # group the differences
     #     array of (value_diff, count) pairs
-    grouped_diffs = np.array([[g[0], len(list(g[1]))] for g in itertools.groupby(value_diffs)])
+    grouped_diffs = np.array([[g[0], len(list(g[1]))] for g in itertools.groupby(value_diffs.compressed())])
     
     # all string lengths
     strings, = np.where(grouped_diffs[:, 0] == 0)
@@ -200,21 +202,24 @@ def rsc(station, var_list, config_file, full=False, plots=False, diagnostics=Fal
     for var in var_list:
 
         obs_var = getattr(station, var)
+    
+        # need to have at least two observations to get a streak
+        if len(obs_var.data.compressed()) >= 2:
 
-        # repeating (straight) strings
-        if full:
-            get_repeating_string_threshold(obs_var, station.times, config_file, plots=plots, diagnostics=diagnostics)
+            # repeating (straight) strings
+            if full:
+                get_repeating_string_threshold(obs_var, station.times, config_file, plots=plots, diagnostics=diagnostics)
 
-        repeating_value(obs_var, station.times, config_file, plots=plots, diagnostics=diagnostics)
+            repeating_value(obs_var, station.times, config_file, plots=plots, diagnostics=diagnostics)
 
-        # more short strings than reasonable
-        # excess_repeating_value()
+            # more short strings than reasonable
+            # excess_repeating_value()
 
-        # repeats at same hour of day
-        # hourly_repeat()
+            # repeats at same hour of day
+            # hourly_repeat()
 
-        # repeats of whole day
-        # day_repeat()
+            # repeats of whole day
+            # day_repeat()
 
 
     return # rsc

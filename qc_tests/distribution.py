@@ -425,7 +425,7 @@ def all_obs_gap(obs_var, station, config_file, plots=False, diagnostics=False):
                         if len(storms) >= 2:
                             # find where separation more than the usual obs separation
                             storm_1diffs = np.ma.diff(storms)
-                            separations, = np.where(storm_1diffs > np.median(np.diff(wind_data)))
+                            separations, = np.where(storm_1diffs > np.ma.median(np.ma.diff(wind_data)))
 
                             if len(separations) != 0:
                                 # multiple storm signals 

@@ -98,49 +98,61 @@ def prepare_data(obs_var, station, month, diagnostics=False, winsorize=True):
     normed_anomalies = np.ma.copy(anomalies)
 
     mlocs, = np.where(station.months == month)
-    anomalies.mask[mlocs] = False
-    normed_anomalies.mask[mlocs] = False        
 
-    hourly_clims = np.ma.zeros(24)
-    hourly_clims.mask = np.ones(24)
-    for hour in range(24):
+    # need to have some data!
+    if len(mlocs) > DATA_COUNT_THRESHOLD:
 
-        # calculate climatology
-        hlocs, = np.where(np.logical_and(station.months == month, station.hours == hour))
+        anomalies.mask[mlocs] = False
+        normed_anomalies.mask[mlocs] = False        
 
-        hour_data = obs_var.data[hlocs]
+        hourly_clims = np.ma.zeros(24)
+        hourly_clims.mask = np.ones(24)
+        for hour in range(24):
 
-        if winsorize:
-            if len(hour_data.compressed()) > 10:
-                hour_data = utils.winsorize(hour_data, 5)
+            # calculate climatology
+            hlocs, = np.where(np.logical_and(station.months == month, station.hours == hour))
 
-        if len(hour_data) >= DATA_COUNT_THRESHOLD:
-            hourly_clims[hour] = np.ma.mean(hour_data)
-            hourly_clims.mask[hour] = False
+            hour_data = obs_var.data[hlocs]
 
-        # make anomalies - keeping the order
-        anomalies[hlocs] = obs_var.data[hlocs] - hourly_clims[hour]
+            if winsorize:
+                if len(hour_data.compressed()) > 10:
+                    hour_data = utils.winsorize(hour_data, 5)
 
-    # for the month, normalise anomalies by spread
-    spread = utils.spread(anomalies[mlocs])
-    if spread < 1.5:
-        spread = 1.5
+            if len(hour_data) >= DATA_COUNT_THRESHOLD:
+                hourly_clims[hour] = np.ma.mean(hour_data)
+                hourly_clims.mask[hour] = False
 
-    normed_anomalies[mlocs] = anomalies[mlocs] / spread
+            # make anomalies - keeping the order
+            anomalies[hlocs] = obs_var.data[hlocs] - hourly_clims[hour]
 
-    # apply low pass filter derived from monthly values
-    all_years = np.unique(station.years)
-    monthly_anoms = np.ma.zeros(all_years.shape[0])
-    for y, year in enumerate(all_years):
+        # if insufficient data at each hour, then no anomalies calculated
+        if len(anomalies[mlocs].compressed()) > DATA_COUNT_THRESHOLD:
 
-        ylocs, = np.where(station.years == year)
-        year_data = obs_var.data[ylocs]
+            # for the month, normalise anomalies by spread
+            spread = utils.spread(anomalies[mlocs])
+            if spread < 1.5:
+                spread = 1.5
 
-        monthly_anoms[y] = utils.average(year_data)
+            normed_anomalies[mlocs] = anomalies[mlocs] / spread
 
-    lp_filtered_anomalies = low_pass_filter(normed_anomalies, station, monthly_anoms, month)
+            # apply low pass filter derived from monthly values
+            all_years = np.unique(station.years)
+            monthly_anoms = np.ma.zeros(all_years.shape[0])
+            for y, year in enumerate(all_years):
 
-    return lp_filtered_anomalies # prepare_data
+                ylocs, = np.where(station.years == year)
+                year_data = obs_var.data[ylocs]
+
+                monthly_anoms[y] = utils.average(year_data)
+
+            lp_filtered_anomalies = low_pass_filter(normed_anomalies, station, monthly_anoms, month)
+
+            return lp_filtered_anomalies # prepare_data
+
+        else:
+            return anomalies # prepare_data
+    else:
+        return anomalies # prepare_data
 
 #************************************************************************
 def find_month_thresholds(obs_var, station, config_file, plots=False, diagnostics=False, winsorize=True):
@@ -159,45 +171,47 @@ def find_month_thresholds(obs_var, station, config_file, plots=False, diagnostic
     for month in range(1, 13):
 
         normalised_anomalies = prepare_data(obs_var, station, month, diagnostics=diagnostics, winsorize=winsorize)
+
+        if len(normalised_anomalies.compressed()) > DATA_COUNT_THRESHOLD:
         
-        bins = utils.create_bins(normalised_anomalies, BIN_WIDTH)
-        hist, bin_edges = np.histogram(normalised_anomalies.compressed(), bins)
+            bins = utils.create_bins(normalised_anomalies, BIN_WIDTH)
+            hist, bin_edges = np.histogram(normalised_anomalies.compressed(), bins)
 
-        gaussian_fit = utils.fit_gaussian(bins[1:], hist, max(hist), mu=bins[np.argmax(hist)], sig=utils.spread(normalised_anomalies))
+            gaussian_fit = utils.fit_gaussian(bins[1:], hist, max(hist), mu=bins[np.argmax(hist)], sig=utils.spread(normalised_anomalies))
 
-        fitted_curve = utils.gaussian(bins[1:], gaussian_fit)
+            fitted_curve = utils.gaussian(bins[1:], gaussian_fit)
 
-        # diagnostic plots
-        if plots:
-            import matplotlib.pyplot as plt
-            plt.clf()
-            plt.step(bins[1:], hist, color='k', where="pre")
-            plt.yscale("log")
+            # diagnostic plots
+            if plots:
+                import matplotlib.pyplot as plt
+                plt.clf()
+                plt.step(bins[1:], hist, color='k', where="pre")
+                plt.yscale("log")
 
-            plt.ylabel("Number of Observations")
-            plt.xlabel("Scaled {}".format(obs_var.name.capitalize()))
-            plt.title("{} - month {}".format(station.id, month))
+                plt.ylabel("Number of Observations")
+                plt.xlabel("Scaled {}".format(obs_var.name.capitalize()))
+                plt.title("{} - month {}".format(station.id, month))
 
-            plt.plot(bins[1:], fitted_curve)
-            plt.ylim([0.1, max(hist)*2])
+                plt.plot(bins[1:], fitted_curve)
+                plt.ylim([0.1, max(hist)*2])
 
-        # use bins and curve to find points where curve is < FREQUENCY_THRESHOLD
-        try:
-            lower_threshold = bins[1:][np.where(np.logical_and(fitted_curve < FREQUENCY_THRESHOLD, bins[1:] < 0))[0]][-1]
-        except:
-            lower_threshold = bins[1]
-        try:
-            upper_threshold = bins[1:][np.where(np.logical_and(fitted_curve < FREQUENCY_THRESHOLD, bins[1:] > 0))[0]][0]
-        except:
-            upper_threshold = bins[-1]
+            # use bins and curve to find points where curve is < FREQUENCY_THRESHOLD
+            try:
+                lower_threshold = bins[1:][np.where(np.logical_and(fitted_curve < FREQUENCY_THRESHOLD, bins[1:] < 0))[0]][-1]
+            except:
+                lower_threshold = bins[1]
+            try:
+                upper_threshold = bins[1:][np.where(np.logical_and(fitted_curve < FREQUENCY_THRESHOLD, bins[1:] > 0))[0]][0]
+            except:
+                upper_threshold = bins[-1]
 
-        if plots:
-            plt.axvline(upper_threshold, c="r")
-            plt.axvline(lower_threshold, c="r")
-            plt.show()
-            
-        utils.write_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-uthresh".format(month), "{}".format(upper_threshold), diagnostics=diagnostics)
-        utils.write_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-lthresh".format(month), "{}".format(lower_threshold), diagnostics=diagnostics)
+            if plots:
+                plt.axvline(upper_threshold, c="r")
+                plt.axvline(lower_threshold, c="r")
+                plt.show()
+
+            utils.write_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-uthresh".format(month), "{}".format(upper_threshold), diagnostics=diagnostics)
+            utils.write_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-lthresh".format(month), "{}".format(lower_threshold), diagnostics=diagnostics)
           
     return # find_month_thresholds
 
@@ -222,59 +236,61 @@ def monthly_clim(obs_var, station, config_file, logfile="", plots=False, diagnos
         # note these are for the whole record, just this month is unmasked
         normalised_anomalies = prepare_data(obs_var, station, month, diagnostics=diagnostics, winsorize=winsorize)
         
-        bins = utils.create_bins(normalised_anomalies, BIN_WIDTH)
-        hist, bin_edges = np.histogram(normalised_anomalies.compressed(), bins)
+        if len(normalised_anomalies.compressed()) > DATA_COUNT_THRESHOLD:
 
-        try:
-            upper_threshold = float(utils.read_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-uthresh".format(month)))
-            lower_threshold = float(utils.read_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-lthresh".format(month)))
-        except KeyError:
-            print("Information missing in config file")
-            find_month_thresholds(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
-            upper_threshold = float(utils.read_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-uthresh".format(month)))
-            lower_threshold = float(utils.read_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-lthresh".format(month)))
+            bins = utils.create_bins(normalised_anomalies, BIN_WIDTH)
+            hist, bin_edges = np.histogram(normalised_anomalies.compressed(), bins)
 
-        # now to find the gaps
-        uppercount = len(np.where(normalised_anomalies > upper_threshold)[0])
-        lowercount = len(np.where(normalised_anomalies < lower_threshold)[0])
-        
-        if uppercount > 0:
-            gap_start = utils.find_gap(hist, bins, upper_threshold, GAP_SIZE)
+            try:
+                upper_threshold = float(utils.read_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-uthresh".format(month)))
+                lower_threshold = float(utils.read_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-lthresh".format(month)))
+            except KeyError:
+                print("Information missing in config file")
+                find_month_thresholds(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
+                upper_threshold = float(utils.read_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-uthresh".format(month)))
+                lower_threshold = float(utils.read_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-lthresh".format(month)))
 
-            if gap_start != 0:
-                bad_locs, = np.ma.where(normalised_anomalies > gap_start) # all years for one month
+            # now to find the gaps
+            uppercount = len(np.where(normalised_anomalies > upper_threshold)[0])
+            lowercount = len(np.where(normalised_anomalies < lower_threshold)[0])
 
-                # normalised_anomalies are for the whole record, just this month is unmasked
-                flags[bad_locs] = "C"
-                                       
-        if lowercount > 0:
-            gap_start = utils.find_gap(hist, bins, lower_threshold, GAP_SIZE, upwards=False)
+            if uppercount > 0:
+                gap_start = utils.find_gap(hist, bins, upper_threshold, GAP_SIZE)
 
-            if gap_start != 0:
-                bad_locs, = np.ma.where(normalised_anomalies < gap_start) # all years for one month
+                if gap_start != 0:
+                    bad_locs, = np.ma.where(normalised_anomalies > gap_start) # all years for one month
 
-                flags[bad_locs] = "C"
+                    # normalised_anomalies are for the whole record, just this month is unmasked
+                    flags[bad_locs] = "C"
 
-        # diagnostic plots
-        if plots:
-            import matplotlib.pyplot as plt
-            plt.clf()
-            plt.step(bins[1:], hist, color='k', where="pre")
-            plt.yscale("log")
+            if lowercount > 0:
+                gap_start = utils.find_gap(hist, bins, lower_threshold, GAP_SIZE, upwards=False)
 
-            plt.ylabel("Number of Observations")
-            plt.xlabel("Scaled {}".format(obs_var.name.capitalize()))
-            plt.title("{} - month {}".format(station.id, month))
+                if gap_start != 0:
+                    bad_locs, = np.ma.where(normalised_anomalies < gap_start) # all years for one month
 
-            plt.ylim([0.1, max(hist)*2])
-            plt.axvline(upper_threshold, c="r")
-            plt.axvline(lower_threshold, c="r")
+                    flags[bad_locs] = "C"
 
-            bad_locs, = np.where(flags[month_locs] == "C")
-            bad_hist, dummy = np.histogram(normalised_anomalies[month_locs][bad_locs], bins)
-            plt.step(bins[1:], bad_hist, color='r', where="pre")
+            # diagnostic plots
+            if plots:
+                import matplotlib.pyplot as plt
+                plt.clf()
+                plt.step(bins[1:], hist, color='k', where="pre")
+                plt.yscale("log")
 
-            plt.show()
+                plt.ylabel("Number of Observations")
+                plt.xlabel("Scaled {}".format(obs_var.name.capitalize()))
+                plt.title("{} - month {}".format(station.id, month))
+
+                plt.ylim([0.1, max(hist)*2])
+                plt.axvline(upper_threshold, c="r")
+                plt.axvline(lower_threshold, c="r")
+
+                bad_locs, = np.where(flags[month_locs] == "C")
+                bad_hist, dummy = np.histogram(normalised_anomalies[month_locs][bad_locs], bins)
+                plt.step(bins[1:], bad_hist, color='r', where="pre")
+
+                plt.show()
 
     # append flags to object
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
