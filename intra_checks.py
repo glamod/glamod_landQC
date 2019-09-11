@@ -31,7 +31,7 @@ import setup
 #************************************************************************
 
 # Temporary stuff
-IFF_LOC = setup.SUBDAILY_IN_DIR
+MFF_LOC = setup.SUBDAILY_IN_DIR
 QFF_LOC = setup.SUBDAILY_OUT_DIR
 CONF_LOC = setup.SUBDAILY_CONFIG_DIR
 
@@ -48,15 +48,30 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
     :param bool full: run full reprocessing rather than using stored values.
     """
 
-    # Need codes to process IDs and any inventory
-    # these are just for testing!
-    import glob
-    station_list = glob.glob(r'{}/*.psv'.format(IFF_LOC))
-    station_list = [stn.split("/")[-1] for stn in station_list]
-
     obs_var_list = setup.obs_var_list
 
-    for st, station_id in enumerate(station_list):
+    # process the station list
+    station_list = pd.read_fwf(os.path.join(setup.SUBDAILY_IN_DIR, "ghcnh-stations.txt"), widths=(11, 9, 10, 7, 35), header=None)
+    station_IDs = station_list.iloc[:, 0]
+
+    # work from the end to save messing up the start indexing
+    endindex=None
+    if end_id != "":
+        endindex, = np.where(station_IDs == end_id)
+
+    station_list = station_list.iloc[: endindex[0]+1]
+    station_IDs = station_IDs[: endindex[0]+1]
+
+    # and do the front
+    startindex=0
+    if restart_id != "":
+        startindex, = np.where(station_IDs == restart_id)
+
+    station_list = station_list.iloc[startindex[0]:]
+    station_IDs = station_IDs[startindex[0] :]
+
+    # now spin through each ID in the curtailed list
+    for st, station_id in enumerate(station_IDs):
         print("{} {}".format(dt.datetime.now(), station_id))
 
         # for diagnostics
@@ -66,20 +81,20 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         # set up config file to hold thresholds etc
         config_file = os.path.join(CONF_LOC, "{}.config".format(station_id))
 
+        #*************************
         # set up the stations
-        # TODO - read in a station list correctly - these are dummies
-#        lat = 52
-#        lon = 0.1
-#        elev = 10
-#        station = utils.Station(station_id, lat, lon, elev)
+        # TEMPORARY
+        # extract geo metadata from DF
+#        station = utils.Station(station_id, station_df["Latitude"][0], station_df["Longitude"][0], station_df["Elevation"][0])
+
+        station = utils.Station(station_id, station_list.iloc[st][1], station_list.iloc[st][2], station_list.iloc[st][3])
+        if diagnostics:
+            print(station)
 
         #*************************
         # read MFF
-        station_df = io.read(os.path.join(IFF_LOC, station_id[:-4]))
+        station_df = io.read(os.path.join(MFF_LOC, station_id))
 
-        # TEMPORARY
-        # extract geo metadata from DF
-        station = utils.Station(station_id, station_df["Latitude"][0], station_df["Longitude"][0], station_df["Elevation"][0])
 
         # convert to datetimes
         datetimes = pd.to_datetime(station_df[["Year", "Month", "Day", "Hour", "Minute"]])
@@ -126,7 +141,9 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
 
         # HadISD only runs on stations where latitude higher than 60(N/S)
         # Takes a long time, this one
-#        qc_tests.diurnal.dcc(station, config_file, full=full, plots=plots, diagnostics=diagnostics)
+#        print("U", dt.datetime.now()-startT)
+#        if np.abs(station.latitude < 60):
+#            qc_tests.diurnal.dcc(station, config_file, full=full, plots=plots, diagnostics=diagnostics)
 
         print("D", dt.datetime.now()-startT)
         qc_tests.distribution.dgc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_file, full=full, plots=plots, diagnostics=diagnostics)
@@ -158,7 +175,7 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         qc_tests.pressure.pcc(station, config_file, full=full, plots=plots, diagnostics=diagnostics)
 
         print("w", dt.datetime.now()-startT)
-        qc_tests.winds.wcc(station, config_file, fix=False, full=full, plots=plots, diagnostics=diagnostics)
+        qc_tests.winds.wcc(station, config_file, fix=True, full=full, plots=plots, diagnostics=diagnostics)
 
         print(dt.datetime.now()-startT)
 
@@ -187,7 +204,7 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
             station_df["{} QC flags".format(var)] = obs_var.flags
 
         # write out the dataframe to output format
-        io.write(os.path.join(QFF_LOC, "{}_QC".format(station_id[:-4])), station_df)
+        io.write(os.path.join(QFF_LOC, "{}".format(station_id)), station_df)
 
         print(dt.datetime.now()-startT)
 
