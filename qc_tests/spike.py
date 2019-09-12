@@ -60,11 +60,13 @@ def get_critical_values(obs_var, times, config_file, plots=False, diagnostics=Fa
     # TODO don't run using flagged data
     # TODO monthly?
  
-    time_diffs = np.ma.diff(times)/np.timedelta64(1, "m") # presuming minutes
+    masked_times = np.ma.masked_array(times, mask = obs_var.data.mask)
+
+    time_diffs = np.ma.diff(masked_times)/np.timedelta64(1, "m") # presuming minutes
     value_diffs = np.ma.diff(obs_var.data)
 
     # get thresholds for each unique time differences
-    unique_diffs = np.unique(time_diffs)
+    unique_diffs = np.unique(time_diffs.compressed())
 
     for t_diff in unique_diffs:
 
@@ -72,6 +74,7 @@ def get_critical_values(obs_var, times, config_file, plots=False, diagnostics=Fa
             # not a spike or jump, but 2 values at the same time.
             #  should be zero value difference, so fitting histogram not going to work
             #  handled in separate test
+            print("test")
             continue
 
         locs, = np.where(time_diffs == t_diff)
@@ -86,6 +89,14 @@ def get_critical_values(obs_var, times, config_file, plots=False, diagnostics=Fa
 
             # write out the thresholds...
             utils.write_qc_config(config_file, "SPIKE-{}".format(obs_var.name), "{}".format(t_diff), "{}".format(c_value), diagnostics=diagnostics)
+            if diagnostics:
+                print("   Time Difference: {} minutes".format(t_diff))
+                print("      Number of obs: {}, threshold: {}".format(len(first_differences.compressed()), c_value))
+        else:
+            if diagnostics:
+                print("   Time Difference: {} minutes".format(t_diff))
+                print("      Number of obs insufficient: {} < {}".format(len(first_differences.compressed()), utils.MIN_NOBS))
+
 
     return # get_critical_values
 
@@ -104,12 +115,13 @@ def identify_spikes(obs_var, times, config_file, plots=False, diagnostics=False)
     # TODO check works with missing data (compressed?)
     # TODO monthly?
 
+    masked_times = np.ma.masked_array(times, mask = obs_var.data.mask)
    
-    time_diffs = np.ma.diff(times)/np.timedelta64(1, "m") # presuming minutes
+    time_diffs = np.ma.diff(masked_times)/np.timedelta64(1, "m") # presuming minutes
     value_diffs = np.ma.diff(obs_var.data)
 
     # get thresholds for each unique time differences
-    unique_diffs = np.unique(time_diffs)
+    unique_diffs = np.unique(time_diffs.compressed())
 
     # retrieve the critical values
     critical_values = {}
@@ -155,41 +167,76 @@ def identify_spikes(obs_var, times, config_file, plots=False, diagnostics=False)
             continue # to next loop
         
         # potential spikes
-        for ps, possible_spike in enumerate(t_locs[c_locs]):
+        for ps, possible_in_spike in enumerate(t_locs[c_locs]):
             is_spike = False
 
             spike_len = 1
             while spike_len <= MAX_SPIKE_LENGTH:
                 # test for each possible length to see if identified
-                if (possible_spike + spike_len) in c_locs:
-                    # check that signs are opposite
-                    if np.sign(value_diffs[possible_spike]) != np.sign(value_diffs[possible_spike + spike_len]):
+                out_spike_t_diff = time_diffs[possible_in_spike + spike_len]
+                possible_out_spike = value_diffs[possible_in_spike + spike_len]
+                try:
+                    # find critical value for time-difference of way out of spike
+                    out_critical_value = critical_values[out_spike_t_diff]
+                except KeyError:
+                    # don't have a value for this time difference, so use the maximum of all as a proxy
+                    out_critical_value = max(critical_values.values())
+                    
+                if np.abs(possible_out_spike) > out_critical_value:
+                    # check that the signs are opposite
+                    if np.sign(value_diffs[possible_in_spike]) != np.sign(value_diffs[possible_in_spike + spike_len]):
                         is_spike = True
-                        break                        
+                        break
+
                 spike_len += 1
 
-            if is_spike and spike_len > 1:
-                # test within spike differences
+            if is_spike and spike_len >= 1:
+                # test within spike differences (chosing correct time difference)
                 within = 1
                 while within < spike_len:
-                    if value_diffs[possible_spike + within] > (critical_values[t_diff])/2.:
+                    within_t_diff = time_diffs[possible_in_spike + within]
+                    try:
+                        within_critical_value = critical_values[within_t_diff]
+                        if value_diffs[possible_in_spike + within] > within_critical_value/2.:
+                            is_spike = False 
+                    except KeyError:
+                        # don't have a value for this time difference, so use the maximum of all as a proxy
+                        within_critical_value = max(critical_values.values())
+
+                    if value_diffs[possible_in_spike + within] > within_critical_value/2.:
                         is_spike = False 
+                        
                     within += 1
 
             if is_spike:
-                # test either side (either one side or the other is too big)
-                if value_diffs[possible_spike - 1] > (critical_values[t_diff])/2. or\
-                   value_diffs[possible_spike + spike_len + 1] > (critical_values[t_diff])/2.:
+                # test either side (either before or after is too big)
+                before_t_diff = time_diffs[possible_in_spike - 1]
+                try:
+                    before_critical_value = critical_values[before_t_diff]
+                except KeyError:
+                    # don't have a value for this time difference, so use the maximum of all as a proxy
+                    before_critical_value = max(critical_values.values())                    
+
+                after_t_diff = time_diffs[possible_in_spike + spike_len + 1]
+                try:
+                    after_critical_value = critical_values[after_t_diff]
+                except KeyError:
+                    # don't have a value for this time difference, so use the maximum of all as a proxy
+                    after_critical_value = max(critical_values.values())
+
+                if value_diffs[possible_in_spike - 1] > before_critical_value/2. or\
+                   value_diffs[possible_in_spike + spike_len + 1] > after_critical_value/2.:
                     is_spike = False
 
             # if the spike is still set, set the flags
             if is_spike:
-                flags[possible_spike+1 : possible_spike+1+spike_len] = "S"
+                # "+1" because of difference arrays
+                flags[possible_in_spike+1 : possible_in_spike+1+spike_len] = "S"
 
                 # diagnostic plots
                 if plots:
-                    plot_spike(times, obs_var, possible_spike+1, spike_len)
-                     
+                    plot_spike(times, obs_var, possible_in_spike+1, spike_len)                     
+
         obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
         if diagnostics:
@@ -213,14 +260,14 @@ def sc(station, var_list, config_file, full=False, plots=False, diagnostics=Fals
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
-    for var in var_list:
+    for var in ["wind_speed"]:# var_list:
 
         obs_var = getattr(station, var)
 
         # decide whether to recalculate
         if full:
             get_critical_values(obs_var, station.times, config_file, plots=plots, diagnostics=diagnostics)
-
+            
         identify_spikes(obs_var, station.times, config_file, plots=plots, diagnostics=diagnostics)
 
     return  # sc
