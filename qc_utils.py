@@ -382,14 +382,14 @@ def plot_log_distribution(edges, hist, fit, threshold, line_label, xlabel, title
     plt.clf()
     # stretch bars, so can run off below 0
     plot_hist = np.array([np.log10(x) if x != 0 else -1 for x in hist])
-    plt.step(edges[1:], plot_hist, color='k', label=line_label, where="mid")
+    plt.step(edges[1:], plot_hist, color='k', label=line_label, where="pre")
     plt.plot(edges, fit, 'b-', label="best fit")          
     
     plt.xlabel(xlabel)
     plt.ylabel("log10(Frequency)")
     
     # set y-lim to something sensible
-    plt.ylim([-0.3, max(plot_hist)])
+    plt.ylim([-0.3, max(plot_hist)+0.5])
     plt.xlim([0, max(edges)])
     
     plt.axvline(threshold, c='r', label="threshold = {}".format(threshold))

@@ -12,6 +12,7 @@ Repeated Streaks Check
 """
 #************************************************************************
 import sys
+import copy
 import itertools
 import numpy as np
 
@@ -39,13 +40,13 @@ def plot_streak(times, obs_var, streak_start, streak_end):
     if pad_start < 0:
         pad_start = 0
     pad_end = streak_end + 48
-    if pad_end > len(obs_var.data):
-        pad_end = len(obs_var.data)
+    if pad_end > len(obs_var.data.compressed()):
+        pad_end = len(obs_var.data.compressed())
 
     # simple plot
     plt.clf()
-    plt.plot(times[pad_start: pad_end], obs_var.data[pad_start: pad_end], 'ko', )
-    plt.plot(times[streak_start: streak_end], obs_var.data[streak_start: streak_end], 'ro')    
+    plt.plot(times[pad_start: pad_end], obs_var.data.compressed()[pad_start: pad_end], 'ko', )
+    plt.plot(times[streak_start: streak_end], obs_var.data.compressed()[streak_start: streak_end], 'ro')    
 
     plt.ylabel(obs_var.units)
     plt.show()
@@ -64,11 +65,11 @@ def prepare_data_repeating_string(obs_var, times, plots=False, diagnostics=False
     """
 
     # want locations where first differences are zero
-    value_diffs = np.ma.diff(obs_var.data)
+    value_diffs = np.ma.diff(obs_var.data.compressed())
 
     # group the differences
     #     array of (value_diff, count) pairs
-    grouped_diffs = np.array([[g[0], len(list(g[1]))] for g in itertools.groupby(value_diffs.compressed())])
+    grouped_diffs = np.array([[g[0], len(list(g[1]))] for g in itertools.groupby(value_diffs)])
     
     # all string lengths
     strings, = np.where(grouped_diffs[:, 0] == 0)
@@ -90,14 +91,20 @@ def get_repeating_string_threshold(obs_var, times, config_file, plots=False, dia
 
     # TODO - how to cope with varying time or measurement resolutions
 
-    repeated_string_lengths, grouped_diffs, strings = prepare_data_repeating_string(obs_var, times, plots=plots, diagnostics=diagnostics)
+    this_var = copy.deepcopy(obs_var)
+    if obs_var.name == "wind_speed":
+        calms, = np.ma.where(this_var.data == 0)
+        this_var.data[calms] = utils.MDI
+        this_var.data.mask[calms] = True
+
+    repeated_string_lengths, grouped_diffs, strings = prepare_data_repeating_string(this_var, times, plots=plots, diagnostics=diagnostics)
 
     # bin width is 1 as dealing in time index.
     # minimum bin value is 2 as this is the shortest string possible
-    threshold = utils.get_critical_values(repeated_string_lengths, binmin=2, binwidth=1.0, plots=plots, diagnostics=diagnostics, title=obs_var.name.capitalize(), xlabel="Repeating string length")
+    threshold = utils.get_critical_values(repeated_string_lengths, binmin=2, binwidth=1.0, plots=plots, diagnostics=diagnostics, title=this_var.name.capitalize(), xlabel="Repeating string length")
 
     # write out the thresholds...
-    utils.write_qc_config(config_file, "STREAK-{}".format(obs_var.name), "Straight", "{}".format(threshold), diagnostics=diagnostics)
+    utils.write_qc_config(config_file, "STREAK-{}".format(this_var.name), "Straight", "{}".format(threshold), diagnostics=diagnostics)
 
     return # repeating_string_threshold
 
@@ -115,44 +122,52 @@ def repeating_value(obs_var, times, config_file, plots=False, diagnostics=False)
     :param bool diagnostics: turn on diagnostic output
     """
  
-    # TODO - remove calm periods for wind speeds when (a) calculating thresholds and (b) identifying streaks
+    # remove calm periods for wind speeds when (a) calculating thresholds and (b) identifying streaks
+    this_var = copy.deepcopy(obs_var)
+    if obs_var.name == "wind_speed":
+        calms, = np.ma.where(this_var.data == 0)
+        this_var.data[calms] = utils.MDI
+        this_var.data.mask[calms] = True
 
-    flags = np.array(["" for i in range(obs_var.data.shape[0])])
+
+    flags = np.array(["" for i in range(this_var.data.shape[0])])
+    compressed_flags = np.array(["" for i in range(this_var.data.compressed().shape[0])])
 
     # retrieve the threshold and store in another dictionary
     threshold = {}
     try:
-        th = utils.read_qc_config(config_file, "STREAK-{}".format(obs_var.name), "Straight")
+        th = utils.read_qc_config(config_file, "STREAK-{}".format(this_var.name), "Straight")
         threshold["Straight"] = float(th)
     except KeyError:
         # no threshold set
         print("Threshold missing in config file")
-        get_repeating_string_threshold(obs_var, times, config_file, plots=plots, diagnostics=diagnostics)
-        th = utils.read_qc_config(config_file, "STREAK-{}".format(obs_var.name), "Straight")
+        get_repeating_string_threshold(this_var, times, config_file, plots=plots, diagnostics=diagnostics)
+        th = utils.read_qc_config(config_file, "STREAK-{}".format(this_var.name), "Straight")
         threshold["Straight"] = float(th)
 
-    repeated_string_lengths, grouped_diffs, strings = prepare_data_repeating_string(obs_var, times, plots=plots, diagnostics=diagnostics)
+    repeated_string_lengths, grouped_diffs, strings = prepare_data_repeating_string(this_var, times, plots=plots, diagnostics=diagnostics)
 
     # above threshold
-    bad, = np.where(repeated_string_lengths > threshold["Straight"])
+    bad, = np.where(repeated_string_lengths >= threshold["Straight"])
 
     # flag identified strings
     for string in bad:
         start = int(np.sum(grouped_diffs[:strings[string], 1]))
         end = start + int(grouped_diffs[strings[string], 1]) + 1
 
-        flags[start : end] = "K"
+        compressed_flags[start : end] = "K"
 
         if plots:
-            plot_streak(times, obs_var, start, end)
+            plot_streak(times, this_var, start, end)
 
-    obs_var.flags = utils.insert_flags(obs_var.flags, flags)
+    # undo compression
+    flags[this_var.data.mask == False] = compressed_flags
+    this_var.flags = utils.insert_flags(this_var.flags, flags)
 
     if diagnostics:
         
-        print("Repeated Strings {}".format(obs_var.name))
+        print("Repeated Strings {}".format(this_var.name))
         print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
-
 
     return # repeating_value
 
