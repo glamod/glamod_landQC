@@ -55,20 +55,16 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
     station_IDs = station_list.iloc[:, 0]
 
     # work from the end to save messing up the start indexing
-    endindex=None
     if end_id != "":
         endindex, = np.where(station_IDs == end_id)
-
-    station_list = station_list.iloc[: endindex[0]+1]
-    station_IDs = station_IDs[: endindex[0]+1]
+        station_list = station_list.iloc[: endindex[0]+1]
+        station_IDs = station_IDs[: endindex[0]+1]
 
     # and do the front
-    startindex=0
     if restart_id != "":
         startindex, = np.where(station_IDs == restart_id)
-
-    station_list = station_list.iloc[startindex[0]:]
-    station_IDs = station_IDs[startindex[0] :]
+        station_list = station_list.iloc[startindex[0]:]
+        station_IDs = station_IDs[startindex[0] :]
 
     # now spin through each ID in the curtailed list
     for st, station_id in enumerate(station_IDs):

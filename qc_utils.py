@@ -340,21 +340,21 @@ def get_critical_values(indata, binmin = 0, binwidth = 1, plots = False, diagnos
             if fit[1] < 0:
                 # negative slope as expected
 
-                # where does *fit* fall below log10(0.1) = -1
+                # where does *fit* fall below log10(0.1) = -1, then..
                 try:
                     fit_below_point1, = np.argwhere(fit_curve < -1)[0]
 
                     # find first empty bin after that
-                    first_zero_bin, = np.argwhere(full_hist[fit_below_point1:] == 0)[0] + 1
+                    first_zero_bin, = np.argwhere(full_hist[fit_below_point1:] == 0)[0]
                     threshold = binwidth * (binmin + fit_below_point1 + first_zero_bin)
 
                 except IndexError:
-                    # too shallow a decay - use default maximum
-                    threshold = len(full_hist)
+                    # too shallow a decay - use default maximum.  Retains all data
+                    threshold = len(full_hist)*binwidth
 
             else:
-                # positive slope - likely malformed distribution.  Just retain all
-                threshold = len(full_hist)
+                # positive slope - likely malformed distribution.  Retains all data
+                threshold = len(full_hist)*binwidth
 
             if plots:
                 plot_log_distribution(full_edges, full_hist, fit_curve, threshold, line_label, xlabel, title)

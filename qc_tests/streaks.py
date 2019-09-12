@@ -54,12 +54,11 @@ def plot_streak(times, obs_var, streak_start, streak_end):
     return # plot_streak
 
 #************************************************************************
-def prepare_data_repeating_string(obs_var, times, plots=False, diagnostics=False):
+def prepare_data_repeating_string(obs_var, plots=False, diagnostics=False):
     """
     Prepare the data for repeating strings
 
     :param MetVar obs_var: meteorological variable object
-    :param array times: array of times (usually in minutes)
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
@@ -78,12 +77,11 @@ def prepare_data_repeating_string(obs_var, times, plots=False, diagnostics=False
     return repeated_string_lengths, grouped_diffs, strings # prepare_data_repeating_string
 
 #************************************************************************
-def get_repeating_string_threshold(obs_var, times, config_file, plots=False, diagnostics=False):
+def get_repeating_string_threshold(obs_var, config_file, plots=False, diagnostics=False):
     """
     Use distribution to determine threshold values.  Then also store in config file.
 
     :param MetVar obs_var: meteorological variable object
-    :param array times: array of times (usually in minutes)
     :param str config_file: configuration file to store critical values
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
@@ -97,7 +95,7 @@ def get_repeating_string_threshold(obs_var, times, config_file, plots=False, dia
         this_var.data[calms] = utils.MDI
         this_var.data.mask[calms] = True
 
-    repeated_string_lengths, grouped_diffs, strings = prepare_data_repeating_string(this_var, times, plots=plots, diagnostics=diagnostics)
+    repeated_string_lengths, grouped_diffs, strings = prepare_data_repeating_string(this_var, plots=plots, diagnostics=diagnostics)
 
     # bin width is 1 as dealing in time index.
     # minimum bin value is 2 as this is the shortest string possible
@@ -141,11 +139,11 @@ def repeating_value(obs_var, times, config_file, plots=False, diagnostics=False)
     except KeyError:
         # no threshold set
         print("Threshold missing in config file")
-        get_repeating_string_threshold(this_var, times, config_file, plots=plots, diagnostics=diagnostics)
+        get_repeating_string_threshold(this_var, config_file, plots=plots, diagnostics=diagnostics)
         th = utils.read_qc_config(config_file, "STREAK-{}".format(this_var.name), "Straight")
         threshold["Straight"] = float(th)
 
-    repeated_string_lengths, grouped_diffs, strings = prepare_data_repeating_string(this_var, times, plots=plots, diagnostics=diagnostics)
+    repeated_string_lengths, grouped_diffs, strings = prepare_data_repeating_string(this_var, plots=plots, diagnostics=diagnostics)
 
     # above threshold
     bad, = np.where(repeated_string_lengths >= threshold["Straight"])
@@ -223,7 +221,7 @@ def rsc(station, var_list, config_file, full=False, plots=False, diagnostics=Fal
 
             # repeating (straight) strings
             if full:
-                get_repeating_string_threshold(obs_var, station.times, config_file, plots=plots, diagnostics=diagnostics)
+                get_repeating_string_threshold(obs_var, config_file, plots=plots, diagnostics=diagnostics)
 
             repeating_value(obs_var, station.times, config_file, plots=plots, diagnostics=diagnostics)
 
