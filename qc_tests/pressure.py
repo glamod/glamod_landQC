@@ -116,7 +116,7 @@ def pressure_offset(sealp, stnlp, times, config_file, plots=False, diagnostics=F
 
         # diagnostic plots
         if plots:
-            bins = np.aspread(np.round(average)-1, np.round(average)+1, 0.1)
+            bins = np.spread(np.round(average)-1, np.round(average)+1, 0.1)
             import matplotlib.pyplot as plt
             plt.clf()
             plt.hist(difference.compressed(), bins=bins)

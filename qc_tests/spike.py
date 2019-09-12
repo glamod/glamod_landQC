@@ -260,7 +260,7 @@ def sc(station, var_list, config_file, full=False, plots=False, diagnostics=Fals
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
-    for var in ["wind_speed"]:# var_list:
+    for var in var_list:
 
         obs_var = getattr(station, var)
 
