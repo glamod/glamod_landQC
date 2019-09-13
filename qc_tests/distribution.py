@@ -247,11 +247,13 @@ def prepare_all_data(obs_var, station, month, config_file, full=False, diagnosti
             utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-clim".format(month), "{}".format(climatology), diagnostics=diagnostics)
             utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-spread".format(month), "{}".format(spread), diagnostics=diagnostics)
         
-           
 
     if climatology == utils.MDI and spread == utils.MDI:
         # these weren't calculable, move on
         return np.ma.array([utils.MDI])
+    elif spread == 0:
+        # all the same value
+        return (all_month_data - climatology)  # prepare_all_data
     else:
         return (all_month_data - climatology)/spread  # prepare_all_data
 
@@ -277,6 +279,11 @@ def find_thresholds(obs_var, station, config_file, plots=False, diagnostics=Fals
             utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-uthresh".format(month), "{}".format(utils.MDI), diagnostics=diagnostics)
             utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-lthresh".format(month), "{}".format(utils.MDI), diagnostics=diagnostics)
             continue
+        elif len(np.unique(normalised_anomalies)) == 1:
+            # all the same value, so won't be able to fit a histogram
+            utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-uthresh".format(month), "{}".format(utils.MDI), diagnostics=diagnostics)
+            utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-lthresh".format(month), "{}".format(utils.MDI), diagnostics=diagnostics)
+            continue
 
         bins = utils.create_bins(normalised_anomalies, BIN_WIDTH)
         hist, bin_edges = np.histogram(normalised_anomalies, bins)
@@ -289,6 +296,7 @@ def find_thresholds(obs_var, station, config_file, plots=False, diagnostics=Fals
         # diagnostic plots
         if plots:
             import matplotlib.pyplot as plt
+            plt.clf()
             plt.step(bins[1:], hist, color='k', where="pre")
             plt.yscale("log")
 
@@ -301,11 +309,15 @@ def find_thresholds(obs_var, station, config_file, plots=False, diagnostics=Fals
 
         # use bins and curve to find points where curve is < FREQUENCY_THRESHOLD
         try:
-            lower_threshold = bins[1:][np.where(np.logical_and(fitted_curve < FREQUENCY_THRESHOLD, bins[1:] < 0))[0]][-1]
+            lower_threshold = bins[1:][np.where(np.logical_and(fitted_curve < FREQUENCY_THRESHOLD, bins[1:] < bins[np.argmax(fitted_curve)]))[0]][-1]
         except:
             lower_threshold = bins[1]
         try:
-            upper_threshold = bins[1:][np.where(np.logical_and(fitted_curve < FREQUENCY_THRESHOLD, bins[1:] > 0))[0]][0]
+            if len(np.unique(fitted_curve)) == 1:
+                # just a line of zeros perhaps (found on AFA00409906 station_level_pressure 20190913)
+                upper_threshold = bins[-1]
+            else:
+                upper_threshold = bins[1:][np.where(np.logical_and(fitted_curve < FREQUENCY_THRESHOLD, bins[1:] > bins[np.argmax(fitted_curve)]))[0]][0]
         except:
             upper_threshold = bins[-1]
 
@@ -352,6 +364,10 @@ def all_obs_gap(obs_var, station, config_file, plots=False, diagnostics=False):
 
         normalised_anomalies = prepare_all_data(obs_var, station, month, config_file, full=False, diagnostics=diagnostics)
 
+        if (len(normalised_anomalies.compressed()) == 1 and normalised_anomalies[0] == utils.MDI):
+            # no data to work with for this month, move on.
+            continue
+
         bins = utils.create_bins(normalised_anomalies, BIN_WIDTH)
         hist, bin_edges = np.histogram(normalised_anomalies, bins)
 
@@ -367,6 +383,9 @@ def all_obs_gap(obs_var, station, config_file, plots=False, diagnostics=False):
 
         if upper_threshold == utils.MDI and lower_threshold == utils.MDI:
             # these weren't able to be calculated, move on
+            continue
+        elif len(np.unique(normalised_anomalies)) == 1:
+            # all the same value, so won't be able to fit a histogram
             continue
 
         # now to find the gaps
@@ -517,6 +536,7 @@ def dgc(station, var_list, config_file, full=False, plots=False, diagnostics=Fal
         if plots and full:
             gplots = False
 
+        plots = True
         # monthly gap
         if full:
             find_monthly_scaling(obs_var, station, config_file, diagnostics=diagnostics)

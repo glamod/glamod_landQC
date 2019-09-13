@@ -120,6 +120,13 @@ def identify_spikes(obs_var, times, config_file, plots=False, diagnostics=False)
     time_diffs = np.ma.diff(masked_times)/np.timedelta64(1, "m") # presuming minutes
     value_diffs = np.ma.diff(obs_var.data)
 
+    if len(value_diffs.mask.shape) == 0:
+        # single mask value, replace with array of True/False's
+        if value_diffs.mask:
+            value_diffs.mask = np.ones(value_diffs.shape)
+        else:
+            value_diffs.mask = np.zeros(value_diffs.shape)
+
     # get thresholds for each unique time differences
     unique_diffs = np.unique(time_diffs.compressed())
 
@@ -165,6 +172,9 @@ def identify_spikes(obs_var, times, config_file, plots=False, diagnostics=False)
         except:
             # no critical value for this time difference
             continue # to next loop
+
+        # TODO - sort spikes at very beginning or very end of sequence, 
+        #    when don't have a departure from/return to a normal level
         
         # potential spikes
         for ps, possible_in_spike in enumerate(t_locs[c_locs]):
@@ -173,14 +183,27 @@ def identify_spikes(obs_var, times, config_file, plots=False, diagnostics=False)
             spike_len = 1
             while spike_len <= MAX_SPIKE_LENGTH:
                 # test for each possible length to see if identified
-                out_spike_t_diff = time_diffs[possible_in_spike + spike_len]
-                possible_out_spike = value_diffs[possible_in_spike + spike_len]
                 try:
-                    # find critical value for time-difference of way out of spike
-                    out_critical_value = critical_values[out_spike_t_diff]
-                except KeyError:
-                    # don't have a value for this time difference, so use the maximum of all as a proxy
+                    out_spike_t_diff = time_diffs[possible_in_spike + spike_len]
+                    possible_out_spike = value_diffs[possible_in_spike + spike_len]
+                except IndexError:
+                    # got to end of data run, can't test final value at the moment
+                    break
+
+                # need to test mask/unmasked using array rather than values extracted above
+                #    as if values unmasked, then no mask attribute to test!
+                if time_diffs.mask[possible_in_spike + spike_len] == False and \
+                        value_diffs.mask[possible_in_spike + spike_len] == False:
+                    try:
+                        # find critical value for time-difference of way out of spike
+                        out_critical_value = critical_values[out_spike_t_diff]
+                    except KeyError:
+                        # don't have a value for this time difference, so use the maximum of all as a proxy
+                        out_critical_value = max(critical_values.values())
+                else:
+                    # time or value difference masked
                     out_critical_value = max(critical_values.values())
+                    
                     
                 if np.abs(possible_out_spike) > out_critical_value:
                     # check that the signs are opposite
@@ -195,38 +218,60 @@ def identify_spikes(obs_var, times, config_file, plots=False, diagnostics=False)
                 within = 1
                 while within < spike_len:
                     within_t_diff = time_diffs[possible_in_spike + within]
-                    try:
-                        within_critical_value = critical_values[within_t_diff]
+                    if time_diffs.mask[possible_in_spike + within] == False:
+                        try:
+                            within_critical_value = critical_values[within_t_diff]
+                            if value_diffs[possible_in_spike + within] > within_critical_value/2.:
+                                is_spike = False 
+                        except KeyError:
+                            # don't have a value for this time difference, so use the maximum of all as a proxy
+                            within_critical_value = max(critical_values.values())
+                    else:
+                        # time difference masked
+                        within_critical_value = max(critical_values.values())
+                        
+                    if value_diffs.mask[possible_in_spike + within] == False:
                         if value_diffs[possible_in_spike + within] > within_critical_value/2.:
                             is_spike = False 
-                    except KeyError:
-                        # don't have a value for this time difference, so use the maximum of all as a proxy
-                        within_critical_value = max(critical_values.values())
-
-                    if value_diffs[possible_in_spike + within] > within_critical_value/2.:
-                        is_spike = False 
+                    else:
+                        # if masked then no data, so can't say if it's not a spike
+                        pass
                         
                     within += 1
 
             if is_spike:
                 # test either side (either before or after is too big)
                 before_t_diff = time_diffs[possible_in_spike - 1]
-                try:
-                    before_critical_value = critical_values[before_t_diff]
-                except KeyError:
-                    # don't have a value for this time difference, so use the maximum of all as a proxy
+                if time_diffs.mask[possible_in_spike - 1] == False:
+                    try:
+                        before_critical_value = critical_values[before_t_diff]
+                    except KeyError:
+                        # don't have a value for this time difference, so use the maximum of all as a proxy
+                        before_critical_value = max(critical_values.values())                    
+                else:
+                    # time difference masked
                     before_critical_value = max(critical_values.values())                    
+                    
 
                 after_t_diff = time_diffs[possible_in_spike + spike_len + 1]
-                try:
-                    after_critical_value = critical_values[after_t_diff]
-                except KeyError:
-                    # don't have a value for this time difference, so use the maximum of all as a proxy
-                    after_critical_value = max(critical_values.values())
+                if time_diffs.mask[possible_in_spike + spike_len + 1] == False:
+                    try:
+                        after_critical_value = critical_values[after_t_diff]
+                    except KeyError:
+                        # don't have a value for this time difference, so use the maximum of all as a proxy
+                        after_critical_value = max(critical_values.values())
+                else:
+                    # time difference masked
+                    after_critical_value = max(critical_values.values())                    
 
-                if value_diffs[possible_in_spike - 1] > before_critical_value/2. or\
-                   value_diffs[possible_in_spike + spike_len + 1] > after_critical_value/2.:
-                    is_spike = False
+                if value_diffs.mask[possible_in_spike - 1] == False:
+                    if value_diffs[possible_in_spike - 1] > before_critical_value/2.:
+                        # before spike fails test
+                        is_spike = False
+                if value_diffs.mask[possible_in_spike + spike_len + 1] == False:
+                    if value_diffs[possible_in_spike + spike_len + 1] > after_critical_value/2.:
+                        # after spike fails test
+                        is_spike = False
 
             # if the spike is still set, set the flags
             if is_spike:

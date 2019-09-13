@@ -52,14 +52,20 @@ def get_repeating_dpd_threshold(temperatures, dewpoints, config_file, plots=Fals
     # find only the DPD=0 locations, and then see if there are streaks
     locs, = np.ma.where(dpd == 0)
 
-    repeated_string_lengths, grouped_diffs, strings = prepare_data_repeating_dpd(locs, plots=plots, diagnostics=diagnostics)
+    # only process further if there are rnough locations
+    if len(locs) > 1:
+        repeated_string_lengths, grouped_diffs, strings = prepare_data_repeating_dpd(locs, plots=plots, diagnostics=diagnostics)
 
-    # bin width is 1 as dealing with the index.
-    # minimum bin value is 2 as this is the shortest string possible
-    threshold = utils.get_critical_values(repeated_string_lengths, binmin=2, binwidth=1.0, plots=plots, diagnostics=diagnostics, title="DPD streak length", xlabel="Repeating DPD length")
+        # bin width is 1 as dealing with the index.
+        # minimum bin value is 2 as this is the shortest string possible
+        threshold = utils.get_critical_values(repeated_string_lengths, binmin=2, binwidth=1.0, plots=plots, diagnostics=diagnostics, title="DPD streak length", xlabel="Repeating DPD length")
 
-    # write out the thresholds...
-    utils.write_qc_config(config_file, "HUMIDITY", "DPD", "{}".format(threshold), diagnostics=diagnostics)
+        # write out the thresholds...
+        utils.write_qc_config(config_file, "HUMIDITY", "DPD", "{}".format(threshold), diagnostics=diagnostics)
+    else:
+        # store high value so threshold never reached
+        utils.write_qc_config(config_file, "HUMIDITY", "DPD", "{}".format(-utils.MDI), diagnostics=diagnostics)
+        
 
     return # repeating_dpd_threshold
 
@@ -197,23 +203,25 @@ def dew_point_depression_streak(times, temperatures, dewpoints, config_file, plo
     # find only the DPD=0 locations, and then see if there are streaks
     locs, = np.ma.where(dpd == 0)
 
-    repeated_string_lengths, grouped_diffs, strings = prepare_data_repeating_dpd(locs, plots=plots, diagnostics=diagnostics)
+    # only process further if there are enough locations
+    if len(locs) > 1:
+        repeated_string_lengths, grouped_diffs, strings = prepare_data_repeating_dpd(locs, plots=plots, diagnostics=diagnostics)
 
-    # above threshold
-    bad, = np.where(repeated_string_lengths >= threshold)
+        # above threshold
+        bad, = np.where(repeated_string_lengths >= threshold)
 
-    # flag identified strings
-    for string in bad:
-        start = int(np.sum(grouped_diffs[:strings[string], 1]))
-        end = start + int(grouped_diffs[strings[string], 1]) + 1
+        # flag identified strings
+        for string in bad:
+            start = int(np.sum(grouped_diffs[:strings[string], 1]))
+            end = start + int(grouped_diffs[strings[string], 1]) + 1
 
-        flags[start : end] = "h"
+            flags[start : end] = "h"
 
-        if plots:
-            plot_humiditystreak(times, temperatures, dewpoints, start, end)
+            if plots:
+                plot_humiditystreak(times, temperatures, dewpoints, start, end)
 
-    # only flag the dewpoints
-    dewpoints.flags = utils.insert_flags(dewpoints.flags, flags)
+        # only flag the dewpoints
+        dewpoints.flags = utils.insert_flags(dewpoints.flags, flags)
         
     if diagnostics:
         

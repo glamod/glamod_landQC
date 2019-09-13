@@ -530,6 +530,11 @@ def fit_gaussian(x, y, norm, mu=MDI, sig=MDI, skew=MDI):
         mu=np.ma.mean(x)
     if sig == MDI:
         sig=np.ma.std(x)
+
+    if sig == 0:
+        # calculation of spread hasn't worked for some reason
+        sig = 3.*np.unique(np.diff(x))[0]
+
     if skew == MDI:
         p0 = np.array([norm, mu, sig])
         result = least_squares(residuals_gaussian, p0, args=(y, x), max_nfev=10000, verbose=0, method="lm")

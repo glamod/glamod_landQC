@@ -60,9 +60,8 @@ def identify_multiple_values(obs_var, times, config_file, plots=False, diagnosti
     value_diffs = np.ma.diff(obs_var.data)
 
     multiple_obs_at_time, = np.where(time_diffs == 0)
-    print("n multiple obs {}".format(len(multiple_obs_at_time)))
+
     suspect_locs, = np.ma.where(value_diffs[multiple_obs_at_time] != 0)
-    print("n multiple obs {}".format(len(suspect_locs)))
                      
     # set the first of the obs, then the second which make the diff
     flags[multiple_obs_at_time[suspect_locs]] = "T"
