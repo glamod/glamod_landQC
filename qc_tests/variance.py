@@ -176,6 +176,11 @@ def variance_check(obs_var, station, config_file, plots=False, diagnostics=False
                 else:
                     pressure_data = station.sea_level_pressure.data[ym_locs]
                     
+                if len(pressure_monthly_data.compressed()) < DATA_COUNT_THRESHOLD or \
+                        len(wind_monthly_data.compressed()) < DATA_COUNT_THRESHOLD:
+                    # need sufficient data to work with for storm check to work, else can't tell
+                    #    move on
+                    continue
                 
                 high_winds, = np.ma.where((wind_data - wind_average)/wind_spread > STORM_THRESHOLD)
                 low_pressures, = np.ma.where((pressure_average - pressure_data)/pressure_spread > STORM_THRESHOLD)

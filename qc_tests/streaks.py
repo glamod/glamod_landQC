@@ -95,14 +95,21 @@ def get_repeating_string_threshold(obs_var, config_file, plots=False, diagnostic
         this_var.data[calms] = utils.MDI
         this_var.data.mask[calms] = True
 
-    repeated_string_lengths, grouped_diffs, strings = prepare_data_repeating_string(this_var, plots=plots, diagnostics=diagnostics)
+    # only process further if there is enough data
+    if len(this_var.data.compressed()) > 1:
 
-    # bin width is 1 as dealing in time index.
-    # minimum bin value is 2 as this is the shortest string possible
-    threshold = utils.get_critical_values(repeated_string_lengths, binmin=2, binwidth=1.0, plots=plots, diagnostics=diagnostics, title=this_var.name.capitalize(), xlabel="Repeating string length")
+        repeated_string_lengths, grouped_diffs, strings = prepare_data_repeating_string(this_var, plots=plots, diagnostics=diagnostics)
 
-    # write out the thresholds...
-    utils.write_qc_config(config_file, "STREAK-{}".format(this_var.name), "Straight", "{}".format(threshold), diagnostics=diagnostics)
+        # bin width is 1 as dealing in time index.
+        # minimum bin value is 2 as this is the shortest string possible
+        threshold = utils.get_critical_values(repeated_string_lengths, binmin=2, binwidth=1.0, plots=plots, diagnostics=diagnostics, title=this_var.name.capitalize(), xlabel="Repeating string length")
+
+        # write out the thresholds...
+        utils.write_qc_config(config_file, "STREAK-{}".format(this_var.name), "Straight", "{}".format(threshold), diagnostics=diagnostics)
+
+    else:
+        # store high value so threshold never reached
+        utils.write_qc_config(config_file, "STREAK-{}".format(this_var.name), "Straight", "{}".format(-utils.MDI), diagnostics=diagnostics)
 
     return # repeating_string_threshold
 
@@ -143,24 +150,26 @@ def repeating_value(obs_var, times, config_file, plots=False, diagnostics=False)
         th = utils.read_qc_config(config_file, "STREAK-{}".format(this_var.name), "Straight")
         threshold["Straight"] = float(th)
 
-    repeated_string_lengths, grouped_diffs, strings = prepare_data_repeating_string(this_var, plots=plots, diagnostics=diagnostics)
+    # only process further if there is enough data
+    if len(this_var.data.compressed()) > 1:
+        repeated_string_lengths, grouped_diffs, strings = prepare_data_repeating_string(this_var, plots=plots, diagnostics=diagnostics)
 
-    # above threshold
-    bad, = np.where(repeated_string_lengths >= threshold["Straight"])
+        # above threshold
+        bad, = np.where(repeated_string_lengths >= threshold["Straight"])
 
-    # flag identified strings
-    for string in bad:
-        start = int(np.sum(grouped_diffs[:strings[string], 1]))
-        end = start + int(grouped_diffs[strings[string], 1]) + 1
+        # flag identified strings
+        for string in bad:
+            start = int(np.sum(grouped_diffs[:strings[string], 1]))
+            end = start + int(grouped_diffs[strings[string], 1]) + 1
 
-        compressed_flags[start : end] = "K"
+            compressed_flags[start : end] = "K"
 
-        if plots:
-            plot_streak(times, this_var, start, end)
+            if plots:
+                plot_streak(times, this_var, start, end)
 
-    # undo compression
-    flags[this_var.data.mask == False] = compressed_flags
-    this_var.flags = utils.insert_flags(this_var.flags, flags)
+        # undo compression
+        flags[this_var.data.mask == False] = compressed_flags
+        this_var.flags = utils.insert_flags(this_var.flags, flags)
 
     if diagnostics:
         
