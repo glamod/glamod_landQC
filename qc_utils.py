@@ -336,8 +336,8 @@ def get_critical_values(indata, binmin = 0, binwidth = 1, plots = False, diagnos
                 # remove inf's
                 goods, = np.where(central_hist != 0)
 
-                # if no short streaks for centre of distribution
-                if len(goods) == 0:
+                # if insufficient short streaks/small differences for centre of distribution
+                if len(goods) < 2:
                     threshold = max(indata) + binwidth
 
                 else:
