@@ -148,6 +148,11 @@ def pressure_offset(sealp, stnlp, times, config_file, plots=False, diagnostics=F
         # only flag the station level pressure
         stnlp.flags = utils.insert_flags(stnlp.flags, flags)
 
+    if diagnostics:
+        
+        print("Pressure {}".format(stnlp.name))
+        print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
+
     return # pressure_offset
 
 #************************************************************************

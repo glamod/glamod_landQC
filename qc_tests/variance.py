@@ -154,13 +154,20 @@ def variance_check(obs_var, station, config_file, plots=False, diagnostics=False
         # prepare wind and pressure data in case needed to check for storms
         if obs_var.name in ["station_level_pressure", "sea_level_pressure", "wind_speed"]:
             wind_monthly_data = station.wind_speed.data[month_locs]
-            wind_average = utils.average(wind_monthly_data)
-            wind_spread = utils.spread(wind_monthly_data)
-
             if obs_var.name in ["station_level_pressure", "sea_level_pressure"]:
                 pressure_monthly_data = obs_var.data[month_locs]
             else:
                 pressure_monthly_data = station.sea_level_pressure.data[month_locs]
+
+            if len(pressure_monthly_data.compressed()) < DATA_COUNT_THRESHOLD or \
+                    len(wind_monthly_data.compressed()) < DATA_COUNT_THRESHOLD:
+                # need sufficient data to work with for storm check to work, else can't tell
+                #    move on
+                continue
+
+            wind_average = utils.average(wind_monthly_data)
+            wind_spread = utils.spread(wind_monthly_data)
+
             pressure_average = utils.average(pressure_monthly_data)
             pressure_spread = utils.spread(pressure_monthly_data)
 
@@ -174,10 +181,10 @@ def variance_check(obs_var, station, config_file, plots=False, diagnostics=False
                 if obs_var.name in ["station_level_pressure", "sea_level_pressure"]:
                     pressure_data = obs_var.data[ym_locs]
                 else:
-                    pressure_data = station.sea_level_pressure.data[ym_locs]
-                    
-                if len(pressure_monthly_data.compressed()) < DATA_COUNT_THRESHOLD or \
-                        len(wind_monthly_data.compressed()) < DATA_COUNT_THRESHOLD:
+                    pressure_data = station.sea_level_pressure.data[ym_locs]                    
+
+                if len(pressure_data.compressed()) < DATA_COUNT_THRESHOLD or \
+                        len(wind_data.compressed()) < DATA_COUNT_THRESHOLD:
                     # need sufficient data to work with for storm check to work, else can't tell
                     #    move on
                     continue

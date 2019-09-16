@@ -298,66 +298,88 @@ def get_critical_values(indata, binmin = 0, binwidth = 1, plots = False, diagnos
 
         if len(full_hist) > 1:
 
-            # use only the central section (as long as it's not just 5 bins)
-            i = 0
-            limit = 0
-            while limit < 5:
-                # count outwards until there is a zero-valued bin
-                try:
-                    limit = np.argwhere(full_hist == 0)[i][0]
-                    i += 1
-                except IndexError:
-                    # no zero bins in this histogram
-                    limit = len(full_hist)
-                    break          
+            # use only the central section (as long as it's 5(10) or more bins)
+            for limit_threshold in [5, 10]:
+                i = 0
+                n_zeros = 0
+                limit = 0
+                while limit < limit_threshold:
+                    # count outwards until there is a zero-valued bin
+                    try:
+                        limit = np.argwhere(full_hist == 0)[i][0]
+                        n_zeros += 1
+                        i += 1
+                    except IndexError:
+                        # no zero bins in this histogram
+                        limit = len(full_hist)
+                        break
 
-            # use this central section for fitting
-            edges = full_edges[:limit]
-            central_hist = full_hist[:limit]
+                if n_zeros >=3 and limit == 5:
+                    # check the next limit
+                    pass
+                else:
+                    # got a decent enough central region
+                    #   or extended limit isn't enough either, caught later
+                    break
 
-            # remove inf's
-            goods, = np.where(central_hist != 0)
-            hist = central_hist[goods]
-            edges = edges[goods]
-
-            # and take log10
-            hist  = np.log10(hist)
-
-
-            # Working in log-yscale from hereon
-
-            # a 10^-bx
-            a = hist[np.argmax(hist)]
-            b = 1
-
-            p0 = np.array([a,b])
-            result=least_squares(residuals_linear, p0, args=(hist, edges), max_nfev=10000, verbose=0, method="lm")
-
-            fit = result.x
-
-            fit_curve = linear(full_edges, fit)
-
-            if fit[1] < 0:
-                # negative slope as expected
-
-                # where does *fit* fall below log10(0.1) = -1, then..
-                try:
-                    fit_below_point1, = np.argwhere(fit_curve < -1)[0]
-
-                    # find first empty bin after that
-                    first_zero_bin, = np.argwhere(full_hist[fit_below_point1:] == 0)[0]
-                    threshold = binwidth * (binmin + fit_below_point1 + first_zero_bin)
-
-                except IndexError:
-                    # too shallow a decay - use default maximum.  Retains all data
-                    threshold = len(full_hist)*binwidth
+            if limit == 10 and n_zeros >= 7:
+                # extended central bit is mainly zeros
+                # can't continue
+                threshold = max(indata) + binwidth
 
             else:
-                # positive slope - likely malformed distribution.  Retains all data
-                threshold = len(full_hist)*binwidth
 
-            if plots:
-                plot_log_distribution(full_edges, full_hist, fit_curve, threshold, line_label, xlabel, title)
+                # use this central section for fitting
+                edges = full_edges[:limit]
+                central_hist = full_hist[:limit]
+
+                # remove inf's
+                goods, = np.where(central_hist != 0)
+
+                # if no short streaks for centre of distribution
+                if len(goods) == 0:
+                    threshold = max(indata) + binwidth
+
+                else:
+                    hist = central_hist[goods]
+                    edges = edges[goods]
+
+                    # and take log10
+                    hist  = np.log10(hist)
+
+                    # Working in log-yscale from hereon
+                    # a 10^-bx
+                    a = hist[np.argmax(hist)]
+                    b = 1
+
+                    p0 = np.array([a,b])
+                    result=least_squares(residuals_linear, p0, args=(hist, edges), max_nfev=10000, verbose=0, method="lm")
+
+                    fit = result.x
+
+                    fit_curve = linear(full_edges, fit)
+
+                    if fit[1] < 0:
+                        # negative slope as expected
+
+                        # where does *fit* fall below log10(0.1) = -1, then..
+                        try:
+                            fit_below_point1, = np.argwhere(fit_curve < -1)[0]
+
+                            # find first empty bin after that
+                            first_zero_bin, = np.argwhere(full_hist[fit_below_point1:] == 0)[0]
+                            threshold = binwidth * (binmin + fit_below_point1 + first_zero_bin)
+
+                        except IndexError:
+                            # too shallow a decay - use default maximum.  Retains all data
+                            threshold = len(full_hist)*binwidth
+
+                    else:
+                        # positive slope - likely malformed distribution.  Retains all data
+                        threshold = len(full_hist)*binwidth
+
+                    if plots:
+                        plot_log_distribution(full_edges, full_hist, fit_curve, threshold, line_label, xlabel, title)
 
         else:
             threshold = max(indata) + binwidth

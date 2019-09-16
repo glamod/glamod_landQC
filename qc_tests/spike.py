@@ -241,37 +241,52 @@ def identify_spikes(obs_var, times, config_file, plots=False, diagnostics=False)
 
             if is_spike:
                 # test either side (either before or after is too big)
-                before_t_diff = time_diffs[possible_in_spike - 1]
-                if time_diffs.mask[possible_in_spike - 1] == False:
-                    try:
+                try:
+                    before_t_diff = time_diffs[possible_in_spike - 1]
+                    if time_diffs.mask[possible_in_spike - 1] == False:
                         before_critical_value = critical_values[before_t_diff]
-                    except KeyError:
-                        # don't have a value for this time difference, so use the maximum of all as a proxy
+                    else:
+                        # time difference masked
                         before_critical_value = max(critical_values.values())                    
-                else:
-                    # time difference masked
+                except KeyError:
+                    # don't have a value for this time difference, so use the maximum of all as a proxy
+                    before_critical_value = max(critical_values.values())
+                except IndexError:
+                    # off the front of the data array
                     before_critical_value = max(critical_values.values())                    
-                    
 
-                after_t_diff = time_diffs[possible_in_spike + spike_len + 1]
-                if time_diffs.mask[possible_in_spike + spike_len + 1] == False:
-                    try:
+                try:
+                    after_t_diff = time_diffs[possible_in_spike + spike_len + 1]
+                    if time_diffs.mask[possible_in_spike + spike_len + 1] == False:
                         after_critical_value = critical_values[after_t_diff]
-                    except KeyError:
-                        # don't have a value for this time difference, so use the maximum of all as a proxy
-                        after_critical_value = max(critical_values.values())
-                else:
-                    # time difference masked
+                    else:
+                        # time difference masked
+                        after_critical_value = max(critical_values.values())                    
+                except KeyError:
+                    # don't have a value for this time difference, so use the maximum of all as a proxy
+                    after_critical_value = max(critical_values.values())
+                except IndexError:
+                    # off the back of the data array
                     after_critical_value = max(critical_values.values())                    
 
-                if value_diffs.mask[possible_in_spike - 1] == False:
-                    if value_diffs[possible_in_spike - 1] > before_critical_value/2.:
-                        # before spike fails test
-                        is_spike = False
-                if value_diffs.mask[possible_in_spike + spike_len + 1] == False:
-                    if value_diffs[possible_in_spike + spike_len + 1] > after_critical_value/2.:
-                        # after spike fails test
-                        is_spike = False
+                try:
+                    if value_diffs.mask[possible_in_spike - 1] == False:
+                        if value_diffs[possible_in_spike - 1] > before_critical_value/2.:
+                            # before spike fails test
+                            is_spike = False
+
+                except IndexError:
+                    # off the front of the data array
+                    pass
+                    
+                try:
+                    if value_diffs.mask[possible_in_spike + spike_len + 1] == False:
+                        if value_diffs[possible_in_spike + spike_len + 1] > after_critical_value/2.:
+                            # after spike fails test
+                            is_spike = False
+                except IndexError:
+                    # off the back of the data array
+                    pass
 
             # if the spike is still set, set the flags
             if is_spike:

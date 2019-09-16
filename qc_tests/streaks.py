@@ -88,6 +88,7 @@ def get_repeating_string_threshold(obs_var, config_file, plots=False, diagnostic
     """
 
     # TODO - how to cope with varying time or measurement resolutions
+    # TODO - what if there are only a few "normal" values and otherwise long strings (AGM00060374 20190916)
 
     this_var = copy.deepcopy(obs_var)
     if obs_var.name == "wind_speed":
