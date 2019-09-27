@@ -15,7 +15,7 @@ STORM_THRESHOLD = 4
 MIN_VARIANCES = 10
 SPREAD_THRESHOLD = 8.
 MIN_VALUES = 30
-DATA_COUNT_THRESHOLD = 120
+
 #************************************************************************
 def prepare_data(obs_var, station, month, diagnostics=False, winsorize=True):
     """
@@ -50,7 +50,7 @@ def prepare_data(obs_var, station, month, diagnostics=False, winsorize=True):
             if len(hour_data.compressed()) > 10:
                 hour_data = utils.winsorize(hour_data, 50)
 
-        if len(hour_data.compressed()) >= DATA_COUNT_THRESHOLD:
+        if len(hour_data.compressed()) >= utils.DATA_COUNT_THRESHOLD:
             hourly_clims[hour] = np.ma.mean(hour_data)
             hourly_clims.mask[hour] = False
 
@@ -159,8 +159,8 @@ def variance_check(obs_var, station, config_file, plots=False, diagnostics=False
             else:
                 pressure_monthly_data = station.sea_level_pressure.data[month_locs]
 
-            if len(pressure_monthly_data.compressed()) < DATA_COUNT_THRESHOLD or \
-                    len(wind_monthly_data.compressed()) < DATA_COUNT_THRESHOLD:
+            if len(pressure_monthly_data.compressed()) < utils.DATA_COUNT_THRESHOLD or \
+                    len(wind_monthly_data.compressed()) < utils.DATA_COUNT_THRESHOLD:
                 # need sufficient data to work with for storm check to work, else can't tell
                 #    move on
                 continue
@@ -183,8 +183,8 @@ def variance_check(obs_var, station, config_file, plots=False, diagnostics=False
                 else:
                     pressure_data = station.sea_level_pressure.data[ym_locs]                    
 
-                if len(pressure_data.compressed()) < DATA_COUNT_THRESHOLD or \
-                        len(wind_data.compressed()) < DATA_COUNT_THRESHOLD:
+                if len(pressure_data.compressed()) < utils.DATA_COUNT_THRESHOLD or \
+                        len(wind_data.compressed()) < utils.DATA_COUNT_THRESHOLD:
                     # need sufficient data to work with for storm check to work, else can't tell
                     #    move on
                     continue

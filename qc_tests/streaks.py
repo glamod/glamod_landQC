@@ -19,8 +19,6 @@ import numpy as np
 
 import qc_utils as utils
 
-DATA_COUNT_THRESHOLD = 120
-
 
 #*********************************************
 def plot_streak(times, obs_var, streak_start, streak_end):

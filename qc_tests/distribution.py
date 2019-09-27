@@ -14,7 +14,6 @@ import qc_utils as utils
 #************************************************************************
 STORM_THRESHOLD = 5
 
-DATA_COUNT_THRESHOLD = 50 
 VALID_MONTHS = 5
 MIN_OBS = 28*2 # two obs per day for the month (minimum subdaily)
 SPREAD_LIMIT = 2 # two IQR/MAD/STD
@@ -216,7 +215,7 @@ def prepare_all_data(obs_var, station, month, config_file, full=False, diagnosti
 
     if full:
 
-        if len(all_month_data.compressed()) > DATA_COUNT_THRESHOLD:
+        if len(all_month_data.compressed()) >= utils.DATA_COUNT_THRESHOLD:
             # have data, now to standardise
             climatology = utils.average(all_month_data) # mean
             spread = utils.spread(all_month_data) # IQR currently
@@ -235,7 +234,7 @@ def prepare_all_data(obs_var, station, month, config_file, full=False, diagnosti
             spread = float(utils.read_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-spread".format(month)))        
         except KeyError:
             
-            if len(all_month_data.compressed()) > DATA_COUNT_THRESHOLD:
+            if len(all_month_data.compressed()) >= utils.DATA_COUNT_THRESHOLD:
                 # have data, now to standardise
                 climatology = utils.average(all_month_data) # mean
                 spread = utils.spread(all_month_data) # IQR currently
@@ -419,8 +418,8 @@ def all_obs_gap(obs_var, station, config_file, plots=False, diagnostics=False):
                     wind_monthly_data = prepare_monthly_data(station.wind_speed, station, month)
                     pressure_monthly_data = prepare_monthly_data(obs_var, station, month)
 
-                    if len(pressure_monthly_data.compressed()) < DATA_COUNT_THRESHOLD or \
-                            len(wind_monthly_data.compressed()) < DATA_COUNT_THRESHOLD:
+                    if len(pressure_monthly_data.compressed()) < utils.DATA_COUNT_THRESHOLD or \
+                            len(wind_monthly_data.compressed()) < utils.DATA_COUNT_THRESHOLD:
                         # need sufficient data to work with for storm check to work, else can't tell
                         pass
                     else:

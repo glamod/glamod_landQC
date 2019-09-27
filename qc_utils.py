@@ -14,7 +14,6 @@ from scipy.optimize import least_squares
 
 UNIT_DICT = {"temperature" : "degrees C", "dew_point_temperature" :  "degrees C", "wind_direction" :  "degrees", "wind_speed" : "meters per second", "sea_level_pressure" : "hPa hectopascals", "station_level_pressure" : "hPa hectopascals"}
 MDI = -1.e30
-MIN_NOBS = 100
 
 
 #*********************************************
@@ -31,7 +30,7 @@ config = configparser.ConfigParser()
 config.read(CONFIG_FILE)
 
 #*********************************************
-# statistics
+# Statistics
 MEAN = config.getboolean("STATISTICS", "mean")
 MEDIAN = config.getboolean("STATISTICS", "median")
 if MEAN == MEDIAN:
@@ -47,6 +46,10 @@ MAD = config.getboolean("STATISTICS", "mad")
 if sum([STDEV, MAD, IQR]) >= 2:
     print("Configuration file STATISTICS entry malformed. One of stdev, iqr, median only")
     sys.exit
+
+#*********************************************
+# Thresholds
+DATA_COUNT_THRESHOLD = config.getint("THRESHOLDS", "min_data_count")
 
 
 #*********************************************
@@ -619,3 +622,122 @@ def find_gap(hist, bins, threshold, gap_size, upwards=True):
             break
 
     return gap_start # find_gap
+
+#*********************************************
+def reporting_accuracy(indata, winddir = False, plots = False):
+    '''
+    Uses histogram of remainders to look for special values
+
+    :param array indata: masked array
+    :param bool winddir: true if processing wind directions
+    :param bool plots: make plots (winddir only)
+
+    :returns: resolution - reporting accuracy (resolution) of data
+    '''
+    
+    
+    good_values = indata.compressed()
+
+    resolution = -1
+    if winddir:
+        # 360/36/16/8/ compass points ==> 1/10/22.5/45/90 deg resolution
+        if len(good_values) > 0:
+
+            hist, binEdges = np.histogram(good_values, bins = np.arange(0, 362, 1))
+
+            # normalise
+            hist = hist / float(sum(hist))
+
+            #
+            if sum(hist[np.arange(90, 360+90, 90)]) >= 0.6:
+                resolution = 90
+            elif sum(hist[np.arange(45, 360+45, 45)]) >= 0.6:
+                resolution = 45
+            elif sum(hist[np.round(0.1 + np.arange(22.5, 360+22.5, 22.5)).astype("int")]) >= 0.6:
+                # added 0.1 because of floating point errors!
+                resolution = 22
+            elif sum(hist[np.arange(10, 360+10, 10)]) >= 0.6:
+                resolution = 10
+            else:
+                resolution = 1
+
+            print("Wind dir resolution = {} degrees".format(resolution))
+            if plots:
+                import matplotlib.pyplot as plt
+                plt.clf()
+                plt.hist(good_values, bins = np.arange(0,362,1))
+                plt.show()
+        
+    else:
+        if len(good_values) > 0:
+
+            remainders = np.abs(good_values) - np.floor(np.abs(good_values))
+
+            hist, binEdges = np.histogram(remainders, bins = np.arange(-0.05, 1.05, 0.1))
+
+            # normalise
+            hist = hist / float(sum(hist))
+
+            if hist[0] >= 0.3:
+                if hist[5] >= 0.15:
+                    resolution = 0.5
+                else:
+                    resolution = 1.0
+            else:
+                resolution = 0.1
+
+    return resolution # reporting_accuracy
+
+#*********************************************
+def reporting_frequency(intimes, inobs):
+    '''
+    Uses histogram of remainders to look for special values
+
+    Works on hourly and above or minute data separately
+
+    :param array intimes: array of panda datetimes
+    :param array inobs: masked array
+    :returns: frequency - reporting frequency of data (minutes)
+    '''
+        
+    masked_times = np.ma.masked_array(intimes, mask = inobs.mask)
+
+    frequency = -1
+    if len(masked_times) > 0:
+
+        difference_series = np.ma.diff(masked_times)/np.timedelta64(1, "m")
+
+        if np.unique(difference_series)[0] >= 60:
+            # then most likely hourly or beyond
+            
+            difference_series = difference_series/60.
+
+            hist, binEdges = np.histogram(difference_series, bins = np.arange(1, 25, 1), density=True)
+            # 1,2,3,6 hours
+            if hist[0] >= 0.5:
+                frequency = 60
+            elif hist[1] >= 0.5:
+                frequency = 120
+            elif hist[2] >= 0.5:
+                frequency = 180
+            elif hist[3] >= 0.5:
+                frequency = 240
+            elif hist[5] >= 0.5:
+                frequency = 360
+            else:
+                frequency = 1440
+
+        else:
+            # have to think about minutes
+            hist, binEdges = np.histogram(difference_series, bins = np.arange(1, 60, 1), density=True)
+            # 1,5,10 minutes
+            if hist[0] >= 0.5:
+                frequency = 1
+            elif hist[4] >= 0.5:
+                frequency = 5
+            elif hist[9] >= 0.5:
+                frequency = 10
+            else:
+                frequency = 60
+       
+    return frequency # reporting_frequency

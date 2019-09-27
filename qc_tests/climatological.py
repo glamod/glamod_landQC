@@ -15,7 +15,6 @@ import qc_utils as utils
 FREQUENCY_THRESHOLD = 0.1
 GAP_SIZE = 2
 BIN_WIDTH = 0.5
-DATA_COUNT_THRESHOLD = 120
 
 #************************************************************************
 def get_weights(monthly_anoms, monthly_subset, filter_subset):
@@ -100,7 +99,7 @@ def prepare_data(obs_var, station, month, diagnostics=False, winsorize=True):
     mlocs, = np.where(station.months == month)
 
     # need to have some data!
-    if len(mlocs) > DATA_COUNT_THRESHOLD:
+    if len(mlocs) >= utils.DATA_COUNT_THRESHOLD:
 
         anomalies.mask[mlocs] = False
         normed_anomalies.mask[mlocs] = False        
@@ -118,7 +117,7 @@ def prepare_data(obs_var, station, month, diagnostics=False, winsorize=True):
                 if len(hour_data.compressed()) > 10:
                     hour_data = utils.winsorize(hour_data, 5)
 
-            if len(hour_data) >= DATA_COUNT_THRESHOLD:
+            if len(hour_data) >= utils.DATA_COUNT_THRESHOLD:
                 hourly_clims[hour] = np.ma.mean(hour_data)
                 hourly_clims.mask[hour] = False
 
@@ -126,7 +125,7 @@ def prepare_data(obs_var, station, month, diagnostics=False, winsorize=True):
             anomalies[hlocs] = obs_var.data[hlocs] - hourly_clims[hour]
 
         # if insufficient data at each hour, then no anomalies calculated
-        if len(anomalies[mlocs].compressed()) > DATA_COUNT_THRESHOLD:
+        if len(anomalies[mlocs].compressed()) >= utils.DATA_COUNT_THRESHOLD:
 
             # for the month, normalise anomalies by spread
             spread = utils.spread(anomalies[mlocs])
@@ -172,7 +171,7 @@ def find_month_thresholds(obs_var, station, config_file, plots=False, diagnostic
 
         normalised_anomalies = prepare_data(obs_var, station, month, diagnostics=diagnostics, winsorize=winsorize)
 
-        if len(normalised_anomalies.compressed()) > DATA_COUNT_THRESHOLD:
+        if len(normalised_anomalies.compressed()) >= utils.DATA_COUNT_THRESHOLD:
         
             bins = utils.create_bins(normalised_anomalies, BIN_WIDTH)
             hist, bin_edges = np.histogram(normalised_anomalies.compressed(), bins)
@@ -236,7 +235,7 @@ def monthly_clim(obs_var, station, config_file, logfile="", plots=False, diagnos
         # note these are for the whole record, just this month is unmasked
         normalised_anomalies = prepare_data(obs_var, station, month, diagnostics=diagnostics, winsorize=winsorize)
         
-        if len(normalised_anomalies.compressed()) > DATA_COUNT_THRESHOLD:
+        if len(normalised_anomalies.compressed()) >= utils.DATA_COUNT_THRESHOLD:
 
             bins = utils.create_bins(normalised_anomalies, BIN_WIDTH)
             hist, bin_edges = np.histogram(normalised_anomalies.compressed(), bins)

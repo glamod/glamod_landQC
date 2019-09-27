@@ -13,7 +13,6 @@ import qc_utils as utils
 # TODO - factorise, as code currently duplicated between ID and flag defs.
 
 ROLLING = 7
-MIN_OBS = 10
 BIN_WIDTH = 1.0
 RATIO = 0.5
 
@@ -42,12 +41,19 @@ def identify_values(obs_var, station, config_file, plots=False, diagnostics=Fals
 
         month_data = obs_var.data[locs]
 
-        if len(month_data.compressed()) < MIN_OBS:
+        if len(month_data.compressed()) < utils.DATA_COUNT_THRESHOLD:
             # insufficient data, so write out empty config and move on
             utils.write_qc_config(config_file, "FREQUENT-{}".format(obs_var.name), "{}".format(month), "[{}]".format(",".join(str(s) for s in [])), diagnostics=diagnostics)
             continue
 
-        bins = utils.create_bins(month_data, BIN_WIDTH)
+        # adjust bin widths according to reporting accuracy
+        resolution = utils.reporting_accuracy(month_data)
+
+        if resolution <= 0.5:
+            bins = utils.create_bins(month_data, 0.5) 
+        else:
+            bins = utils.create_bins(month_data, 1.0) 
+            
         hist, bin_edges = np.histogram(month_data, bins)
 
         # diagnostic plots
@@ -70,7 +76,7 @@ def identify_values(obs_var, station, config_file, plots=False, diagnostics=Fals
                 target_bins = hist[b-(ROLLING//2) : b + (ROLLING//2) + 1]
                 
                 # if sufficient obs, maximum and contains > 50%, but not all, of the data
-                if bar >= MIN_OBS:
+                if bar >= utils.DATA_COUNT_THRESHOLD:
                     if bar == target_bins.max():
                         if (bar/target_bins.sum()) > RATIO:
                             suspect += [bins[b]]
@@ -138,7 +144,13 @@ def frequent_values(obs_var, station, config_file, plots=False, diagnostics=Fals
 
             month_flags = np.array(["" for i in range(month_data.shape[0])])
 
-            bins = utils.create_bins(month_data, width)
+            # adjust bin widths according to reporting accuracy
+            resolution = utils.reporting_accuracy(month_data)
+            
+            if resolution <= 0.5:
+                bins = utils.create_bins(month_data, 0.5) 
+            else:
+                bins = utils.create_bins(month_data, 1.0) 
             hist, bin_edges = np.histogram(month_data, bins)
            
             # Scan through the histogram
@@ -149,7 +161,7 @@ def frequent_values(obs_var, station, config_file, plots=False, diagnostics=Fals
                     target_bins = hist[b-(ROLLING//2) : b + (ROLLING//2) + 1]
 
                     # if sufficient obs, maximum and contains > 50% of data
-                    if bar > MIN_OBS:
+                    if bar >= utils.DATA_COUNT_THRESHOLD:
                         if bar == target_bins.max():
                             if (bar/target_bins.sum()) > RATIO:
                                 # this bin meets all the criteria

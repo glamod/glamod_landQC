@@ -82,7 +82,7 @@ def get_critical_values(obs_var, times, config_file, plots=False, diagnostics=Fa
         first_differences = value_diffs[locs]
 
         # ensure sufficient non-masked observations
-        if len(first_differences.compressed()) > utils.MIN_NOBS:
+        if len(first_differences.compressed()) >= utils.DATA_COUNT_THRESHOLD:
 
             # fit decay curve to one-sided distribution
             c_value = utils.get_critical_values(first_differences.compressed(), binmin=0, binwidth=0.5, plots=plots, diagnostics=diagnostics, xlabel="First differences", title="Spike - {} - {}m".format(obs_var.name.capitalize(), t_diff))
@@ -95,7 +95,7 @@ def get_critical_values(obs_var, times, config_file, plots=False, diagnostics=Fa
         else:
             if diagnostics:
                 print("   Time Difference: {} minutes".format(t_diff))
-                print("      Number of obs insufficient: {} < {}".format(len(first_differences.compressed()), utils.MIN_NOBS))
+                print("      Number of obs insufficient: {} < {}".format(len(first_differences.compressed()), utils.DATA_COUNT_THRESHOLD))
 
 
     return # get_critical_values

@@ -13,7 +13,6 @@ import qc_utils as utils
 # TODO - move threshold into a config file?
 THRESHOLD = 4 # min spread of 1hPa, so only outside +/-4hPa flagged.
 
-MIN_OBS = 10
 MIN_SPREAD = 1.0
 
 #*********************************************
@@ -66,7 +65,7 @@ def identify_values(sealp, stnlp, times, config_file, plots=False, diagnostics=F
 
     difference = sealp.data - stnlp.data
 
-    if len(difference.compressed()) >= MIN_OBS:
+    if len(difference.compressed()) >= utils.DATA_COUNT_THRESHOLD:
 
         average = utils.average(difference)
         spread = utils.spread(difference)
@@ -96,7 +95,7 @@ def pressure_offset(sealp, stnlp, times, config_file, plots=False, diagnostics=F
 
     difference = sealp.data - stnlp.data
 
-    if len(difference.compressed()) >= MIN_OBS:
+    if len(difference.compressed()) >= utils.DATA_COUNT_THRESHOLD:
 
         try:
             average = float(utils.read_qc_config(config_file, "PRESSURE", "average"))
@@ -116,7 +115,7 @@ def pressure_offset(sealp, stnlp, times, config_file, plots=False, diagnostics=F
 
         # diagnostic plots
         if plots:
-            bins = np.spread(np.round(average)-1, np.round(average)+1, 0.1)
+            bins = np.arange(np.round(average)-1, np.round(average)+1, 0.1)
             import matplotlib.pyplot as plt
             plt.clf()
             plt.hist(difference.compressed(), bins=bins)

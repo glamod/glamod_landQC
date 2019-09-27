@@ -52,7 +52,7 @@ def get_repeating_dpd_threshold(temperatures, dewpoints, config_file, plots=Fals
     # find only the DPD=0 locations, and then see if there are streaks
     locs, = np.ma.where(dpd == 0)
 
-    # only process further if there are rnough locations
+    # only process further if there are enough locations
     if len(locs) > 1:
         repeated_string_lengths, grouped_diffs, strings = prepare_data_repeating_dpd(locs, plots=plots, diagnostics=diagnostics)
 
