@@ -1,9 +1,9 @@
 '''
-Create batches of stations to run in parallel on e.g. LOTUS
+Create batches of stations to run in parallel on e.g. LOTUS to allow Rose suite to schedule
 
-create_batches.py invoked by typing::
+run_batches_rose.py invoked by typing::
 
-  python create_batches.py --batch --total --stage [--full]
+  python run_batches_rose.py --batch --total --stage [--full]
 
 Input arguments:
 

@@ -11,6 +11,8 @@ import configparser
 import json
 from scipy.optimize import least_squares
 
+import setup
+
 
 UNIT_DICT = {"temperature" : "degrees C", "dew_point_temperature" :  "degrees C", "wind_direction" :  "degrees", "wind_speed" : "meters per second", "sea_level_pressure" : "hPa hectopascals", "station_level_pressure" : "hPa hectopascals"}
 MDI = -1.e30
@@ -91,6 +93,36 @@ class Station(object):
     __repr__ = __str__
 
     
+#************************************************************************
+def get_station_list(restart_id="", end_id=""):
+    """
+    Read in station list file(s) and return dataframe
+
+    :param str restart_id: which station to start on
+    :param str end_id: which station to end on
+
+    :returns: dataframe of station list
+    """
+
+    # process the station list
+    station_list = pd.read_fwf(os.path.join(setup.SUBDAILY_IN_DIR, "ghcnh-stations.txt"), widths=(11, 9, 10, 7, 35), header=None)
+    station_list2 = pd.read_fwf(os.path.join(setup.SUBDAILY_IN_DIR, "ghcnh-stations-2add.txt"), widths=(11, 9, 10, 7, 35), header=None)
+
+    station_list.append(station_list2, ignore_index=True)
+    station_IDs = station_list.iloc[:, 0]
+
+    # work from the end to save messing up the start indexing
+    if end_id != "":
+        endindex, = np.where(station_IDs == end_id)
+        station_list = station_list.iloc[: endindex[0]+1]
+
+    # and do the front
+    if restart_id != "":
+        startindex, = np.where(station_IDs == restart_id)
+        station_list = station_list.iloc[startindex[0]:]
+
+    return station_list # get_station_list
+
 #************************************************************************
 def read_qc_config(config_filename, section, field, islist=False):
     """

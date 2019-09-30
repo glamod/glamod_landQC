@@ -56,20 +56,9 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
     obs_var_list = setup.obs_var_list
 
     # process the station list
-    station_list = pd.read_fwf(os.path.join(setup.SUBDAILY_IN_DIR, "ghcnh-stations.txt"), widths=(11, 9, 10, 7, 35), header=None)
+    station_list = utils.get_station_list(restart_id=restart_id, end_id=end_id)
+
     station_IDs = station_list.iloc[:, 0]
-
-    # work from the end to save messing up the start indexing
-    if end_id != "":
-        endindex, = np.where(station_IDs == end_id)
-        station_list = station_list.iloc[: endindex[0]+1]
-        station_IDs = station_IDs[: endindex[0]+1]
-
-    # and do the front
-    if restart_id != "":
-        startindex, = np.where(station_IDs == restart_id)
-        station_list = station_list.iloc[startindex[0]:]
-        station_IDs = station_IDs[startindex[0] :]
 
     # now spin through each ID in the curtailed list
     for st, station_id in enumerate(station_IDs):
