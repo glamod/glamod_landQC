@@ -96,8 +96,8 @@ if __name__ == "__main__":
 
     # intra-station checks
     if args.stage == "I":
-        run_intra_station_checks(restart_id=args.restart_id,
-                   end_id=args.end_id,
+        run_intra_station_checks(restart_id=restart_id,
+                   end_id=end_id,
                    full=args.full)
 
 #************************************************************************
