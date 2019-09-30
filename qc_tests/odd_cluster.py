@@ -11,8 +11,8 @@ import qc_utils as utils
 #************************************************************************
 
 MAX_LENGTH_OBS = 6 # up to X data points
-MAX_LENGTH_TIME = 24 # within a max of Y hours
-MIN_SEPARATION = 48 # separated by Z hours on either side from other data
+MAX_LENGTH_TIME = 12 # within a max of Y hours
+MIN_SEPARATION = 7*24 # separated by Z hours on either side from other data
 
 
 #*********************************************
