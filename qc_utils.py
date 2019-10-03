@@ -108,7 +108,7 @@ def get_station_list(restart_id="", end_id=""):
     station_list = pd.read_fwf(os.path.join(setup.SUBDAILY_IN_DIR, "ghcnh-stations.txt"), widths=(11, 9, 10, 7, 35), header=None)
     station_list2 = pd.read_fwf(os.path.join(setup.SUBDAILY_IN_DIR, "ghcnh-stations-2add.txt"), widths=(11, 9, 10, 7, 35), header=None)
 
-    station_list.append(station_list2, ignore_index=True)
+    station_list = station_list.append(station_list2, ignore_index=True)
     station_IDs = station_list.iloc[:, 0]
 
     # work from the end to save messing up the start indexing
