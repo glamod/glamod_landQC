@@ -6,8 +6,8 @@ Humidity Cross Checks
 2. Check and flag instances of dew point depression
 """
 #************************************************************************
-import numpy as np
 import itertools
+import numpy as np
 
 import qc_utils as utils
 
@@ -28,7 +28,7 @@ def prepare_data_repeating_dpd(locs, plots=False, diagnostics=False):
     # group the differences
     #     array of (value_diff, count) pairs
     grouped_diffs = np.array([[g[0], len(list(g[1]))] for g in itertools.groupby(index_diffs)])
-    
+
     # all adjacent values, hence difference in array-index is 1
     strings, = np.where(grouped_diffs[:, 0] == 1)
     repeated_string_lengths = grouped_diffs[strings, 1] + 1
@@ -65,7 +65,7 @@ def get_repeating_dpd_threshold(temperatures, dewpoints, config_file, plots=Fals
     else:
         # store high value so threshold never reached
         utils.write_qc_config(config_file, "HUMIDITY", "DPD", "{}".format(-utils.MDI), diagnostics=diagnostics)
-        
+
 
     return # repeating_dpd_threshold
 
@@ -82,7 +82,7 @@ def plot_humidities(T, D, times, bad):
     :returns:
     '''
     import matplotlib.pyplot as plt
-        
+
     pad_start = bad - 24
     if pad_start < 0:
         pad_start = 0
@@ -94,9 +94,9 @@ def plot_humidities(T, D, times, bad):
     plt.clf()
     plt.plot(times[pad_start : pad_end], T.data[pad_start : pad_end], 'k-', marker=".", label=T.name.capitalize())
     plt.plot(times[pad_start : pad_end], D.data[pad_start : pad_end], 'b-', marker=".", label=D.name.capitalize())
-    plt.plot(times[bad], D.data[bad], 'r*', ms=10)    
+    plt.plot(times[bad], D.data[bad], 'r*', ms=10)
 
-    plt.legend(loc = "upper right")
+    plt.legend(loc="upper right")
     plt.ylabel(T.units)
     plt.show()
 
@@ -116,7 +116,7 @@ def plot_humidity_streak(times, T, D, streak_start, streak_end):
     :returns:
     '''
     import matplotlib.pyplot as plt
-        
+
     pad_start = streak_start - 48
     if pad_start < 0:
         pad_start = 0
@@ -128,8 +128,8 @@ def plot_humidity_streak(times, T, D, streak_start, streak_end):
     plt.clf()
     plt.plot(times[pad_start: pad_end], T.data.compressed()[pad_start: pad_end], 'k-', marker=".", label=T.name.capitalize())
     plt.plot(times[pad_start: pad_end], D.data.compressed()[pad_start: pad_end], 'b-', marker=".", label=D.name.capitalize())
-    plt.plot(times[streak_start: streak_end], T_var.data.compressed()[streak_start: streak_end], 'k-', marker=".", label=T.name.capitalize())    
-    plt.plot(times[streak_start: streak_end], D_var.data.compressed()[streak_start: streak_end], 'b-', marker=".", label=D.name.capitalize())    
+    plt.plot(times[streak_start: streak_end], T_var.data.compressed()[streak_start: streak_end], 'k-', marker=".", label=T.name.capitalize())
+    plt.plot(times[streak_start: streak_end], D_var.data.compressed()[streak_start: streak_end], 'b-', marker=".", label=D.name.capitalize())
 
     plt.ylabel(obs_var.units)
     plt.show()
@@ -163,9 +163,9 @@ def super_saturation_check(times, temperatures, dewpoints, plots=False, diagnost
     if plots:
         for bad in sss:
             plot_humidities(temperatures, dewpoints, times, bad)
-        
+
     if diagnostics:
-        
+
         print("Supersaturation {}".format(dewpoints.name))
         print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
 
@@ -222,9 +222,9 @@ def dew_point_depression_streak(times, temperatures, dewpoints, config_file, plo
 
         # only flag the dewpoints
         dewpoints.flags = utils.insert_flags(dewpoints.flags, flags)
-        
+
     if diagnostics:
-        
+
         print("Dewpoint Depression {}".format(dewpoints.name))
         print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
 
@@ -263,6 +263,6 @@ def hcc(station, config_file, full=False, plots=False, diagnostics=False):
 
 #************************************************************************
 if __name__ == "__main__":
-    
+
     print("humidity cross checks")
 #************************************************************************

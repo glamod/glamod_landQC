@@ -23,7 +23,6 @@ Input arguments:
 #************************************************************************
 import os
 import datetime as dt
-import numpy as np
 import pandas as pd
 
 # internal utils
@@ -214,7 +213,7 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         if diagnostics or plots:
 #            input("end")
             break
-        
+
     return # run_checks
 
 #************************************************************************

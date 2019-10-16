@@ -58,7 +58,7 @@ def logical_checks(speed, direction, fix=False, plots=False, diagnostics=False):
     dflags[wrapped_direction] = "w"
     if diagnostics:
         print("  Wrapped direction : {}".format(len(wrapped_direction[0])))
-    
+
     # no direction possible if speed == 0
     bad_direction = np.ma.where(np.logical_and(speed.data == 0, direction.data != 0))
     dflags[bad_direction] = "w"
@@ -70,17 +70,17 @@ def logical_checks(speed, direction, fix=False, plots=False, diagnostics=False):
     sflags[bad_speed] = "w"
     if diagnostics:
         print("  Bad speed : {}".format(len(bad_speed[0])))
-    
+
     # copy flags into attribute
     speed.flags = utils.insert_flags(speed.flags, sflags)
     direction.flags = utils.insert_flags(direction.flags, dflags)
 
     if diagnostics:
-        
+
         print("Wind Logical".format(speed.name))
         print("   Cumulative number of {} flags set: {}".format(speed.name, len(np.where(sflags != "")[0])))
         print("   Cumulative number of {} flags set: {}".format(direction.name, len(np.where(dflags != "")[0])))
-    
+
     return # logical_checks
 
 #************************************************************************
@@ -105,6 +105,6 @@ def wcc(station, config_file, fix=False, full=False, plots=False, diagnostics=Fa
 
 #************************************************************************
 if __name__ == "__main__":
-    
+
     print("pressure cross checks")
 #************************************************************************

@@ -11,7 +11,6 @@ Repeated Streaks Check
    Some thresholds now determined dynamically
 """
 #************************************************************************
-import sys
 import copy
 import itertools
 import numpy as np
@@ -33,7 +32,7 @@ def plot_streak(times, obs_var, streak_start, streak_end):
     :returns:
     '''
     import matplotlib.pyplot as plt
-        
+
     pad_start = streak_start - 48
     if pad_start < 0:
         pad_start = 0
@@ -44,7 +43,7 @@ def plot_streak(times, obs_var, streak_start, streak_end):
     # simple plot
     plt.clf()
     plt.plot(times[pad_start: pad_end], obs_var.data.compressed()[pad_start: pad_end], 'ko', )
-    plt.plot(times[streak_start: streak_end], obs_var.data.compressed()[streak_start: streak_end], 'ro')    
+    plt.plot(times[streak_start: streak_end], obs_var.data.compressed()[streak_start: streak_end], 'ro')
 
     plt.ylabel(obs_var.units)
     plt.show()
@@ -67,7 +66,7 @@ def prepare_data_repeating_string(obs_var, plots=False, diagnostics=False):
     # group the differences
     #     array of (value_diff, count) pairs
     grouped_diffs = np.array([[g[0], len(list(g[1]))] for g in itertools.groupby(value_diffs)])
-    
+
     # all string lengths
     strings, = np.where(grouped_diffs[:, 0] == 0)
     repeated_string_lengths = grouped_diffs[strings, 1] + 1
@@ -171,7 +170,7 @@ def repeating_value(obs_var, times, config_file, plots=False, diagnostics=False)
         this_var.flags = utils.insert_flags(this_var.flags, flags)
 
     if diagnostics:
-        
+
         print("Repeated Strings {}".format(this_var.name))
         print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
 
@@ -180,7 +179,7 @@ def repeating_value(obs_var, times, config_file, plots=False, diagnostics=False)
 
 #************************************************************************
 def excess_repeating_value():
-    
+
     # more than expected number of short strings during a given period, but each individually not enough to set of main test
     # HadISD - proportion of each year identified by strings, if >5x median, then remove these
 
@@ -223,7 +222,7 @@ def rsc(station, var_list, config_file, full=False, plots=False, diagnostics=Fal
     for var in var_list:
 
         obs_var = getattr(station, var)
-    
+
         # need to have at least two observations to get a streak
         if len(obs_var.data.compressed()) >= 2:
 
@@ -247,6 +246,6 @@ def rsc(station, var_list, config_file, full=False, plots=False, diagnostics=Fal
 
 #************************************************************************
 if __name__ == "__main__":
-    
+
     print("checking repeated strings")
 #************************************************************************

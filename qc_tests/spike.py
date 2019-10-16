@@ -24,7 +24,7 @@ def plot_spike(times, obs_var, spike_start, spike_length):
     :returns:
     '''
     import matplotlib.pyplot as plt
-        
+
     # simple plot
     plt.clf()
     pad_start = spike_start-24
@@ -34,9 +34,9 @@ def plot_spike(times, obs_var, spike_start, spike_length):
     if pad_end > len(obs_var.data):
         pad_end = len(obs_var.data)
 
-    plt.plot(times[pad_start: pad_end], obs_var.data[pad_start: pad_end], 'k-', marker=".")        
+    plt.plot(times[pad_start: pad_end], obs_var.data[pad_start: pad_end], 'k-', marker=".")
 
-    plt.plot(times[spike_start: spike_start+spike_length], obs_var.data[spike_start: spike_start+spike_length], 'r*', ms=10)    
+    plt.plot(times[spike_start: spike_start+spike_length], obs_var.data[spike_start: spike_start+spike_length], 'r*', ms=10)
 
     plt.ylabel(obs_var.name.capitalize())
     plt.show()
@@ -60,7 +60,7 @@ def get_critical_values(obs_var, times, config_file, plots=False, diagnostics=Fa
     # TODO don't run using flagged data
     # TODO monthly?
  
-    masked_times = np.ma.masked_array(times, mask = obs_var.data.mask)
+    masked_times = np.ma.masked_array(times, mask=obs_var.data.mask)
 
     time_diffs = np.ma.diff(masked_times)/np.timedelta64(1, "m") # presuming minutes
     value_diffs = np.ma.diff(obs_var.data)
@@ -115,8 +115,8 @@ def identify_spikes(obs_var, times, config_file, plots=False, diagnostics=False)
     # TODO check works with missing data (compressed?)
     # TODO monthly?
 
-    masked_times = np.ma.masked_array(times, mask = obs_var.data.mask)
-   
+    masked_times = np.ma.masked_array(times, mask=obs_var.data.mask)
+
     time_diffs = np.ma.diff(masked_times)/np.timedelta64(1, "m") # presuming minutes
     value_diffs = np.ma.diff(obs_var.data)
 
@@ -164,7 +164,7 @@ def identify_spikes(obs_var, times, config_file, plots=False, diagnostics=False)
 
         # new blank flag array
         flags = np.array(["" for i in range(obs_var.data.shape[0])])
-        
+
         t_locs, = np.where(time_diffs == t_diff)
 
         try:
@@ -175,7 +175,7 @@ def identify_spikes(obs_var, times, config_file, plots=False, diagnostics=False)
 
         # TODO - sort spikes at very beginning or very end of sequence, 
         #    when don't have a departure from/return to a normal level
-        
+
         # potential spikes
         for ps, possible_in_spike in enumerate(t_locs[c_locs]):
             is_spike = False
@@ -203,8 +203,8 @@ def identify_spikes(obs_var, times, config_file, plots=False, diagnostics=False)
                 else:
                     # time or value difference masked
                     out_critical_value = max(critical_values.values())
-                    
-                    
+
+
                 if np.abs(possible_out_spike) > out_critical_value:
                     # check that the signs are opposite
                     if np.sign(value_diffs[possible_in_spike]) != np.sign(value_diffs[possible_in_spike + spike_len]):
@@ -229,14 +229,14 @@ def identify_spikes(obs_var, times, config_file, plots=False, diagnostics=False)
                     else:
                         # time difference masked
                         within_critical_value = max(critical_values.values())
-                        
+
                     if value_diffs.mask[possible_in_spike + within] == False:
                         if value_diffs[possible_in_spike + within] > within_critical_value/2.:
                             is_spike = False 
                     else:
                         # if masked then no data, so can't say if it's not a spike
                         pass
-                        
+
                     within += 1
 
             if is_spike:
@@ -247,13 +247,13 @@ def identify_spikes(obs_var, times, config_file, plots=False, diagnostics=False)
                         before_critical_value = critical_values[before_t_diff]
                     else:
                         # time difference masked
-                        before_critical_value = max(critical_values.values())                    
+                        before_critical_value = max(critical_values.values())
                 except KeyError:
                     # don't have a value for this time difference, so use the maximum of all as a proxy
                     before_critical_value = max(critical_values.values())
                 except IndexError:
                     # off the front of the data array
-                    before_critical_value = max(critical_values.values())                    
+                    before_critical_value = max(critical_values.values())
 
                 try:
                     after_t_diff = time_diffs[possible_in_spike + spike_len + 1]
@@ -261,13 +261,13 @@ def identify_spikes(obs_var, times, config_file, plots=False, diagnostics=False)
                         after_critical_value = critical_values[after_t_diff]
                     else:
                         # time difference masked
-                        after_critical_value = max(critical_values.values())                    
+                        after_critical_value = max(critical_values.values())
                 except KeyError:
                     # don't have a value for this time difference, so use the maximum of all as a proxy
                     after_critical_value = max(critical_values.values())
                 except IndexError:
                     # off the back of the data array
-                    after_critical_value = max(critical_values.values())                    
+                    after_critical_value = max(critical_values.values())
 
                 try:
                     if value_diffs.mask[possible_in_spike - 1] == False:
@@ -278,7 +278,7 @@ def identify_spikes(obs_var, times, config_file, plots=False, diagnostics=False)
                 except IndexError:
                     # off the front of the data array
                     pass
-                    
+
                 try:
                     if value_diffs.mask[possible_in_spike + spike_len + 1] == False:
                         if value_diffs[possible_in_spike + spike_len + 1] > after_critical_value/2.:
@@ -295,7 +295,7 @@ def identify_spikes(obs_var, times, config_file, plots=False, diagnostics=False)
 
                 # diagnostic plots
                 if plots:
-                    plot_spike(times, obs_var, possible_in_spike+1, spike_len)                     
+                    plot_spike(times, obs_var, possible_in_spike+1, spike_len)
 
         obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
@@ -327,7 +327,7 @@ def sc(station, var_list, config_file, full=False, plots=False, diagnostics=Fals
         # decide whether to recalculate
         if full:
             get_critical_values(obs_var, station.times, config_file, plots=plots, diagnostics=diagnostics)
-            
+
         identify_spikes(obs_var, station.times, config_file, plots=plots, diagnostics=diagnostics)
 
     return  # sc
@@ -335,6 +335,6 @@ def sc(station, var_list, config_file, full=False, plots=False, diagnostics=Fals
 
 #************************************************************************
 if __name__ == "__main__":
-    
+
     print("checking for short period spikes")
 #************************************************************************

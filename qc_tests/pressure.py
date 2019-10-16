@@ -15,6 +15,7 @@ THRESHOLD = 4 # min spread of 1hPa, so only outside +/-4hPa flagged.
 
 MIN_SPREAD = 1.0
 
+
 #*********************************************
 def plot_pressure(sealp, stnlp, times, bad):
     '''
@@ -28,22 +29,22 @@ def plot_pressure(sealp, stnlp, times, bad):
     :returns:
     '''
     import matplotlib.pyplot as plt
-    
+
     pad_start = bad - 24
     if pad_start < 0:
         pad_start = 0
     pad_end = bad + 24
-    if pad_end > len(obs_var.data):
-        pad_end = len(obs_var.data)
-    
+    if pad_end > len(sealp.data):
+        pad_end = len(sealp.data)
+
     # simple plot
     plt.clf()
     plt.plot(times[pad_start : pad_end], sealp.data[pad_start : pad_end], 'k-', marker=".", label=sealp.name.capitalize())
     plt.plot(times[pad_start : pad_end], stnlp.data[pad_start : pad_end], 'b-', marker=".", label=stnlp.name.capitalize())
-    plt.plot(times[bad], sealp.data[bad], 'r*', ms=10)    
-    plt.plot(times[bad], stnlp.data[bad], 'r*', ms=10)    
+    plt.plot(times[bad], sealp.data[bad], 'r*', ms=10)
+    plt.plot(times[bad], stnlp.data[bad], 'r*', ms=10)
 
-    plt.legend(loc = "upper right")
+    plt.legend(loc="upper right")
     plt.ylabel(sealp.units)
 
     plt.show()
@@ -148,11 +149,73 @@ def pressure_offset(sealp, stnlp, times, config_file, plots=False, diagnostics=F
         stnlp.flags = utils.insert_flags(stnlp.flags, flags)
 
     if diagnostics:
-        
+
         print("Pressure {}".format(stnlp.name))
         print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
 
     return # pressure_offset
+
+#*********************************************
+def calc_slp(stnlp, elevation, temperature):
+    '''
+    Suggestion from Scott Stevens to calculate the SLP from the StnLP
+    Presumes 15C if no temperature available
+    '''
+    filled_temperature = np.ma.copy(temperature)
+
+    # find locations where we could calculate the SLP, but temperatures are missing
+    missing_Ts, = np.where(np.logical_and(filled_temperature.mask == True, stnlp.mask == False))
+    if len(missing_Ts) > 0:
+        filled_temperature[missing_Ts] = 15.0
+
+    factor = (1. - ((0.0065*elevation) / ((filled_temperature+273.15) + (0.0065*elevation))))
+
+    sealp = stnlp * (factor ** -5.257)    
+
+    return sealp # calc_slp
+
+#************************************************************************
+def pressure_theory(sealp, stnlp, temperature, times, elevation, plots=False, diagnostics=False):
+    """
+    Flag locations where difference between recorded and calculated sea-level pressure 
+    falls outside of bounds
+
+    :param MetVar sealp: sea level pressure object
+    :param MetVar stnlp: station level pressure object
+    :param MetVar temperature: temperature object
+    :param array times: datetime array
+    :param float elevation: station elevation (m)
+    :param bool plots: turn on plots
+    :param bool diagnostics: turn on diagnostic output
+    """
+
+    flags = np.array(["" for i in range(sealp.data.shape[0])])
+
+    theoretical_value = calc_slp(stnlp.data, elevation, temperature.data)
+
+    difference = sealp.data - theoretical_value
+
+    bad_locs, = np.where(np.abs(difference) > THRESHOLD)
+
+    if len(bad_locs) != 0:
+        flags[bad_locs] = "p"
+        if diagnostics:
+            print("Pressure".format(stnlp.name))
+            print("   Number of mismatches between recorded and theoretical SLPs {}".format(len(bad_locs)))
+        if plots:
+            for bad in bad_locs:
+                plot_pressure(sealp, stnlp, times, bad)
+
+    # flag both as not sure immediately where the issue lies
+    stnlp.flags = utils.insert_flags(stnlp.flags, flags)
+    sealp.flags = utils.insert_flags(sealp.flags, flags)
+
+    if diagnostics:
+
+        print("Pressure {}".format(stnlp.name))
+        print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
+
+    return # pressure_theory
 
 #************************************************************************
 def pcc(station, config_file, full=False, plots=False, diagnostics=False):
@@ -173,10 +236,13 @@ def pcc(station, config_file, full=False, plots=False, diagnostics=False):
         identify_values(sealp, stnlp, station.times, config_file, plots=plots, diagnostics=diagnostics)
     pressure_offset(sealp, stnlp, station.times, config_file, plots=plots, diagnostics=diagnostics)
 
+    temperature = getattr(station, "temperature")
+    pressure_theory(sealp, stnlp, temperature, station.times, station.elev, plots=plots, diagnostics=diagnostics)
+
     return # pcc
 
 #************************************************************************
 if __name__ == "__main__":
-    
+
     print("pressure cross checks")
 #************************************************************************

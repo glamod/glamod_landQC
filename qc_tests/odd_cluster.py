@@ -24,11 +24,11 @@ def plot_cluster(times, obs_var, oc_start, oc_end):
     :param MetVar obs_var: Meteorological variable object
     :param int oc_start: start of cluster in data array index
     :param int oc_end: end of cluster in data array index
-    
+
     :returns:
     '''
     import matplotlib.pyplot as plt
-    
+
     # sort the padding
     if oc_start == 0:
         start = 0
@@ -41,8 +41,8 @@ def plot_cluster(times, obs_var, oc_start, oc_end):
     else:
         end = oc_end + 20
         if end > len(times):
-            end = len(times)        
-    
+            end = len(times)
+
     # simple plot
     plt.clf()
     plt.plot(times[start: end], obs_var.data[start, end], 'bo')
@@ -108,7 +108,7 @@ def flag_clusters(obs_var, station, plots=False, diagnostics=False):
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
     if diagnostics:
-        
+
         print("Odd Cluster {}".format(obs_var.name))
         print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
 
@@ -138,6 +138,6 @@ def occ(station, var_list, config_file, full=False, plots=False, diagnostics=Fal
 
 #************************************************************************
 if __name__ == "__main__":
-    
+
     print("checking gaps in distributions")
 #************************************************************************

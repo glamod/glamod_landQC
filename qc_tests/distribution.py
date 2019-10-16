@@ -33,7 +33,7 @@ def prepare_monthly_data(obs_var, station, month, diagnostics=False):
     """
 
     all_years = np.unique(station.years)
-    
+
     month_averages = []
     # spin through each year to get average for the calendar month selected
     for year in all_years:
@@ -62,7 +62,7 @@ def find_monthly_scaling(obs_var, station, config_file, diagnostics=False):
     """
 
     all_years = np.unique(station.years)
-    
+
     for month in range(1, 13):
 
         month_averages = prepare_monthly_data(obs_var, station, month, diagnostics=diagnostics)
@@ -100,7 +100,7 @@ def monthly_gap(obs_var, station, config_file, plots=False, diagnostics=False):
 
     flags = np.array(["" for i in range(obs_var.data.shape[0])])
     all_years = np.unique(station.years)
-    
+
     for month in range(1, 13):
 
         month_averages = prepare_monthly_data(obs_var, station, month, diagnostics=diagnostics)
@@ -143,12 +143,12 @@ def monthly_gap(obs_var, station, config_file, plots=False, diagnostics=False):
         while good:
 
             if standardised_months[sort_order][mid_point - step] != standardised_months[sort_order][mid_point + step]:
-                
+
                 suspect_months = [standardised_months[sort_order][mid_point - step], standardised_months[sort_order][mid_point + step]]
-                
+
                 if min(suspect_months) != 0:
                     # not all clustered at origin
-                    
+
                     if max(suspect_months)/min(suspect_months) >= 2. and min(suspect_months) >= 1.5:
                         # at least 1.5x spread from centre and difference of two in location (longer tail)
                         # flag everything further from this bin for that tail
@@ -163,7 +163,7 @@ def monthly_gap(obs_var, station, config_file, plots=False, diagnostics=False):
             if step == mid_point:
                 # reached end
                 break
-    
+
         # now follow flag locations back up through the process
         for bad_month_id in bad:
             # year ID for this set of calendar months
@@ -171,10 +171,10 @@ def monthly_gap(obs_var, station, config_file, plots=False, diagnostics=False):
                 if year == bad_month_id:
                     locs, = np.where(np.logical_and(station.months == month, station.years == year))
                     flags[locs] = "D"
-                    
+
         if plots:
             import matplotlib.pyplot as plt
-            
+
             plt.step(bins[1:], hist, color='k', where="pre")
             if len(bad) > 0:
                 bad_hist, dummy = np.histogram(standardised_months[bad], bins)
@@ -184,13 +184,13 @@ def monthly_gap(obs_var, station, config_file, plots=False, diagnostics=False):
             plt.xlabel(obs_var.name.capitalize())
             plt.title("{} - month {}".format(station.id, month))
 
-            plt.show()       
+            plt.show()
 
     # append flags to object
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
     if diagnostics:
-        
+
         print("Distribution (monthly) {}".format(obs_var.name))
         print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
 
@@ -226,14 +226,14 @@ def prepare_all_data(obs_var, station, month, config_file, full=False, diagnosti
         # write out the scaling...
         utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-clim".format(month), "{}".format(climatology), diagnostics=diagnostics)
         utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-spread".format(month), "{}".format(spread), diagnostics=diagnostics)
-        
+
     else:
 
         try:
             climatology = float(utils.read_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-clim".format(month)))
-            spread = float(utils.read_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-spread".format(month)))        
+            spread = float(utils.read_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-spread".format(month)))
         except KeyError:
-            
+
             if len(all_month_data.compressed()) >= utils.DATA_COUNT_THRESHOLD:
                 # have data, now to standardise
                 climatology = utils.average(all_month_data) # mean
@@ -245,7 +245,7 @@ def prepare_all_data(obs_var, station, month, config_file, full=False, diagnosti
              # write out the scaling...
             utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-clim".format(month), "{}".format(climatology), diagnostics=diagnostics)
             utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-spread".format(month), "{}".format(spread), diagnostics=diagnostics)
-        
+
 
     if climatology == utils.MDI and spread == utils.MDI:
         # these weren't calculable, move on
@@ -268,7 +268,7 @@ def find_thresholds(obs_var, station, config_file, plots=False, diagnostics=Fals
     :param bool diagnostics: turn on diagnostic output
     """
 
-  
+
     for month in range(1, 13):
 
         normalised_anomalies = prepare_all_data(obs_var, station, month, config_file, full=True, diagnostics=diagnostics)
@@ -358,7 +358,7 @@ def all_obs_gap(obs_var, station, config_file, plots=False, diagnostics=False):
     """
 
     flags = np.array(["" for i in range(obs_var.data.shape[0])])
-    
+
     for month in range(1, 13):
 
         normalised_anomalies = prepare_all_data(obs_var, station, month, config_file, full=False, diagnostics=diagnostics)
@@ -378,7 +378,7 @@ def all_obs_gap(obs_var, station, config_file, plots=False, diagnostics=False):
             find_thresholds(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
             upper_threshold = float(utils.read_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-uthresh".format(month)))
             lower_threshold = float(utils.read_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-lthresh".format(month)))
-            
+
 
         if upper_threshold == utils.MDI and lower_threshold == utils.MDI:
             # these weren't able to be calculated, move on
@@ -390,7 +390,7 @@ def all_obs_gap(obs_var, station, config_file, plots=False, diagnostics=False):
         # now to find the gaps
         uppercount = len(np.where(normalised_anomalies > upper_threshold)[0])
         lowercount = len(np.where(normalised_anomalies < lower_threshold)[0])
-        
+
         month_locs, = np.where(station.months == month) # append should keep year order
         if uppercount > 0:
             gap_start = utils.find_gap(hist, bins, upper_threshold, GAP_SIZE)
@@ -401,7 +401,7 @@ def all_obs_gap(obs_var, station, config_file, plots=False, diagnostics=False):
                 month_flags = flags[month_locs]
                 month_flags[bad_locs] = "d"
                 flags[month_locs] = month_flags
-                                       
+
         if lowercount > 0:
             gap_start = utils.find_gap(hist, bins, lower_threshold, GAP_SIZE, upwards=False)
 
@@ -455,7 +455,7 @@ def all_obs_gap(obs_var, station, config_file, plots=False, diagnostics=False):
                                 if len(separations) != 0:
                                     # multiple storm signals 
                                     storm_start = 0
-                                    storm_finish = separations[0] + 1                                           
+                                    storm_finish = separations[0] + 1
                                     first_storm = expand_around_storms(storms[storm_start: storm_finish], len(wind_data))
                                     final_storm_locs = copy.deepcopy(first_storm)
 
@@ -484,7 +484,7 @@ def all_obs_gap(obs_var, station, config_file, plots=False, diagnostics=False):
                             # unset the flags
                             if len(storms) > 0:
                                 month_flags[this_year_locs][final_storm_locs] = ""
-                            
+
                 # having checked for storms now store final flags
                 flags[month_locs] = month_flags
 
@@ -509,12 +509,12 @@ def all_obs_gap(obs_var, station, config_file, plots=False, diagnostics=False):
             plt.step(bins[1:], bad_hist, color='r', where="pre")
 
             plt.show()
-                        
+
     # append flags to object
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
     if diagnostics:
-        
+
         print("Distribution (all) {}".format(obs_var.name))
         print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
 
@@ -536,7 +536,7 @@ def dgc(station, var_list, config_file, full=False, plots=False, diagnostics=Fal
     for var in var_list:
 
         obs_var = getattr(station, var)
-        
+
         # no point plotting twice!
         gplots = plots
         if plots and full:
@@ -546,7 +546,7 @@ def dgc(station, var_list, config_file, full=False, plots=False, diagnostics=Fal
         if full:
             find_monthly_scaling(obs_var, station, config_file, diagnostics=diagnostics)
         monthly_gap(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
-        
+
         # all observations gap
         if full:
             find_thresholds(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
@@ -557,6 +557,6 @@ def dgc(station, var_list, config_file, full=False, plots=False, diagnostics=Fal
 
 #************************************************************************
 if __name__ == "__main__":
-    
+
     print("checking gaps in distributions")
 #************************************************************************

@@ -3,12 +3,12 @@ qc_utils.py contains utility scripts to help with quality control tests
 '''
 import sys
 import os
+import configparser
+import json
 import pandas as pd
 import numpy as np
 import scipy.special
 
-import configparser
-import json
 from scipy.optimize import least_squares
 
 import setup
@@ -261,7 +261,7 @@ def populate_station(station, df, obs_var_list):
     return # populate_station
 
 #*********************************************
-def IQR(data, percentile = 0.25):
+def IQR(data, percentile=0.25):
     ''' Calculate the IQR of the data '''
 
     try:
@@ -277,7 +277,7 @@ def IQR(data, percentile = 0.25):
     return sorted_data[n_data - quartile] - sorted_data[quartile] # IQR
     
 #*********************************************
-def mean_absolute_deviation(data, median = False):    
+def mean_absolute_deviation(data, median=False):    
     ''' Calculate the MAD of the data '''
     
     if median:
@@ -289,7 +289,7 @@ def mean_absolute_deviation(data, median = False):
     return mad # mean_absolute_deviation
 
 #*********************************************
-def linear(X,p):
+def linear(X, p):
     '''
     decay function for line fitting
     p[0]=intercept
@@ -302,13 +302,13 @@ def residuals_linear(p, Y, X):
     '''
     Least squared residuals from linear trend
     '''
-    err = ((Y-linear(X,p))**2.0)
+    err = ((Y-linear(X, p))**2.0)
 
     return err # residuals_linear
 
 #*********************************************
-def get_critical_values(indata, binmin = 0, binwidth = 1, plots = False, diagnostics = False, \
-                        line_label = "", xlabel = "", title = "", old_threshold = 0):
+def get_critical_values(indata, binmin=0, binwidth=1, plots=False, diagnostics=False, \
+                        line_label="", xlabel="", title="", old_threshold=0):
     """
     Plot histogram on log-y scale and fit 1/x decay curve to set threshold
 
@@ -329,7 +329,7 @@ def get_critical_values(indata, binmin = 0, binwidth = 1, plots = False, diagnos
 
         # set up the bins and make a histogram.  Use Absolute values
         bins = np.arange(binmin, 2 * max(np.ceil(np.abs(indata))), binwidth)
-        full_hist, full_edges = np.histogram(np.abs(indata), bins = bins)
+        full_hist, full_edges = np.histogram(np.abs(indata), bins=bins)
 
         if len(full_hist) > 1:
 
@@ -349,7 +349,7 @@ def get_critical_values(indata, binmin = 0, binwidth = 1, plots = False, diagnos
                         limit = len(full_hist)
                         break
 
-                if n_zeros >=3 and limit == 5:
+                if n_zeros >= 3 and limit == 5:
                     # check the next limit
                     pass
                 else:
@@ -380,15 +380,15 @@ def get_critical_values(indata, binmin = 0, binwidth = 1, plots = False, diagnos
                     edges = edges[goods]
 
                     # and take log10
-                    hist  = np.log10(hist)
+                    hist = np.log10(hist)
 
                     # Working in log-yscale from hereon
                     # a 10^-bx
                     a = hist[np.argmax(hist)]
                     b = 1
 
-                    p0 = np.array([a,b])
-                    result=least_squares(residuals_linear, p0, args=(hist, edges), max_nfev=10000, verbose=0, method="lm")
+                    p0 = np.array([a, b])
+                    result = least_squares(residuals_linear, p0, args=(hist, edges), max_nfev=10000, verbose=0, method="lm")
 
                     fit = result.x
 
@@ -451,7 +451,7 @@ def plot_log_distribution(edges, hist, fit, threshold, line_label, xlabel, title
     
     plt.axvline(threshold, c='r', label="threshold = {}".format(threshold))
     
-    plt.legend(loc = "upper right")
+    plt.legend(loc="upper right")
     plt.title(title)
        
     plt.show()
@@ -548,7 +548,7 @@ def residuals_skew_gaussian(p, Y, X):
     '''
     Least squared residuals from linear trend
     '''
-    err = ((Y-skew_gaussian(X,p))**2.0)
+    err = ((Y-skew_gaussian(X, p))**2.0)
 
     return err # residuals_skew_gaussian
 
@@ -568,7 +568,7 @@ def residuals_gaussian(p, Y, X):
     '''
     Least squared residuals from linear trend
     '''
-    err = ((Y-gaussian(X,p))**2.0)
+    err = ((Y-gaussian(X, p))**2.0)
 
     return err # residuals_gaussian
 
@@ -584,9 +584,9 @@ def fit_gaussian(x, y, norm, mu=MDI, sig=MDI, skew=MDI):
       fit - array of [norm,mu,sigma,(skew)]
     '''
     if mu == MDI:
-        mu=np.ma.mean(x)
+        mu = np.ma.mean(x)
     if sig == MDI:
-        sig=np.ma.std(x)
+        sig = np.ma.std(x)
 
     if sig == 0:
         # calculation of spread hasn't worked for some reason
@@ -656,7 +656,7 @@ def find_gap(hist, bins, threshold, gap_size, upwards=True):
     return gap_start # find_gap
 
 #*********************************************
-def reporting_accuracy(indata, winddir = False, plots = False):
+def reporting_accuracy(indata, winddir=False, plots=False):
     '''
     Uses histogram of remainders to look for special values
 
@@ -675,7 +675,7 @@ def reporting_accuracy(indata, winddir = False, plots = False):
         # 360/36/16/8/ compass points ==> 1/10/22.5/45/90 deg resolution
         if len(good_values) > 0:
 
-            hist, binEdges = np.histogram(good_values, bins = np.arange(0, 362, 1))
+            hist, binEdges = np.histogram(good_values, bins=np.arange(0, 362, 1))
 
             # normalise
             hist = hist / float(sum(hist))
@@ -697,7 +697,7 @@ def reporting_accuracy(indata, winddir = False, plots = False):
             if plots:
                 import matplotlib.pyplot as plt
                 plt.clf()
-                plt.hist(good_values, bins = np.arange(0,362,1))
+                plt.hist(good_values, bins=np.arange(0, 362, 1))
                 plt.show()
         
     else:
@@ -705,7 +705,7 @@ def reporting_accuracy(indata, winddir = False, plots = False):
 
             remainders = np.abs(good_values) - np.floor(np.abs(good_values))
 
-            hist, binEdges = np.histogram(remainders, bins = np.arange(-0.05, 1.05, 0.1))
+            hist, binEdges = np.histogram(remainders, bins=np.arange(-0.05, 1.05, 0.1))
 
             # normalise
             hist = hist / float(sum(hist))
@@ -732,7 +732,7 @@ def reporting_frequency(intimes, inobs):
     :returns: frequency - reporting frequency of data (minutes)
     '''
         
-    masked_times = np.ma.masked_array(intimes, mask = inobs.mask)
+    masked_times = np.ma.masked_array(intimes, mask=inobs.mask)
 
     frequency = -1
     if len(masked_times) > 0:
@@ -744,7 +744,7 @@ def reporting_frequency(intimes, inobs):
             
             difference_series = difference_series/60.
 
-            hist, binEdges = np.histogram(difference_series, bins = np.arange(1, 25, 1), density=True)
+            hist, binEdges = np.histogram(difference_series, bins=np.arange(1, 25, 1), density=True)
             # 1,2,3,6 hours
             if hist[0] >= 0.5:
                 frequency = 60
@@ -761,7 +761,7 @@ def reporting_frequency(intimes, inobs):
 
         else:
             # have to think about minutes
-            hist, binEdges = np.histogram(difference_series, bins = np.arange(1, 60, 1), density=True)
+            hist, binEdges = np.histogram(difference_series, bins=np.arange(1, 60, 1), density=True)
             # 1,5,10 minutes
             if hist[0] >= 0.5:
                 frequency = 1

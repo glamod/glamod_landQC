@@ -20,7 +20,7 @@ def plot_multiple(times, obs_var, start):
     :returns:
     '''
     import matplotlib.pyplot as plt
-        
+
     # simple plot
     plt.clf()
     pad_start = start-24
@@ -30,9 +30,9 @@ def plot_multiple(times, obs_var, start):
     if pad_end > len(obs_var.data):
         pad_end = len(obs_var.data)
 
-    plt.plot(times[pad_start: pad_end], obs_var.data[pad_start: pad_end], 'k-', marker=".")        
+    plt.plot(times[pad_start: pad_end], obs_var.data[pad_start: pad_end], 'k-', marker=".")
 
-    plt.plot(times[start: start+1], obs_var.data[start: start+1], 'r*', ms=10)    
+    plt.plot(times[start: start+1], obs_var.data[start: start+1], 'r*', ms=10)
 
     plt.ylabel(obs_var.name.capitalize())
     plt.show()
@@ -53,7 +53,7 @@ def identify_multiple_values(obs_var, times, config_file, plots=False, diagnosti
 
     # TODO check works with missing data (compressed?)
     # TODO monthly?
-   
+
     flags = np.array(["" for i in range(obs_var.data.shape[0])])
 
     time_diffs = np.ma.diff(times)/np.timedelta64(1, "m") # presuming minutes
@@ -62,15 +62,15 @@ def identify_multiple_values(obs_var, times, config_file, plots=False, diagnosti
     multiple_obs_at_time, = np.where(time_diffs == 0)
 
     suspect_locs, = np.ma.where(value_diffs[multiple_obs_at_time] != 0)
-                     
+
     # set the first of the obs, then the second which make the diff
     flags[multiple_obs_at_time[suspect_locs]] = "T"
     flags[multiple_obs_at_time[suspect_locs]+1] = "T"
-        
+
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
     if diagnostics:
-        
+
         print("Timestamp {}".format(obs_var.name))
         print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
 
@@ -101,6 +101,6 @@ def tsc(station, var_list, config_file, full=False, plots=False, diagnostics=Fal
 
 #************************************************************************
 if __name__ == "__main__":
-    
+
     print("checking for more than one value at a single timestamp")
 #************************************************************************

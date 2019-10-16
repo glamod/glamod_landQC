@@ -53,13 +53,13 @@ def identify_values(obs_var, station, config_file, plots=False, diagnostics=Fals
             bins = utils.create_bins(month_data, 0.5) 
         else:
             bins = utils.create_bins(month_data, 1.0) 
-            
+
         hist, bin_edges = np.histogram(month_data, bins)
 
         # diagnostic plots
         if plots:
             import matplotlib.pyplot as plt
-            
+
             plt.step(bins[1:], hist, color='k', where="pre")
             plt.yscale("log")
 
@@ -72,9 +72,9 @@ def identify_values(obs_var, station, config_file, plots=False, diagnostics=Fals
         suspect = []
         for b, bar in enumerate(hist):
             if (b > ROLLING//2) and (b <= (len(hist) - ROLLING//2)):
-                
+
                 target_bins = hist[b-(ROLLING//2) : b + (ROLLING//2) + 1]
-                
+
                 # if sufficient obs, maximum and contains > 50%, but not all, of the data
                 if bar >= utils.DATA_COUNT_THRESHOLD:
                     if bar == target_bins.max():
@@ -89,8 +89,8 @@ def identify_values(obs_var, station, config_file, plots=False, diagnostics=Fals
                     bad_hist[b] = 0
 
             plt.step(bins[1:], bad_hist, color='r', where="pre")
-            plt.show()       
-            
+            plt.show()
+
 
         # write out the thresholds...
         utils.write_qc_config(config_file, "FREQUENT-{}".format(obs_var.name), "{}".format(month), "[{}]".format(",".join(str(s) for s in suspect)), diagnostics=diagnostics)
@@ -146,13 +146,13 @@ def frequent_values(obs_var, station, config_file, plots=False, diagnostics=Fals
 
             # adjust bin widths according to reporting accuracy
             resolution = utils.reporting_accuracy(month_data)
-            
+
             if resolution <= 0.5:
                 bins = utils.create_bins(month_data, 0.5) 
             else:
                 bins = utils.create_bins(month_data, 1.0) 
             hist, bin_edges = np.histogram(month_data, bins)
-           
+
             # Scan through the histogram
             #   check if a bin is the maximum of a local area ("ROLLING")
             for b, bar in enumerate(hist):
@@ -176,7 +176,7 @@ def frequent_values(obs_var, station, config_file, plots=False, diagnostics=Fals
         # diagnostic plots
         if plots:
             import matplotlib.pyplot as plt
-            
+
             plt.step(bins[1:], hist, color='k', where="pre")
             plt.yscale("log")
 
@@ -190,13 +190,13 @@ def frequent_values(obs_var, station, config_file, plots=False, diagnostics=Fals
                     bad_hist[b] = 0
 
             plt.step(bins[1:], bad_hist, color='r', where="pre")
-            plt.show()       
-                                   
+            plt.show()
+
     # append flags to object
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
     if diagnostics:
-        
+
         print("Frequent Values {}".format(obs_var.name))
         print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
 
@@ -224,7 +224,7 @@ def fvc(station, var_list, config_file, full=False, plots=False, diagnostics=Fal
         if plots and full:
             fplots = False
 
-        # Frequent Values  
+        # Frequent Values
         if full:
             identify_values(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
 
@@ -235,6 +235,6 @@ def fvc(station, var_list, config_file, full=False, plots=False, diagnostics=Fal
 
 #************************************************************************
 if __name__ == "__main__":
-    
+
     print("checking frequent values")
 #************************************************************************

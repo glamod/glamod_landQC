@@ -26,11 +26,11 @@ SINE_CURVE = (np.sin(2.*np.pi* np.arange((24*60), dtype=(np.float64)) / (24.*60.
 def quartile_check(minutes):
     """
     Check if >=3 quartiles of the day have data
-    
+
     :param array minutes: minutes of day where there are data
     :returns: boolean
     """
-    
+
     quartile_has_data = np.zeros(4)
 
     for minute in minutes:
@@ -83,26 +83,26 @@ def find_fit(this_day, this_day_mins):
     # head up the sides (out of the well of the minimum) 
     #     and get the spread once greater than critical
     """
-     |                                                         
-     |                             uncertainty                
-     |                            |-----------|                
-     |                                                         
- D   |   *  *  *                                      *  *  *  
- i   |            *  *                          *  *           
- f   |                  *                    *                 
- f   |                     *              *                    
- s   |                                                         
-     |                        *        *                       
-     |                                                         
-     |                                                         
-     |                           *  *  <---- Min Diff                
-     |                                                         
-     |                                                         
-     |                                                         
-     |                                                         
+     |
+     |                             uncertainty
+     |                            |-----------|
+     |
+ D   |   *  *  *                                      *  *  *
+ i   |            *  *                          *  *
+ f   |                  *                    *
+ f   |                     *              *
+ s   |
+     |                        *        *
+     |
+     |
+     |                           *  *  <---- Min Diff
+     |
+     |
+     |
+     |
      |_________________________________________________________________
                               HOURS
-    """             
+    """
     uncertainty = 1 # hours
     while uncertainty < 11: # i.e. undefined
         if differences[11-uncertainty] > critical_value and\
@@ -128,14 +128,14 @@ def get_daily_offset(station, locs, obs_var):
     this_day = obs_var.data[locs]
     these_times = station.times[locs] - station.times[locs].iloc[0]
     this_day_mins = (these_times.to_numpy()/np.timedelta64(1, "m")).astype(int)
-    
+
     # TODO - further restrictions (range>=5K, at least in 3 of 4 quarters of the day etc)
     best_fit, uncertainty = MISSING, MISSING
     if len(this_day.compressed()) > OBS_PER_DAY:
         if np.ma.max(this_day) - np.ma.min(this_day) > DAILY_RANGE:
-            if quartile_check(this_day_mins):            
+            if quartile_check(this_day_mins):
                 best_fit, uncertainty = find_fit(this_day, this_day_mins)
-    
+
     return best_fit, uncertainty # get_daily_offset
 
 #************************************************************************
@@ -168,7 +168,7 @@ def prepare_data(station, obs_var):
                 if len(locs) != 0:
                     best_fit_diurnal[d], best_fit_uncertainty[d] = get_daily_offset(station, locs, obs_var)
 
-                # and move on to the next day     
+                # and move on to the next day
                 d += 1
 
     return best_fit_diurnal, best_fit_uncertainty # prepare_data 
@@ -186,7 +186,7 @@ def find_offset(obs_var, station, config_file, plots=False, diagnostics=False):
     """
 
     best_fit_diurnal, best_fit_uncertainty = prepare_data(station, obs_var)
-    
+
     # done complete record, have best fit for each day
     # now to find best overall fit.
     #    find median offset for each uncertainty range from 1 to 6 hours
@@ -224,7 +224,7 @@ def find_offset(obs_var, station, config_file, plots=False, diagnostics=False):
                     hour_matches[centre[0] - (h + 1) : centre[0] + h + 2] += 1
                 else:
                     hour_matches[centre[0] - (h + 1) : ] += 1
-                    hour_matches[ : centre[0] + h + 2- 24] += 1                                        
+                    hour_matches[ : centre[0] + h + 2- 24] += 1
             else:
                 hour_matches[: centre[0] + h + 2] += 1
                 hour_matches[centre[0] - (h + 1) :] += 1
@@ -271,7 +271,7 @@ def diurnal_cycle_check(obs_var, station, config_file, plots=False, diagnostics=
 
         max_range = best_fit_diurnal + best_fit_uncertainty
         max_range[max_range >= 24] = max_range[max_range >= 24] - 24
-                
+
         # check if global best fit falls inside daily fit +/- uncertainty
         bad_locs, = np.where(np.logical_and(min_range >= diurnal_offset, max_range <= diurnal_offset))
 
@@ -295,7 +295,7 @@ def diurnal_cycle_check(obs_var, station, config_file, plots=False, diagnostics=
 
             print("Diurnal Check {}".format(obs_var.name))
             print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
-            
+
     return # diurnal_cycle_check
 
 
@@ -323,6 +323,6 @@ def dcc(station, config_file, full=False, plots=False, diagnostics=False):
 
 #************************************************************************
 if __name__ == "__main__":
-    
+
     print("checking diurnal cycle")
 #************************************************************************

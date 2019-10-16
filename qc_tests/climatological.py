@@ -69,11 +69,11 @@ def low_pass_filter(normed_anomalies, station, monthly_anoms, month):
         else:
             monthly_range = np.arange(year-2, year+3)
             filter_range = np.arange(5)
-            
+
         if np.ma.sum(np.ma.abs(monthly_anoms[monthly_range])) != 0:
-                
+
             weights = get_weights(monthly_anoms, monthly_range, filter_range)
-            
+
             ymlocs, = np.where(np.logical_and(station.months == month, station.years == year))
             normed_anomalies[ymlocs] = normed_anomalies[ymlocs] - weights
 
@@ -102,7 +102,7 @@ def prepare_data(obs_var, station, month, diagnostics=False, winsorize=True):
     if len(mlocs) >= utils.DATA_COUNT_THRESHOLD:
 
         anomalies.mask[mlocs] = False
-        normed_anomalies.mask[mlocs] = False        
+        normed_anomalies.mask[mlocs] = False
 
         hourly_clims = np.ma.zeros(24)
         hourly_clims.mask = np.ones(24)
@@ -172,7 +172,7 @@ def find_month_thresholds(obs_var, station, config_file, plots=False, diagnostic
         normalised_anomalies = prepare_data(obs_var, station, month, diagnostics=diagnostics, winsorize=winsorize)
 
         if len(normalised_anomalies.compressed()) >= utils.DATA_COUNT_THRESHOLD:
-        
+
             bins = utils.create_bins(normalised_anomalies, BIN_WIDTH)
             hist, bin_edges = np.histogram(normalised_anomalies.compressed(), bins)
 
@@ -211,7 +211,7 @@ def find_month_thresholds(obs_var, station, config_file, plots=False, diagnostic
 
             utils.write_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-uthresh".format(month), "{}".format(upper_threshold), diagnostics=diagnostics)
             utils.write_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-lthresh".format(month), "{}".format(lower_threshold), diagnostics=diagnostics)
-          
+
     return # find_month_thresholds
 
 #************************************************************************
@@ -227,14 +227,14 @@ def monthly_clim(obs_var, station, config_file, logfile="", plots=False, diagnos
     :param bool diagnostics: turn on diagnostic output
     """
     flags = np.array(["" for i in range(obs_var.data.shape[0])])
-    
+
     for month in range(1, 13):
 
         month_locs, = np.where(station.months == month)
 
         # note these are for the whole record, just this month is unmasked
         normalised_anomalies = prepare_data(obs_var, station, month, diagnostics=diagnostics, winsorize=winsorize)
-        
+
         if len(normalised_anomalies.compressed()) >= utils.DATA_COUNT_THRESHOLD:
 
             bins = utils.create_bins(normalised_anomalies, BIN_WIDTH)
@@ -295,7 +295,7 @@ def monthly_clim(obs_var, station, config_file, logfile="", plots=False, diagnos
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
     if diagnostics:
-        
+
         print("Climatological {}".format(obs_var.name))
         print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
 
@@ -332,6 +332,6 @@ def coc(station, var_list, config_file, full=False, plots=False, diagnostics=Fal
 
 #************************************************************************
 if __name__ == "__main__":
-    
+
     print("checking for climatological outliers")
 #************************************************************************

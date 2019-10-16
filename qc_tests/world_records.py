@@ -37,7 +37,7 @@ def record_check(obs_var, plots=False, diagnostics=False):
 
     # presume ROW at the moment until have a regional assignator
     flags = np.array(["" for i in range(obs_var.data.shape[0])])
-    
+
     # masked arrays allows ignoring missing data
     too_high, = np.ma.where(obs_var.data > maxes[obs_var.name]["ROW"])
     too_low, = np.ma.where(obs_var.data < mins[obs_var.name]["ROW"])
@@ -75,6 +75,6 @@ def wrc(station, var_list, full=False, plots=False, diagnostics=False):
 
 #************************************************************************
 if __name__ == "__main__":
-    
+
     print("checking for exceedence of world records")
 #************************************************************************

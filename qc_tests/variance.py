@@ -6,7 +6,6 @@ Checks for months with higher/lower variance than expected
 
 """
 #************************************************************************
-import sys
 import numpy as np
 
 import qc_utils as utils
@@ -35,7 +34,7 @@ def prepare_data(obs_var, station, month, diagnostics=False, winsorize=True):
 
     mlocs, = np.where(station.months == month)
     anomalies.mask[mlocs] = False
-    normed_anomalies.mask[mlocs] = False        
+    normed_anomalies.mask[mlocs] = False
 
     hourly_clims = np.ma.zeros(24)
     hourly_clims.mask = np.ones(24)
@@ -132,7 +131,7 @@ def variance_check(obs_var, station, config_file, plots=False, diagnostics=False
     # get hourly climatology for each month
     for month in range(1, 13):
         month_locs, = np.where(station.months == month)
-            
+
         variances = prepare_data(obs_var, station, month, diagnostics=diagnostics, winsorize=winsorize)
 
         try:
@@ -143,7 +142,7 @@ def variance_check(obs_var, station, config_file, plots=False, diagnostics=False
             find_thresholds(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
             average_variance = float(utils.read_qc_config(config_file, "VARIANCE-{}".format(obs_var.name), "{}-average".format(month)))
             variance_spread = float(utils.read_qc_config(config_file, "VARIANCE-{}".format(obs_var.name), "{}-spread".format(month)))
-            
+
 
         if average_variance == utils.MDI and variance_spread == utils.MDI:
             # couldn't be calculated, mpve on
@@ -173,7 +172,7 @@ def variance_check(obs_var, station, config_file, plots=False, diagnostics=False
 
         all_years = np.unique(station.years)
         for year in bad_years:
-            
+
             ym_locs, = np.where(np.logical_and(station.months == month, station.years == all_years[year]))
 
             if obs_var.name in ["station_level_pressure", "sea_level_pressure", "wind_speed"]:
@@ -181,14 +180,14 @@ def variance_check(obs_var, station, config_file, plots=False, diagnostics=False
                 if obs_var.name in ["station_level_pressure", "sea_level_pressure"]:
                     pressure_data = obs_var.data[ym_locs]
                 else:
-                    pressure_data = station.sea_level_pressure.data[ym_locs]                    
+                    pressure_data = station.sea_level_pressure.data[ym_locs]
 
                 if len(pressure_data.compressed()) < utils.DATA_COUNT_THRESHOLD or \
                         len(wind_data.compressed()) < utils.DATA_COUNT_THRESHOLD:
                     # need sufficient data to work with for storm check to work, else can't tell
                     #    move on
                     continue
-                
+
                 high_winds, = np.ma.where((wind_data - wind_average)/wind_spread > STORM_THRESHOLD)
                 low_pressures, = np.ma.where((pressure_average - pressure_data)/pressure_spread > STORM_THRESHOLD)
 
@@ -203,7 +202,7 @@ def variance_check(obs_var, station, config_file, plots=False, diagnostics=False
                     diffs = np.ma.diff(pressure_data)
                 elif obs_var.name == "wind_speed":
                     diffs = np.ma.diff(wind_data)
-                    
+
 
                 # count up the largest number of sequential negative and positive differences
                 negs, poss = 0, 0
@@ -228,7 +227,7 @@ def variance_check(obs_var, station, config_file, plots=False, diagnostics=False
                     # could be a storm, so better to leave this month unflagged
                     # zero length array to flag
                     ym_locs = np.ma.array([])
-                        
+
 
             # copy over the flags, if any
             if len(ym_locs) != 0:
@@ -264,7 +263,7 @@ def variance_check(obs_var, station, config_file, plots=False, diagnostics=False
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
     if diagnostics:
-        
+
         print("Variance {}".format(obs_var.name))
         print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
 
@@ -299,6 +298,6 @@ def evc(station, var_list, config_file, full=False, plots=False, diagnostics=Fal
 
 #************************************************************************
 if __name__ == "__main__":
-    
+
     print("checking excess variance")
 #************************************************************************
