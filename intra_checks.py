@@ -198,12 +198,19 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         # reverse order so can insert without messing up the indices
         new_column_indices.reverse()
         for index in new_column_indices:
-            station_df.insert(index, "{} QC flags".format(station_df.columns[index-2]), ["" for i in range(station_df.shape[0])], True)
+            station_df.insert(index, "{}_QC_flag".format(station_df.columns[index-2]), ["" for i in range(station_df.shape[0])], True)
+
+        # sort source_ID.x columns - purely for first release
+        for c, column in enumerate(station_df.columns):
+            if "Source_ID" in column:
+                variable = station_df.columns[c-1]
+                station_df = station_df.rename(columns={column : "{}_Source_ID".format(variable)})
+
 
         # write in the flag information
         for var in obs_var_list:
             obs_var = getattr(station, var)
-            station_df["{} QC flags".format(var)] = obs_var.flags
+            station_df["{}_QC_flag".format(var)] = obs_var.flags
 
         # write out the dataframe to output format
         io.write(os.path.join(QFF_LOC, "{}".format(station_id)), station_df)

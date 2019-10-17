@@ -106,5 +106,5 @@ def wcc(station, config_file, fix=False, full=False, plots=False, diagnostics=Fa
 #************************************************************************
 if __name__ == "__main__":
 
-    print("pressure cross checks")
+    print("wind cross checks")
 #************************************************************************
