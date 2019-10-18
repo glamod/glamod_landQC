@@ -96,7 +96,7 @@ def tsc(station, var_list, config_file, full=False, plots=False, diagnostics=Fal
 
         identify_multiple_values(obs_var, station.times, config_file, plots=plots, diagnostics=diagnostics)
 
-    return  # sc
+    return  # tsc
 
 
 #************************************************************************
