@@ -30,6 +30,7 @@ ROOT_DIR = config.get("PATHS", "root")
 SUBDAILY_IN_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "mff"))
 SUBDAILY_OUT_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "qff"))
 SUBDAILY_CONFIG_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "config"))
+SUBDAILY_IMAGE_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "images"))
 
 # for cross-timescale checks
 # DAILY_DIR = 
@@ -49,6 +50,12 @@ with open(os.path.join(os.path.dirname(__file__), VARFILE), "r") as pf:
     parameters = json.load(pf)
 
 obs_var_list = parameters["variables"]["process_vars"]
+
+DTYPE_DICT =  {}
+for var in obs_var_list:
+    DTYPE_DICT[var] = float
+    DTYPE_DICT["{}_Source_ID".format(var)] = int
+    DTYPE_DICT["{}_QC_flag".format(var)] = str
 
 #*********************************************
 # END

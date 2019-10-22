@@ -61,7 +61,7 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
 
     # now spin through each ID in the curtailed list
     for st, station_id in enumerate(station_IDs):
-        print("{} {}".format(dt.datetime.now(), station_id))
+        print("{} {} ({}/{})".format(dt.datetime.now(), station_id, st+1, station_IDs.shape[0]))
 
         # for diagnostics
 #        if station_id != "ICAOKAYE-1_223.psv": continue
@@ -82,11 +82,22 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
 
         #*************************
         # read MFF
-        station_df = io.read(os.path.join(MFF_LOC, station_id))
+        try:
+            station_df = io.read(os.path.join(MFF_LOC, station_id))
+        except IOError:
+            print("Missing station {}".format(station_id))
+            continue
 
 
         # convert to datetimes
         datetimes = pd.to_datetime(station_df[["Year", "Month", "Day", "Hour", "Minute"]])
+        
+        # some may have no data (for whatever reason)
+        if datetimes.shape[0] == 0:
+            if diagnostics:
+                print("No data in station {}".format(station_id))
+            # scoot onto next station
+            continue
 
         # convert dataframe to station and MetVar objects for internal processing
         utils.populate_station(station, station_df, obs_var_list)

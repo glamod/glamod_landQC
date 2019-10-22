@@ -1,4 +1,5 @@
 #************************************************************************
+import cartopy.crs as ccrs
 import os
 import datetime as dt
 import pandas as pd
@@ -6,7 +7,6 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
 
 # internal utils
 import qc_utils as utils
@@ -24,8 +24,8 @@ QC_TESTS = {"o" : "Odd Cluster", "F" : "Frequent Value", "D" : "Distribution - M
 MFF_LOC = setup.SUBDAILY_IN_DIR
 QFF_LOC = setup.SUBDAILY_OUT_DIR
 CONF_LOC = setup.SUBDAILY_CONFIG_DIR
+IMAGE_LOCS = setup.SUBDAILY_IMAGE_DIR
 
-IMAGE_LOCS=""
 start_time_string = dt.datetime.strftime(dt.datetime.now(), "%Y%m%d")
 
 #************************************************************************
@@ -64,7 +64,8 @@ def main(restart_id="", end_id="", diagnostics=False):
             setattr(station, var, utils.Meteorological_Variable("{}".format(var), utils.MDI, "", ""))
             obs_var = getattr(station, var)
 
-            flags = station_df["{}_QC_flag".format(var)].fillna("")
+#            flags = station_df["{}_QC_flag".format(var)].fillna("")
+            flags = station_df["{} QC flags".format(var)].fillna("")
 
             for test in QC_TESTS.keys():
 
@@ -136,7 +137,23 @@ def main(restart_id="", end_id="", diagnostics=False):
             plt.close()
 
 
+    return # main
+
 #************************************************************************
 if __name__ == "__main__":
-    main()
+
+    import argparse
+
+    # set up keyword arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--restart_id', dest='restart_id', action='store', default="",
+                        help='Restart ID for truncated run, default=""')
+    parser.add_argument('--end_id', dest='end_id', action='store', default="",
+                        help='End ID for truncated run, default=""')
+    parser.add_argument('--diagnostics', dest='diagnostics', action='store_true', default=False,
+                        help='Run diagnostics (will not write out file)')
+
+    args = parser.parse_args()
+    main(restart_id=args.restart_id, end_id=args.end_id, diagnostics=args.diagnostics)
+
 #*******************************************************

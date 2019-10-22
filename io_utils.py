@@ -1,8 +1,9 @@
 '''
 io_utils - contains scripts for read/write of main files
 '''
-
+import os
 import pandas as pd
+import setup
 
 #************************************************************************
 def read_psv(infile, separator, extension="mff", compression="infer"):
@@ -14,9 +15,8 @@ def read_psv(infile, separator, extension="mff", compression="infer"):
     :param str separator: separating character (e.g. ",", "|")
     :param str extension: infile extension [mff]
     :returns: df - DataFrame
-
     '''
-    df = pd.read_csv("{}.{}".format(infile, extension), sep=separator, compression=compression)
+    df = pd.read_csv("{}.{}".format(infile, extension), sep=separator, compression=compression, dtype=setup.DTYPE_DICT)
 
     return df #  read_psv
 
@@ -31,7 +31,10 @@ def read(infile, extension="mff"):
     """
 
     # for .psv
-    df = read_psv(infile, "|", extension=extension)
+    if os.path.exists("{}.{}".format(infile, extension)):
+        df = read_psv(infile, "|", extension=extension)
+    else:
+        raise IOError
 
     return df # read
 
