@@ -12,6 +12,7 @@ import qc_utils as utils
 
 # TODO - move threshold into a config file?
 THRESHOLD = 4 # min spread of 1hPa, so only outside +/-4hPa flagged.
+THEORY_THRESHOLD = 10 
 
 MIN_SPREAD = 1.0
 
@@ -195,7 +196,21 @@ def pressure_theory(sealp, stnlp, temperature, times, elevation, plots=False, di
 
     difference = sealp.data - theoretical_value
 
-    bad_locs, = np.where(np.abs(difference) > THRESHOLD)
+    bad_locs, = np.ma.where(np.ma.abs(difference) > THEORY_THRESHOLD)
+
+    # diagnostic plots
+    if plots:
+        bins = np.arange(np.round(np.ma.min(difference))-1, np.round(np.ma.max(difference))+1, 0.1)
+        import matplotlib.pyplot as plt
+        plt.clf()
+        plt.hist(difference.compressed(), bins=bins)
+        plt.axvline(x=THEORY_THRESHOLD, ls="--", c="r")
+        plt.axvline(x=-THEORY_THRESHOLD, ls="--", c="r")
+        plt.xlim([bins[0] - 1, bins[-1] + 1])
+        plt.ylabel("Observations")
+        plt.xlabel("Difference (hPa)")
+        plt.show()
+
 
     if len(bad_locs) != 0:
         flags[bad_locs] = "p"
