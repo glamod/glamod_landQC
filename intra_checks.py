@@ -159,7 +159,7 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         # could run on wind direction?
         if test in ["all", "streaks"]:
             print("K", dt.datetime.now()-startT)
-            qc_tests.streaks.rsc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed"], config_file, full=full, plots=plots, diagnostics=diagnostics)
+            qc_tests.streaks.rsc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed", "wind_direction"], config_file, full=full, plots=plots, diagnostics=diagnostics)
 
         # not run on pressure data in HadISD.
         if test in ["all", "climatological"]:

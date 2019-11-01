@@ -12,9 +12,10 @@ import qc_utils as utils
 
 # TODO - move threshold into a config file?
 THRESHOLD = 4 # min spread of 1hPa, so only outside +/-4hPa flagged.
-THEORY_THRESHOLD = 10 
+THEORY_THRESHOLD = 15 # allows for small offset as well as intrinsic spread
 
 MIN_SPREAD = 1.0
+MAX_SPREAD = 5.0
 
 
 #*********************************************
@@ -73,6 +74,8 @@ def identify_values(sealp, stnlp, times, config_file, plots=False, diagnostics=F
         spread = utils.spread(difference)
         if spread < MIN_SPREAD: # less than XhPa
             spread = MIN_SPREAD
+        elif spread > MAX_SPREAD: # more than XhPa
+            spread = MAX_SPREAD
 
         utils.write_qc_config(config_file, "PRESSURE", "average", "{}".format(average), diagnostics=diagnostics)
         utils.write_qc_config(config_file, "PRESSURE", "spread", "{}".format(spread), diagnostics=diagnostics)
@@ -108,46 +111,55 @@ def pressure_offset(sealp, stnlp, times, config_file, plots=False, diagnostics=F
             spread = utils.spread(difference)
             if spread < MIN_SPREAD: # less than XhPa
                 spread = MIN_SPREAD
+            elif spread > MAX_SPREAD: # more than XhPa
+                spread = MAX_SPREAD
 
             utils.write_qc_config(config_file, "PRESSURE", "average", "{}".format(average), diagnostics=diagnostics)
             utils.write_qc_config(config_file, "PRESSURE", "spread", "{}".format(spread), diagnostics=diagnostics)
 
-        high, = np.ma.where(difference > (average + (THRESHOLD*spread)))
-        low, = np.ma.where(difference < (average - (THRESHOLD*spread)))
-
-        # diagnostic plots
-        if plots:
-            bins = np.arange(np.round(average)-1, np.round(average)+1, 0.1)
-            import matplotlib.pyplot as plt
-            plt.clf()
-            plt.hist(difference.compressed(), bins=bins)
-            plt.axvline(x=(average + (THRESHOLD*spread)), ls="--", c="r")
-            plt.axvline(x=(average - (THRESHOLD*spread)), ls="--", c="r")
-            plt.xlim([bins[0] - 1, bins[-1] + 1])
-            plt.ylabel("Observations")
-            plt.xlabel("Difference (hPa)")
-            plt.show()
-
-        if len(high) != 0:
-            flags[high] = "p"
+        if np.abs(np.ma.mean(difference) - np.ma.median(difference)) > THRESHOLD*spread:
             if diagnostics:
-                print("Pressure".format(stnlp.name))
-                print("   Number of high differences {}".format(len(high)))
+                print("Large difference between mean and median")
+                print("Likely to have two populations of roughly equal size")
+                print("Test won't work")
+            pass
+        else:
+            high, = np.ma.where(difference > (average + (THRESHOLD*spread)))
+            low, = np.ma.where(difference < (average - (THRESHOLD*spread)))
+
+            # diagnostic plots
             if plots:
-                for bad in high:
-                    plot_pressure(sealp, stnlp, times, bad)
+                bins = np.arange(np.round(difference.min())-1, np.round(difference.max())+1, 0.1)
+                import matplotlib.pyplot as plt
+                plt.clf()
+                plt.hist(difference.compressed(), bins=bins)
+                plt.axvline(x=(average + (THRESHOLD*spread)), ls="--", c="r")
+                plt.axvline(x=(average - (THRESHOLD*spread)), ls="--", c="r")
+                plt.xlim([bins[0] - 1, bins[-1] + 1])
+                plt.ylabel("Observations")
+                plt.xlabel("Difference (hPa)")
+                plt.show()
 
-        if len(low) != 0:
-            flags[low] = "p"
-            if diagnostics:
-                print("   Number of low differences {}".format(len(low)))
-            if plots:
-                for bad in low:
-                    plot_pressure(sealp, stnlp, times, bad)
+            if len(high) != 0:
+                flags[high] = "p"
+                if diagnostics:
+                    print("Pressure".format(stnlp.name))
+                    print("   Number of high differences {}".format(len(high)))
+                if plots:
+                    for bad in high:
+                        plot_pressure(sealp, stnlp, times, bad)
+
+            if len(low) != 0:
+                flags[low] = "p"
+                if diagnostics:
+                    print("   Number of low differences {}".format(len(low)))
+                if plots:
+                    for bad in low:
+                        plot_pressure(sealp, stnlp, times, bad)
 
 
-        # only flag the station level pressure
-        stnlp.flags = utils.insert_flags(stnlp.flags, flags)
+            # only flag the station level pressure
+            stnlp.flags = utils.insert_flags(stnlp.flags, flags)
 
     if diagnostics:
 

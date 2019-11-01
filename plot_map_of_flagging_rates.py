@@ -19,6 +19,14 @@ QC_TESTS = {"o" : "Odd Cluster", "F" : "Frequent Value", "D" : "Distribution - M
             "d" : "Distribution - all", "W" : "World Records", "K" : "Streaks", \
             "C" : "Climatological", "T" : "Timestamp", "S" : "Spike", "h" : "Humidity", \
             "V" : "Variance", "p" : "Pressure", "w" : "Winds"}
+QC_TESTS = {"h" : "Humidity"}
+
+TESTS_FOR_VARS = {"temperature": ["o", "F", "D", "d", "W", "K", "C", "T", "S", "V", ],\
+                      "dew_point_temperature": ["o", "F", "D", "d", "W", "K", "C", "T", "S", "h", "V", ],\
+                      "sea_level_pressure" : ["o", "F", "D", "d", "W", "K", "T", "S", "V", "p", ],\
+                      "station_level_pressure" : ["o", "F", "D", "d", "K", "T", "S", "V", "p", ],\
+                      "wind_speed" : ["o", "W", "K", "T", "S", "V", "w"],
+                  "wind_direction" : ["K", "w"]}
 
 # Temporary stuff
 MFF_LOC = setup.SUBDAILY_IN_DIR
@@ -51,33 +59,37 @@ def main(restart_id="", end_id="", diagnostics=False):
     for st, station_id in enumerate(station_IDs):
         print("{} {}".format(dt.datetime.now(), station_id))
 
+#        if station_id not in ["AFA00409803", "AFA00409793"]: continue
+
         station = utils.Station(station_id, station_list.iloc[st][1], station_list.iloc[st][2], station_list.iloc[st][3])
         if diagnostics:
             print(station)
 
         #*************************
         # read QFF
-        station_df = io.read(os.path.join(QFF_LOC, station_id), extension="qff")
+        try:
+            station_df = io.read(os.path.join(QFF_LOC, station_id), extension="qff")
+        except IOError:
+            print("Missing station {}".format(station_id))
+            continue
 
         for var in obs_var_list:
 
             setattr(station, var, utils.Meteorological_Variable("{}".format(var), utils.MDI, "", ""))
             obs_var = getattr(station, var)
 
-#            flags = station_df["{}_QC_flag".format(var)].fillna("")
-            flags = station_df["{} QC flags".format(var)].fillna("")
+            flags = station_df["{}_QC_flag".format(var)].fillna("")
 
             for test in QC_TESTS.keys():
-
                 locs = flags[flags.str.match(test)]
 
                 setattr(obs_var, test, locs.shape[0]/flags.shape[0])
-            
+
         all_stations[station_id] = station
 
     # now spin through each var/test combo and make a plot
     for var in obs_var_list:
-        for test in QC_TESTS.keys():
+        for test in TESTS_FOR_VARS[var]:
 
             lats, lons, flag_fraction = np.zeros(station_IDs.shape[0]), np.zeros(station_IDs.shape[0]), np.zeros(station_IDs.shape[0])
             for st, (ID, station) in enumerate(all_stations.items()):
@@ -133,7 +145,7 @@ def main(restart_id="", end_id="", diagnostics=False):
             leg=plt.legend(loc='lower center', ncol=4, bbox_to_anchor=(0.5, -0.12), frameon=False, title='', prop={'size':9}, \
                            labelspacing=0.15, columnspacing=0.5, numpoints=1)
 
-            plt.savefig(IMAGE_LOCS+"All_fails_{}-{}_{}.png".format(var, test, start_time_string))
+            plt.savefig(os.path.join(IMAGE_LOCS, "All_fails_{}-{}_{}.png".format(var, test, start_time_string)))
             plt.close()
 
 

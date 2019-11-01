@@ -12,7 +12,13 @@ import qc_utils as utils
 
 MAX_LENGTH_OBS = 6 # up to X data points
 MAX_LENGTH_TIME = 12 # within a max of Y hours
-MIN_SEPARATION = 7*24 # separated by Z hours on either side from other data
+"""
+NOTES:
+HadISD uses 2 days (48h)
+Did try 7 days for initial run (October 2019) but still flagging lots of obs
+Next version using 4 weeks (~1 month) to get the really isolated ones.
+"""
+MIN_SEPARATION = 28*24 # separated by Z hours on either side from other data
 
 
 #*********************************************
