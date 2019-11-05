@@ -78,31 +78,37 @@ def lc(station, var_list, full=False, plots=False, diagnostics=False):
     if station.lat < -90 or station.lat > 90:
         write_logic_error(station, "Bad latitude: {}".format(station.lat), diagnostics=diagnostics)
         if diagnostics:
-            print("Bad latitude {}".format(station.lat))
+            print("Bad latitude: {}".format(station.lat))
         return_code = -1
 
     if station.lon < -180 or station.lon > 180:
         write_logic_error(station, "Bad longtitude: {}".format(station.lon), diagnostics=diagnostics)
         if diagnostics:
-            print("Bad longtitude {}".format(station.lon))
+            print("Bad longtitude: {}".format(station.lon))
+        return_code = -1
+
+    if station.lon == 0 and station.lat == 0:
+        write_logic_error(station, "Bad longtitude & latitude combination: lon={}, lat={}".format(station.lon, station.lat), diagnostics=diagnostics)
+        if diagnostics:
+            print("Bad longtitude/latitude: {} & {}".format(station.lon, station.lat))
         return_code = -1
 
     if station.elev < -432.65 or station.elev > 8850:
         write_logic_error(station, "Bad elevation: {}".format(station.elev), diagnostics=diagnostics)
         if diagnostics:
-            print("Bad elevation {}".format(station.elev))
+            print("Bad elevation: {}".format(station.elev))
         return_code = -1
 
     if station.times.iloc[0] < dt.datetime(1650,1,1):
-        write_logic_error(station, "Bad times: {}".format(station.times[0]), diagnostics=diagnostics)
+        write_logic_error(station, "Bad start time: {}".format(station.times[0]), diagnostics=diagnostics)
         if diagnostics:
-            print("Bad times {}".format(station.times[0]))
+            print("Bad start time: {}".format(station.times[0]))
         return_code = -1
 
     elif station.times.iloc[-1] > dt.datetime.now():
-        write_logic_error(station, "Bad times: {}".format(station.times[-1]), diagnostics=diagnostics)
+        write_logic_error(station, "Bad end time: {}".format(station.times[-1]), diagnostics=diagnostics)
         if diagnostics:
-            print("Bad times {}".format(station.times[-1]))
+            print("Bad end time: {}".format(station.times[-1]))
         return_code = -1
     
     # observation level
