@@ -31,6 +31,7 @@ SUBDAILY_IN_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "mff"))
 SUBDAILY_OUT_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "qff"))
 SUBDAILY_CONFIG_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "config"))
 SUBDAILY_IMAGE_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "images"))
+SUBDAILY_ERROR_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "errors"))
 
 # for cross-timescale checks
 # DAILY_DIR = 
@@ -48,7 +49,6 @@ FULL_UPDATE = config.getboolean("SETTINGS", "full_reprocess")
 VARFILE = config.get("FILES", "variables")
 with open(os.path.join(os.path.dirname(__file__), VARFILE), "r") as pf:
     parameters = json.load(pf)
-
 obs_var_list = parameters["variables"]["process_vars"]
 
 DTYPE_DICT =  {}
@@ -56,6 +56,16 @@ for var in obs_var_list:
     DTYPE_DICT[var] = float
     DTYPE_DICT["{}_Source_ID".format(var)] = int
     DTYPE_DICT["{}_QC_flag".format(var)] = str
+
+
+#************************************************************************
+if __name__ == "__main__":
+
+    # if called as stand alone, then clean out the errors from a previous run
+    if len(os.listdir(SUBDAILY_ERROR_DIR)) != 0:
+        for this_file in os.listdir(SUBDAILY_ERROR_DIR):
+            os.remove(os.path.join(SUBDAILY_ERROR_DIR, this_file))
+        
 
 #*********************************************
 # END

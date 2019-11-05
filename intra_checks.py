@@ -132,6 +132,15 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         Precipitation logical checks - precip not in C3S 311a @Aug 2019
         """
         #*************************
+        if test in ["all", "logic"]:
+            print("L", dt.datetime.now()-startT)
+            good_metadata = qc_tests.logic_checks.lc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed", "wind_direction"], full=full, plots=plots, diagnostics=diagnostics)
+
+            if good_metadata != 0:
+                print("Issue with station metadata")
+                # skip on to next one
+                continue
+
         if test in ["all", "odd_cluster"]:
             print("O", dt.datetime.now()-startT)
             # TODO - use suite config file to store all settings for tests
@@ -156,7 +165,6 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
             print("W", dt.datetime.now()-startT)
             qc_tests.world_records.wrc(station, ["temperature", "dew_point_temperature", "sea_level_pressure", "wind_speed"], full=full, plots=plots, diagnostics=diagnostics)
 
-        # could run on wind direction?
         if test in ["all", "streaks"]:
             print("K", dt.datetime.now()-startT)
             qc_tests.streaks.rsc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed", "wind_direction"], config_file, full=full, plots=plots, diagnostics=diagnostics)

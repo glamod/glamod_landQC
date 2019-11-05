@@ -54,6 +54,9 @@ if sum([STDEV, MAD, IQR]) >= 2:
 DATA_COUNT_THRESHOLD = config.getint("THRESHOLDS", "min_data_count")
 
 
+# read in logic check list
+LOGICFILE = os.path.join(os.path.dirname(__file__), config.get("FILES", "logic"))
+
 #*********************************************
 #*********************************************
 class Meteorological_Variable(object):
