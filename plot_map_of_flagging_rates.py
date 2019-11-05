@@ -18,15 +18,14 @@ import setup
 QC_TESTS = {"o" : "Odd Cluster", "F" : "Frequent Value", "D" : "Distribution - Monthly", \
             "d" : "Distribution - all", "W" : "World Records", "K" : "Streaks", \
             "C" : "Climatological", "T" : "Timestamp", "S" : "Spike", "h" : "Humidity", \
-            "V" : "Variance", "p" : "Pressure", "w" : "Winds"}
-QC_TESTS = {"h" : "Humidity"}
+            "V" : "Variance", "p" : "Pressure", "w" : "Winds", "L" : "Logic"}
 
-TESTS_FOR_VARS = {"temperature": ["o", "F", "D", "d", "W", "K", "C", "T", "S", "V", ],\
-                      "dew_point_temperature": ["o", "F", "D", "d", "W", "K", "C", "T", "S", "h", "V", ],\
-                      "sea_level_pressure" : ["o", "F", "D", "d", "W", "K", "T", "S", "V", "p", ],\
-                      "station_level_pressure" : ["o", "F", "D", "d", "K", "T", "S", "V", "p", ],\
-                      "wind_speed" : ["o", "W", "K", "T", "S", "V", "w"],
-                  "wind_direction" : ["K", "w"]}
+TESTS_FOR_VARS = {"temperature": ["o", "F", "D", "d", "W", "K", "C", "T", "S", "V", "L"],\
+                      "dew_point_temperature": ["o", "F", "D", "d", "W", "K", "C", "T", "S", "h", "V", "L"],\
+                      "sea_level_pressure" : ["o", "F", "D", "d", "W", "K", "T", "S", "V", "p", "L"],\
+                      "station_level_pressure" : ["o", "F", "D", "d", "K", "T", "S", "V", "p", "L"],\
+                      "wind_speed" : ["o", "W", "K", "T", "S", "V", "w", "L"],
+                  "wind_direction" : ["K", "w", "L"]}
 
 # Temporary stuff
 MFF_LOC = setup.SUBDAILY_IN_DIR
