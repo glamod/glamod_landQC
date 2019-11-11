@@ -331,7 +331,8 @@ def get_critical_values(indata, binmin=0, binwidth=1, plots=False, diagnostics=F
     if len(set(indata)) > 1:
 
         # set up the bins and make a histogram.  Use Absolute values
-        bins = np.arange(binmin, 2 * max(np.ceil(np.abs(indata))), binwidth)
+        max_bin = np.max([2 * max(np.ceil(np.abs(indata))), 10]) # so that have sufficient to fit to
+        bins = np.arange(binmin, max_bin, binwidth)
         full_hist, full_edges = np.histogram(np.abs(indata), bins=bins)
 
         if len(full_hist) > 1:

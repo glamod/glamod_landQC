@@ -99,7 +99,7 @@ def lc(station, var_list, full=False, plots=False, diagnostics=False):
             print("Bad elevation: {}".format(station.elev))
         return_code = -1
 
-    if station.times.iloc[0] < dt.datetime(1650,1,1):
+    if station.times.iloc[0] < dt.datetime(1650, 1, 1):
         write_logic_error(station, "Bad start time: {}".format(station.times[0]), diagnostics=diagnostics)
         if diagnostics:
             print("Bad start time: {}".format(station.times[0]))

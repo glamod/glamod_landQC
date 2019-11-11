@@ -165,9 +165,9 @@ def repeating_value(obs_var, times, config_file, plots=False, diagnostics=False)
             if plots:
                 plot_streak(times, this_var, start, end)
 
-        # undo compression
+        # undo compression and write into original object (the one with calm periods)
         flags[this_var.data.mask == False] = compressed_flags
-        this_var.flags = utils.insert_flags(this_var.flags, flags)
+        obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
     if diagnostics:
 
