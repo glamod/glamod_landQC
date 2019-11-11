@@ -93,11 +93,18 @@ def lc(station, var_list, full=False, plots=False, diagnostics=False):
             print("Bad longtitude/latitude: {} & {}".format(station.lon, station.lat))
         return_code = -1
 
-    if station.elev < -432.65 or station.elev > 8850:
-        write_logic_error(station, "Bad elevation: {}".format(station.elev), diagnostics=diagnostics)
-        if diagnostics:
-            print("Bad elevation: {}".format(station.elev))
-        return_code = -1
+# Missing elevation acceptable - removed this for the moment (7 November 2019, RJHD)
+#   missing could be -999, -999.9, -999.999 etc hence string comparison
+    if (station.elev < -432.65 or station.elev > 8850.):
+        if str(station.elev)[:4] != "-999":
+            write_logic_error(station, "Bad elevation: {}".format(station.elev), diagnostics=diagnostics)
+            if diagnostics:
+                print("Bad elevation: {}".format(station.elev))
+            return_code = -1
+        else:
+            if diagnostics:
+                print("Missing elevation, but not flagged: {}".format(station.elev))
+
 
     if station.times.iloc[0] < dt.datetime(1650, 1, 1):
         write_logic_error(station, "Bad start time: {}".format(station.times[0]), diagnostics=diagnostics)
