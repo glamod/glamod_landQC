@@ -52,7 +52,7 @@ if sum([STDEV, MAD, IQR]) >= 2:
 #*********************************************
 # Thresholds
 DATA_COUNT_THRESHOLD = config.getint("THRESHOLDS", "min_data_count")
-
+HIGH_FLAGGING = config.getfloat("THRESHOLDS", "high_flag_proportion")
 
 # read in logic check list
 LOGICFILE = os.path.join(os.path.dirname(__file__), config.get("FILES", "logic"))
@@ -777,3 +777,33 @@ def reporting_frequency(intimes, inobs):
                 frequency = 60
        
     return frequency # reporting_frequency
+
+#*********************************************
+def high_flagging(station):
+    """
+    Check flags for each observational variable, and return True if any 
+    has too large a proportion flagged
+    
+    :param Station station: station object
+    
+    :returns: bool
+    """
+    bad = False
+
+    for ov in setup.obs_var_list:
+
+        obs_var = getattr(station, ov)
+
+        obs_locs, = np.where(obs_var.data.mask == False)
+
+        flags = obs_var.flags
+
+        flagged, = np.where(flags[obs_locs] != "")
+
+        if flagged.shape[0] / obs_locs.shape[0] > HIGH_FLAGGING:
+            bad = True
+            print("{} flagging rate of {:5.1f}%".format(obs_var.name, \
+                                                        100*(flagged.shape[0] / obs_locs.shape[0])))
+            break
+
+    return bad # high_flagging

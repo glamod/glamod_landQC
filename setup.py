@@ -28,10 +28,26 @@ config.read(CONFIG_FILE)
 # locations
 ROOT_DIR = config.get("PATHS", "root")
 SUBDAILY_IN_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "mff"))
+
 SUBDAILY_OUT_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "qff"))
+if not os.path.exists(SUBDAILY_OUT_DIR):
+    os.mkdir(SUBDAILY_OUT_DIR)
+
+SUBDAILY_BAD_DIR = os.path.join(SUBDAILY_OUT_DIR, "bad_stations")
+if not os.path.exists(SUBDAILY_BAD_DIR):
+    os.mkdir(SUBDAILY_BAD_DIR)
+
 SUBDAILY_CONFIG_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "config"))
+if not os.path.exists(SUBDAILY_CONFIG_DIR):
+    os.mkdir(SUBDAILY_CONFIG_DIR)
+
 SUBDAILY_IMAGE_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "images"))
+if not os.path.exists(SUBDAILY_IMAGE_DIR):
+    os.mkdir(SUBDAILY_IMAGE_DIR)
+
 SUBDAILY_ERROR_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "errors"))
+if not os.path.exists(SUBDAILY_ERROR_DIR):
+    os.mkdir(SUBDAILY_ERROR_DIR)
 
 # for cross-timescale checks
 # DAILY_DIR = 

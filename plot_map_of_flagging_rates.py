@@ -18,14 +18,14 @@ import setup
 QC_TESTS = {"o" : "Odd Cluster", "F" : "Frequent Value", "D" : "Distribution - Monthly", \
             "d" : "Distribution - all", "W" : "World Records", "K" : "Streaks", \
             "C" : "Climatological", "T" : "Timestamp", "S" : "Spike", "h" : "Humidity", \
-            "V" : "Variance", "p" : "Pressure", "w" : "Winds", "L" : "Logic"}
+            "V" : "Variance", "p" : "Pressure", "w" : "Winds", "L" : "Logic", "U" : "Clean up"}
 
-TESTS_FOR_VARS = {"temperature": ["o", "F", "D", "d", "W", "K", "C", "T", "S", "V", "L"],\
-                      "dew_point_temperature": ["o", "F", "D", "d", "W", "K", "C", "T", "S", "h", "V", "L"],\
-                      "sea_level_pressure" : ["o", "F", "D", "d", "W", "K", "T", "S", "V", "p", "L"],\
-                      "station_level_pressure" : ["o", "F", "D", "d", "K", "T", "S", "V", "p", "L"],\
-                      "wind_speed" : ["o", "W", "K", "T", "S", "V", "w", "L"],
-                  "wind_direction" : ["K", "w", "L"]}
+TESTS_FOR_VARS = {"temperature": ["o", "F", "D", "d", "W", "K", "C", "T", "S", "V", "L", "U"],\
+                      "dew_point_temperature": ["o", "F", "D", "d", "W", "K", "C", "T", "S", "h", "V", "L", "U"],\
+                      "sea_level_pressure" : ["o", "F", "D", "d", "W", "K", "T", "S", "V", "p", "L", "U"],\
+                      "station_level_pressure" : ["o", "F", "D", "d", "K", "T", "S", "V", "p", "L", "U"],\
+                      "wind_speed" : ["o", "W", "K", "T", "S", "V", "w", "L", "U"],
+                  "wind_direction" : ["K", "w", "L", "U"]}
 
 # Temporary stuff
 MFF_LOC = setup.SUBDAILY_IN_DIR
@@ -83,6 +83,7 @@ def main(restart_id="", end_id="", diagnostics=False):
                 locs = flags[flags.str.match(test)]
 
                 setattr(obs_var, test, locs.shape[0]/flags.shape[0])
+                setattr(obs_var, "{}_counts".format(test), locs.shape[0])
 
         all_stations[station_id] = station
 
@@ -90,62 +91,68 @@ def main(restart_id="", end_id="", diagnostics=False):
     for var in obs_var_list:
         for test in TESTS_FOR_VARS[var]:
 
-            lats, lons, flag_fraction = np.zeros(station_IDs.shape[0]), np.zeros(station_IDs.shape[0]), np.zeros(station_IDs.shape[0])
-            for st, (ID, station) in enumerate(all_stations.items()):
-                lats[st] = station.lat
-                lons[st] = station.lon
-                obs_var = getattr(station, var)
-                flag_fraction[st] = getattr(obs_var, test) * 100               
+            for suffix in ["", "_counts"]:
 
-            # do the plot
-            plt.figure(figsize=(8, 5))
-            plt.clf()
-            ax = plt.axes([0, 0.03, 1, 1], projection=ccrs.Robinson())
-            ax.set_global()
-            ax.coastlines('50m')
-            try:
-                ax.gridlines(draw_labels = True)
-            except TypeError:
-                ax.gridlines()
+                lats, lons, flag_fraction = np.zeros(station_IDs.shape[0]), np.zeros(station_IDs.shape[0]), np.zeros(station_IDs.shape[0])
+                for st, (ID, station) in enumerate(all_stations.items()):
+                    lats[st] = station.lat
+                    lons[st] = station.lon
+                    obs_var = getattr(station, var)
+                    flag_fraction[st] = getattr(obs_var, test) * 100               
 
-            # colors are the exact same RBG codes as in IDL
-            colors = [(150, 150, 150), (41, 10, 216), (63, 160, 255), (170, 247, 255), \
-                      (255, 224, 153), (247, 109, 94), (165, 0, 33), (0, 0, 0)]
-            limits = [0.0, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 100.]
+                # do the plot
+                plt.figure(figsize=(8, 5))
+                plt.clf()
+                ax = plt.axes([0, 0.03, 1, 1], projection=ccrs.Robinson())
+                ax.set_global()
+                ax.coastlines('50m')
+                try:
+                    ax.gridlines(draw_labels = True)
+                except TypeError:
+                    ax.gridlines()
 
-            for u, upper in enumerate(limits):
+                # colors are the exact same RBG codes as in IDL
+                colors = [(150, 150, 150), (41, 10, 216), (63, 160, 255), (170, 247, 255), \
+                          (255, 224, 153), (247, 109, 94), (165, 0, 33), (0, 0, 0)]
+                if suffix == "":
+                    limits = [0.0, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 100.]
+                elif suffix == "_counts":
+                    limits = [0.0, 5., 10., 50., 100., 500., 1000., 5000.]
+                    
 
-                # sort the labels
-                if u == 0:
-                    locs, = np.where(flag_fraction == 0)
-                    label = "{}%: {}".format(upper, len(locs))
-                else:
-                    locs, = np.where(np.logical_and(flag_fraction <= upper, \
-                                                    flag_fraction > limits[u-1]))
-                    label = ">{} to {}%: {}".format(limits[u-1], upper, len(locs))
-                    if upper == limits[-1]:
-                        label = ">{}%: {}".format(limits[u-1], len(locs))
+                for u, upper in enumerate(limits):
 
-                # and plot
-                if len(locs) > 0:
-                    ax.scatter(lons[locs], lats[locs], transform = ccrs.Geodetic(), s = 15, c = tuple([float(c)/255 for c in colors[u]]), \
-                               edgecolors="none", label = label)
+                    # sort the labels
+                    if u == 0:
+                        locs, = np.where(flag_fraction == 0)
+                        label = "{}%: {}".format(upper, len(locs))
+                    else:
+                        locs, = np.where(np.logical_and(flag_fraction <= upper, \
+                                                        flag_fraction > limits[u-1]))
+                        label = ">{} to {}%: {}".format(limits[u-1], upper, len(locs))
+                        if upper == limits[-1]:
+                            label = ">{}%: {}".format(limits[u-1], len(locs))
 
-                else:
-                    ax.scatter([0], [-90], transform = ccrs.Geodetic(), s = 15, c = tuple([float(c)/255 for c in colors[u]]), \
-                               edgecolors="none", label = label)
+                    # and plot
+                    if len(locs) > 0:
+                        ax.scatter(lons[locs], lats[locs], transform = ccrs.Geodetic(), s = 15, c = tuple([float(c)/255 for c in colors[u]]), \
+                                   edgecolors="none", label = label)
 
-            plt.title("{} - {}".format(" ".join([v.capitalize() for v in var.split("_")]), QC_TESTS[test]))
+                    else:
+                        ax.scatter([0], [-90], transform = ccrs.Geodetic(), s = 15, c = tuple([float(c)/255 for c in colors[u]]), \
+                                   edgecolors="none", label = label)
 
-            watermarkstring="/".join(os.getcwd().split('/')[4:])+'/'+\
-                os.path.basename( __file__ )+"   "+dt.datetime.strftime(dt.datetime.now(), "%d-%b-%Y %H:%M")
-            plt.figtext(0.01,0.01,watermarkstring,size=5)
+                plt.title("{} - {}".format(" ".join([v.capitalize() for v in var.split("_")]), QC_TESTS[test]))
 
-            leg=plt.legend(loc='lower center', ncol=4, bbox_to_anchor=(0.5, -0.12), frameon=False, title='', prop={'size':9}, \
-                           labelspacing=0.15, columnspacing=0.5, numpoints=1)
+                watermarkstring="/".join(os.getcwd().split('/')[4:])+'/'+\
+                    os.path.basename( __file__ )+"   "+dt.datetime.strftime(dt.datetime.now(), "%d-%b-%Y %H:%M")
+                plt.figtext(0.01,0.01,watermarkstring,size=5)
 
-            plt.savefig(os.path.join(IMAGE_LOCS, "All_fails_{}-{}_{}.png".format(var, test, start_time_string)))
-            plt.close()
+                leg=plt.legend(loc='lower center', ncol=4, bbox_to_anchor=(0.5, -0.12), frameon=False, title='', prop={'size':9}, \
+                               labelspacing=0.15, columnspacing=0.5, numpoints=1)
+
+                plt.savefig(os.path.join(IMAGE_LOCS, "All_fails_{}-{}{}_{}.png".format(var, test, suffix, start_time_string)))
+                plt.close()
 
 
     return # main

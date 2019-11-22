@@ -32,12 +32,6 @@ import qc_tests
 import setup
 #************************************************************************
 
-# Temporary stuff
-MFF_LOC = setup.SUBDAILY_IN_DIR
-QFF_LOC = setup.SUBDAILY_OUT_DIR
-CONF_LOC = setup.SUBDAILY_CONFIG_DIR
-
-
 #************************************************************************
 def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=False, test="all"):
     """
@@ -68,7 +62,7 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
 
         startT = dt.datetime.now()
         # set up config file to hold thresholds etc
-        config_file = os.path.join(CONF_LOC, "{}.config".format(station_id))
+        config_file = os.path.join(setup.SUBDAILY_CONFIG_DIR, "{}.config".format(station_id))
 
         #*************************
         # set up the stations
@@ -83,7 +77,7 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         #*************************
         # read MFF
         try:
-            station_df = io.read(os.path.join(MFF_LOC, station_id))
+            station_df = io.read(os.path.join(setup.SUBDAILY_IN_DIR, station_id))
         except IOError:
             print("Missing station {}".format(station_id))
             continue
@@ -198,10 +192,14 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
             print("w", dt.datetime.now()-startT)
             qc_tests.winds.wcc(station, config_file, fix=True, full=full, plots=plots, diagnostics=diagnostics)
 
+        if test in ["all", "clean_up"]:
+            print("U", dt.datetime.now()-startT)
+            qc_tests.clean_up.mcu(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed", "wind_direction"], full=full, plots=plots, diagnostics=diagnostics)
+
         print(dt.datetime.now()-startT)
 
         #*************************
-        # Output of QFF
+        # Insert flags into Data Frame
 
         # need to insert columns in correct place
         column_names = station_df.columns.values
@@ -230,15 +228,24 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         for var in obs_var_list:
             obs_var = getattr(station, var)
             station_df["{}_QC_flag".format(var)] = obs_var.flags
+       
 
+        #*************************
+        # Output of QFF
         # write out the dataframe to output format
-        io.write(os.path.join(QFF_LOC, "{}".format(station_id)), station_df)
+        if utils.high_flagging(station):
+            # high flagging rates in one variable.  Withholding station completely
+            # TODO - once neighbour checks present, revisit, in case only withhold offending variable
+            print("{} withheld as too high flagging".format(station.id))
+            io.write(os.path.join(setup.SUBDAILY_BAD_DIR, "{}".format(station_id)), station_df)
+        else:
+            io.write(os.path.join(setup.SUBDAILY_OUT_DIR, "{}".format(station_id)), station_df)
 
         print(dt.datetime.now()-startT)
 
-        if diagnostics or plots:
+#        if diagnostics or plots:
 #            input("end")
-            break
+#            break
 
     return # run_checks
 

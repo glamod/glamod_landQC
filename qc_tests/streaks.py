@@ -4,11 +4,11 @@ Repeated Streaks Check
 
    Checks for replication of 
      1. checks for consecutive repeating values
-     2. checks if one year has more repeating strings than expected
-     3. checks for repeats at a given hour across a number of days
-     4. checks for repeats for whole days - all 24 hourly values
+     2. checks if one year has more repeating strings than expected [Not yet implemented]
+     3. checks for repeats at a given hour across a number of days [Not yet implemented]
+     4. checks for repeats for whole days - all 24 hourly values [Not yet implemented]
 
-   Some thresholds now determined dynamically
+   Thresholds now determined dynamically
 """
 #************************************************************************
 import copy

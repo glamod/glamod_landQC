@@ -47,7 +47,7 @@ def prepare_data(obs_var, station, month, diagnostics=False, winsorize=True):
 
         if winsorize:
             if len(hour_data.compressed()) > 10:
-                hour_data = utils.winsorize(hour_data, 50)
+                hour_data = utils.winsorize(hour_data, 5)
 
         if len(hour_data.compressed()) >= utils.DATA_COUNT_THRESHOLD:
             hourly_clims[hour] = np.ma.mean(hour_data)
@@ -219,7 +219,7 @@ def variance_check(obs_var, station, config_file, plots=False, diagnostics=False
                         poss = 0
                         negs += 1
 
-                if (biggest_neg < 10) and (biggest_pos < 10):
+                if (biggest_neg < 10) and (biggest_pos < 10) and not couldbe_storm:
                     # insufficient to identify as a storm (HadISD values)
                     # leave flags set
                     pass
