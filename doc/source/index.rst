@@ -33,7 +33,7 @@ Then create your own virtual environment, using the command which ensures all th
 
   virtualenv --system-site-packages venv
 
-At this point you can unload JasPy:
+At this point you can unload JasPy::
   
   module unload jaspy
 
@@ -59,7 +59,7 @@ Running the QC
 
 Configuration files handle the over-arching settings for the code,
 including setting the paths to the files and the statistics and
-thresholds to use.::
+thresholds to use.  The configuration.txt file contains::
 
   [PATHS]
   root = /gws/nopw/j04/c3s311a_lot2/data/level1/land/
