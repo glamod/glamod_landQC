@@ -153,7 +153,7 @@ tornado==5.1.1
 tqdm==4.28.1
 traitlets==4.3.2
 tzlocal==1.5.1
-urllib3==1.24.1
+urllib3==1.24.2
 virtualenv==16.0.0
 wcwidth==0.1.7
 WebOb==1.8.4
