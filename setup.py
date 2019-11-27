@@ -27,9 +27,10 @@ config.read(CONFIG_FILE)
 #*********************************************
 # locations
 ROOT_DIR = config.get("PATHS", "root")
-SUBDAILY_IN_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "mff"))
+SUBDAILY_IN_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "mff"), config.get("PATHS", "mff_version"))
+SUBDAILY_ROOT_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "mff"))
 
-SUBDAILY_OUT_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "qff"))
+SUBDAILY_OUT_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "qff"), config.get("PATHS", "qff_version"))
 if not os.path.exists(SUBDAILY_OUT_DIR):
     os.mkdir(SUBDAILY_OUT_DIR)
 

@@ -108,7 +108,7 @@ def get_station_list(restart_id="", end_id=""):
     """
 
     # process the station list
-    station_list = pd.read_fwf(os.path.join(setup.SUBDAILY_IN_DIR, "ghcnh-stations.txt"), widths=(11, 9, 10, 7, 35), header=None)
+    station_list = pd.read_fwf(os.path.join(setup.SUBDAILY_ROOT_DIR, "ghcnh-stations.txt"), widths=(11, 9, 10, 7, 35), header=None)
 
     # no longer necessary in November run, kept just in case
 #    station_list2 = pd.read_fwf(os.path.join(setup.SUBDAILY_IN_DIR, "ghcnh-stations-2add.txt"), widths=(11, 9, 10, 7, 35), header=None)
@@ -798,14 +798,17 @@ def high_flagging(station):
 
         obs_locs, = np.where(obs_var.data.mask == False)
 
-        flags = obs_var.flags
+        if obs_locs.shape[0] > 10 * DATA_COUNT_THRESHOLD:
+            # require sufficient observations to make a flagged fraction useful.
 
-        flagged, = np.where(flags[obs_locs] != "")
+            flags = obs_var.flags
 
-        if flagged.shape[0] / obs_locs.shape[0] > HIGH_FLAGGING:
-            bad = True
-            print("{} flagging rate of {:5.1f}%".format(obs_var.name, \
-                                                        100*(flagged.shape[0] / obs_locs.shape[0])))
-            break
+            flagged, = np.where(flags[obs_locs] != "")
+
+            if flagged.shape[0] / obs_locs.shape[0] > HIGH_FLAGGING:
+                bad = True
+                print("{} flagging rate of {:5.1f}%".format(obs_var.name, \
+                                                                100*(flagged.shape[0] / obs_locs.shape[0])))
+                break
 
     return bad # high_flagging
