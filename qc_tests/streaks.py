@@ -61,6 +61,8 @@ def prepare_data_repeating_string(obs_var, plots=False, diagnostics=False):
     """
 
     # want locations where first differences are zero
+    #   does not change if time or instrumental resolution changes.
+    #   if there is zero difference between one obs and the next, that's the main thing
     value_diffs = np.ma.diff(obs_var.data.compressed())
 
     # group the differences
@@ -84,9 +86,7 @@ def get_repeating_string_threshold(obs_var, config_file, plots=False, diagnostic
     :param bool diagnostics: turn on diagnostic output
     """
 
-    # TODO - how to cope with varying time or measurement resolutions
-    # TODO - what if there are only a few "normal" values and otherwise long strings (AGM00060374 20190916)
-
+    # mask calm periods (as these could be a reasonable string)
     this_var = copy.deepcopy(obs_var)
     if obs_var.name == "wind_speed":
         calms, = np.ma.where(this_var.data == 0)

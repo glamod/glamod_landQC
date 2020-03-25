@@ -18,17 +18,18 @@ import setup
 QC_TESTS = {"o" : "Odd Cluster", "F" : "Frequent Value", "D" : "Distribution - Monthly", \
             "d" : "Distribution - all", "W" : "World Records", "K" : "Streaks", \
             "C" : "Climatological", "T" : "Timestamp", "S" : "Spike", "h" : "Humidity", \
-            "V" : "Variance", "p" : "Pressure", "w" : "Winds", "L" : "Logic", "U" : "Clean up"}
+            "V" : "Variance", "p" : "Pressure", "w" : "Winds", "L" : "Logic", "U" : "Clean up", \
+            "N" : "Neighbour"}
 
-TESTS_FOR_VARS = {"temperature": ["o", "F", "D", "d", "W", "K", "C", "T", "S", "V", "L", "U"],\
-                      "dew_point_temperature": ["o", "F", "D", "d", "W", "K", "C", "T", "S", "h", "V", "L", "U"],\
-                      "sea_level_pressure" : ["o", "F", "D", "d", "W", "K", "T", "S", "V", "p", "L", "U"],\
-                      "station_level_pressure" : ["o", "F", "D", "d", "K", "T", "S", "V", "p", "L", "U"],\
-                      "wind_speed" : ["o", "W", "K", "T", "S", "V", "w", "L", "U"],
-                  "wind_direction" : ["K", "w", "L", "U"]}
+TESTS_FOR_VARS = {"temperature": ["All", "o", "F", "D", "d", "W", "K", "C", "T", "S", "V", "L", "U", "N"],\
+                      "dew_point_temperature": ["All", "o", "F", "D", "d", "W", "K", "C", "T", "S", "h", "V", "L", "U", "N"],\
+                      "sea_level_pressure" : ["All", "o", "F", "D", "d", "W", "K", "T", "S", "V", "p", "L", "U", "N"],\
+                      "station_level_pressure" : ["All", "o", "F", "D", "d", "K", "T", "S", "V", "p", "L", "U", "N"],\
+                      "wind_speed" : ["All", "o", "W", "K", "T", "S", "V", "w", "L", "U", "N"],
+                  "wind_direction" : ["All", "K", "w", "L", "U"]}
 
 # Temporary stuff
-MFF_LOC = setup.SUBDAILY_IN_DIR
+MFF_LOC = setup.SUBDAILY_MFF_DIR
 QFF_LOC = setup.SUBDAILY_OUT_DIR
 CONF_LOC = setup.SUBDAILY_CONFIG_DIR
 IMAGE_LOCS = setup.SUBDAILY_IMAGE_DIR
@@ -50,7 +51,7 @@ def main(restart_id="", end_id="", diagnostics=False):
     # process the station list
     station_list = utils.get_station_list(restart_id=restart_id, end_id=end_id)
 
-    station_IDs = station_list.iloc[:, 0]
+    station_IDs = station_list.id
 
     all_stations = {}
 
@@ -58,16 +59,14 @@ def main(restart_id="", end_id="", diagnostics=False):
     for st, station_id in enumerate(station_IDs):
         print("{} {}".format(dt.datetime.now(), station_id))
 
-#        if station_id not in ["AFA00409803", "AFA00409793"]: continue
-
-        station = utils.Station(station_id, station_list.iloc[st][1], station_list.iloc[st][2], station_list.iloc[st][3])
+        station = utils.Station(station_id, station_list.iloc[st].latitude, station_list.iloc[st].longitude, station_list.iloc[st].elevation)
         if diagnostics:
             print(station)
 
         #*************************
         # read QFF
         try:
-            station_df = io.read(os.path.join(QFF_LOC, station_id), extension="qff")
+            station_df = io.read(os.path.join(setup.SUBDAILY_OUT_DIR, "{}.qff".format(station_id)))
         except IOError:
             print("Missing station {}".format(station_id))
             continue
@@ -80,10 +79,17 @@ def main(restart_id="", end_id="", diagnostics=False):
             flags = station_df["{}_QC_flag".format(var)].fillna("")
 
             for test in QC_TESTS.keys():
-                locs = flags[flags.str.match(test)]
+                locs = flags[flags.str.contains(test)]
 
                 setattr(obs_var, test, locs.shape[0]/flags.shape[0])
                 setattr(obs_var, "{}_counts".format(test), locs.shape[0])
+
+            # for total, get number of clean obs and subtract
+            flagged, = np.where(flags != "")
+            setattr(obs_var, "All", flagged.shape[0]/flags.shape[0])
+            setattr(obs_var, "All_counts".format(test), flagged.shape[0])
+            
+            
 
         all_stations[station_id] = station
 
@@ -142,7 +148,10 @@ def main(restart_id="", end_id="", diagnostics=False):
                         ax.scatter([0], [-90], transform = ccrs.Geodetic(), s = 15, c = tuple([float(c)/255 for c in colors[u]]), \
                                    edgecolors="none", label = label)
 
-                plt.title("{} - {}".format(" ".join([v.capitalize() for v in var.split("_")]), QC_TESTS[test]))
+                if test == "All":
+                    plt.title("{} - {}".format(" ".join([v.capitalize() for v in var.split("_")]), "All"))
+                else:
+                    plt.title("{} - {}".format(" ".join([v.capitalize() for v in var.split("_")]), QC_TESTS[test]))
 
                 watermarkstring="/".join(os.getcwd().split('/')[4:])+'/'+\
                     os.path.basename( __file__ )+"   "+dt.datetime.strftime(dt.datetime.now(), "%d-%b-%Y %H:%M")

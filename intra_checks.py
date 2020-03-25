@@ -23,6 +23,7 @@ Input arguments:
 #************************************************************************
 import os
 import datetime as dt
+import numpy as np
 import pandas as pd
 
 # internal utils
@@ -46,19 +47,14 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
                      frequent/humidity/odd_cluster/pressure/spike/streaks/timestamp/variance/winds/world_records]
     """
 
-    obs_var_list = setup.obs_var_list
-
     # process the station list
     station_list = utils.get_station_list(restart_id=restart_id, end_id=end_id)
 
-    station_IDs = station_list.iloc[:, 0]
+    station_IDs = station_list.id
 
     # now spin through each ID in the curtailed list
     for st, station_id in enumerate(station_IDs):
         print("{} {} ({}/{})".format(dt.datetime.now(), station_id, st+1, station_IDs.shape[0]))
-
-        # for diagnostics
-#        if station_id != "ICAOKAYE-1_223.psv": continue
 
         startT = dt.datetime.now()
         # set up config file to hold thresholds etc
@@ -66,42 +62,22 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
 
         #*************************
         # set up the stations
-        # TEMPORARY
-        # extract geo metadata from DF
-#        station = utils.Station(station_id, station_df["Latitude"][0], station_df["Longitude"][0], station_df["Elevation"][0])
-
-        station = utils.Station(station_id, station_list.iloc[st][1], station_list.iloc[st][2], station_list.iloc[st][3])
+        station = utils.Station(station_id, station_list.latitude[st], station_list.longitude[st], station_list.elevation[st])
         if diagnostics:
             print(station)
 
-        #*************************
-        # read MFF
         try:
-            station_df = io.read(os.path.join(setup.SUBDAILY_IN_DIR, station_id))
-        except IOError:
-            print("Missing station {}".format(station_id))
+            station, station_df = io.read_station(os.path.join(setup.SUBDAILY_MFF_DIR, "{}.mff".format(station_id)), station)
+        except OSError:
+            # file missing, move on to next in sequence
             continue
 
-
-        # convert to datetimes
-        datetimes = pd.to_datetime(station_df[["Year", "Month", "Day", "Hour", "Minute"]])
-        
         # some may have no data (for whatever reason)
-        if datetimes.shape[0] == 0:
+        if station.times.shape[0] == 0:
             if diagnostics:
-                print("No data in station {}".format(station_id))
+                print("No data in station {}".format(station.id))
             # scoot onto next station
             continue
-
-        # convert dataframe to station and MetVar objects for internal processing
-        utils.populate_station(station, station_df, obs_var_list)
-        station.times = datetimes
-
-        # store extra information to enable easy extraction later
-        station.years = station_df["Year"].fillna(utils.MDI).to_numpy()
-        station.months = station_df["Month"].fillna(utils.MDI).to_numpy()
-        station.days = station_df["Day"].fillna(utils.MDI).to_numpy()
-        station.hours = station_df["Hour"].fillna(utils.MDI).to_numpy()
 
         #*************************
         # lat and lon checks
@@ -144,12 +120,12 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
             print("F", dt.datetime.now()-startT)
             qc_tests.frequent.fvc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_file, full=full, plots=plots, diagnostics=diagnostics)
 
-        # HadISD only runs on stations where latitude higher than 60(N/S)
+        # HadISD only runs on stations where latitude lower than 60(N/S)
         # Takes a long time, this one
-#        if test in ["all", "diurnal"]:
-#            print("U", dt.datetime.now()-startT)
-#            if np.abs(station.latitude < 60):
-#                qc_tests.diurnal.dcc(station, config_file, full=full, plots=plots, diagnostics=diagnostics)
+        if test in ["all", "diurnal"]:
+            print("U", dt.datetime.now()-startT)
+            if np.abs(station.lat < 60):
+                qc_tests.diurnal.dcc(station, config_file, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "distribution"]:
             print("D", dt.datetime.now()-startT)
@@ -209,7 +185,7 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         #    need to automate the column identification
         new_column_indices = []
         for c, column in enumerate(station_df.columns):
-            if column in obs_var_list:
+            if column in setup.obs_var_list:
                 new_column_indices += [c + 2] # 2 offset rightwards from variable's column
 
         # reverse order so can insert without messing up the indices
@@ -225,7 +201,7 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
 
 
         # write in the flag information
-        for var in obs_var_list:
+        for var in setup.obs_var_list:
             obs_var = getattr(station, var)
             station_df["{}_QC_flag".format(var)] = obs_var.flags
        
@@ -237,9 +213,9 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
             # high flagging rates in one variable.  Withholding station completely
             # TODO - once neighbour checks present, revisit, in case only withhold offending variable
             print("{} withheld as too high flagging".format(station.id))
-            io.write(os.path.join(setup.SUBDAILY_BAD_DIR, "{}".format(station_id)), station_df)
+            io.write(os.path.join(setup.SUBDAILY_BAD_DIR, "{}.qff".format(station_id)), station_df)
         else:
-            io.write(os.path.join(setup.SUBDAILY_OUT_DIR, "{}".format(station_id)), station_df)
+            io.write(os.path.join(setup.SUBDAILY_PROC_DIR, "{}.qff".format(station_id)), station_df)
 
         print(dt.datetime.now()-startT)
 

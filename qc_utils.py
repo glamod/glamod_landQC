@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 '''
 qc_utils.py contains utility scripts to help with quality control tests
 '''
@@ -14,11 +15,20 @@ from scipy.optimize import least_squares
 import setup
 
 
-UNIT_DICT = {"temperature" : "degrees C", "dew_point_temperature" :  "degrees C", "wind_direction" :  "degrees", "wind_speed" : "meters per second", "sea_level_pressure" : "hPa hectopascals", "station_level_pressure" : "hPa hectopascals"}
+UNIT_DICT = {"temperature" : "degrees C", \
+                 "dew_point_temperature" :  "degrees C", \
+                 "wind_direction" :  "degrees", \
+                 "wind_speed" : "meters per second", \
+                 "sea_level_pressure" : "hPa hectopascals", \
+                 "station_level_pressure" : "hPa hectopascals"}
+
 MDI = -1.e30
 
 
 #*********************************************
+# Process the Configuration File
+#*********************************************
+
 CONFIG_FILE = "./configuration.txt"
 
 if not os.path.exists(os.path.join(os.path.dirname(__file__), CONFIG_FILE)):
@@ -58,6 +68,15 @@ HIGH_FLAGGING = config.getfloat("THRESHOLDS", "high_flag_proportion")
 LOGICFILE = os.path.join(os.path.dirname(__file__), config.get("FILES", "logic"))
 
 #*********************************************
+# Neighbour Checks
+MAX_NEIGHBOUR_DISTANCE = config.getint("NEIGHBOURS", "max_distance")
+MAX_NEIGHBOUR_VERTICAL_SEP = config.getint("NEIGHBOURS", "max_vertical_separation")
+MAX_N_NEIGHBOURS = config.getint("NEIGHBOURS", "max_number")
+NEIGHBOUR_FILE = config.get("NEIGHBOURS", "filename")
+MIN_NEIGHBOURS = config.getint("NEIGHBOURS", "minimum_number")
+
+#*********************************************
+# Set up the Classes
 #*********************************************
 class Meteorological_Variable(object):
     '''
@@ -97,6 +116,8 @@ class Station(object):
 
     
 #************************************************************************
+# Subroutines
+#************************************************************************
 def get_station_list(restart_id="", end_id=""):
     """
     Read in station list file(s) and return dataframe
@@ -108,13 +129,14 @@ def get_station_list(restart_id="", end_id=""):
     """
 
     # process the station list
-    station_list = pd.read_fwf(os.path.join(setup.SUBDAILY_ROOT_DIR, "ghcnh-stations.txt"), widths=(11, 9, 10, 7, 35), header=None)
+    station_list = pd.read_fwf(os.path.join(setup.SUBDAILY_ROOT_DIR, "ghcnh-stations.txt"), \
+                                   widths=(11, 9, 10, 7, 35), header=None, names=("id", "latitude", "longitude", "elevation", "name"))
 
     # no longer necessary in November run, kept just in case
-#    station_list2 = pd.read_fwf(os.path.join(setup.SUBDAILY_IN_DIR, "ghcnh-stations-2add.txt"), widths=(11, 9, 10, 7, 35), header=None)
+#    station_list2 = pd.read_fwf(os.path.join(setup.SUBDAILY_ROOT_DIR, "ghcnh-stations-2add.txt"), widths=(11, 9, 10, 7, 35), header=None)
 #    station_list = station_list.append(station_list2, ignore_index=True)
 
-    station_IDs = station_list.iloc[:, 0]
+    station_IDs = station_list.id
 
     # work from the end to save messing up the start indexing
     if end_id != "":
@@ -126,7 +148,7 @@ def get_station_list(restart_id="", end_id=""):
         startindex, = np.where(station_IDs == restart_id)
         station_list = station_list.iloc[startindex[0]:]
 
-    return station_list # get_station_list
+    return station_list.reset_index() # get_station_list
 
 #************************************************************************
 def read_qc_config(config_filename, section, field, islist=False):
@@ -224,16 +246,17 @@ def insert_flags(qc_flags, flags):
     :param array flags: string array of flags
     """
 
-    qc_flags = np.core.defchararray.add(qc_flags, flags)
+    qc_flags = np.core.defchararray.add(qc_flags.astype(str), flags.astype(str))
 
     return qc_flags # insert_flags
 
 
 #************************************************************************
-def populate_station(station, df, obs_var_list):
+def populate_station(station, df, obs_var_list, read_flags=False):
     """
     Convert Data Frame into internal station and obs_variable objects
 
+    :param bool read_flags: read in already pre-existing flags
     """
     
     for variable in obs_var_list:
@@ -257,8 +280,12 @@ def populate_station(station, df, obs_var_list):
             
         this_var.data.fill_value = MDI
 
-        # empty flag array
-        this_var.flags = np.array(["" for i in range(len(this_var.data))])
+        if read_flags:
+            # change all empty values (else NaN) to blank
+            this_var.flags = df["{}_QC_flag".format(variable)].fillna("").to_numpy()
+        else:
+            # empty flag array
+            this_var.flags = np.array(["" for i in range(len(this_var.data))])
 
         # and store
         setattr(station, variable, this_var)

@@ -23,22 +23,21 @@ Input arguments:
 
 import os.path
 
-import iris
-from iris.analysis.cartography import DEFAULT_SPHERICAL_EARTH_RADIUS
-import iris.coord_categorisation
+#import iris as iris
+#from iris.analysis.cartography import DEFAULT_SPHERICAL_EARTH_RADIUS
+DEFAULT_SPHERICAL_EARTH_RADIUS=6367470
+#import iris.coord_categorisation
 import numpy as np
 import scipy.linalg
+
 
 from geometry import polar2d_to_cartesian, cross_distance, vector_angle
 
 import qc_utils as utils
 from setup import SUBDAILY_CONFIG_DIR
 
-MAX_NEIGHBOUR_DISTANCE = 200 # km
-MAX_N_NEIGHBOURS = 20
 DEFAULT_SEPARATION = 9999
 CHUNKSIZE = 1000 # size of arrays to split ID list into for distances
-OUTFILE = "neighbours.txt"
 
 #************************************************************************
 def get_cartesian(latitudes, longitudes):
@@ -89,7 +88,7 @@ def get_neighbours(station_list_a, station_list_b=None, diagnostics=False, plots
     :param dataframe station_list_a: id, latitude, longitude, elevation and name.
     :param dataframe station_list_b: id, latitude, longitude, elevation and name [None].
     :param bool diagnostics: print extra material to screen
-    :param bool plots: create plots from each test
+    :param bool plots: create plots
     :param bool full: run full reprocessing rather than using stored values.
 
     :returns: array of [targets, neighbour_indices, distances]
@@ -97,7 +96,7 @@ def get_neighbours(station_list_a, station_list_b=None, diagnostics=False, plots
 
 
     # storage array for index and distance [index, neighbour_index, distance]
-    neighbours = -np.ones((station_list_a.shape[0], MAX_N_NEIGHBOURS, 2)).astype(int)
+    neighbours = -np.ones((station_list_a.shape[0], utils.MAX_N_NEIGHBOURS, 2)).astype(int)
     neighbours[:, :, 1] = DEFAULT_SEPARATION
 
     if diagnostics:
@@ -111,8 +110,14 @@ def get_neighbours(station_list_a, station_list_b=None, diagnostics=False, plots
         cartesian_b = None
     distances = compute_corange_matrix(cartesian_a, cartesian_b).astype(int)
 
-    # remove this as not always working where there's a diagonal!  Closest is always self.
-    # np.fill_diagonal(distances, DEFAULT_SEPARATION)
+    # and do elevation check
+    elev_a = station_list_a.elevation
+    if station_list_b is not None:
+        elev_b = station_list_b.elevation
+    else:
+        elev_b = np.copy(station_list_a.elevation)
+    elev_a, elev_b = np.meshgrid(elev_a, elev_b) 
+    vertical_separations = np.abs(elev_a - elev_b).T # transpose to match shape of distances
 
     if diagnostics:
         print("Post-processing")
@@ -120,8 +125,10 @@ def get_neighbours(station_list_a, station_list_b=None, diagnostics=False, plots
     # store indices of those if close enough.
     for t, target in enumerate(distances):
 
-        matches, = np.where(target < MAX_NEIGHBOUR_DISTANCE)
-
+        match_distance, = np.where(target <= utils.MAX_NEIGHBOUR_DISTANCE)
+        match_elevation, = np.where(vertical_separations[t] <= utils.MAX_NEIGHBOUR_VERTICAL_SEP)
+        matches = np.intersect1d(match_distance, match_elevation)
+        
         if len(matches) > 0:
             # have some neighbours
 
@@ -132,10 +139,10 @@ def get_neighbours(station_list_a, station_list_b=None, diagnostics=False, plots
             current_neighbours = np.append(current_neighbours, new_neighbours, axis=0) 
 
             # sort on distances, and store closest N
-            sort_order = np.argsort(current_neighbours[:, 1])            
+            sort_order = np.argsort(current_neighbours[:, 1])
 
             # overwrite.        
-            neighbours[t, :, :] = current_neighbours[sort_order[:MAX_N_NEIGHBOURS]]            
+            neighbours[t, :, :] = current_neighbours[sort_order[:utils.MAX_N_NEIGHBOURS]]            
                
     return neighbours # get_neighbours
 
@@ -147,14 +154,14 @@ def main(restart_id="", end_id="", diagnostics=False, plots=False, full=False):
     :param str restart_id: which station to start on
     :param str end_id: which station to end on
     :param bool diagnostics: print extra material to screen
-    :param bool plots: create plots from each test
+    :param bool plots: create plots
     :param bool full: run full reprocessing rather than using stored values.
     """
 
     station_list = utils.get_station_list(restart_id=restart_id, end_id=end_id)
 
     # storage array for index and distance [index, neighbour_index, distance]
-    neighbours = -np.ones((station_list.shape[0], MAX_N_NEIGHBOURS, 2)).astype(int)
+    neighbours = -np.ones((station_list.shape[0], utils.MAX_N_NEIGHBOURS, 2)).astype(int)
     neighbours[:, :, 1] = DEFAULT_SEPARATION
 
     # now need to chunk up and process in bits.
@@ -180,23 +187,25 @@ def main(restart_id="", end_id="", diagnostics=False, plots=False, full=False):
 
             # doing longhand as couldn't get a reliable whole-array solution
             for sn, this_station in enumerate(these_station_neighbours):
-
                 # sort on distances, and store closest N
-                sort_order = np.argsort(this_station[:, 1])            
+                sort_order = np.argsort(this_station[:, 1])
 
                 # overwrite.        
                 these_station_neighbours[sn] = this_station[sort_order]
 
         # write back into neighbour array 
-        neighbours[sub_arr1.index.start : sub_arr1.index.stop] = these_station_neighbours[:, :MAX_N_NEIGHBOURS, :]
+        neighbours[sub_arr1.index.start : sub_arr1.index.stop] = these_station_neighbours[:, :utils.MAX_N_NEIGHBOURS, :]
 
     # so this only needs running once per update, write out and store the neighbours
     if diagnostics:
         print("writing")
-    with open(os.path.join(SUBDAILY_CONFIG_DIR, OUTFILE), "w") as outfile:
+    with open(os.path.join(SUBDAILY_CONFIG_DIR, utils.NEIGHBOUR_FILE), "w") as outfile:
 
         # each station
-        for station in neighbours:
+        for st, station in enumerate(neighbours):
+            # check to make sure that the first entry is correct (in cases where a neighbour has zero separation
+            if station[0, 0] != st:
+                station[[0,1]]=station[[1,0]] 
 
             outstring = ""
             # each neighbour
@@ -205,6 +214,8 @@ def main(restart_id="", end_id="", diagnostics=False, plots=False, full=False):
                     outstring = "{:s} {:>12s} {:8d}".format(outstring, station_list.id[neighb[0]], neighb[1])
                 else:
                     outstring = "{:s} {:>12s} {:8d}".format(outstring, "-", neighb[1])
+                    
+#            input("stop")
 
             outfile.write("{}\n".format(outstring))
 

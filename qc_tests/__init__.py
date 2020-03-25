@@ -1,4 +1,4 @@
 from . import world_records, spike, streaks, humidity
 from . import frequent, pressure, distribution, climatological
 from . import variance, winds, diurnal, odd_cluster
-from . import timestamp, logic_checks, clean_up
+from . import timestamp, logic_checks, clean_up, neighbour_outlier

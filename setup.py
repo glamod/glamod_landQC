@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 '''
 initial_setup - contains settings and path information
 '''
@@ -11,6 +12,7 @@ import json
 
 
 #*********************************************
+# Process Configuration file
 CONFIG_FILE = "./configuration.txt"
 
 if not os.path.exists(os.path.join(os.path.dirname(__file__), CONFIG_FILE)):
@@ -26,11 +28,44 @@ config.read(CONFIG_FILE)
 
 #*********************************************
 # locations
-ROOT_DIR = config.get("PATHS", "root")
-SUBDAILY_IN_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "mff"), config.get("PATHS", "mff_version"))
-SUBDAILY_ROOT_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "mff"))
 
-SUBDAILY_OUT_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "qff"), config.get("PATHS", "qff_version"))
+# GWS base dir
+ROOT_DIR = config.get("PATHS", "root")
+
+# SCRATCH base dir
+SCRATCH_DIR = config.get("PATHS", "scratch")
+
+# source always the same - currently on GWS
+SUBDAILY_ROOT_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "mff"))
+SUBDAILY_MFF_DIR = os.path.join(SUBDAILY_ROOT_DIR, config.get("PATHS", "mff_version"))
+
+# where to run
+runon = config.get("PATHS", "runon")
+if runon == "scratch":
+    root_dir = SCRATCH_DIR
+    # need to keep origin unaffected
+    SCRATCH_ROOT_DIR = os.path.join(root_dir, config.get("PATHS", "mff"))
+#   If keep this commented out then can run and save onto scratch without needing to copy MFFs over first
+#    SUBDAILY_MFF_DIR = os.path.join(SCRATCH_ROOT_DIR, config.get("PATHS", "mff_version"))
+
+elif runon == "root":
+    root_dir = ROOT_DIR
+
+
+
+# set up suitable paths
+# processing space - for intermediate files, between mff and qff
+if not os.path.exists(os.path.join(root_dir, config.get("PATHS", "proc"))):
+    os.mkdir(os.path.join(root_dir, config.get("PATHS", "proc")))
+
+SUBDAILY_PROC_DIR = os.path.join(root_dir, config.get("PATHS", "proc"), config.get("PATHS", "proc_version"))
+if not os.path.exists(SUBDAILY_PROC_DIR):
+    os.mkdir(SUBDAILY_PROC_DIR)
+
+if not os.path.exists(os.path.join(root_dir, config.get("PATHS", "qff"))):
+    os.mkdir(os.path.join(root_dir, config.get("PATHS", "qff")))
+
+SUBDAILY_OUT_DIR = os.path.join(root_dir, config.get("PATHS", "qff"), config.get("PATHS", "qff_version"))
 if not os.path.exists(SUBDAILY_OUT_DIR):
     os.mkdir(SUBDAILY_OUT_DIR)
 
@@ -38,17 +73,18 @@ SUBDAILY_BAD_DIR = os.path.join(SUBDAILY_OUT_DIR, "bad_stations")
 if not os.path.exists(SUBDAILY_BAD_DIR):
     os.mkdir(SUBDAILY_BAD_DIR)
 
-SUBDAILY_CONFIG_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "config"))
+SUBDAILY_CONFIG_DIR = os.path.join(root_dir, config.get("PATHS", "config"))
 if not os.path.exists(SUBDAILY_CONFIG_DIR):
     os.mkdir(SUBDAILY_CONFIG_DIR)
 
-SUBDAILY_IMAGE_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "images"))
+SUBDAILY_IMAGE_DIR = os.path.join(root_dir, config.get("PATHS", "images"))
 if not os.path.exists(SUBDAILY_IMAGE_DIR):
     os.mkdir(SUBDAILY_IMAGE_DIR)
 
-SUBDAILY_ERROR_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "errors"))
+SUBDAILY_ERROR_DIR = os.path.join(root_dir, config.get("PATHS", "errors"))
 if not os.path.exists(SUBDAILY_ERROR_DIR):
     os.mkdir(SUBDAILY_ERROR_DIR)
+
 
 # for cross-timescale checks
 # DAILY_DIR = 

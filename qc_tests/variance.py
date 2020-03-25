@@ -145,7 +145,7 @@ def variance_check(obs_var, station, config_file, plots=False, diagnostics=False
 
 
         if average_variance == utils.MDI and variance_spread == utils.MDI:
-            # couldn't be calculated, mpve on
+            # couldn't be calculated, move on
             continue
 
         bad_years, = np.where(np.abs(variances - average_variance) / variance_spread > SPREAD_THRESHOLD)
@@ -170,24 +170,31 @@ def variance_check(obs_var, station, config_file, plots=False, diagnostics=False
             pressure_average = utils.average(pressure_monthly_data)
             pressure_spread = utils.spread(pressure_monthly_data)
 
+        # go through each bad year for this month
         all_years = np.unique(station.years)
         for year in bad_years:
 
+            # corresponding locations
             ym_locs, = np.where(np.logical_and(station.months == month, station.years == all_years[year]))
 
+            # if pressure or wind speed, need to do some further checking before applying flags
             if obs_var.name in ["station_level_pressure", "sea_level_pressure", "wind_speed"]:
+
+                # pull out the data
                 wind_data = station.wind_speed.data[ym_locs]
                 if obs_var.name in ["station_level_pressure", "sea_level_pressure"]:
                     pressure_data = obs_var.data[ym_locs]
                 else:
                     pressure_data = station.sea_level_pressure.data[ym_locs]
 
+
+                # need sufficient data to work with for storm check to work, else can't tell
                 if len(pressure_data.compressed()) < utils.DATA_COUNT_THRESHOLD or \
                         len(wind_data.compressed()) < utils.DATA_COUNT_THRESHOLD:
-                    # need sufficient data to work with for storm check to work, else can't tell
-                    #    move on
+                    # move on
                     continue
 
+                # find locations of high wind speeds and low pressures, cross match
                 high_winds, = np.ma.where((wind_data - wind_average)/wind_spread > STORM_THRESHOLD)
                 low_pressures, = np.ma.where((pressure_average - pressure_data)/pressure_spread > STORM_THRESHOLD)
 
@@ -202,7 +209,6 @@ def variance_check(obs_var, station, config_file, plots=False, diagnostics=False
                     diffs = np.ma.diff(pressure_data)
                 elif obs_var.name == "wind_speed":
                     diffs = np.ma.diff(wind_data)
-
 
                 # count up the largest number of sequential negative and positive differences
                 negs, poss = 0, 0
@@ -266,9 +272,6 @@ def variance_check(obs_var, station, config_file, plots=False, diagnostics=False
 
         print("Variance {}".format(obs_var.name))
         print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
-
-
-        # TODO - SLP/STNLP storm check
 
     return # variance_check
 

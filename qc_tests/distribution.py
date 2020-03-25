@@ -411,7 +411,7 @@ def all_obs_gap(obs_var, station, config_file, plots=False, diagnostics=False):
                 month_flags = flags[month_locs]
                 month_flags[bad_locs] = "d"
 
-                # TODO - can this bit be refactored
+                # TODO - can this bit be refactored?
                 # for pressure data, see if the flagged obs correspond with high winds
                 # could be a storm signal
                 if obs_var.name in ["station_level_pressure", "sea_level_pressure"]:

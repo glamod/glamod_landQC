@@ -62,7 +62,12 @@ def plot_cluster(times, obs_var, oc_start, oc_end):
 #************************************************************************
 def flag_clusters(obs_var, station, plots=False, diagnostics=False):
     """
-# TODO - docstring
+    Go through the clusters of data and flag if meet requirements
+
+    :param MetVar obs_var: meteorological variable object
+    :param Station station: Station Object for the station
+    :param bool plots: turn on plots
+    :param bool diagnostics: turn on diagnostic output
     """
 
     flags = np.array(["" for i in range(obs_var.data.shape[0])])

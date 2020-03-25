@@ -76,7 +76,7 @@ def find_fit(this_day, this_day_mins):
     best_fit = np.argmin(differences)
 
     # now to get uncertainties on this best fit shift
-    critical_value = np.ma.min(differences) + (np.ma.max(differences) - np.ma.min(differences))*THRESHOLD
+    critical_value = np.ma.min(differences) + ((np.ma.max(differences) - np.ma.min(differences))*THRESHOLD)
     # roll, so best fit is in the middle
     differences = np.roll(differences, (11 - best_fit))
 
@@ -129,7 +129,7 @@ def get_daily_offset(station, locs, obs_var):
     these_times = station.times[locs] - station.times[locs].iloc[0]
     this_day_mins = (these_times.to_numpy()/np.timedelta64(1, "m")).astype(int)
 
-    # TODO - further restrictions (range>=5K, at least in 3 of 4 quarters of the day etc)
+    # further restrictions (range>=5K, at least in 3 of 4 quarters of the day etc)
     best_fit, uncertainty = MISSING, MISSING
     if len(this_day.compressed()) > OBS_PER_DAY:
         if np.ma.max(this_day) - np.ma.min(this_day) > DAILY_RANGE:
@@ -193,8 +193,8 @@ def find_offset(obs_var, station, config_file, plots=False, diagnostics=False):
     best_fits = MISSING*np.ones(6).astype(int)
     for h in range(6):
         locs, = np.where(best_fit_uncertainty == h+1)
-        # TODO - move 300 to config or header
-        if len(locs) >= 300:
+
+        if len(locs) >= utils.DATA_COUNT_THRESHOLD:
             best_fits[h] = np.median(best_fit_diurnal[locs])
 
     # now go through each of the 6hrs of uncertainty and see if the range

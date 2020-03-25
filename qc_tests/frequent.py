@@ -10,8 +10,6 @@ import numpy as np
 import qc_utils as utils
 #************************************************************************
 
-# TODO - factorise, as code currently duplicated between ID and flag defs.
-
 ROLLING = 7
 BIN_WIDTH = 1.0
 RATIO = 0.5
@@ -28,10 +26,8 @@ def identify_values(obs_var, station, config_file, plots=False, diagnostics=Fals
     :param bool diagnostics: turn on diagnostic output
     """
 
-    # TODO - dynamic bin width depending on resolution.
     # TODO - do we want to go down the road of allowing resolution (and hence test)
     #           to vary over the p-o-r?  I.e. 1C in early, to 0.5C to 0.1C in different decades?
-    # TODO - data count thresholds
 
     utils.write_qc_config(config_file, "FREQUENT-{}".format(obs_var.name), "width", "{}".format(BIN_WIDTH), diagnostics=diagnostics)
 
@@ -109,7 +105,6 @@ def frequent_values(obs_var, station, config_file, plots=False, diagnostics=Fals
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
-    # TODO - data count thresholds
 
     flags = np.array(["" for i in range(obs_var.data.shape[0])])
 

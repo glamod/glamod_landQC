@@ -10,13 +10,11 @@ import numpy as np
 import qc_utils as utils
 #************************************************************************
 
-# TODO - move threshold into a config file?
 THRESHOLD = 4 # min spread of 1hPa, so only outside +/-4hPa flagged.
 THEORY_THRESHOLD = 15 # allows for small offset as well as intrinsic spread
 
 MIN_SPREAD = 1.0
 MAX_SPREAD = 5.0
-
 
 #*********************************************
 def plot_pressure(sealp, stnlp, times, bad):

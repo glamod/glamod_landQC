@@ -11,6 +11,7 @@ import numpy as np
 
 import qc_utils as utils
 
+HIGH_FLAGGING_THRESHOLD = 0.4
 
 #************************************************************************
 def prepare_data_repeating_dpd(locs, plots=False, diagnostics=False):
@@ -137,11 +138,11 @@ def plot_humidity_streak(times, T, D, streak_start, streak_end):
     return # plot_humidity_streak
 
 #************************************************************************
-def super_saturation_check(times, temperatures, dewpoints, plots=False, diagnostics=False):
+def super_saturation_check(station, temperatures, dewpoints, plots=False, diagnostics=False):
     """
     Flag locations where dewpoint is greater than air temperature
 
-    :param array times: datetime array
+    :param Station station: Station Object for the station
     :param MetVar temperatures: temperatures object
     :param MetVar dewpoints: dewpoints object
     :param bool plots: turn on plots
@@ -154,15 +155,23 @@ def super_saturation_check(times, temperatures, dewpoints, plots=False, diagnost
 
     flags[sss] = "h"
 
+    # and if month has a high proportion
+    for year in np.unique(station.years):
+        for month in range(1, 13):
+            month_locs, = np.where(np.logical_and(station.years == year, station.months == month))
+            if month_locs.shape[0] != 0:
+                flagged, = np.where(flags[month_locs] == "h")
+
+                if (flagged.shape[0]/month_locs.shape[0]) > HIGH_FLAGGING_THRESHOLD:
+                    flags[month_locs] == "h"
+
     # only flag the dewpoints
     dewpoints.flags = utils.insert_flags(dewpoints.flags, flags)
-
-    # TODO - what if enough of a month is flagged...
 
     # diagnostic plots
     if plots:
         for bad in sss:
-            plot_humidities(temperatures, dewpoints, times, bad)
+            plot_humidities(temperatures, dewpoints, station.times, bad)
 
     if diagnostics:
 
@@ -246,7 +255,7 @@ def hcc(station, config_file, full=False, plots=False, diagnostics=False):
     dewpoints = getattr(station, "dew_point_temperature")
 
     # Super Saturation
-#    super_saturation_check(station.times, temperatures, dewpoints, plots=plots, diagnostics=diagnostics)
+    super_saturation_check(station, temperatures, dewpoints, plots=plots, diagnostics=diagnostics)
 
     # Dew Point Depression
     #    Note, won't have cloud-base or past-significant-weather

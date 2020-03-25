@@ -12,6 +12,9 @@ import numpy as np
 import setup
 
 import qc_utils as utils
+#************************************************************************
+
+BAD_THRESHOLD = 0.005 # 99.5% good, 0.5% bad
 
 with open(utils.LOGICFILE, "r") as lf:
     REASONABLE_LIMITS = json.load(lf)["logic_limits"]
@@ -30,14 +33,26 @@ def logic_check(obs_var, plots=False, diagnostics=False):
 
     obs_min, obs_max = REASONABLE_LIMITS[obs_var.name]
 
-    bad_locs, = np.where(np.logical_and(obs_var.data < obs_min, obs_var.data > obs_max))
+    bad_locs, = np.ma.where(np.logical_and(obs_var.data < obs_min, obs_var.data > obs_max))
 
     if len(bad_locs) > 0:
-        flags[bad_locs] = "L"
 
-        if diagnostics:
-            print("Logic Checks {}".format(obs_var.name))
-            print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
+        # are more than a certain fraction bad 
+        #    (pervasive issues only as limits are within World Records)
+
+        if (bad_locs.shape[0] / obs_var.data.compressed()) > BAD_THRESHOLD: # 99.5% good, 0.5% bad
+
+            flags[bad_locs] = "L"
+
+            if diagnostics:
+                print("Logic Checks {}".format(obs_var.name))
+                print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
+        else:
+            if diagnostics:
+                print("Logic Checks {}".format(obs_var.name))
+                print("   Number of issues found: {}".format(len(bad_locs)))
+                print("   No flags set as proportion small enough")
+                
 
     return flags # logic_check 
 
@@ -73,7 +88,7 @@ def lc(station, var_list, full=False, plots=False, diagnostics=False):
     # https://github.com/glamod/glamod-dm/blob/master/glamod-parser/glamod/parser/filters/observations_table.py
     # database parser has these, for future reference
 
-    # station level
+    # station level (from inventory listing, not for each timestamp)
     return_code = 0
     if station.lat < -90 or station.lat > 90:
         write_logic_error(station, "Bad latitude: {}".format(station.lat), diagnostics=diagnostics)

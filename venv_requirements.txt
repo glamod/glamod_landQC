@@ -6,7 +6,6 @@ attrs==18.2.0
 Babel==2.6.0
 backcall==0.1.0
 backports.ssl==0.0.9
-basemap==1.2.0
 beautifulsoup4==4.6.3
 bokeh==1.0.2
 boto3==1.9.67

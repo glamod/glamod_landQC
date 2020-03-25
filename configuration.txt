@@ -1,0 +1,33 @@
+[SETTINGS]
+full_reprocess = True
+[PATHS]
+runon = scratch
+root = /gws/nopw/j04/c3s311a_lot2/data/level1/land/
+scratch = /work/scratch-nompiio/rjhd2/c3s311a_lot2/level1/land/
+mff = level1b_sub_daily_data/
+mff_version = mff_latest/
+proc = level1b1_sub_daily_data/
+proc_version = v20200324/
+qff = level1c_sub_daily_data/
+qff_version = v20200324/
+config = level1c_sub_daily_data_configs/
+images = level1c_sub_daily_data_plots/
+errors = level1c_sub_daily_data_errors/
+[FILES]
+variables = obs_variables.json
+logic = logic_config.json
+[STATISTICS]
+mean = False
+median = True
+stdev = False
+iqr = True
+mad = False
+[THRESHOLDS]
+min_data_count = 120
+high_flag_proportion = 0.2
+[NEIGHBOURS]
+max_distance = 500
+max_vertical_separation = 200
+max_number = 20
+filename = neighbours.txt
+minimum_number = 3

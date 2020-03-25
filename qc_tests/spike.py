@@ -56,8 +56,6 @@ def get_critical_values(obs_var, times, config_file, plots=False, diagnostics=Fa
     """
 
     # use all first differences
-    # TODO check works with missing data (compressed?)
-    # TODO don't run using flagged data
     # TODO monthly?
  
     masked_times = np.ma.masked_array(times, mask=obs_var.data.mask)
