@@ -149,7 +149,7 @@ def prepare_data(station, obs_var):
     :returns: best_fit, uncertainty - arrays
     """
 
-    ndays = station.times.iloc[-1] - station.times.iloc[0]
+    ndays = dt.date(station.times.iloc[-1].year + 1, 1, 1) - dt.date(station.times.iloc[0].year, 1, 1)
     best_fit_diurnal = np.zeros(ndays.days + 1).astype(int)
     best_fit_uncertainty = np.zeros(ndays.days + 1).astype(int)
     d = 0

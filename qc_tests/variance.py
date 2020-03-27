@@ -200,6 +200,7 @@ def variance_check(obs_var, station, config_file, plots=False, diagnostics=False
 
                 match = np.in1d(high_winds, low_pressures)
 
+                couldbe_storm = False
                 if len(match) > 0:
                     # this could be a storm, either at tropical station (relatively constant pressure)
                     # or out of season in mid-latitudes.
