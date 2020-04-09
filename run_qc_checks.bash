@@ -16,7 +16,7 @@ if [ "${STAGE}" != "I" ] && [ "${STAGE}" != "N" ]; then
 fi
 
 
-CLOBBER="True"
+CLOBBER="False"
 cwd=`pwd`
 
 # use configuration file to pull out paths &c

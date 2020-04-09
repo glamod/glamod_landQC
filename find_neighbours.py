@@ -205,7 +205,12 @@ def main(restart_id="", end_id="", diagnostics=False, plots=False, full=False):
         for st, station in enumerate(neighbours):
             # check to make sure that the first entry is correct (in cases where a neighbour has zero separation
             if station[0, 0] != st:
-                station[[0,1]]=station[[1,0]] 
+                zeros, = np.where(station[:, 1] == 0)
+                match, = np.where(station[zeros, 0] == st)
+                if len(match) == 1:
+                    station[[0, match[0]]]=station[[match[0], 0]]
+                else:
+                    input("{} issue".format(st))
 
             outstring = ""
             # each neighbour

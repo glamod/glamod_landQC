@@ -11,6 +11,7 @@ proc_version = v20200324/
 qff = level1c_sub_daily_data/
 qff_version = v20200324/
 config = level1c_sub_daily_data_configs/
+flags = level1c_sub_daily_data_flags/
 images = level1c_sub_daily_data_plots/
 errors = level1c_sub_daily_data_errors/
 [FILES]

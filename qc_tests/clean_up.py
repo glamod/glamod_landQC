@@ -42,12 +42,17 @@ def clean_up(obs_var, station, plots=False, diagnostics=False):
 
             if n_obs < LOW_COUNT_THRESHOLD:
                 # insufficient unflagged observations left
-                new_flags[month_locs[obs_locs]] = "U"
+                new_flags[month_locs[obs_locs]] = "E"
+                if diagnostics:
+                    print("{} - {} : {}".format(year, month, len(obs_locs)))
 
             else:
                 if flagged.shape[0] / n_obs > HIGH_FLAGGING_THRESHOLD:
                     # flag remainder
-                    new_flags[month_locs[obs_locs]] = "U"
+                    new_flags[month_locs[obs_locs]] = "E"
+
+                    if diagnostics:
+                        print("{} - {} : {}".format(year, month, len(obs_locs)))
 
     if diagnostics:
         print("Clean Up {}".format(obs_var.name))

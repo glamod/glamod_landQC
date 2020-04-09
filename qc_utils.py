@@ -22,6 +22,14 @@ UNIT_DICT = {"temperature" : "degrees C", \
                  "sea_level_pressure" : "hPa hectopascals", \
                  "station_level_pressure" : "hPa hectopascals"}
 
+
+QC_TESTS = {"o" : "Odd Cluster", "F" : "Frequent Value", "D" : "Distribution - Monthly", \
+            "d" : "Distribution - all", "W" : "World Records", "K" : "Streaks", \
+            "C" : "Climatological", "T" : "Timestamp", "S" : "Spike", "h" : "Humidity", \
+            "V" : "Variance", "p" : "Pressure", "w" : "Winds", "L" : "Logic", "U" : "Diurnal", \
+            "E" : "Clean Up", "N" : "Neighbour"}
+
+
 MDI = -1.e30
 
 

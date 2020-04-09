@@ -130,6 +130,12 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         else:
             io.write(os.path.join(setup.SUBDAILY_OUT_DIR, "{}.qff".format(target_station_id)), target_station_df)
 
+            
+        #*************************
+        # Output flagging summary file
+        io.flag_write(os.path.join(setup.SUBDAILY_FLAG_DIR, "{}.flg".format(target_station_id)), target_station_df, diagnostics=diagnostics)
+
+
         print(dt.datetime.now()-startT)
 
     return # run_checks

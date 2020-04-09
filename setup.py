@@ -81,6 +81,10 @@ SUBDAILY_IMAGE_DIR = os.path.join(root_dir, config.get("PATHS", "images"))
 if not os.path.exists(SUBDAILY_IMAGE_DIR):
     os.mkdir(SUBDAILY_IMAGE_DIR)
 
+SUBDAILY_FLAG_DIR = os.path.join(root_dir, config.get("PATHS", "flags"))
+if not os.path.exists(SUBDAILY_FLAG_DIR):
+    os.mkdir(SUBDAILY_FLAG_DIR)
+
 SUBDAILY_ERROR_DIR = os.path.join(root_dir, config.get("PATHS", "errors"))
 if not os.path.exists(SUBDAILY_ERROR_DIR):
     os.mkdir(SUBDAILY_ERROR_DIR)
