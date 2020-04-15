@@ -126,7 +126,7 @@ def flag_write(outfilename, df, diagnostics=False):
                 outfile.write("{} : {} : {}\n".format(var, "{}_counts".format(test), locs.shape[0]))
 
 
-            # for total, get number of clean obs and subtract
+            # for total, get number of nonclean obs
             flagged, = np.where(flags != "")
             outfile.write("{} : {} : {}\n".format(var, "All", flagged.shape[0]/flags.shape[0]))
             outfile.write("{} : {} : {}\n".format(var, "{}_counts".format("All"), flagged.shape[0]))

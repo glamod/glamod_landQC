@@ -16,7 +16,7 @@ if [ "${STAGE}" != "I" ] && [ "${STAGE}" != "N" ]; then
 fi
 
 
-CLOBBER="False"
+CLOBBER="True"
 cwd=`pwd`
 
 # use configuration file to pull out paths &c
@@ -67,7 +67,7 @@ do
 #    echo "#BSUB -e ${cwd}/logs/%J.err " >> ${lotus_script}
     echo "#BSUB -o ${cwd}/logs/${stn}.out" >> ${lotus_script}
     echo "#BSUB -e ${cwd}/logs/${stn}.err " >> ${lotus_script}
-    echo "#BSUB -W 00:30" >> ${lotus_script}
+    echo "#BSUB -W 01:00" >> ${lotus_script}
     echo "#BSUB -R \"rusage[mem=1000] select[type==any]\"" >> ${lotus_script}
     echo "#BSUB -M 1000" >> ${lotus_script}
     echo "" >> ${lotus_script}

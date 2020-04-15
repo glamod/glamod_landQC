@@ -16,12 +16,12 @@ import setup
 #************************************************************************
 
 
-TESTS_FOR_VARS = {"temperature": ["All", "o", "F", "D", "d", "W", "K", "C", "T", "S", "V", "L", "U", "N"],\
-                      "dew_point_temperature": ["All", "o", "F", "D", "d", "W", "K", "C", "T", "S", "h", "V", "L", "U", "N"],\
-                      "sea_level_pressure" : ["All", "o", "F", "D", "d", "W", "K", "T", "S", "V", "p", "L", "U", "N"],\
-                      "station_level_pressure" : ["All", "o", "F", "D", "d", "K", "T", "S", "V", "p", "L", "U", "N"],\
-                      "wind_speed" : ["All", "o", "W", "K", "T", "S", "V", "w", "L", "U", "N"],
-                  "wind_direction" : ["All", "K", "w", "L", "U"]}
+TESTS_FOR_VARS = {"temperature": ["All", "o", "U", "F", "D", "d", "W", "K", "C", "T", "S", "V", "L", "E", "N"],\
+                      "dew_point_temperature": ["All", "o", "F", "D", "d", "W", "K", "C", "T", "S", "h", "V", "L", "E", "N"],\
+                      "sea_level_pressure" : ["All", "o", "F", "D", "d", "W", "K", "T", "S", "V", "p", "L", "E", "N"],\
+                      "station_level_pressure" : ["All", "o", "F", "D", "d", "K", "T", "S", "V", "p", "L", "E", "N"],\
+                      "wind_speed" : ["All", "o", "W", "K", "T", "S", "V", "w", "L", "E", "N"],
+                  "wind_direction" : ["All", "K", "w", "L", "E"]}
 
 UNITS = {"" : "%", "_counts" : "cts"}
 
@@ -74,14 +74,14 @@ def main(restart_id="", end_id="", diagnostics=False):
     for st, station_id in enumerate(station_IDs):
         print("{} {}".format(dt.datetime.now(), station_id))
 
-        if station_id != "ASM00095308": continue
-
         station = utils.Station(station_id, station_list.iloc[st].latitude, station_list.iloc[st].longitude, station_list.iloc[st].elevation)
         if diagnostics:
             print(station)
 
-
-        flag_summary = flag_read(os.path.join(setup.SUBDAILY_FLAG_DIR, "{}.flg".format(station_id)))
+        try:
+            flag_summary = flag_read(os.path.join(setup.SUBDAILY_FLAG_DIR, "{}.flg".format(station_id)))
+        except IOError:
+            print("flag file missing for {}".format(station_id))
 
 
         #*************************
@@ -104,22 +104,29 @@ def main(restart_id="", end_id="", diagnostics=False):
 
                 # setattr(obs_var, test, locs.shape[0]/flags.shape[0])
                 # setattr(obs_var, "{}_counts".format(test), locs.shape[0])
-                setattr(obs_var, test, flag_summary[var][test])
-                setattr(obs_var, "{}_counts".format(test), flag_summary[var]["{}_counts".format(test)])
+                try:
+                    setattr(obs_var, test, flag_summary[var][test])
+                    setattr(obs_var, "{}_counts".format(test), flag_summary[var]["{}_counts".format(test)])
+                except KeyError:
+                    setattr(obs_var, test, 0)
+                    setattr(obs_var, "{}_counts".format(test), 0)
+                    
 
             # # for total, get number of clean obs and subtract
             # flagged, = np.where(flags != "")
             # setattr(obs_var, "All", flagged.shape[0]/flags.shape[0])
             # setattr(obs_var, "All_counts".format(test), flagged.shape[0])
-            setattr(obs_var, "All", flag_summary[var]["All"])
-            setattr(obs_var, "All_counts".format(test), flag_summary[var]["{}_counts".format("All")])
-            
+            try:
+                setattr(obs_var, "All", flag_summary[var]["All"])
+                setattr(obs_var, "All_counts".format(test), flag_summary[var]["{}_counts".format("All")])
+            except KeyError:
+                setattr(obs_var, "All", 0)
+                setattr(obs_var, "All_counts".format(test), 0)
+
             if diagnostics:
                 print("{} - {}".format(var, flagged.shape[0]))
-            
-        all_stations[station_id] = station
 
-        input("stop")
+        all_stations[station_id] = station
 
     # now spin through each var/test combo and make a plot
     for var in obs_var_list:
@@ -135,7 +142,6 @@ def main(restart_id="", end_id="", diagnostics=False):
                     obs_var = getattr(station, var)
                     flag_fraction[st] = getattr(obs_var, "{}{}".format(test, suffix))
 
-                    flag_fraction[st]
 
                 if suffix == "":
                     flag_fraction *= 100.  # convert to percent

@@ -117,6 +117,10 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
 
         print(dt.datetime.now()-startT)
 
+        # write in the flag information
+        for var in setup.obs_var_list:
+            obs_var = getattr(target_station, var)
+            target_station_df["{}_QC_flag".format(var)] = obs_var.flags
 
         #*************************
         # Output of QFF
