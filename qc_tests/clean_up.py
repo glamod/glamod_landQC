@@ -10,7 +10,7 @@ import numpy as np
 
 import qc_utils as utils
 
-LOW_COUNT_THRESHOLD = 0 # removed 24/4/2020
+LOW_COUNT_THRESHOLD = 20
 HIGH_FLAGGING_THRESHOLD = 0.6
 
 #************************************************************************
@@ -40,9 +40,9 @@ def clean_up(obs_var, station, plots=False, diagnostics=False):
             flagged, = np.where(old_flags[month_locs][obs_locs] != "")
             unflagged, = np.where(old_flags[month_locs][obs_locs] == "")
 
-            if n_obs < LOW_COUNT_THRESHOLD:
+            if unflagged.shape[0] < LOW_COUNT_THRESHOLD:
                 # insufficient unflagged observations left
-                new_flags[month_locs[obs_locs]] = "E"
+                new_flags[month_locs[obs_locs][unflagged]] = "E"
                 if diagnostics:
                     print("Low count {} - {} : {}".format(year, month, len(obs_locs)))
 
