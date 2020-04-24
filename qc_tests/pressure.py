@@ -231,9 +231,18 @@ def pressure_theory(sealp, stnlp, temperature, times, elevation, plots=False, di
             for bad in bad_locs:
                 plot_pressure(sealp, stnlp, times, bad)
 
+    def adjust_preexisting_locs(var, flags):
+        # may have flags already set by previous part of test
+        # find these locations, and adjust new flags to these aren't added again
+        pre_exist = [i for i,item in enumerate(var.flags) if "p" in item]
+        new_flags = flags[:]
+        new_flags[pre_exist] = ""
+
+        return new_flags
+
     # flag both as not sure immediately where the issue lies
-    stnlp.flags = utils.insert_flags(stnlp.flags, flags)
-    sealp.flags = utils.insert_flags(sealp.flags, flags)
+    stnlp.flags = utils.insert_flags(stnlp.flags, adjust_preexisting_locs(stnlp, flags))
+    sealp.flags = utils.insert_flags(sealp.flags, adjust_preexisting_locs(sealp, flags))
 
     if diagnostics:
 

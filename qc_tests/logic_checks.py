@@ -33,14 +33,14 @@ def logic_check(obs_var, plots=False, diagnostics=False):
 
     obs_min, obs_max = REASONABLE_LIMITS[obs_var.name]
 
-    bad_locs, = np.ma.where(np.logical_and(obs_var.data < obs_min, obs_var.data > obs_max))
+    bad_locs, = np.ma.where(np.logical_or(obs_var.data < obs_min, obs_var.data > obs_max))
 
     if len(bad_locs) > 0:
 
         # are more than a certain fraction bad 
         #    (pervasive issues only as limits are within World Records)
 
-        if (bad_locs.shape[0] / obs_var.data.compressed()) > BAD_THRESHOLD: # 99.5% good, 0.5% bad
+        if (bad_locs.shape[0] / obs_var.data.compressed().shape[0]) > BAD_THRESHOLD: # 99.5% good, 0.5% bad
 
             flags[bad_locs] = "L"
 

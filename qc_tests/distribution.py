@@ -130,21 +130,21 @@ def monthly_gap(obs_var, station, config_file, plots=False, diagnostics=False):
         # now follow flag locations back up through the process
         for bad_month_id in bad:
             # year ID for this set of calendar months
-            for year in all_years:
-                if year == bad_month_id:
-                    locs, = np.where(np.logical_and(station.months == month, station.years == year))
-                    flags[locs] = "D"
+            locs, = np.where(np.logical_and(station.months == month, station.years == all_years[bad_month_id]))
+            flags[locs] = "D"
 
         # walk distribution from centre to find assymetry
         sort_order = standardised_months.argsort()
         mid_point = len(standardised_months) // 2
         good = True
         step = 1
+        bad = []
         while good:
 
             if standardised_months[sort_order][mid_point - step] != standardised_months[sort_order][mid_point + step]:
 
-                suspect_months = [standardised_months[sort_order][mid_point - step], standardised_months[sort_order][mid_point + step]]
+                suspect_months = [np.abs(standardised_months[sort_order][mid_point - step]), \
+                                      np.abs(standardised_months[sort_order][mid_point + step])]
 
                 if min(suspect_months) != 0:
                     # not all clustered at origin
@@ -153,24 +153,23 @@ def monthly_gap(obs_var, station, config_file, plots=False, diagnostics=False):
                         # at least 1.5x spread from centre and difference of two in location (longer tail)
                         # flag everything further from this bin for that tail
                         if suspect_months[0] == max(suspect_months):
-                            # LHS has issue
-                            bad = sort_order[:mid_point - step]
+                            # LHS has issue (remember that have removed the sign)
+                            bad = sort_order[:mid_point - (step-1)] # need -1 given array indexing standards
                         elif suspect_months[1] == max(suspect_months):
                             # RHS has issue
                             bad = sort_order[mid_point + step:]
+                        good = False
 
             step += 1
-            if step == mid_point:
+            if (mid_point - step) < 0 or (mid_point + step) == standardised_months.shape[0]:
                 # reached end
                 break
-
+        
         # now follow flag locations back up through the process
         for bad_month_id in bad:
             # year ID for this set of calendar months
-            for year in all_years:
-                if year == bad_month_id:
-                    locs, = np.where(np.logical_and(station.months == month, station.years == year))
-                    flags[locs] = "D"
+            locs, = np.where(np.logical_and(station.months == month, station.years == all_years[bad_month_id]))
+            flags[locs] = "D"
 
         if plots:
             import matplotlib.pyplot as plt

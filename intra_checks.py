@@ -80,7 +80,6 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
             continue
 
         #*************************
-        # lat and lon checks
 
         """
         HadISD tests and order
@@ -103,6 +102,8 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         """
         #*************************
         if test in ["all", "logic"]:
+            # incl lat, lon and elev checks
+#
             print("L", dt.datetime.now()-startT)
             good_metadata = qc_tests.logic_checks.lc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed", "wind_direction"], full=full, plots=plots, diagnostics=diagnostics)
 

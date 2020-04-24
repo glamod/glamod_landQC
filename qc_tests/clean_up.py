@@ -3,15 +3,15 @@ Clean Up Months
 ^^^^^^^^^^^^^^^
 
 Flag whole months if large proportions already flagged, 
-or if only a few observations left.
+or if only a few observations left [not active].
 """
 #************************************************************************
 import numpy as np
 
 import qc_utils as utils
 
-LOW_COUNT_THRESHOLD = 20
-HIGH_FLAGGING_THRESHOLD = 0.4
+LOW_COUNT_THRESHOLD = 0 # removed 24/4/2020
+HIGH_FLAGGING_THRESHOLD = 0.6
 
 #************************************************************************
 def clean_up(obs_var, station, plots=False, diagnostics=False):
@@ -44,15 +44,15 @@ def clean_up(obs_var, station, plots=False, diagnostics=False):
                 # insufficient unflagged observations left
                 new_flags[month_locs[obs_locs]] = "E"
                 if diagnostics:
-                    print("{} - {} : {}".format(year, month, len(obs_locs)))
+                    print("Low count {} - {} : {}".format(year, month, len(obs_locs)))
 
             else:
                 if flagged.shape[0] / n_obs > HIGH_FLAGGING_THRESHOLD:
                     # flag remainder
                     new_flags[month_locs[obs_locs]] = "E"
-
                     if diagnostics:
-                        print("{} - {} : {}".format(year, month, len(obs_locs)))
+                        print("High flag {} - {} : {} ({}%)".format(year, month, len(obs_locs), (100*flagged.shape[0] / n_obs)))
+                        print(np.unique(old_flags[month_locs][obs_locs][flagged]))
 
     if diagnostics:
         print("Clean Up {}".format(obs_var.name))
