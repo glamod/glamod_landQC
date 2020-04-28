@@ -117,7 +117,7 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
 
         if test in ["all", "clean_up"]:
             print("U", dt.datetime.now()-startT)
-            qc_tests.clean_up.mcu(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed", "wind_direction"], full=full, plots=plots, diagnostics=diagnostics)
+            qc_tests.clean_up.mcu(target_station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed", "wind_direction"], full=full, plots=plots, diagnostics=diagnostics)
 
 
         print(dt.datetime.now()-startT)
