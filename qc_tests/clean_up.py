@@ -10,7 +10,7 @@ import numpy as np
 
 import qc_utils as utils
 
-LOW_COUNT_THRESHOLD = 20
+LOW_COUNT_THRESHOLD = 0
 HIGH_FLAGGING_THRESHOLD = 0.6
 
 #************************************************************************

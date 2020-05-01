@@ -91,7 +91,7 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
             print(target_station)
 
         try:
-            target_station, target_station_df = io.read_station(os.path.join(setup.SUBDAILY_PROC_DIR, "{}.qff".format(target_station_id)), target_station, read_flags=True)
+            target_station, target_station_df = io.read_station(os.path.join(setup.SUBDAILY_PROC_DIR, "{:11s}.qff".format(target_station_id)), target_station, read_flags=True)
         except OSError:
             # file missing, move on to next in sequence
             continue
@@ -134,15 +134,15 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
             # high flagging rates in one variable.  Withholding station completely
             # TODO - once neighbour checks present, revisit, in case only withhold offending variable
             print("{} withheld as too high flagging".format(target_station.id))
-            io.write(os.path.join(setup.SUBDAILY_BAD_DIR, "{}.qff".format(target_station_id)), target_station_df)
+            io.write(os.path.join(setup.SUBDAILY_BAD_DIR, "{:11s}.qff".format(target_station_id)), target_station_df)
                                                             
         else:
-            io.write(os.path.join(setup.SUBDAILY_OUT_DIR, "{}.qff".format(target_station_id)), target_station_df)
+            io.write(os.path.join(setup.SUBDAILY_OUT_DIR, "{:11s}.qff".format(target_station_id)), target_station_df)
 
             
         #*************************
         # Output flagging summary file
-        io.flag_write(os.path.join(setup.SUBDAILY_FLAG_DIR, "{}.flg".format(target_station_id)), target_station_df, diagnostics=diagnostics)
+        io.flag_write(os.path.join(setup.SUBDAILY_FLAG_DIR, "{:11s}.flg".format(target_station_id)), target_station_df, diagnostics=diagnostics)
 
 
         print(dt.datetime.now()-startT)

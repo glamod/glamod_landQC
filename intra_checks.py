@@ -54,11 +54,11 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
 
     # now spin through each ID in the curtailed list
     for st, station_id in enumerate(station_IDs):
-        print("{} {} ({}/{})".format(dt.datetime.now(), station_id, st+1, station_IDs.shape[0]))
+        print("{} {:11s} ({}/{})".format(dt.datetime.now(), station_id, st+1, station_IDs.shape[0]))
 
         startT = dt.datetime.now()
         # set up config file to hold thresholds etc
-        config_file = os.path.join(setup.SUBDAILY_CONFIG_DIR, "{}.config".format(station_id))
+        config_file = os.path.join(setup.SUBDAILY_CONFIG_DIR, "{:11s}.config".format(station_id))
 
         #*************************
         # set up the stations
@@ -67,7 +67,7 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
             print(station)
 
         try:
-            station, station_df = io.read_station(os.path.join(setup.SUBDAILY_MFF_DIR, "{}.mff".format(station_id)), station)
+            station, station_df = io.read_station(os.path.join(setup.SUBDAILY_MFF_DIR, "{:11s}.mff".format(station_id)), station)
         except OSError:
             # file missing, move on to next in sequence
             continue
@@ -216,13 +216,13 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
             # high flagging rates in one variable.  Withholding station completely
             # TODO - once neighbour checks present, revisit, in case only withhold offending variable
             print("{} withheld as too high flagging".format(station.id))
-            io.write(os.path.join(setup.SUBDAILY_BAD_DIR, "{}.qff".format(station_id)), station_df)
+            io.write(os.path.join(setup.SUBDAILY_BAD_DIR, "{:11s}.qff".format(station_id)), station_df)
         else:
-            io.write(os.path.join(setup.SUBDAILY_PROC_DIR, "{}.qff".format(station_id)), station_df)
+            io.write(os.path.join(setup.SUBDAILY_PROC_DIR, "{:11s}.qff".format(station_id)), station_df)
 
         #*************************
         # Output flagging summary file
-        io.flag_write(os.path.join(setup.SUBDAILY_FLAG_DIR, "{}.flg".format(station_id)), station_df, diagnostics=diagnostics)
+        io.flag_write(os.path.join(setup.SUBDAILY_FLAG_DIR, "{:11s}.flg".format(station_id)), station_df, diagnostics=diagnostics)
 
 
 

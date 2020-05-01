@@ -77,7 +77,7 @@ SUBDAILY_CONFIG_DIR = os.path.join(root_dir, config.get("PATHS", "config"))
 if not os.path.exists(SUBDAILY_CONFIG_DIR):
     os.mkdir(SUBDAILY_CONFIG_DIR)
 
-SUBDAILY_IMAGE_DIR = os.path.join(root_dir, config.get("PATHS", "images"))
+SUBDAILY_IMAGE_DIR = os.path.join(root_dir, config.get("PATHS", "images"), config.get("PATHS", "image_version"))
 if not os.path.exists(SUBDAILY_IMAGE_DIR):
     os.mkdir(SUBDAILY_IMAGE_DIR)
 

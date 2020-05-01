@@ -216,9 +216,9 @@ def main(restart_id="", end_id="", diagnostics=False, plots=False, full=False):
             # each neighbour
             for neighb in station:
                 if neighb[0] != -1:
-                    outstring = "{:s} {:>12s} {:8d}".format(outstring, station_list.id[neighb[0]], neighb[1])
+                    outstring = "{:s} {:<11s} {:8d}".format(outstring, station_list.id[neighb[0]], neighb[1])
                 else:
-                    outstring = "{:s} {:>12s} {:8d}".format(outstring, "-", neighb[1])
+                    outstring = "{:s} {:>11s} {:8d}".format(outstring, "-", neighb[1])
                     
 #            input("stop")
 

@@ -20,7 +20,7 @@ def read_psv(infile, separator, compression="infer"):
     :param str extension: infile extension [mff]
     :returns: df - DataFrame
     '''
-    df = pd.read_csv(infile, sep=separator, compression=compression, dtype=setup.DTYPE_DICT)
+    df = pd.read_csv(infile, sep=separator, compression=compression, dtype=setup.DTYPE_DICT, na_values="Null")
 
     return df #  read_psv
 
