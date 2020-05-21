@@ -45,7 +45,7 @@ VERSION=$(grep "version " "${CONFIG_FILE}" | grep -v "${MFF_VER}" | awk -F'= ' '
 
 # set up list of stations
 STATION_LIST="ghcnh-stations.txt"
-station_list_file=${ROOT}${MFF}${STATION_LIST}
+station_list_file=${ROOT}"mingle_lists/"${STATION_LIST}
 #echo $station_list_file
 echo `wc -l ${station_list_file}`
 stn_ids=`awk -F" " '{print $1}' ${station_list_file}`
