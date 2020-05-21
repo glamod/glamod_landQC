@@ -74,7 +74,7 @@ SUBDAILY_BAD_DIR = os.path.join(SUBDAILY_OUT_DIR, "bad_stations") #  datestamp i
 if not os.path.exists(SUBDAILY_BAD_DIR):
     os.mkdir(SUBDAILY_BAD_DIR)
 
-SUBDAILY_CONFIG_DIR = os.path.join(root_dir, config.get("PATHS", "config"))
+SUBDAILY_CONFIG_DIR = os.path.join(root_dir, config.get("PATHS", "config"), DATESTAMP)
 if not os.path.exists(SUBDAILY_CONFIG_DIR):
     os.mkdir(SUBDAILY_CONFIG_DIR)
 
