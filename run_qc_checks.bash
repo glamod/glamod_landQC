@@ -39,17 +39,15 @@ fi
 # extract remaining locations
 MFF=$(grep "mff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
 MFF_VER=$(grep "mff_version " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
-
 PROC=$(grep "proc " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
-PROC_VER=$(grep "proc_version " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
-
 QFF=$(grep "qff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
-QFF_VER=$(grep "qff_version " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
+VERSION=$(grep "version " "${CONFIG_FILE}" | grep -v "${MFF_VER}" | awk -F'= ' '{print $2}')
 
 # set up list of stations
 STATION_LIST="ghcnh-stations.txt"
 station_list_file=${ROOT}${MFF}${STATION_LIST}
-echo $station_list_file
+#echo $station_list_file
+echo `wc -l ${station_list_file}`
 stn_ids=`awk -F" " '{print $1}' ${station_list_file}`
 
 # spin through each in turn, submitting a job
@@ -101,7 +99,7 @@ do
 #    elif [ ${scnt} -ge 4000 ]; then
 #        exit
 #    fi
-             
+
     # check target file exists (in case waiting on upstream process)
     submit=false
     if [ "${STAGE}" == "I" ]; then
@@ -109,21 +107,21 @@ do
             submit=true
         fi
     elif [ "${STAGE}" == "N" ]; then
-        if [ -f "${ROOTDIR}${PROC}${PROC_VER}${stn}.qff" ]; then
+        if [ -f "${ROOTDIR}${PROC}${VERSION}${stn}.qff" ]; then
             submit=true
         fi
     fi
-    
-    # if clear to submi
+
+    # if clear to submit
     if [ $submit == true ]; then
         # if overwrite
-        if [ "${CLOBBER}" = "True" ]; then
+        if [ "${CLOBBER}" == "True" ]; then
             bsub < ${lotus_script}
             sleep 1s # allow submission to occur before moving on
         else
             # check if already processed before setting going
             if [ "${STAGE}" == "I" ]; then
-                if [ ! -f "${ROOTDIR}${PROC}${PROC_VER}${stn}.qff" ]; then
+                if [ ! -f "${ROOTDIR}${PROC}${VERSION}${stn}.qff" ]; then
                     bsub < ${lotus_script}
                     sleep 1s # allow submission to occur before 
                 else
@@ -131,7 +129,7 @@ do
                 fi
                 
             elif [ "${STAGE}" == "N" ]; then
-                if [ ! -f "${ROOTDIR}${QFF}${QFF_VER}${stn}.qff" ]; then
+                if [ ! -f "${ROOTDIR}${QFF}${VERSION}${stn}.qff" ]; then
                     bsub < ${lotus_script}
                     sleep 1s # allow submission to occur before 
                 else
@@ -140,4 +138,5 @@ do
             fi
         fi
     fi
+    read
 done

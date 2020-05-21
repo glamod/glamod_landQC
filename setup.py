@@ -37,6 +37,7 @@ SCRATCH_DIR = config.get("PATHS", "scratch")
 
 # source always the same - currently on GWS
 SUBDAILY_ROOT_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "mff"))
+SUBDAILY_MINGLE_DIR = os.path.join(ROOT_DIR, "mingle_lists")
 SUBDAILY_MFF_DIR = os.path.join(SUBDAILY_ROOT_DIR, config.get("PATHS", "mff_version"))
 
 # where to run
@@ -51,25 +52,25 @@ if runon == "scratch":
 elif runon == "root":
     root_dir = ROOT_DIR
 
-
+DATESTAMP = config.get("PATHS", "version")
 
 # set up suitable paths
 # processing space - for intermediate files, between mff and qff
 if not os.path.exists(os.path.join(root_dir, config.get("PATHS", "proc"))):
     os.mkdir(os.path.join(root_dir, config.get("PATHS", "proc")))
 
-SUBDAILY_PROC_DIR = os.path.join(root_dir, config.get("PATHS", "proc"), config.get("PATHS", "proc_version"))
+SUBDAILY_PROC_DIR = os.path.join(root_dir, config.get("PATHS", "proc"), DATESTAMP)
 if not os.path.exists(SUBDAILY_PROC_DIR):
     os.mkdir(SUBDAILY_PROC_DIR)
 
 if not os.path.exists(os.path.join(root_dir, config.get("PATHS", "qff"))):
     os.mkdir(os.path.join(root_dir, config.get("PATHS", "qff")))
 
-SUBDAILY_OUT_DIR = os.path.join(root_dir, config.get("PATHS", "qff"), config.get("PATHS", "qff_version"))
+SUBDAILY_OUT_DIR = os.path.join(root_dir, config.get("PATHS", "qff"), DATESTAMP)
 if not os.path.exists(SUBDAILY_OUT_DIR):
     os.mkdir(SUBDAILY_OUT_DIR)
 
-SUBDAILY_BAD_DIR = os.path.join(SUBDAILY_OUT_DIR, "bad_stations")
+SUBDAILY_BAD_DIR = os.path.join(SUBDAILY_OUT_DIR, "bad_stations") #  datestamp in Subdaily_out_dir
 if not os.path.exists(SUBDAILY_BAD_DIR):
     os.mkdir(SUBDAILY_BAD_DIR)
 
@@ -77,15 +78,15 @@ SUBDAILY_CONFIG_DIR = os.path.join(root_dir, config.get("PATHS", "config"))
 if not os.path.exists(SUBDAILY_CONFIG_DIR):
     os.mkdir(SUBDAILY_CONFIG_DIR)
 
-SUBDAILY_IMAGE_DIR = os.path.join(root_dir, config.get("PATHS", "images"), config.get("PATHS", "image_version"))
+SUBDAILY_IMAGE_DIR = os.path.join(root_dir, config.get("PATHS", "images"), DATESTAMP)
 if not os.path.exists(SUBDAILY_IMAGE_DIR):
     os.mkdir(SUBDAILY_IMAGE_DIR)
 
-SUBDAILY_FLAG_DIR = os.path.join(root_dir, config.get("PATHS", "flags"))
+SUBDAILY_FLAG_DIR = os.path.join(root_dir, config.get("PATHS", "flags"), DATESTAMP)
 if not os.path.exists(SUBDAILY_FLAG_DIR):
     os.mkdir(SUBDAILY_FLAG_DIR)
 
-SUBDAILY_ERROR_DIR = os.path.join(root_dir, config.get("PATHS", "errors"))
+SUBDAILY_ERROR_DIR = os.path.join(root_dir, config.get("PATHS", "errors"), DATESTAMP)
 if not os.path.exists(SUBDAILY_ERROR_DIR):
     os.mkdir(SUBDAILY_ERROR_DIR)
 
