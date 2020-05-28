@@ -16,7 +16,7 @@ if [ "${STAGE}" != "I" ] && [ "${STAGE}" != "N" ]; then
 fi
 
 
-CLOBBER="True"
+CLOBBER="False"
 cwd=`pwd`
 
 # use configuration file to pull out paths &c
@@ -102,15 +102,22 @@ do
 
     # check target file exists (in case waiting on upstream process)
     submit=false
-    if [ "${STAGE}" == "I" ]; then
-        if [ -f "${ROOT}${MFF}${MFF_VER}${stn}.mff" ]; then
-            submit=true
+    while [ ${submit} == false ];
+    do
+        if [ "${STAGE}" == "I" ]; then
+            if [ -f "${ROOT}${MFF}${MFF_VER}${stn}.mff" ]; then
+                submit=true
+            fi
+        elif [ "${STAGE}" == "N" ]; then
+            if [ -f "${ROOTDIR}${PROC}${VERSION}${stn}.qff" ]; then
+                submit=true
+            fi
         fi
-    elif [ "${STAGE}" == "N" ]; then
-        if [ -f "${ROOTDIR}${PROC}${VERSION}${stn}.qff" ]; then
-            submit=true
+        if [ ${sumbit} == false ]; then
+            echo "upstream file ${stn} missing, sleeping 1m"
+            sleep 1m
         fi
-    fi
+    done
 
     # if clear to submit
     if [ $submit == true ]; then
@@ -138,5 +145,5 @@ do
             fi
         fi
     fi
-    read
+    exit
 done

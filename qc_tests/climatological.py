@@ -55,17 +55,17 @@ def low_pass_filter(normed_anomalies, station, monthly_anoms, month):
     for year in range(all_years.shape[0]):
         
         if year == 0:
-            monthly_range = np.arange(0, 3)
-            filter_range = np.arange(2, 5)
+            monthly_range = np.arange(0, 3)[:all_years.shape[0]]
+            filter_range = np.arange(2, 5)[:all_years.shape[0]]
         elif year == 1:
-            monthly_range = np.arange(0, 4)
-            filter_range = np.arange(1, 5)
+            monthly_range = np.arange(0, 4)[:all_years.shape[0]]
+            filter_range = np.arange(1, 5)[:all_years.shape[0]]
         elif year == all_years.shape[0] - 2:
-            monthly_range = np.arange(-4, 0, -1)
-            filter_range = np.arange(0, 4)
+            monthly_range = np.arange(-4, 0)[-all_years.shape[0]:]
+            filter_range = np.arange(0, 4)[-all_years.shape[0]:]
         elif year == all_years.shape[0] - 1:
-            monthly_range = np.arange(-3, 0, -1)
-            filter_range = np.arange(0, 3)
+            monthly_range = np.arange(-3, 0)[-all_years.shape[0]:]
+            filter_range = np.arange(0, 3)[-all_years.shape[0]:]
         else:
             monthly_range = np.arange(year-2, year+3)
             filter_range = np.arange(5)
@@ -82,7 +82,7 @@ def low_pass_filter(normed_anomalies, station, monthly_anoms, month):
 #************************************************************************
 def prepare_data(obs_var, station, month, diagnostics=False, winsorize=True):
     """
-    Prepare the data for the climatological check.  Makes anonmalies and applies low-pass filter
+    Prepare the data for the climatological check.  Makes anomalies and applies low-pass filter
 
     :param MetVar obs_var: meteorological variable object
     :param Station station: station object
@@ -98,8 +98,10 @@ def prepare_data(obs_var, station, month, diagnostics=False, winsorize=True):
 
     mlocs, = np.where(station.months == month)
 
-    # need to have some data!
-    if len(mlocs) >= utils.DATA_COUNT_THRESHOLD:
+    nyears = len(np.unique(station.years[mlocs]))
+
+    # need to have some data and in at least 5 years!
+    if len(mlocs) >= utils.DATA_COUNT_THRESHOLD and nyears >= 5:
 
         anomalies.mask[mlocs] = False
         normed_anomalies.mask[mlocs] = False
