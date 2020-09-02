@@ -47,7 +47,10 @@ def clean_up(obs_var, station, plots=False, diagnostics=False):
                     print("Low count {} - {} : {}".format(year, month, len(obs_locs)))
 
             else:
-                if flagged.shape[0] / n_obs > HIGH_FLAGGING_THRESHOLD:
+                if flagged.shape[0] == 0:
+                    # no flags set so just skip
+                    pass
+                elif flagged.shape[0] / n_obs > HIGH_FLAGGING_THRESHOLD:
                     # flag remainder
                     new_flags[month_locs[obs_locs]] = "E"
                     if diagnostics:

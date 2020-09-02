@@ -134,10 +134,10 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
             # high flagging rates in one variable.  Withholding station completely
             # TODO - once neighbour checks present, revisit, in case only withhold offending variable
             print("{} withheld as too high flagging".format(target_station.id))
-            io.write(os.path.join(setup.SUBDAILY_BAD_DIR, "{:11s}.qff".format(target_station_id)), target_station_df)
+            io.write(os.path.join(setup.SUBDAILY_BAD_DIR, "{:11s}.qff".format(target_station_id)), target_station_df, formatters={"Latitude" : "{:7.4f}", "Longitude" : "{:7.4f}", "Month": "{:02d}", "Day": "{:02d}", "Hour" : "{:02d}", "Minute" : "{:02d}"})
                                                             
         else:
-            io.write(os.path.join(setup.SUBDAILY_OUT_DIR, "{:11s}.qff".format(target_station_id)), target_station_df)
+            io.write(os.path.join(setup.SUBDAILY_OUT_DIR, "{:11s}.qff".format(target_station_id)), target_station_df, formatters={"Latitude" : "{:7.4f}", "Longitude" : "{:7.4f}", "Month": "{:02d}", "Day": "{:02d}", "Hour" : "{:02d}", "Minute" : "{:02d}"})
 
             
         #*************************
@@ -146,6 +146,8 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
 
 
         print(dt.datetime.now()-startT)
+
+        input("stop")
 
     return # run_checks
 

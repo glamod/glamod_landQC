@@ -69,7 +69,7 @@ def write_logic_error(station, message, diagnostics=False):
     outfilename = os.path.join(setup.SUBDAILY_ERROR_DIR, "{}.err".format(station.id))
 
     with open(outfilename, "a") as outfile:
-        
+        outfile.write(dt.datetime.strftime(dt.datetime.now(), "%Y-%m-%d %H:%M") + "\n")
         outfile.write(message + "\n")
 
     return # write_logic_error
@@ -109,9 +109,9 @@ def lc(station, var_list, full=False, plots=False, diagnostics=False):
         return_code = -1
 
     # Missing elevation acceptable - removed this for the moment (7 November 2019, RJHD)
-    #       missing could be -999, -999.9, -999.999 etc hence using string comparison
+    #       missing could be -999, -999.9, -999.999 or even 9999.0 etc hence using string comparison
     if (station.elev < -432.65 or station.elev > 8850.):
-        if str(station.elev)[:4] != "-999":
+        if str(station.elev)[:4] not in ["-999", "9999"]:
             write_logic_error(station, "Bad elevation: {}".format(station.elev), diagnostics=diagnostics)
             if diagnostics:
                 print("Bad elevation: {}".format(station.elev))

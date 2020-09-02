@@ -137,10 +137,10 @@ def get_station_list(restart_id="", end_id=""):
     """
 
     # process the station list
-    station_list = pd.read_fwf(os.path.join(setup.SUBDAILY_MINGLE_DIR, "ghcnh-stations.txt"), \
+    station_list = pd.read_fwf(os.path.join(setup.SUBDAILY_MINGLE_DIR, setup.STATION_LIST), \
                                    widths=(11, 9, 10, 7, 35), header=None, names=("id", "latitude", "longitude", "elevation", "name"))
 
-    # no longer necessary in November run, kept just in case
+    # no longer necessary in November 2019 run, kept just in case
 #    station_list2 = pd.read_fwf(os.path.join(setup.SUBDAILY_ROOT_DIR, "ghcnh-stations-2add.txt"), widths=(11, 9, 10, 7, 35), header=None)
 #    station_list = station_list.append(station_list2, ignore_index=True)
 

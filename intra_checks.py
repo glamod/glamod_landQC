@@ -59,6 +59,13 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         startT = dt.datetime.now()
         # set up config file to hold thresholds etc
         config_file = os.path.join(setup.SUBDAILY_CONFIG_DIR, "{:11s}.config".format(station_id))
+        if full:
+            try:
+                # recreating, so remove completely
+                os.remove(config_file)
+            except IOError:
+                pass
+    
 
         #*************************
         # set up the stations
@@ -68,8 +75,13 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
 
         try:
             station, station_df = io.read_station(os.path.join(setup.SUBDAILY_MFF_DIR, "{:11s}.mff".format(station_id)), station)
-        except OSError:
+        except OSError as e:
             # file missing, move on to next in sequence
+            io.write_error(station, "File Missing")
+            continue
+        except ValueError as e:
+            # some issue in the raw file
+            io.write_error(station, "Error in input file", error=str(e))
             continue
 
         # some may have no data (for whatever reason)
@@ -77,6 +89,7 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
             if diagnostics:
                 print("No data in station {}".format(station.id))
             # scoot onto next station
+            io.write_error(station, "No data in input file")
             continue
 
         #*************************
@@ -199,9 +212,12 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         # sort source_ID.x columns - purely for first release
         for c, column in enumerate(station_df.columns):
             if "Source_ID" in column:
+                # replace the NaN with empty string
+                station_df[column] = station_df[column].fillna('')
+                # rename the column
                 variable = station_df.columns[c-1]
                 station_df = station_df.rename(columns={column : "{}_Source_ID".format(variable)})
-
+                
 
         # write in the flag information
         for var in setup.obs_var_list:
