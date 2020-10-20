@@ -112,9 +112,13 @@ def neighbour_outlier(target_station, initial_neighbours, variable, diagnostics=
                 flag_locs, = np.where(buddy_var.flags != "") 
                 buddy_var.data.mask[flag_locs] = True
 
-            except OSError:
-                # missing station - may have been withheld
-                # TODO handle and alert
+            except OSError as e:
+                # file missing, move on to next in sequence
+                io.write_error(buddy, "File Missing (Buddy)")
+                continue
+            except ValueError as e:
+                # some issue in the raw file
+                io.write_error(buddy, "Error in input file (Buddy)", error=str(e))
                 continue
 
             # match the timestamps of target_station and copy over

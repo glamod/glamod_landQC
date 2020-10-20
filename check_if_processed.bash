@@ -55,6 +55,7 @@ stn_ids=`awk -F" " '{print $1}' ${station_list_file}`
 processed=0
 withheld=0
 errors=0
+unprocessed=0
 
 
 # spin through each in turn, submitting a job
@@ -63,6 +64,13 @@ for stn in ${stn_ids}
 do
 #    echo ${stn}
 
+    if [ "${STAGE}" == "I" ]; then
+        process_dir=${ROOTDIR}${PROC}${VERSION}
+    elif [ "${STAGE}" == "N" ]; then
+        process_dir=${ROOTDIR}${QFF}${VERSION}
+    fi
+    withheld_dir=${ROOTDIR}${QFF}${VERSION}bad_stations
+    error_dir=${ROOTDIR}${ERR}${VERSION}
 
     if [ "${STAGE}" == "I" ]; then
         if [ -f "${ROOTDIR}${PROC}${VERSION}${stn}.qff" ]; then
@@ -77,6 +85,7 @@ do
         else
             # this shouldn't happen!
             echo "${stn} missing"
+            let unprocessed=unprocessed+1
         fi
     elif [ "${STAGE}" == "N" ]; then
         if [ -f "${ROOTDIR}${QFF}${VERSION}${stn}.qff" ]; then
@@ -91,6 +100,7 @@ do
         else
             # this shouldn't happen!
             echo "${stn} missing"
+            let unprocessed=unprocessed+1
         fi
     fi
 
@@ -101,11 +111,14 @@ done
 in_stations=`wc -l $station_list_file`
 echo "Total input stations ${in_stations}" 
 
-echo "Total qc'd stations ${processed}"
+echo "Total qc'd stations ${processed} ${process_dir}"
 
-echo "Total withheld stations ${withheld}"
+echo "Total withheld stations ${withheld} ${withheld_dir}"
 
-echo "Total errors ${errors}"
+echo "Total errors ${errors} ${error_dir}"
+
+echo "Unprocessed stations (job failures?) ${unprocessed}"
 
 let out_stations=processed+withheld+errors
 echo "Total output stations ${out_stations}"
+

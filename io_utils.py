@@ -131,7 +131,6 @@ def write(outfile, df, formatters={}):
     # need to adjust formatting for certain columns before writing
 
     for column, fmt in formatters.items():
-        print(key, value)
         df[column] = pd.Series([fmt.format(val) for val in df[column]], index = df.index)
 
 #    df['Latitude'] = pd.Series(["{:7.4f}".format(val) for val in df['Latitude']], index = df.index)

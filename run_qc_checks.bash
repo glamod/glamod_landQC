@@ -20,7 +20,9 @@ if [ "${WAIT}" != "T" ] && [ "${WAIT}" != "F" ]; then
     echo Please enter valid waiting option. T [true - wait for upstream files] or F [false - skip missing files]
     exit
 fi
-
+# remove both positional characters
+shift
+shift
 
 CLOBBER="False"
 cwd=`pwd`
@@ -53,30 +55,34 @@ ERR=${QFF%/}_errors/
 
 # if neighbour checks make sure all files in place
 if [ "${STAGE}" == "N" ]; then
-    if [ -f "${ROOTDIR}${QFF%/}_configs${VERSION}neighbours.txt" ]; then
+    echo "${ROOTDIR}${QFF%/}_configs/${VERSION}neighbours.txt"
+    if [ ! -f "${ROOTDIR}${QFF%/}_configs/${VERSION}neighbours.txt" ]; then
         read -p "Neighbour file missing - do you want to run Y/N" run_neighbours
-    fi
-	if [ "${run_neighbours}" != "N" ]; then
-	     echo "Running neighbour finding routine"
+
+	    if [ "${run_neighbours}" == "Y" ]; then
+	         echo "Running neighbour finding routine"
              source venv/bin/activate
              python -m find_neighbours
-	else
-	     echo "Not running neighbour finding routine, exit"
-	     exit
-	fi
+	    else
+	         echo "Not running neighbour finding routine, exit"
+	         exit
+	    fi
+    fi
 fi
 
 
 # set up list of stations
 STATION_LIST=$(grep "station_list " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
-station_list_file=${ROOT}"/"${MFF}"/"${STATION_LIST}
+station_list_file="${ROOT}/${MFF}/${STATION_LIST}"
 
 echo `wc -l ${station_list_file}`
 stn_ids=`awk -F" " '{print $1}' ${station_list_file}`
 
-# check all stations present - and output if not
+#**************************************
+echo "Check all upstream stations present"
 missing_file=missing.txt
 rm ${missing_file}
+touch ${missing_file}
 for stn in ${stn_ids}
 do
     processed=false
@@ -103,9 +109,18 @@ do
 done
 
 echo "Checked for all input files - see missing.txt"
+n_missing=`wc ${missing_file} | awk -F' ' '{print $1}'`
+if [ ${n_missing} -ne 0 ]; then
+    read -p "${n_missing} files missing - do you want to run remainder Y/N? " run_lotus
+    if [ "${run_lotus}" == "N" ]; then
+        exit
+    fi
+fi
 
+
+#**************************************
 # spin through each in turn, submitting a job
-scnt=0
+# scnt=0
 for stn in ${stn_ids}
 do
     echo ${stn}
@@ -121,7 +136,17 @@ do
     echo "#SBATCH --job-name=QC_${stn}" >> ${lotus_script}
     echo "#SBATCH --output=${cwd}/logs/${stn}.out" >> ${lotus_script}
     echo "#SBATCH --error=${cwd}/logs/${stn}.err " >> ${lotus_script}
-    echo "#SBATCH --time=10:00" >> ${lotus_script}
+    
+    if [ "${STAGE}" == "I" ]; then
+        if [ "${stn:0:1}" == "U" ]; then
+            # US stations take a long time
+            echo "#SBATCH --time=60:00" >> ${lotus_script} # 60mins
+        else
+            echo "#SBATCH --time=30:00" >> ${lotus_script} # 60mins
+        fi
+    elif  [ "${STAGE}" == "N" ]; then
+        echo "#SBATCH --time=10:00" >> ${lotus_script} # 10mins
+    fi
     echo "#SBATCH --mem=3000" >> ${lotus_script}
     echo "" >> ${lotus_script}
     echo "source venv/bin/activate" >> ${lotus_script}
@@ -138,6 +163,7 @@ do
     n_jobs=`squeue --user=rjhd2 | wc -l`
     while [ ${n_jobs} -gt 50 ];
     do        
+        echo "sleeping for 5min to clear queue"
         sleep 5m
         n_jobs=`squeue --user=rjhd2 | wc -l`
     done
@@ -186,6 +212,11 @@ do
                 echo "upstream file ${stn} missing, sleeping 1m"
                 sleep 1m
             fi
+        elif [ "${WAIT}" == "F" ]; then
+            if [ ${submit} == false ]; then
+                echo "upstream file ${stn} missing, skipping"
+                submit=skip # to escape the loop as we will skip this file
+            fi
         fi
         
     done
@@ -201,19 +232,33 @@ do
         else
             # check if already processed before setting going
             if [ "${STAGE}" == "I" ]; then
-                if [ ! -f "${ROOTDIR}${PROC}${VERSION}${stn}.qff" ]; then
+                if [ -f "${ROOTDIR}${PROC}${VERSION}${stn}.qff" ]; then
+                    # output exists
+                    echo "${stn} already processed"
+                elif [ -f "${ROOTDIR}${QFF}${VERSION}bad_stations/${stn}.qff" ]; then
+                    # output exists
+                    echo "${stn} already processed - bad station"
+                elif [ -f "${ROOTDIR}${ERR}${VERSION}${stn}.err" ]; then
+                    # output exists
+                    echo "${stn} already processed - managed error"
+                else
                     sbatch ${lotus_script}
                     sleep 1s # allow submission to occur before 
-                else
-                    echo "${stn} already processed"
                 fi
                 
             elif [ "${STAGE}" == "N" ]; then
-                if [ ! -f "${ROOTDIR}${QFF}${VERSION}${stn}.qff" ]; then
+                if [ -f "${ROOTDIR}${QFF}${VERSION}${stn}.qff" ]; then
+                    # output exists
+                    echo "${stn} already processed"
+                elif [ -f "${ROOTDIR}${QFF}${VERSION}bad_stations/${stn}.qff" ]; then
+                    # output exists
+                    echo "${stn} already processed - bad station"
+                elif [ -f "${ROOTDIR}${ERR}${VERSION}${stn}.err" ]; then
+                    # output exists
+                    echo "${stn} already processed - managed error"
+                else
                     sbatch ${lotus_script}
                     sleep 1s # allow submission to occur before 
-                else
-                    echo "${stn} already processed"
                 fi
             fi
         fi
@@ -223,11 +268,17 @@ done
 
 
 # and print summary
-n_jobs=`squeue | wc -l`
+n_jobs=`squeue --user=rjhd2 | wc -l`
+# deal with Slurm header in output
+let n_jobs=n_jobs-1
 while [ ${n_jobs} -ne 0 ];
 do        
+    echo "All submitted, waiting 5min for queue to clear"
     sleep 5m
-    n_jobs=`squeue | wc -l`
+    n_jobs=`squeue --user=rjhd2 | wc -l`
+    let n_jobs=n_jobs-1
 done
 
-source check_if_processed
+source check_if_processed.bash ${STAGE}
+
+echo "ends"

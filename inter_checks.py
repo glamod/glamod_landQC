@@ -147,7 +147,7 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
 
         print(dt.datetime.now()-startT)
 
-        input("stop")
+#        input("stop")
 
     return # run_checks
 
