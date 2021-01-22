@@ -246,7 +246,7 @@ def variance_check(obs_var, station, config_file, plots=False, diagnostics=False
             import matplotlib.pyplot as plt
 
             scaled_variances = ((variances - average_variance) / variance_spread)
-            bins = utils.create_bins(scaled_variances, 0.25)
+            bins = utils.create_bins(scaled_variances, 0.25, obs_var.name)
             hist, bin_edges = np.histogram(scaled_variances, bins)
 
             plt.clf()

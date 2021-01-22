@@ -175,7 +175,7 @@ def find_month_thresholds(obs_var, station, config_file, plots=False, diagnostic
 
         if len(normalised_anomalies.compressed()) >= utils.DATA_COUNT_THRESHOLD:
 
-            bins = utils.create_bins(normalised_anomalies, BIN_WIDTH)
+            bins = utils.create_bins(normalised_anomalies, BIN_WIDTH, obs_var.name)
             hist, bin_edges = np.histogram(normalised_anomalies.compressed(), bins)
 
             gaussian_fit = utils.fit_gaussian(bins[1:], hist, max(hist), mu=bins[np.argmax(hist)], sig=utils.spread(normalised_anomalies))
@@ -239,7 +239,7 @@ def monthly_clim(obs_var, station, config_file, logfile="", plots=False, diagnos
 
         if len(normalised_anomalies.compressed()) >= utils.DATA_COUNT_THRESHOLD:
 
-            bins = utils.create_bins(normalised_anomalies, BIN_WIDTH)
+            bins = utils.create_bins(normalised_anomalies, BIN_WIDTH, obs_var.name)
             hist, bin_edges = np.histogram(normalised_anomalies.compressed(), bins)
 
             try:

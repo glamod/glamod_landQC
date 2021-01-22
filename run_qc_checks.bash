@@ -5,9 +5,10 @@
 #   and submits each as a separate jobs to LOTUS
 #
 # CALL
-#    bash run_qc.bash STAGE
+#    bash run_qc.bash STAGE WAIT
 #    
 #    STAGE = I [internal] or N [neighbour]
+#     WAIT = T [true] or F [false] # wait for upstream files to be ready
 #****************************************************************** 
 
 STAGE=$1
@@ -111,7 +112,7 @@ done
 echo "Checked for all input files - see missing.txt"
 n_missing=`wc ${missing_file} | awk -F' ' '{print $1}'`
 if [ ${n_missing} -ne 0 ]; then
-    read -p "${n_missing} files missing - do you want to run remainder Y/N? " run_lotus
+    read -p "${n_missing} upstream files missing - do you want to run remainder Y/N? " run_lotus
     if [ "${run_lotus}" == "N" ]; then
         exit
     fi
@@ -208,11 +209,14 @@ do
         
         # option to skip over if upstream missing through unexpected way
         if [ "${WAIT}" == "T" ]; then
+
             if [ ${submit} == false ]; then
                 echo "upstream file ${stn} missing, sleeping 1m"
                 sleep 1m
             fi
+
         elif [ "${WAIT}" == "F" ]; then
+
             if [ ${submit} == false ]; then
                 echo "upstream file ${stn} missing, skipping"
                 submit=skip # to escape the loop as we will skip this file
@@ -225,45 +229,64 @@ do
 
     # if clear to submit
     if [ $submit == true ]; then
+
         # if overwrite
         if [ "${CLOBBER}" == "True" ]; then
             sbatch ${lotus_script}
             sleep 1s # allow submission to occur before moving on
+
         else
+
             # check if already processed before setting going
             if [ "${STAGE}" == "I" ]; then
+
                 if [ -f "${ROOTDIR}${PROC}${VERSION}${stn}.qff" ]; then
                     # output exists
                     echo "${stn} already processed"
+
                 elif [ -f "${ROOTDIR}${QFF}${VERSION}bad_stations/${stn}.qff" ]; then
                     # output exists
                     echo "${stn} already processed - bad station"
+
                 elif [ -f "${ROOTDIR}${ERR}${VERSION}${stn}.err" ]; then
                     # output exists
                     echo "${stn} already processed - managed error"
+
                 else
                     sbatch ${lotus_script}
                     sleep 1s # allow submission to occur before 
+#                    exit
+
                 fi
                 
             elif [ "${STAGE}" == "N" ]; then
+
                 if [ -f "${ROOTDIR}${QFF}${VERSION}${stn}.qff" ]; then
                     # output exists
                     echo "${stn} already processed"
+
                 elif [ -f "${ROOTDIR}${QFF}${VERSION}bad_stations/${stn}.qff" ]; then
                     # output exists
                     echo "${stn} already processed - bad station"
+
                 elif [ -f "${ROOTDIR}${ERR}${VERSION}${stn}.err" ]; then
                     # output exists
                     echo "${stn} already processed - managed error"
+
                 else
                     sbatch ${lotus_script}
                     sleep 1s # allow submission to occur before 
+#                    exit
+
                 fi
+
             fi
+
         fi
+
     fi
 #    exit
+
 done
 
 

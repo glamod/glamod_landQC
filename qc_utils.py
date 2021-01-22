@@ -551,14 +551,34 @@ def winsorize(data, percent):
     return data # winsorize
 
 #************************************************************************
-def create_bins(data, width):
+def create_bins(data, width, obs_var_name):
 
     bmin = np.floor(np.ma.min(data))
     bmax = np.ceil(np.ma.max(data))
 
-    bins = np.arange(bmin - (5*width), bmax + (5*width), width)
-    
-    return bins # create_bins
+    try:
+        bins = np.arange(bmin - (5*width), bmax + (5*width), width)
+        return bins # create_bins
+    except MemoryError:
+        # wierd values (too small/negative or too high means lots of bins)
+        # for INM00020460 Jan 2021
+        import qc_tests.world_records as records
+
+        if obs_var_name == "station_level_pressure":
+            obs_var_name = "sea_level_pressure"
+            # hence us 500hPa as +/- search
+
+        if obs_var_name in ["station_level_pressure", "sea_level_pressure"]:
+            pad = 500
+        else:
+            pad = 100
+                        
+        bmin = records.mins[obs_var_name]["ROW"] - pad
+        bmax = records.maxes[obs_var_name]["ROW"] + pad
+        
+        bins = np.arange(bmin - (5*width), bmax + (5*width), width)
+        
+        return bins # create_bins
 
 #*********************************************
 def gaussian(X, p):

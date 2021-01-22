@@ -46,9 +46,9 @@ def identify_values(obs_var, station, config_file, plots=False, diagnostics=Fals
         resolution = utils.reporting_accuracy(month_data)
 
         if resolution <= 0.5:
-            bins = utils.create_bins(month_data, 0.5) 
+            bins = utils.create_bins(month_data, 0.5, obs_var.name) 
         else:
-            bins = utils.create_bins(month_data, 1.0) 
+            bins = utils.create_bins(month_data, 1.0, obs_var.name) 
 
         hist, bin_edges = np.histogram(month_data, bins)
 
@@ -143,9 +143,9 @@ def frequent_values(obs_var, station, config_file, plots=False, diagnostics=Fals
             resolution = utils.reporting_accuracy(month_data)
 
             if resolution <= 0.5:
-                bins = utils.create_bins(month_data, 0.5) 
+                bins = utils.create_bins(month_data, 0.5, obs_var.name) 
             else:
-                bins = utils.create_bins(month_data, 1.0) 
+                bins = utils.create_bins(month_data, 1.0, obs_var.name) 
             hist, bin_edges = np.histogram(month_data, bins)
 
             # Scan through the histogram

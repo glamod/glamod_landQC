@@ -122,7 +122,7 @@ def monthly_gap(obs_var, station, config_file, plots=False, diagnostics=False):
 
         standardised_months = (month_averages - climatology) / spread
 
-        bins = utils.create_bins(standardised_months, BIN_WIDTH)
+        bins = utils.create_bins(standardised_months, BIN_WIDTH, obs_var.name)
         hist, bin_edges = np.histogram(standardised_months, bins)
 
         # flag months with very large offsets
@@ -283,7 +283,7 @@ def find_thresholds(obs_var, station, config_file, plots=False, diagnostics=Fals
             utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-lthresh".format(month), "{}".format(utils.MDI), diagnostics=diagnostics)
             continue
 
-        bins = utils.create_bins(normalised_anomalies, BIN_WIDTH)
+        bins = utils.create_bins(normalised_anomalies, BIN_WIDTH, obs_var.name)
         hist, bin_edges = np.histogram(normalised_anomalies, bins)
 
         gaussian_fit = utils.fit_gaussian(bins[1:], hist, max(hist), mu=bins[np.argmax(hist)], \
@@ -366,7 +366,7 @@ def all_obs_gap(obs_var, station, config_file, plots=False, diagnostics=False):
             # no data to work with for this month, move on.
             continue
 
-        bins = utils.create_bins(normalised_anomalies, BIN_WIDTH)
+        bins = utils.create_bins(normalised_anomalies, BIN_WIDTH, obs_var.name)
         hist, bin_edges = np.histogram(normalised_anomalies, bins)
 
         try:

@@ -45,8 +45,8 @@ ERR=${QFF%/}_errors/
 
 
 # set up list of stations
-STATION_LIST="ghcnh-stations.txt"
-station_list_file=${ROOT}"mingle_lists/"${STATION_LIST}
+STATION_LIST=$(grep "station_list " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
+station_list_file=${ROOT}"level1b_sub_daily_data/"${STATION_LIST}
 #echo $station_list_file
 echo `wc -l ${station_list_file}`
 stn_ids=`awk -F" " '{print $1}' ${station_list_file}`
@@ -108,7 +108,7 @@ do
     
 done
 
-in_stations=`wc -l $station_list_file`
+in_stations=`wc -l ${station_list_file}`
 echo "Total input stations ${in_stations}" 
 
 echo "Total qc'd stations ${processed} ${process_dir}"
@@ -117,8 +117,13 @@ echo "Total withheld stations ${withheld} ${withheld_dir}"
 
 echo "Total errors ${errors} ${error_dir}"
 
-echo "Unprocessed stations (job failures?) ${unprocessed}"
-
 let out_stations=processed+withheld+errors
 echo "Total output stations ${out_stations}"
+echo ""
+missing=$(wc missing.txt | awk -F' ' '{print $1}')
+echo "Upstream missing stations ${missing}"
+let unprocessed=unprocessed-missing
+echo "Unprocessed stations (job failures?) ${unprocessed}"
 
+let out_stations=processed+withheld+errors+unprocessed
+echo "Total stations ${out_stations}"

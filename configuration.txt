@@ -2,7 +2,7 @@
 full_reprocess = True
 [PATHS]
 runon = root
-version = v20200901/
+version = v20201218/
 root = /gws/nopw/j04/c3s311a_lot2/data/level1/land/
 scratch = /work/scratch-pw/rjhd2/c3s311a_lot2/level1/land/
 mff = level1b_sub_daily_data/
@@ -14,7 +14,7 @@ flags = level1c_sub_daily_data_flags/
 images = level1c_sub_daily_data_plots/
 errors = level1c_sub_daily_data_errors/
 [FILES]
-station_list = ghcnh-stations-20200827.txt
+station_list = ghcnh-stations-20210116.txt
 variables = obs_variables.json
 logic = logic_config.json
 [STATISTICS]
