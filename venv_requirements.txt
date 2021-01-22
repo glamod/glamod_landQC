@@ -85,7 +85,7 @@ pbr==4.2.0
 pep8==1.7.1
 pexpect==4.7.0
 pickleshare==0.7.5
-Pillow==6.2.0
+Pillow==7.1.0
 pluggy==0.8.0
 prompt-toolkit==2.0.9
 psutil==5.4.8
