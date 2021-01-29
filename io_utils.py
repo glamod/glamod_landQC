@@ -187,10 +187,16 @@ def write_error(station, message, error="", diagnostics=False):
     """
     outfilename = os.path.join(setup.SUBDAILY_ERROR_DIR, "{:11s}.err".format(station.id))
 
-    with open(outfilename, "w") as outfile:
+    # in case this file already exists, then append
+    if os.path.exists(outfilename):
+        write_type = "a"
+    else:
+        write_type = "w"
+
+    with open(outfilename, write_type) as outfile:
         outfile.write(dt.datetime.strftime(dt.datetime.now(), "%Y-%m-%d %H:%M") + "\n")
         outfile.write(message + "\n")
         if error != "":
             outfile.write(error + "\n")
-        
+
     return # write_error

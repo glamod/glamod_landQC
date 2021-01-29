@@ -96,7 +96,7 @@ def neighbour_outlier(target_station, initial_neighbours, variable, diagnostics=
                 break
 
             if diagnostics:
-                print(buddy_id)
+                print("{}/{} {}".format(bid, len(initial_neighbours[:, 0]), buddy_id))
 
             # set up station object to hold information
             buddy_idx, = np.where(station_list.id == buddy_id)
@@ -114,11 +114,11 @@ def neighbour_outlier(target_station, initial_neighbours, variable, diagnostics=
 
             except OSError as e:
                 # file missing, move on to next in sequence
-                io.write_error(buddy, "File Missing (Buddy)")
+                io.write_error(target_station, "File Missing (Buddy, {}) - {}".format(variable, buddy_id))
                 continue
             except ValueError as e:
                 # some issue in the raw file
-                io.write_error(buddy, "Error in input file (Buddy)", error=str(e))
+                io.write_error(target_station, "Error in input file (Buddy, {}) - {}".format(variable, buddy_id), error=str(e))
                 continue
 
             # match the timestamps of target_station and copy over
@@ -129,6 +129,10 @@ def neighbour_outlier(target_station, initial_neighbours, variable, diagnostics=
                 # skip if no overlapping times at all!
                 all_buddy_data[bid, match] = buddy_var.data[match_back]
 
+
+        if diagnostics:
+            print("All buddies read in")
+                    
         #*************************
         # find differences
         differences = all_buddy_data - obs_var.data
@@ -193,6 +197,9 @@ def neighbour_outlier(target_station, initial_neighbours, variable, diagnostics=
             dubious_locs = np.ma.where(np.ma.abs(differences) > spreads*SPREAD_LIMIT)
             dubious[dubious_locs] = 1
 
+
+        if diagnostics:
+            print("cross checks complete - assessing all outcomes")
         #*************************
         # sum across neighbours
         neighbour_count = np.ma.count(differences, axis=0)

@@ -143,10 +143,10 @@ do
             # US stations take a long time
             echo "#SBATCH --time=60:00" >> ${lotus_script} # 60mins
         else
-            echo "#SBATCH --time=30:00" >> ${lotus_script} # 60mins
+            echo "#SBATCH --time=30:00" >> ${lotus_script} # 20mins
         fi
     elif  [ "${STAGE}" == "N" ]; then
-        echo "#SBATCH --time=10:00" >> ${lotus_script} # 10mins
+        echo "#SBATCH --time=20:00" >> ${lotus_script} # 20mins
     fi
     echo "#SBATCH --mem=3000" >> ${lotus_script}
     echo "" >> ${lotus_script}

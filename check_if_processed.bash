@@ -126,4 +126,4 @@ let unprocessed=unprocessed-missing
 echo "Unprocessed stations (job failures?) ${unprocessed}"
 
 let out_stations=processed+withheld+errors+unprocessed
-echo "Total stations ${out_stations}"
+echo "Total stations (excl upstream missing) ${out_stations}"
