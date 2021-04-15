@@ -559,22 +559,25 @@ def create_bins(data, width, obs_var_name):
     try:
         bins = np.arange(bmin - (5*width), bmax + (5*width), width)
         return bins # create_bins
-    except MemoryError:
+    except (MemoryError, ValueError):
         # wierd values (too small/negative or too high means lots of bins)
         # for INM00020460 Jan 2021
         import qc_tests.world_records as records
 
+        # to ensure no overwriting of the obs variable name attribute
         if obs_var_name == "station_level_pressure":
-            obs_var_name = "sea_level_pressure"
-            # hence us 500hPa as +/- search
-
-        if obs_var_name in ["station_level_pressure", "sea_level_pressure"]:
+            var_name = "sea_level_pressure"
+            # hence use 500hPa as +/- search
+        else:
+            var_name = obs_var_name
+            
+        if var_name in ["station_level_pressure", "sea_level_pressure"]:
             pad = 500
         else:
             pad = 100
                         
-        bmin = records.mins[obs_var_name]["ROW"] - pad
-        bmax = records.maxes[obs_var_name]["ROW"] + pad
+        bmin = records.mins[var_name]["ROW"] - pad
+        bmax = records.maxes[var_name]["ROW"] + pad
         
         bins = np.arange(bmin - (5*width), bmax + (5*width), width)
         

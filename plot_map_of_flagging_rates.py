@@ -72,6 +72,10 @@ def main(restart_id="", end_id="", diagnostics=False):
 
     # now spin through each ID in the curtailed list
     for st, station_id in enumerate(station_IDs):
+
+#        if st > 10:
+#            break
+        
         print("{} {}".format(dt.datetime.now(), station_id))
 
         station = utils.Station(station_id, station_list.iloc[st].latitude, station_list.iloc[st].longitude, station_list.iloc[st].elevation)
@@ -149,11 +153,11 @@ def main(restart_id="", end_id="", diagnostics=False):
                 # do the plot
                 plt.figure(figsize=(8, 5))
                 plt.clf()
-                ax = plt.axes([0, 0.03, 1, 1], projection=ccrs.Robinson())
+                ax = plt.axes([0.02, 0.02, 0.96, 0.96], projection=ccrs.Robinson())
                 ax.set_global()
                 ax.coastlines('50m')
                 try:
-                    ax.gridlines(draw_labels = True)
+                    ax.gridlines()#draw_labels = True)
                 except TypeError:
                     ax.gridlines()
 
@@ -183,12 +187,12 @@ def main(restart_id="", end_id="", diagnostics=False):
 
                     # and plot
                     if len(locs) > 0:
-                        ax.scatter(lons[locs], lats[locs], transform = ccrs.Geodetic(), s = 15, c = tuple([float(c)/255 for c in colors[u]]), \
+                        ax.scatter(lons[locs], lats[locs], transform=ccrs.PlateCarree(), s=15, color=tuple([float(c)/255 for c in colors[u]]), \
                                    edgecolors="none", label = label)
 
                     else:
-                        ax.scatter([0], [-90], transform = ccrs.Geodetic(), s = 15, c = tuple([float(c)/255 for c in colors[u]]), \
-                                   edgecolors="none", label = label)
+                        ax.scatter([0], [-90], transform=ccrs.PlateCarree(), s=15, color=tuple([float(c)/255 for c in colors[u]]), \
+                                   edgecolors="none", label=label)
 
                 if test == "All":
                     plt.title("{} - {}".format(" ".join([v.capitalize() for v in var.split("_")]), "All"))
