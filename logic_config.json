@@ -1,0 +1,29 @@
+{
+   "logic_limits":{
+       "temperature":[
+           -75,
+           75
+       ],
+       "dew_point_temperature":[
+           -75,
+           75
+       ],
+       "station_level_pressure":[
+           300,
+           1200
+       ],
+       "sea_level_pressure":[
+           870,
+           1090
+       ],
+       "wind_speed":[
+           0,
+           50
+       ],
+       "wind_direction":[
+           0,
+           360
+       ]
+      
+   }
+}

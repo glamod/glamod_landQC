@@ -1,0 +1,12 @@
+{
+   "variables":{
+      "process_vars":[
+         "temperature",
+         "dew_point_temperature",
+         "station_level_pressure",
+         "sea_level_pressure",
+         "wind_speed",
+         "wind_direction"
+      ]
+   }
+}

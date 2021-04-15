@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-C3S 311a Lot 2 QC suite documentation
-=============================================
+C3S 311a Lot 2 sub-daily QC suite documentation
+===============================================
 
 Introduction
 ------------
@@ -61,27 +61,40 @@ Configuration files handle the over-arching settings for the code,
 including setting the paths to the files and the statistics and
 thresholds to use.  The configuration.txt file contains::
 
+  [SETTINGS]
+  full_reprocess = True
   [PATHS]
+  runon = root
+  version = v20210413/
   root = /gws/nopw/j04/c3s311a_lot2/data/level1/land/
+  scratch = /work/scratch-pw/rjhd2/c3s311a_lot2/level1/land/
   mff = level1b_sub_daily_data/
-  mff_version = menne_prelim_mff/
+  mff_version = mff_latest/
+  proc = level1b1_sub_daily_data/
   qff = level1c_sub_daily_data/
-  qff_version = v20191126/
   config = level1c_sub_daily_data_configs/
+  flags = level1c_sub_daily_data_flags/
   images = level1c_sub_daily_data_plots/
   errors = level1c_sub_daily_data_errors/
   [FILES]
+  station_list = ghcnh-stations-20210116.txt
   variables = obs_variables.json
   logic = logic_config.json
   [STATISTICS]
   mean = False
   median = True
   stdev = False
-  iqr = True
+   iqr = True
   mad = False
   [THRESHOLDS]
   min_data_count = 120
   high_flag_proportion = 0.2
+  [NEIGHBOURS]
+  max_distance = 500
+  max_vertical_separation = 200
+  max_number = 20
+  filename = neighbours.txt
+  minimum_number = 3
 
 There is a quick bash script which currently is the quickest and easiest to run the system (please ask for details) but the intention is that Rose/Cylc will perform this in due coourse.
 
