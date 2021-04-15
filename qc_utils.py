@@ -27,7 +27,7 @@ QC_TESTS = {"o" : "Odd Cluster", "F" : "Frequent Value", "D" : "Distribution - M
             "d" : "Distribution - all", "W" : "World Records", "K" : "Streaks", \
             "C" : "Climatological", "T" : "Timestamp", "S" : "Spike", "h" : "Humidity", \
             "V" : "Variance", "p" : "Pressure", "w" : "Winds", "L" : "Logic", "U" : "Diurnal", \
-            "E" : "Clean Up", "N" : "Neighbour"}
+            "E" : "Clean Up", "N" : "Neighbour", "H" : "High Flag Rate"}
 
 
 MDI = -1.e30
@@ -839,6 +839,7 @@ def reporting_frequency(intimes, inobs):
     return frequency # reporting_frequency
 
 #*********************************************
+#DEPRECATED - now in a test
 def high_flagging(station):
     """
     Check flags for each observational variable, and return True if any 
