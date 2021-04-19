@@ -53,6 +53,13 @@ def high_flag_rate(obs_var, plots=False, diagnostics=False):
     if obs_locs.shape[0] > 10 * utils.DATA_COUNT_THRESHOLD:
         # require sufficient observations to make a flagged fraction useful.
 
+        # If already flagged on internal run, return with dummy results.
+        flag_set = np.unique(flags[obs_locs]) # Flags per obs.
+        unique_flags = set("".join(flag_set)) # Unique set of flag letters.
+        if "H" in unique_flags:
+            flags = np.array(["" for i in range(obs_var.data.shape[0])])
+            return flags, any_flags_set
+
         flagged, = np.where(flags[obs_locs] != "")
 
         if flagged.shape[0] / obs_locs.shape[0] > utils.HIGH_FLAGGING:
@@ -65,9 +72,6 @@ def high_flag_rate(obs_var, plots=False, diagnostics=False):
             flags[obs_locs[unflagged]] = "H"
             any_flags_set = True
 
-    # TODO - how to cope with synergistic variables (winds, pressure)
-    # thought - return the variable names, then can see if pressure or wind in the list
-    # if so, then go back to catch the other.
     if diagnostics:
         print("High Flag Rate {}".format(obs_var.name))
         print("   Cumulative number of flags set: {}".format(

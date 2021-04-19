@@ -93,7 +93,12 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
             continue
 
         #*************************
+        # Add the country and continent
+        station.country = utils.find_country_code(station.lat, station.lon)
+        station.continent = utils.find_continent(station.country)
 
+
+        #*************************
         """
         HadISD tests and order
 
@@ -182,6 +187,9 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
             print("w", dt.datetime.now()-startT)
             qc_tests.winds.wcc(station, config_file, fix=True, full=full, plots=plots, diagnostics=diagnostics)
 
+        if test in ["all", "high_flag"]:
+            print("H", dt.datetime.now()-startT)
+            hfr_vars_set = qc_tests.high_flag.hfr(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed", "wind_direction"], full=full, plots=plots, diagnostics=diagnostics)
 
         print(dt.datetime.now()-startT)
 
