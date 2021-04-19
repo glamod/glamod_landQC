@@ -133,6 +133,7 @@ PyYAML==5.4
 pyzmq==17.1.2
 redis==3.3.7
 requests==2.21.0
+reverse-geocoder==1.5.1
 rpy2==2.9.4
 Rtree==0.8.3
 s3transfer==0.1.13
