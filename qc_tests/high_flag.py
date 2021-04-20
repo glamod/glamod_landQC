@@ -23,16 +23,17 @@ def set_synergistic_flags(station, var):
     """
     obs_var = getattr(station, var)
 
-    flags = obs_var.flags
+    new_flags = np.array(["" for i in range(obs_var.data.shape[0])])
+    old_flags = obs_var.flags
     obs_locs, = np.where(obs_var.data.mask == False)
 
     if obs_locs.shape[0] > 10 * utils.DATA_COUNT_THRESHOLD:
         # require sufficient observations to make a flagged fraction useful.
 
         # As synergistically flagged, add to all flags.
-        flags[obs_locs] = "H"
+        new_flags[obs_locs] = "H"
 
-    obs_var.flags = utils.insert_flags(obs_var.flags, flags)
+    obs_var.flags = utils.insert_flags(obs_var.flags, new_flags)
 
     return # set_synergistic_flags
 
@@ -46,21 +47,21 @@ def high_flag_rate(obs_var, plots=False, diagnostics=False):
     :param bool diagnostics: turn on diagnostic output
     """
     any_flags_set = False
-
-    flags = obs_var.flags
+    new_flags = np.array(["" for i in range(obs_var.data.shape[0])])
+    old_flags = obs_var.flags
     obs_locs, = np.where(obs_var.data.mask == False)
 
     if obs_locs.shape[0] > 10 * utils.DATA_COUNT_THRESHOLD:
         # require sufficient observations to make a flagged fraction useful.
 
         # If already flagged on internal run, return with dummy results.
-        flag_set = np.unique(flags[obs_locs]) # Flags per obs.
+        flag_set = np.unique(old_flags[obs_locs]) # Flags per obs.
         unique_flags = set("".join(flag_set)) # Unique set of flag letters.
         if "H" in unique_flags:
-            flags = np.array(["" for i in range(obs_var.data.shape[0])])
-            return flags, any_flags_set
+            # This test has been run before on this variable, so don't do again.
+            return new_flags, any_flags_set
 
-        flagged, = np.where(flags[obs_locs] != "")
+        flagged, = np.where(old_flags[obs_locs] != "")
 
         if flagged.shape[0] / obs_locs.shape[0] > utils.HIGH_FLAGGING:
             if diagnostics:
@@ -69,16 +70,16 @@ def high_flag_rate(obs_var, plots=False, diagnostics=False):
                 )
             # Set flags only obs currently unflagged.
             unflagged, = np.where(flags[obs_locs] == "")
-            flags[obs_locs[unflagged]] = "H"
+            new_flags[obs_locs[unflagged]] = "H"
             any_flags_set = True
 
     if diagnostics:
         print("High Flag Rate {}".format(obs_var.name))
         print("   Cumulative number of flags set: {}".format(
-            len(np.where(flags == "H")[0]))
+            len(np.where(new_flags == "H")[0]))
         )
 
-    return flags, any_flags_set # high_flag_rate
+    return new_flags, any_flags_set # high_flag_rate
 
 #************************************************************************
 def hfr(station, var_list, full=False, plots=False, diagnostics=False):
