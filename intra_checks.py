@@ -93,7 +93,12 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
             continue
 
         #*************************
+        # Add the country and continent
+        station.country = utils.find_country_code(station.lat, station.lon)
+        station.continent = utils.find_continent(station.country)
 
+
+        #*************************
         """
         HadISD tests and order
 
@@ -167,7 +172,7 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
             qc_tests.spike.sc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed"], config_file, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "humidity"]:
-            print("H", dt.datetime.now()-startT)
+            print("h", dt.datetime.now()-startT)
             qc_tests.humidity.hcc(station, config_file, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "variance"]:
@@ -182,10 +187,9 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
             print("w", dt.datetime.now()-startT)
             qc_tests.winds.wcc(station, config_file, fix=True, full=full, plots=plots, diagnostics=diagnostics)
 
-#        # Moved to inter station checks
-#        if test in ["all", "clean_up"]:
-#            print("U", dt.datetime.now()-startT)
-#            qc_tests.clean_up.mcu(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed", "wind_direction"], full=full, plots=plots, diagnostics=diagnostics)
+        if test in ["all", "high_flag"]:
+            print("H", dt.datetime.now()-startT)
+            hfr_vars_set = qc_tests.high_flag.hfr(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed", "wind_direction"], full=full, plots=plots, diagnostics=diagnostics)
 
         print(dt.datetime.now()-startT)
 
@@ -209,14 +213,14 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         for index in new_column_indices:
             station_df.insert(index, "{}_QC_flag".format(station_df.columns[index-2]), ["" for i in range(station_df.shape[0])], True)
 
-        # sort source_ID.x columns - purely for first release
-        for c, column in enumerate(station_df.columns):
-            if "Source_ID" in column:
-                # replace the NaN with empty string
-                station_df[column] = station_df[column].fillna('')
-                # rename the column
-                variable = station_df.columns[c-1]
-                station_df = station_df.rename(columns={column : "{}_Source_ID".format(variable)})
+        # # sort source_ID.x columns - purely for first release
+        # for c, column in enumerate(station_df.columns):
+        #     if "Source_ID" in column:
+        #         # replace the NaN with empty string
+        #         station_df[column] = station_df[column].fillna('')
+        #         # rename the column
+        #         variable = station_df.columns[c-1]
+        #         station_df = station_df.rename(columns={column : "{}_Source_ID".format(variable)})
                 
 
         # write in the flag information
@@ -228,9 +232,8 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         #*************************
         # Output of QFF
         # write out the dataframe to output format
-        if utils.high_flagging(station):
-            # high flagging rates in one variable.  Withholding station completely
-            # TODO - once neighbour checks present, revisit, in case only withhold offending variable
+        if hfr_vars_set > 1:
+            # high flagging rates in more than one variable.  Withholding station completely
             print("{} withheld as too high flagging".format(station.id))
             io.write(os.path.join(setup.SUBDAILY_BAD_DIR, "{:11s}.qff".format(station_id)), station_df)
         else:
@@ -239,8 +242,6 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         #*************************
         # Output flagging summary file
         io.flag_write(os.path.join(setup.SUBDAILY_FLAG_DIR, "{:11s}.flg".format(station_id)), station_df, diagnostics=diagnostics)
-
-
 
 
         print(dt.datetime.now()-startT)

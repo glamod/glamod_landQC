@@ -9,6 +9,7 @@ import json
 import pandas as pd
 import numpy as np
 import scipy.special
+import reverse_geocoder as rg
 
 from scipy.optimize import least_squares
 
@@ -27,7 +28,7 @@ QC_TESTS = {"o" : "Odd Cluster", "F" : "Frequent Value", "D" : "Distribution - M
             "d" : "Distribution - all", "W" : "World Records", "K" : "Streaks", \
             "C" : "Climatological", "T" : "Timestamp", "S" : "Spike", "h" : "Humidity", \
             "V" : "Variance", "p" : "Pressure", "w" : "Winds", "L" : "Logic", "U" : "Diurnal", \
-            "E" : "Clean Up", "N" : "Neighbour"}
+            "E" : "Clean Up", "N" : "Neighbour", "H" : "High Flag Rate"}
 
 
 MDI = -1.e30
@@ -839,6 +840,7 @@ def reporting_frequency(intimes, inobs):
     return frequency # reporting_frequency
 
 #*********************************************
+#DEPRECATED - now in a test
 def high_flagging(station):
     """
     Check flags for each observational variable, and return True if any 
@@ -870,3 +872,40 @@ def high_flagging(station):
                 break
 
     return bad # high_flagging
+
+
+#************************************************************************
+def find_country_code(lat, lon):
+    """
+    Use reverse Geocoder to find closest city to each station, and hence
+    find the country code.
+
+    :param float lat: latitude
+    :param float lon: longitude
+
+    :returns: [str] country_code
+    """
+    results = rg.search((lat, lon))
+    country = results[0]['cc']
+
+    return country # find_country_code
+
+#************************************************************************
+def find_continent(country_code):
+    """
+    Use ISO country list to find continent from country_code.
+
+    :param str country_code: ISO standard country code
+
+    :returns: [str] continent
+    """
+ 
+    # prepare look up
+    with open('iso_country_codes.json', 'r') as infile:
+        iso_codes = json.load(infile)
+
+    concord = {}
+    for entry in iso_codes:
+        concord[entry["Code"]] = entry["continent"]
+
+    return concord[country_code]

@@ -17,6 +17,7 @@ Input arguments:
 
 --diagnostics       [False] Verbose output
 
+--test              ["all"] select a single test to run [neighbour/clean_up/high_flag]
 '''
 #************************************************************************
 import os
@@ -69,7 +70,7 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
     :param bool diagnostics: print extra material to screen
     :param bool plots: create plots from each test
     :param bool full: run full reprocessing rather than using stored values.
-    :param str test: specify a single test to run (useful for diagnostics) [neighbour]
+    :param str test: specify a single test to run (useful for diagnostics) [neighbour/clean_up/high_flag]
     """
 
     # process the station list
@@ -120,6 +121,10 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
             qc_tests.clean_up.mcu(target_station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed", "wind_direction"], full=full, plots=plots, diagnostics=diagnostics)
 
 
+        if test in ["all", "high_flag"]:
+            print("H", dt.datetime.now()-startT)
+            hfr_vars_set = qc_tests.high_flag.hfr(target_station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed", "wind_direction"], full=full, plots=plots, diagnostics=diagnostics)
+
         print(dt.datetime.now()-startT)
 
         # write in the flag information
@@ -130,9 +135,8 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         #*************************
         # Output of QFF
         # write out the dataframe to output format
-        if utils.high_flagging(target_station):
-            # high flagging rates in one variable.  Withholding station completely
-            # TODO - once neighbour checks present, revisit, in case only withhold offending variable
+        if hfr_vars_set > 1:
+            # high flagging rates in more than one variable.  Withholding station completely
             print("{} withheld as too high flagging".format(target_station.id))
             io.write(os.path.join(setup.SUBDAILY_BAD_DIR, "{:11s}.qff".format(target_station_id)), target_station_df, formatters={"Latitude" : "{:7.4f}", "Longitude" : "{:7.4f}", "Month": "{:02d}", "Day": "{:02d}", "Hour" : "{:02d}", "Minute" : "{:02d}"})
                                                             

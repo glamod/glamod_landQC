@@ -16,12 +16,12 @@ import setup
 #************************************************************************
 
 
-TESTS_FOR_VARS = {"temperature": ["All", "o", "U", "F", "D", "d", "W", "K", "C", "T", "S", "V", "L", "E", "N"],\
-                      "dew_point_temperature": ["All", "o", "F", "D", "d", "W", "K", "C", "T", "S", "h", "V", "L", "E", "N"],\
-                      "sea_level_pressure" : ["All", "o", "F", "D", "d", "W", "K", "T", "S", "V", "p", "L", "E", "N"],\
-                      "station_level_pressure" : ["All", "o", "F", "D", "d", "K", "T", "S", "V", "p", "L", "E", "N"],\
-                      "wind_speed" : ["All", "o", "W", "K", "T", "S", "V", "w", "L", "E", "N"],
-                  "wind_direction" : ["All", "K", "w", "L", "E"]}
+TESTS_FOR_VARS = {"temperature": ["All", "o", "U", "F", "D", "d", "W", "K", "C", "T", "S", "V", "L", "E", "N", "H"],\
+                      "dew_point_temperature": ["All", "o", "F", "D", "d", "W", "K", "C", "T", "S", "h", "V", "L", "E", "N", "H"],\
+                      "sea_level_pressure" : ["All", "o", "F", "D", "d", "W", "K", "T", "S", "V", "p", "L", "E", "N", "H"],\
+                      "station_level_pressure" : ["All", "o", "F", "D", "d", "K", "T", "S", "V", "p", "L", "E", "N", "H"],\
+                      "wind_speed" : ["All", "o", "W", "K", "T", "S", "V", "w", "L", "E", "N", "H"],
+                  "wind_direction" : ["All", "K", "w", "L", "E", "H"]}
 
 UNITS = {"" : "%", "_counts" : "cts"}
 
