@@ -40,7 +40,7 @@ def process_batches(batch, total):
 
     # get the most recent station list
     station_list = utils.get_station_list(restart_id="", end_id="")
-    station_IDs = station_list.iloc[:, 0]
+    station_IDs = station_list.id
 
     # find indices in suitable spacing
     splits = np.linspace(0, len(station_list) - 1, total + 1).astype(int)
@@ -51,10 +51,10 @@ def process_batches(batch, total):
     ends[-1] = ends[-1] + 1 # to ensure no out of range error
 
 #    print(starts, ends, len(starts), len(ends))
-    print(station_IDs[starts[batch]], station_IDs[ends[batch]])
+    print(station_IDs.iloc[starts[batch]], station_IDs.iloc[ends[batch]])
 
     # return the restart_id and end_id for use
-    return station_IDs[starts[batch]], station_IDs[ends[batch]] # process_batches
+    return station_IDs.iloc[starts[batch]], station_IDs.iloc[ends[batch]] # process_batches
 
 #************************************************************************
 def run_intra_station_checks(restart_id, end_id, full):
