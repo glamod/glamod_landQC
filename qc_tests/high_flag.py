@@ -69,7 +69,7 @@ def high_flag_rate(obs_var, plots=False, diagnostics=False):
                     obs_var.name, 100*(flagged.shape[0] / obs_locs.shape[0]))
                 )
             # Set flags only obs currently unflagged.
-            unflagged, = np.where(flags[obs_locs] == "")
+            unflagged, = np.where(old_flags[obs_locs] == "")
             new_flags[obs_locs[unflagged]] = "H"
             any_flags_set = True
 
