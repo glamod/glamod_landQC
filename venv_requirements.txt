@@ -161,7 +161,7 @@ tqdm==4.28.1
 traitlets==4.3.2
 typing-extensions==3.7.4.3
 tzlocal==1.5.1
-urllib3==1.25.7
+urllib3==1.26.5
 virtualenv==16.0.0
 virtualenv-clone==0.5.4
 wcwidth==0.1.7
