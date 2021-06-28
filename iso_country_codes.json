@@ -118,6 +118,7 @@
 {"Code": "KI", "Name": "Kiribati", "continent":"oceania"},
 {"Code": "KP", "Name": "Korea, Democratic People's Republic of", "continent":"asia"},
 {"Code": "KR", "Name": "Korea, Republic of", "continent":"asia"},
+{"Code": "XK", "Name": "Kosovo", "continent":"europe"},
 {"Code": "KW", "Name": "Kuwait", "continent":"asia"},
 {"Code": "KG", "Name": "Kyrgyzstan", "continent":"asia"},
 {"Code": "LA", "Name": "Lao People's Democratic Republic", "continent":"asia"},
