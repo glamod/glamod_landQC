@@ -92,7 +92,7 @@ pbr==4.2.0
 pep8==1.7.1
 pexpect==4.7.0
 pickleshare==0.7.5
-Pillow==8.1.1
+Pillow==8.2.0
 pluggy==0.8.0
 prompt-toolkit==2.0.9
 psutil==5.6.6
@@ -161,14 +161,14 @@ tqdm==4.28.1
 traitlets==4.3.2
 typing-extensions==3.7.4.3
 tzlocal==1.5.1
-urllib3==1.25.7
+urllib3==1.26.5
 virtualenv==16.0.0
 virtualenv-clone==0.5.4
 wcwidth==0.1.7
 WebOb==1.8.4
 windspharm==0+unknown
 wrapt==1.10.11
-wxPython==4.0.7.post2
+wxPython==4.1.0
 xarray==0.11.0
 zarr==2.4.0
 zict==0.1.3
