@@ -577,8 +577,8 @@ def create_bins(data, width, obs_var_name):
         else:
             pad = 100
                         
-        bmin = records.mins[var_name]["ROW"] - pad
-        bmax = records.maxes[var_name]["ROW"] + pad
+        bmin = records.mins[var_name]["row"] - pad
+        bmax = records.maxes[var_name]["row"] + pad
         
         bins = np.arange(bmin - (5*width), bmax + (5*width), width)
         
