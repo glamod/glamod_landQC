@@ -552,7 +552,7 @@ def winsorize(data, percent):
     return data # winsorize
 
 #************************************************************************
-def create_bins(data, width, obs_var_name):
+def create_bins(data, width, obs_var_name, anomalies=False):
 
     bmin = np.floor(np.ma.min(data))
     bmax = np.ceil(np.ma.max(data))
@@ -579,7 +579,13 @@ def create_bins(data, width, obs_var_name):
                         
         bmin = records.mins[var_name]["row"] - pad
         bmax = records.maxes[var_name]["row"] + pad
-        
+
+        if anomalies:
+            # for INI0000VOMM June 2021
+            # reset range to surround zero
+            bmin = bmin - np.mean([bmin, bmax])
+            bmax = bmax - np.mean([bmin, bmax])
+
         bins = np.arange(bmin - (5*width), bmax + (5*width), width)
         
         return bins # create_bins

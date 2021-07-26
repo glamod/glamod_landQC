@@ -25,6 +25,12 @@ fi
 shift
 shift
 
+if [ "${STAGE}" == "I" ]; then
+    MAX_N_JOBS=150
+elif [ "${STAGE}" == "N" ]; then
+    MAX_N_JOBS=50
+fi
+WAIT_N_MINS=1
 CLOBBER="False"
 cwd=`pwd`
 SCRIPT_DIR=${cwd}/lotus_scripts/
@@ -133,7 +139,9 @@ do
  	    lotus_script="${SCRIPT_DIR}/lotus_external_${stn}.bash"
     fi
     echo "#!/bin/bash -l" > ${lotus_script}
-    echo "#SBATCH --qos=short-serial" >> ${lotus_script}
+#    echo "#SBATCH --partition=short-serial" >> ${lotus_script}
+    echo "#SBATCH --partition=short-serial-4hr" >> ${lotus_script}
+    echo "#SBATCH --account=short4hr" >> ${lotus_script}
     echo "#SBATCH --job-name=QC_${stn}" >> ${lotus_script}
     echo "#SBATCH --output=${cwd}/logs/${stn}.out" >> ${lotus_script}
     echo "#SBATCH --error=${cwd}/logs/${stn}.err " >> ${lotus_script}
@@ -160,12 +168,12 @@ do
     fi
 
     # now check if we should submit it.
-    # ensure don't overload the queue, max of 50
+    # ensure don't overload the queue, max of e.g. 50
     n_jobs=`squeue --user=rjhd2 | wc -l`
-    while [ ${n_jobs} -gt 50 ];
+    while [ ${n_jobs} -gt ${MAX_N_JOBS} ];
     do        
-        echo "sleeping for 5min to clear queue"
-        sleep 5m
+        echo "sleeping for ${WAIT_N_MINS}min to clear queue"
+        sleep ${WAIT_N_MINS}m
         n_jobs=`squeue --user=rjhd2 | wc -l`
     done
 
