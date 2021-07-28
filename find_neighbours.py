@@ -203,6 +203,21 @@ def main(restart_id="", end_id="", diagnostics=False, plots=False, full=False):
 
         # each station
         for st, station in enumerate(neighbours):
+            """In cases where stations with lat=0 and lon=0 is pervasive, there could be 
+            more than MAX_N_NEIGHBOURS with zero distance.  Hence the sorting by distance
+            won't necessarily end up with the target station at the first index location.
+            These stations will be withheld by the logic checks, so no buddy checks will 
+            be run.  Hence, can manually overwrite the first entry to ensure the writing works."""
+
+            if station_list.latitude[st] == 0 and station_list.longitude[st] == 0:
+                # this station should be withheld by the logic checks, so no buddy checks will be run
+                zeros, = np.where(station[:, 1] == 0)
+                if len(zeros) == len(station[:, 1]):
+                    # checking all neighbours have zero distance
+                    if station[0, 0] != st and station[0, 1] == 0:
+                        # can just overwrite the first
+                        station[0, 0] = st
+
             # check to make sure that the first entry is correct (in cases where a neighbour has zero separation
             if station[0, 0] != st:
                 zeros, = np.where(station[:, 1] == 0)
@@ -210,7 +225,7 @@ def main(restart_id="", end_id="", diagnostics=False, plots=False, full=False):
                 if len(match) == 1:
                     station[[0, match[0]]]=station[[match[0], 0]]
                 else:
-                    input("{} issue".format(st))
+                    input("{} issue".format(station))
 
             outstring = ""
             # each neighbour
