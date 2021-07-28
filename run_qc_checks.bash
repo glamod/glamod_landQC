@@ -158,7 +158,8 @@ do
     fi
     echo "#SBATCH --mem=3000" >> ${lotus_script}
     echo "" >> ${lotus_script}
-    echo "source venv/bin/activate" >> ${lotus_script}
+#    echo "source venv/bin/activate" >> ${lotus_script}
+    echo "source /gws/smf/j04/c3s311a_lot2/rjhd2/landqc_env/bin/activate" >> ${lotus_script}
     echo "" >> ${lotus_script}
 
     if [ "${STAGE}" == "I" ]; then

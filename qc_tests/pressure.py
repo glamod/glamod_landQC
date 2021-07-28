@@ -221,7 +221,6 @@ def pressure_theory(sealp, stnlp, temperature, times, elevation, plots=False, di
         plt.xlabel("Difference (hPa)")
         plt.show()
 
-
     if len(bad_locs) != 0:
         flags[bad_locs] = "p"
         if diagnostics:
@@ -230,7 +229,7 @@ def pressure_theory(sealp, stnlp, temperature, times, elevation, plots=False, di
         if plots:
             for bad in bad_locs:
                 plot_pressure(sealp, stnlp, times, bad)
-
+                
     def adjust_preexisting_locs(var, flags):
         # may have flags already set by previous part of test
         # find these locations, and adjust new flags to these aren't added again
@@ -271,7 +270,12 @@ def pcc(station, config_file, full=False, plots=False, diagnostics=False):
     pressure_offset(sealp, stnlp, station.times, config_file, plots=plots, diagnostics=diagnostics)
 
     temperature = getattr(station, "temperature")
-    pressure_theory(sealp, stnlp, temperature, station.times, station.elev, plots=plots, diagnostics=diagnostics)
+    if str(station.elev)[:4] in ["-999", "9999"]:
+        # missing elevation, so can't run this check
+        print("Station Elevation missing ({}m)".format(station.elev))
+        print("   Theoretical SLP/StnLP cross check not run.")
+    else:
+        pressure_theory(sealp, stnlp, temperature, station.times, station.elev, plots=plots, diagnostics=diagnostics)
 
     return # pcc
 
