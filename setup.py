@@ -115,15 +115,20 @@ VARFILE = config.get("FILES", "variables")
 with open(os.path.join(os.path.dirname(__file__), VARFILE), "r") as pf:
     parameters = json.load(pf)
 obs_var_list = parameters["variables"]["process_vars"]
+carry_thru_var_list = parameters["variables"]["not_process_vars"]
 
 DTYPE_DICT =  {}
-for v,var in enumerate(obs_var_list):
-    DTYPE_DICT[var] = np.float64
-    DTYPE_DICT["{}_Source_ID".format(var)] = str
-    DTYPE_DICT["{}_QC_flag".format(var)] = str
-    DTYPE_DICT["{}_Source_Station_ID".format(var)] = str
-    DTYPE_DICT["{}_Source_Code".format(var)] = str
-    DTYPE_DICT["Source_ID.{}".format(v+1)] = str
+for var_list in (obs_var_list, carry_thru_var_list):
+    for v, var in enumerate(obs_var_list):
+        DTYPE_DICT[var] = np.float64
+        DTYPE_DICT["{}_Source_ID".format(var)] = str
+        DTYPE_DICT["{}_QC_flag".format(var)] = str
+        DTYPE_DICT["{}_Measurement_Code".format(var)] = str
+        DTYPE_DICT["{}_Quality_Code".format(var)] = str
+        DTYPE_DICT["{}_Report_Type".format(var)] = str
+        DTYPE_DICT["{}_Source_Code".format(var)] = str
+        DTYPE_DICT["{}_Source_Station_ID".format(var)] = str
+        DTYPE_DICT["Source_ID.{}".format(v+1)] = str
 DTYPE_DICT["Source_ID"] = str
 
 
