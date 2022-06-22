@@ -80,7 +80,7 @@ nappy==1.1.4
 nc-time-axis==1.1.0
 netCDF4==1.4.2
 nose==1.3.7
-numpy==1.20.2
+numpy==1.22.0
 olefile==0.46
 OWSLib==0.17.0
 packaging==18.0
