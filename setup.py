@@ -30,11 +30,8 @@ config.read(CONFIG_FILE)
 #*********************************************
 # locations
 
-# GWS base dir
+# base dir to run on - GWS or scratch
 ROOT_DIR = config.get("PATHS", "root")
-
-# SCRATCH base dir
-SCRATCH_DIR = config.get("PATHS", "scratch")
 
 # source always the same - currently on GWS
 SUBDAILY_ROOT_DIR = config.get("PATHS", "mff")
@@ -42,16 +39,7 @@ SUBDAILY_MINGLE_DIR = SUBDAILY_ROOT_DIR
 SUBDAILY_MFF_DIR = os.path.join(SUBDAILY_ROOT_DIR, config.get("PATHS", "mff_version"))
 
 # where to run
-runon = config.get("PATHS", "runon")
-if runon == "scratch":
-    root_dir = SCRATCH_DIR
-    # need to keep origin unaffected
-    SCRATCH_ROOT_DIR = os.path.join(root_dir, config.get("PATHS", "mff"))
-#   If keep this commented out then can run and save onto scratch without needing to copy MFFs over first
-#    SUBDAILY_MFF_DIR = os.path.join(SCRATCH_ROOT_DIR, config.get("PATHS", "mff_version"))
-
-elif runon == "root":
-    root_dir = ROOT_DIR
+root_dir = ROOT_DIR
 
 DATESTAMP = config.get("PATHS", "version")
 
@@ -119,8 +107,12 @@ carry_thru_var_list = parameters["variables"]["not_process_vars"]
 
 DTYPE_DICT =  {}
 for var_list in (obs_var_list, carry_thru_var_list):
-    for v, var in enumerate(obs_var_list):
-        DTYPE_DICT[var] = np.float64
+    for v, var in enumerate(var_list):
+        if var in ["remarks", "pressure_3hr_change"]:
+            DTYPE_DICT[var] = str
+        else:
+            DTYPE_DICT[var] = np.float64
+
         DTYPE_DICT["{}_Source_ID".format(var)] = str
         DTYPE_DICT["{}_QC_flag".format(var)] = str
         DTYPE_DICT["{}_Measurement_Code".format(var)] = str
@@ -128,7 +120,8 @@ for var_list in (obs_var_list, carry_thru_var_list):
         DTYPE_DICT["{}_Report_Type".format(var)] = str
         DTYPE_DICT["{}_Source_Code".format(var)] = str
         DTYPE_DICT["{}_Source_Station_ID".format(var)] = str
-        DTYPE_DICT["Source_ID.{}".format(v+1)] = str
+#        DTYPE_DICT["Source_ID.{}".format(v+1)] = str
+
 DTYPE_DICT["Source_ID"] = str
 
 
