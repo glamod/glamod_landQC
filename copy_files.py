@@ -10,8 +10,7 @@ import glob
 def copy_tree(source, destination, diagnostics=False):
     """
     Perform local copy from networked storage to working area 
-        (e.g. /gws/nopw/j04/c3s311a_lot2/data/level1/land/ to 
-        /work/scratch-nompiio/rjhd2/c3s311a_lot2/level1 )
+        (e.g. GWS to /work/scratch )
         
     Automatically wipes and clobbers
 
@@ -49,8 +48,7 @@ def copy_tree(source, destination, diagnostics=False):
 def copy_files(source, destination, extension="", clobber=True, wipe=True, diagnostics=False):
     """
     Perform local copy from networked storage to working area 
-        (e.g. /gws/nopw/j04/c3s311a_lot2/data/level1/land/ to 
-        /work/scratch-nompiio/rjhd2/c3s311a_lot2/level1 )
+        (e.g. GWS/file.txt to /work/scratch/file.txt )
 
     :param str source: source directory
     :param str destination: destination directory

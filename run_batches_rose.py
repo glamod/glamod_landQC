@@ -62,10 +62,6 @@ def run_intra_station_checks(restart_id, end_id, full):
     Run intra-station checks with standard settings
     '''
 
-    if setup.runon == "scratch":
-        # need to copy files
-        copy_files.copy_tree(setup.SUBDAILY_ROOT_DIR, setup.SCRATCH_ROOT_DIR)
-
     intra.run_checks(restart_id=restart_id, end_id=end_id, diagnostics=False, plots=False, full=full)
 
     return # run_intra_station_checks

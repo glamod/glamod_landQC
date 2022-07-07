@@ -80,7 +80,7 @@ fi
 
 # set up list of stations
 STATION_LIST=$(grep "station_list " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
-station_list_file="${ROOT}/${MFF}/${STATION_LIST}"
+station_list_file="${STATION_LIST}"
 
 echo `wc -l ${station_list_file}`
 stn_ids=`awk -F" " '{print $1}' ${station_list_file}`
@@ -94,7 +94,7 @@ for stn in ${stn_ids}
 do
     processed=false
     if [ "${STAGE}" == "I" ]; then
-        if [ -f "${ROOT}${MFF}${MFF_VER}${stn}.mff" ]; then
+        if [ -f "${MFF}${MFF_VER}${stn}.mff" ]; then
             processed=true
         fi
     elif [ "${STAGE}" == "N" ]; then
@@ -156,10 +156,10 @@ do
     elif  [ "${STAGE}" == "N" ]; then
         echo "#SBATCH --time=20:00" >> ${lotus_script} # 20mins
     fi
-    echo "#SBATCH --mem=3000" >> ${lotus_script}
+    echo "#SBATCH --mem=6000" >> ${lotus_script}
     echo "" >> ${lotus_script}
-#    echo "source venv/bin/activate" >> ${lotus_script}
-    echo "source /gws/smf/j04/c3s311a_lot2/rjhd2/landqc_env/bin/activate" >> ${lotus_script}
+    echo "source venv/bin/activate" >> ${lotus_script}
+#    echo "source /gws/smf/j04/c3s311a_lot2/rjhd2/test_env/bin/activate" >> ${lotus_script}
     echo "" >> ${lotus_script}
 
     if [ "${STAGE}" == "I" ]; then
@@ -197,7 +197,7 @@ do
     while [ ${submit} == false ];
     do
         if [ "${STAGE}" == "I" ]; then
-            if [ -f "${ROOT}${MFF}${MFF_VER}${stn}.mff" ]; then
+            if [ -f "${MFF}${MFF_VER}${stn}.mff" ]; then
                 submit=true
             fi
         elif [ "${STAGE}" == "N" ]; then

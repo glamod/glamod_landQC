@@ -1,5 +1,6 @@
 #!/bin/bash -l
-#SBATCH --qos=short-serial
+#SBATCH --partition=short-serial-4hr
+#SBATCH --account=short4hr
 #SBATCH --job-name=QC_plots
 #SBATCH --output=/home/users/rjhd2/c3s311a_lot2/code/glamod_landQC/logs/plots.out
 #SBATCH --error=/home/users/rjhd2/c3s311a_lot2/code/glamod_landQC/logs/plots.err 
