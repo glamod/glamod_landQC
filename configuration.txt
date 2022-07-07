@@ -1,12 +1,12 @@
 [SETTINGS]
 full_reprocess = True
 [PATHS]
-runon = root
-version = v20210728/
+runon = scratch
+version = v20220706_mfftest/
 root = /gws/nopw/j04/c3s311a_lot2/data/level1/land/
-scratch = /work/scratch-pw/rjhd2/c3s311a_lot2/level1/land/
-mff = level1b_sub_daily_data/
-mff_version = mff_test/
+scratch = /work/scratch-pw/rjhd2/level1/
+mff = /work/scratch-pw/mennem/
+mff_version = mff/
 proc = level1b1_sub_daily_data/
 qff = level1c_sub_daily_data/
 config = level1c_sub_daily_data_configs/
@@ -14,7 +14,7 @@ flags = level1c_sub_daily_data_flags/
 images = level1c_sub_daily_data_plots/
 errors = level1c_sub_daily_data_errors/
 [FILES]
-station_list = ghcnh-station-list-rel4.txt
+station_list = /work/scratch-pw/mennem/stnlist/ghcnh-station-list-rel5-test.txt
 variables = obs_variables.json
 logic = logic_config.json
 [STATISTICS]
