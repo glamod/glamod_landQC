@@ -1,10 +1,8 @@
 [SETTINGS]
 full_reprocess = True
 [PATHS]
-runon = scratch
 version = v20220706_mfftest/
-root = /gws/nopw/j04/c3s311a_lot2/data/level1/land/
-scratch = /work/scratch-pw/rjhd2/level1/
+root = /work/scratch-pw/rjhd2/level1/
 mff = /work/scratch-pw/mennem/
 mff_version = mff/
 proc = level1b1_sub_daily_data/
