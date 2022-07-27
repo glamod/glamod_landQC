@@ -302,7 +302,7 @@ def populate_station(station, df, obs_var_list, read_flags=False):
     return # populate_station
 
 #*********************************************
-def IQR(data, percentile=0.25):
+def calculate_IQR(data, percentile=0.25):
     ''' Calculate the IQR of the data '''
 
     try:
@@ -315,7 +315,7 @@ def IQR(data, percentile=0.25):
 
     quartile = int(round(percentile * n_data))
        
-    return sorted_data[n_data - quartile] - sorted_data[quartile] # IQR
+    return sorted_data[n_data - quartile] - sorted_data[quartile] # calculate_IQR
     
 #*********************************************
 def mean_absolute_deviation(data, median=False):    
@@ -523,7 +523,11 @@ def spread(data):
     if STDEV:
         return np.ma.std(data)
     elif IQR:
-        return np.subtract(*np.percentile(data.compressed(), [75, 25]))
+        try:
+            return np.subtract(*np.percentile(data.compressed(), [75, 25]))
+        except AttributeError:
+            return np.subtract(*np.percentile(data, [75, 25]))
+            
     elif MAD:
         if MEDIAN:
             return np.ma.median(np.ma.abs(data - np.ma.median(data)))
