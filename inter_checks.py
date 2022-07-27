@@ -3,7 +3,7 @@ Inter station checks (between station records)
 
 inter_checks.py invoked by typing::
 
-  python inter_checks.py --restart_id --end_id [--full] [--plots] [--diagnostics] 
+  python inter_checks.py --restart_id --end_id [--full] [--plots] [--diagnostics] [--test] [--clobber]
 
 Input arguments:
 
@@ -18,6 +18,9 @@ Input arguments:
 --diagnostics       [False] Verbose output
 
 --test              ["all"] select a single test to run [neighbour/clean_up/high_flag]
+
+--clobber           Overwrite output files if already existing.  If not set, will skip if output exists
+
 '''
 #************************************************************************
 import os
@@ -61,7 +64,7 @@ def read_neighbours(restart_id="", end_id=""):
     return all_entries # read_neighbours
 
 #************************************************************************
-def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=False, test="all"):
+def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=False, test="all", clobber=False):
     """
     Main script.  Reads in station data, populates internal objects and passes to the tests.
 
@@ -71,6 +74,7 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
     :param bool plots: create plots from each test
     :param bool full: run full reprocessing rather than using stored values.
     :param str test: specify a single test to run (useful for diagnostics) [neighbour/clean_up/high_flag]
+    :param bool clobbber: overwrite output file if exists
     """
 
     # process the station list
@@ -83,6 +87,22 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
     # now spin through each ID in the curtailed list
     for st, target_station_id in enumerate(station_IDs):
         print("{} {} ({}/{})".format(dt.datetime.now(), target_station_id, st+1, station_IDs.shape[0]))
+
+        if not clobber:
+            # wanting to skip if files exist
+            if os.path.exists(os.path.join(setup.SUBDAILY_BAD_DIR, "{:11s}.qff".format(station_id))):
+                print("{} exists and clobber not set, skipping to next station.".format(
+                    os.path.join(setup.SUBDAILY_BAD_DIR, "{:11s}.qff".format(station_id))))
+                continue
+            elif os.path.exists(os.path.join(setup.SUBDAILY_OUT_DIR, "{:11s}.qff".format(station_id))):
+                print("{} exists and clobber kw not set, skipping to next station.".format(
+                    os.path.join(setup.SUBDAILY_OUT_DIR, "{:11s}.qff".format(station_id))))
+                continue
+            else:
+                # files don't exists, pass
+                pass
+        else:
+            print("Overwriting output for {}".format(station_id))
 
         startT = dt.datetime.now()
         #*************************
@@ -173,7 +193,10 @@ if __name__ == "__main__":
     parser.add_argument('--plots', dest='plots', action='store_true', default=False,
                         help='Run plots (will not write out file)')
     parser.add_argument('--test', dest='test', action='store', default="all",
-                        help='Select single test [neighbour]')
+                        help='Select single test [neighbour/clean_up/high_flag]')
+    parser.add_argument('--clobber', dest='clobber', action='store_true', default=False,
+                        help='Overwrite output files if they exists.')
+
 
     args = parser.parse_args()
 
@@ -182,6 +205,8 @@ if __name__ == "__main__":
                diagnostics=args.diagnostics,
                plots=args.plots,
                full=args.full,
-               test=args.test)
+               test=args.test,
+               clobber=args.clobber,
+           )
 
 #************************************************************************

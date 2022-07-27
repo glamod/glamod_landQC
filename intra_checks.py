@@ -3,7 +3,7 @@ Intra station checks (within station record)
 
 intra_checks.py invoked by typing::
 
-  python intra_checks.py --restart_id --end_id [--full] [--plots] [--diagnostics] [--test]
+  python intra_checks.py --restart_id --end_id [--full] [--plots] [--diagnostics] [--test] [--clobber]
 
 Input arguments:
 
@@ -19,6 +19,8 @@ Input arguments:
 
 --test              ["all"] select a single test to run [climatological/distribution/diurnal
                      frequent/humidity/odd_cluster/pressure/spike/streaks/timestamp/variance/winds/world_records]
+
+--clobber           Overwrite output files if already existing.  If not set, will skip if output exists
 '''
 #************************************************************************
 import os
@@ -34,7 +36,7 @@ import setup
 #************************************************************************
 
 #************************************************************************
-def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=False, test="all"):
+def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=False, test="all", clobber=False):
     """
     Main script.  Reads in station data, populates internal objects and passes to the tests.
 
@@ -45,6 +47,7 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
     :param bool full: run full reprocessing rather than using stored values.
     :param str test: specify a single test to run (useful for diagnostics) [climatological/distribution/diurnal
                      frequent/humidity/odd_cluster/pressure/spike/streaks/timestamp/variance/winds/world_records]
+    :param bool clobbber: overwrite output file if exists
     """
 
     # process the station list
@@ -55,6 +58,22 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
     # now spin through each ID in the curtailed list
     for st, station_id in enumerate(station_IDs):
         print("{} {:11s} ({}/{})".format(dt.datetime.now(), station_id, st+1, station_IDs.shape[0]))
+
+        if not clobber:
+            # wanting to skip if files exist
+            if os.path.exists(os.path.join(setup.SUBDAILY_BAD_DIR, "{:11s}.qff".format(station_id))):
+                print("{} exists and clobber not set, skipping to next station.".format(
+                    os.path.join(setup.SUBDAILY_BAD_DIR, "{:11s}.qff".format(station_id))))
+                continue
+            elif os.path.exists(os.path.join(setup.SUBDAILY_PROC_DIR, "{:11s}.qff".format(station_id))):
+                print("{} exists and clobber not set, skipping to next station.".format(
+                    os.path.join(setup.SUBDAILY_PROC_DIR, "{:11s}.qff".format(station_id))))
+                continue
+            else:
+                # files don't exists, pass
+                pass
+        else:
+            print("Overwriting output for {}".format(station_id))
 
         startT = dt.datetime.now()
         # set up config file to hold thresholds etc
@@ -271,6 +290,9 @@ if __name__ == "__main__":
                         help='Run plots (will not write out file)')
     parser.add_argument('--test', dest='test', action='store', default="all",
                         help='Select single test [climatological/distribution/diurnal/frequent/humidity/odd_cluster/pressure/spike/streaks/timestamp/variance/winds/world_records]')
+    parser.add_argument('--clobber', dest='clobber', action='store_true', default=False,
+                        help='Overwrite output files if they exists.')
+
     args = parser.parse_args()
 
     run_checks(restart_id=args.restart_id,
@@ -278,6 +300,8 @@ if __name__ == "__main__":
                diagnostics=args.diagnostics,
                plots=args.plots,
                full=args.full,
-               test=args.test)
+               test=args.test,
+               clobber=args.clobber,
+           )
 
 #************************************************************************
