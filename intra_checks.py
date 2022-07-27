@@ -209,6 +209,8 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         if test in ["all", "high_flag"]:
             print("H", dt.datetime.now()-startT)
             hfr_vars_set = qc_tests.high_flag.hfr(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed", "wind_direction"], full=full, plots=plots, diagnostics=diagnostics)
+        else:
+            hfr_vars_set = 0
 
         print(dt.datetime.now()-startT)
 

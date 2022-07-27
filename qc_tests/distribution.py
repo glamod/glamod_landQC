@@ -284,12 +284,15 @@ def find_thresholds(obs_var, station, config_file, plots=False, diagnostics=Fals
             continue
 
         bins = utils.create_bins(normalised_anomalies, BIN_WIDTH, obs_var.name, anomalies=True)
+        bincentres = bins[1:] - (BIN_WIDTH/2)
         hist, bin_edges = np.histogram(normalised_anomalies, bins)
 
-        gaussian_fit = utils.fit_gaussian(bins[1:], hist, max(hist), mu=bins[np.argmax(hist)], \
-                                          sig=utils.spread(normalised_anomalies), skew=skew(normalised_anomalies.compressed()))
+        gaussian_fit = utils.fit_gaussian(bincentres, hist, max(hist),
+                                          mu=np.ma.median(normalised_anomalies),
+                                          sig=1.5*utils.spread(normalised_anomalies),
+                                          skew=skew(normalised_anomalies.compressed()))
 
-        fitted_curve = utils.skew_gaussian(bins[1:], gaussian_fit)
+        fitted_curve = utils.skew_gaussian(bincentres, gaussian_fit)
 
         # diagnostic plots
         if plots:
@@ -302,12 +305,12 @@ def find_thresholds(obs_var, station, config_file, plots=False, diagnostics=Fals
             plt.xlabel(obs_var.name.capitalize())
             plt.title("{} - month {}".format(station.id, month))
 
-            plt.plot(bins[1:], fitted_curve)
+            plt.plot(bincentres, fitted_curve)
             plt.ylim([0.1, max(hist)*2])
 
         # use bins and curve to find points where curve is < FREQUENCY_THRESHOLD
         try:
-            lower_threshold = bins[1:][np.where(np.logical_and(fitted_curve < FREQUENCY_THRESHOLD, bins[1:] < bins[np.argmax(fitted_curve)]))[0]][-1]
+            lower_threshold = bincentres[np.where(np.logical_and(fitted_curve < FREQUENCY_THRESHOLD, bincentres < bins[np.argmax(fitted_curve)]))[0]][-1]
         except:
             lower_threshold = bins[1]
         try:
@@ -315,7 +318,7 @@ def find_thresholds(obs_var, station, config_file, plots=False, diagnostics=Fals
                 # just a line of zeros perhaps (found on AFA00409906 station_level_pressure 20190913)
                 upper_threshold = bins[-1]
             else:
-                upper_threshold = bins[1:][np.where(np.logical_and(fitted_curve < FREQUENCY_THRESHOLD, bins[1:] > bins[np.argmax(fitted_curve)]))[0]][0]
+                upper_threshold = bincentres[np.where(np.logical_and(fitted_curve < FREQUENCY_THRESHOLD, bincentres > bins[np.argmax(fitted_curve)]))[0]][0]
         except:
             upper_threshold = bins[-1]
 

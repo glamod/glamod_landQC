@@ -8,6 +8,7 @@ A low pass filter reduces the effect of long-term changes.
 """
 #************************************************************************
 import numpy as np
+from scipy.stats import skew
 
 import qc_utils as utils
 #************************************************************************
@@ -176,11 +177,23 @@ def find_month_thresholds(obs_var, station, config_file, plots=False, diagnostic
         if len(normalised_anomalies.compressed()) >= utils.DATA_COUNT_THRESHOLD:
 
             bins = utils.create_bins(normalised_anomalies, BIN_WIDTH, obs_var.name)
+            bincentres = bins[1:] - (BIN_WIDTH/2)
             hist, bin_edges = np.histogram(normalised_anomalies.compressed(), bins)
 
-            gaussian_fit = utils.fit_gaussian(bins[1:], hist, max(hist), mu=bins[np.argmax(hist)], sig=utils.spread(normalised_anomalies))
+            # using skew-gaussian, and inflating spread to account for that in the fit
+            # NOTE: for some of the recent exceptional extremes, skew gaussian
+            #       may still not be sufficient, and need to think perhaps of an
+            #       alternative distribution
+            gaussian_fit = utils.fit_gaussian(bincentres, hist, max(hist),
+                                              mu=np.ma.median(normalised_anomalies),
+                                              sig=1.5*utils.spread(normalised_anomalies),
+                                              skew=skew(normalised_anomalies.compressed())
+            )
 
-            fitted_curve = utils.gaussian(bins[1:], gaussian_fit)
+            if len(gaussian_fit) == 3:
+                fitted_curve = utils.gaussian(bincentres, gaussian_fit)
+            elif len(gaussian_fit) == 4:
+                fitted_curve = utils.skew_gaussian(bincentres, gaussian_fit)
 
             # diagnostic plots
             if plots:
@@ -193,16 +206,17 @@ def find_month_thresholds(obs_var, station, config_file, plots=False, diagnostic
                 plt.xlabel("Scaled {}".format(obs_var.name.capitalize()))
                 plt.title("{} - month {}".format(station.id, month))
 
-                plt.plot(bins[1:], fitted_curve)
+                plt.plot(bincentres, fitted_curve)
                 plt.ylim([0.1, max(hist)*2])
 
             # use bins and curve to find points where curve is < FREQUENCY_THRESHOLD
+            #  round up or down to be fully encompassing
             try:
-                lower_threshold = bins[1:][np.where(np.logical_and(fitted_curve < FREQUENCY_THRESHOLD, bins[1:] < 0))[0]][-1]
+                lower_threshold = bins[:-1][np.where(np.logical_and(fitted_curve < FREQUENCY_THRESHOLD, bincentres < 0))[0]][-1]
             except:
-                lower_threshold = bins[1]
+                lower_threshold = bins[0]
             try:
-                upper_threshold = bins[1:][np.where(np.logical_and(fitted_curve < FREQUENCY_THRESHOLD, bins[1:] > 0))[0]][0]
+                upper_threshold = bins[1:][np.where(np.logical_and(fitted_curve < FREQUENCY_THRESHOLD, bincentres > 0))[0]][0]
             except:
                 upper_threshold = bins[-1]
 
@@ -211,8 +225,8 @@ def find_month_thresholds(obs_var, station, config_file, plots=False, diagnostic
                 plt.axvline(lower_threshold, c="r")
                 plt.show()
 
-            utils.write_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-uthresh".format(month), "{}".format(upper_threshold), diagnostics=diagnostics)
-            utils.write_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-lthresh".format(month), "{}".format(lower_threshold), diagnostics=diagnostics)
+            utils.write_qc_config(config_file, "CLIMATOLOGICAL-{}-{}".format(obs_var.name, month), "{}-uthresh".format(month), "{}".format(upper_threshold), diagnostics=diagnostics)
+            utils.write_qc_config(config_file, "CLIMATOLOGICAL-{}-{}".format(obs_var.name, month), "{}-lthresh".format(month), "{}".format(lower_threshold), diagnostics=diagnostics)
 
     return # find_month_thresholds
 
@@ -240,16 +254,17 @@ def monthly_clim(obs_var, station, config_file, logfile="", plots=False, diagnos
         if len(normalised_anomalies.compressed()) >= utils.DATA_COUNT_THRESHOLD:
 
             bins = utils.create_bins(normalised_anomalies, BIN_WIDTH, obs_var.name)
+            bincentres = bins[1:] - (BIN_WIDTH/2)
             hist, bin_edges = np.histogram(normalised_anomalies.compressed(), bins)
 
             try:
-                upper_threshold = float(utils.read_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-uthresh".format(month)))
-                lower_threshold = float(utils.read_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-lthresh".format(month)))
+                upper_threshold = float(utils.read_qc_config(config_file, "CLIMATOLOGICAL-{}-{}".format(obs_var.name, month), "{}-uthresh".format(month)))
+                lower_threshold = float(utils.read_qc_config(config_file, "CLIMATOLOGICAL-{}-{}".format(obs_var.name, month), "{}-lthresh".format(month)))
             except KeyError:
                 print("Information missing in config file")
                 find_month_thresholds(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
-                upper_threshold = float(utils.read_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-uthresh".format(month)))
-                lower_threshold = float(utils.read_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-lthresh".format(month)))
+                upper_threshold = float(utils.read_qc_config(config_file, "CLIMATOLOGICAL-{}-{}".format(obs_var.name, month), "{}-uthresh".format(month)))
+                lower_threshold = float(utils.read_qc_config(config_file, "CLIMATOLOGICAL-{}-{}".format(obs_var.name, month), "{}-lthresh".format(month)))
 
             # now to find the gaps
             uppercount = len(np.where(normalised_anomalies > upper_threshold)[0])
