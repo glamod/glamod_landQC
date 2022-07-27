@@ -3,6 +3,9 @@ World Records Check
 ^^^^^^^^^^^^^^^^^^^
 
 Check for exceedence of world records
+
+Uses values at https://wmo.asu.edu/content/world-meteorological-organization-global-weather-climate-extremes-archive
+and extra knowledge where available
 """
 #************************************************************************
 import numpy as np
@@ -13,9 +16,15 @@ import qc_utils as utils
 # Fixed values at the moment.
 
 # row = Rest Of World.
-T_X = {"africa" : 55.0, "asia" : 53.9, "samerica" : 48.9, "namerica" : 56.7, "europe" : 48.0, "oceania" : 50.7, "antarctica" : 15.0, "row" : 56.7}
+# updated from https://wmo.asu.edu/content/world-meteorological-organization-global-weather-climate-extremes-archive
+#   augmented by local knowledge from extreme events in these cases:
+#   T_X : europe : 48.8 (Syracuse, Sicily, August 2021) beating previous 48.0 [WMO still to validate]
+
+# last check 27 Jul 2022, RJHD
+
+T_X = {"africa" : 55.0, "asia" : 53.9, "samerica" : 48.9, "namerica" : 56.7, "europe" : 48.8, "oceania" : 50.7, "antarctica" : 18.3, "row" : 56.7}
 T_N = {"africa" : -23.9, "asia" : -67.8, "samerica" : -32.8, "namerica" : -63.0, "europe" : -58.1, "oceania" : -23.0, "antarctica" : -89.2, "row" : -89.2}
-D_X = {"africa" : 55.0, "asia" : 53.9, "samerica" : 48.9, "namerica" : 56.7, "europe" : 48.0, "oceania" : 50.7, "antarctica" : 15.0, "row" : 56.7}
+D_X = {"africa" : 55.0, "asia" : 53.9, "samerica" : 48.9, "namerica" : 56.7, "europe" : 48.0, "oceania" : 50.7, "antarctica" : 18.3, "row" : 56.7}
 D_N = {"africa" : -50., "asia" : -100., "samerica" : -60., "namerica" : -100., "europe" : -100., "oceania" : -50., "antarctica" : -100., "row" : -100.}
 W_X = {"africa" : 113.2, "asia" : 113.2, "samerica" : 113.2, "namerica" : 113.2, "europe" : 113.2, "oceania" : 113.2, "antarctica" : 113.2, "row" : 113.2}
 W_N = {"africa" : 0., "asia" : 0., "samerica" : 0., "namerica" : 0., "europe" : 0., "oceania" : 0., "antarctica" : 0., "row" : 0.}
