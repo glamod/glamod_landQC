@@ -71,6 +71,9 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
                 continue
             else:
                 # files don't exists, pass
+                pass
+        else:
+            print("Overwriting output for {}".format(station_id))
 
         startT = dt.datetime.now()
         # set up config file to hold thresholds etc
@@ -299,6 +302,6 @@ if __name__ == "__main__":
                full=args.full,
                test=args.test,
                clobber=args.clobber,
-    )
+           )
 
 #************************************************************************

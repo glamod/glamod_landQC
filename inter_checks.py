@@ -100,7 +100,9 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
                 continue
             else:
                 # files don't exists, pass
-
+                pass
+        else:
+            print("Overwriting output for {}".format(station_id))
 
         startT = dt.datetime.now()
         #*************************
