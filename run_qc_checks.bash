@@ -40,17 +40,7 @@ CONFIG_FILE="${cwd}/configuration.txt"
 
 # using spaces after setting ID to ensure pull out correct line
 # these are fixed references
-ROOT=$(grep "root " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
-SCRATCH=$(grep "scratch " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
-
-# select where output files go
-RUNON=$(grep runon "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
-# set root dir depending on where QC files end up
-if [ "${RUNON}" == "root" ]; then
-    ROOTDIR=${ROOT}
-elif [ "${RUNON}" == "scratch" ]; then
-    ROOTDIR=${SCRATCH}
-fi
+ROOTDIR=$(grep "root " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
 
 # extract remaining locations
 MFF=$(grep "mff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
