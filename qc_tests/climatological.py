@@ -225,8 +225,8 @@ def find_month_thresholds(obs_var, station, config_file, plots=False, diagnostic
                 plt.axvline(lower_threshold, c="r")
                 plt.show()
 
-            utils.write_qc_config(config_file, "CLIMATOLOGICAL-{}-{}".format(obs_var.name, month), "{}-uthresh".format(month), "{}".format(upper_threshold), diagnostics=diagnostics)
-            utils.write_qc_config(config_file, "CLIMATOLOGICAL-{}-{}".format(obs_var.name, month), "{}-lthresh".format(month), "{}".format(lower_threshold), diagnostics=diagnostics)
+            utils.write_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-uthresh".format(month), "{}".format(upper_threshold), diagnostics=diagnostics)
+            utils.write_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-lthresh".format(month), "{}".format(lower_threshold), diagnostics=diagnostics)
 
     return # find_month_thresholds
 
@@ -258,13 +258,13 @@ def monthly_clim(obs_var, station, config_file, logfile="", plots=False, diagnos
             hist, bin_edges = np.histogram(normalised_anomalies.compressed(), bins)
 
             try:
-                upper_threshold = float(utils.read_qc_config(config_file, "CLIMATOLOGICAL-{}-{}".format(obs_var.name, month), "{}-uthresh".format(month)))
-                lower_threshold = float(utils.read_qc_config(config_file, "CLIMATOLOGICAL-{}-{}".format(obs_var.name, month), "{}-lthresh".format(month)))
+                upper_threshold = float(utils.read_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-uthresh".format(month)))
+                lower_threshold = float(utils.read_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-lthresh".format(month)))
             except KeyError:
                 print("Information missing in config file")
                 find_month_thresholds(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
-                upper_threshold = float(utils.read_qc_config(config_file, "CLIMATOLOGICAL-{}-{}".format(obs_var.name, month), "{}-uthresh".format(month)))
-                lower_threshold = float(utils.read_qc_config(config_file, "CLIMATOLOGICAL-{}-{}".format(obs_var.name, month), "{}-lthresh".format(month)))
+                upper_threshold = float(utils.read_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-uthresh".format(month)))
+                lower_threshold = float(utils.read_qc_config(config_file, "CLIMATOLOGICAL-{}".format(obs_var.name), "{}-lthresh".format(month)))
 
             # now to find the gaps
             uppercount = len(np.where(normalised_anomalies > upper_threshold)[0])
