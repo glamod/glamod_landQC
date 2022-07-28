@@ -11,6 +11,7 @@ config = level1c_sub_daily_data_configs/
 flags = level1c_sub_daily_data_flags/
 images = level1c_sub_daily_data_plots/
 errors = level1c_sub_daily_data_errors/
+venvdir = qc_venv
 [FILES]
 station_list = /work/scratch-pw/mennem/stnlist/ghcnh-station-list-rel5-test.txt
 variables = obs_variables.json
