@@ -38,6 +38,7 @@ SCRIPT_DIR=${cwd}/lotus_scripts/
 # use configuration file to pull out paths &c
 CONFIG_FILE="${cwd}/configuration.txt"
 
+VENVDIR=$(grep "venvdir " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
 # using spaces after setting ID to ensure pull out correct line
 # these are fixed references
 ROOTDIR=$(grep "root " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
@@ -58,8 +59,8 @@ if [ "${STAGE}" == "N" ]; then
 
 	    if [ "${run_neighbours}" == "Y" ]; then
 	         echo "Running neighbour finding routine"
-             source venv/bin/activate
-             python -m find_neighbours
+                 source ${VENVDIR}/bin/activate
+                 python -m find_neighbours
 	    else
 	         echo "Not running neighbour finding routine, exit"
 	         exit
@@ -148,7 +149,7 @@ do
     fi
     echo "#SBATCH --mem=6000" >> ${lotus_script}
     echo "" >> ${lotus_script}
-    echo "source venv/bin/activate" >> ${lotus_script}
+    echo "source ${VENVDIR}/bin/activate" >> ${lotus_script}
 #    echo "source /gws/smf/j04/c3s311a_lot2/rjhd2/test_env/bin/activate" >> ${lotus_script}
     echo "" >> ${lotus_script}
 
