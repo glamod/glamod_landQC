@@ -3,7 +3,7 @@ Find the neighbours for each station and store in file.
 
 find_neighbours.py invoked by typing::
 
-  python find_neighbour.py --restart_id --end_id [--full] [--plots] [--diagnostics] [--test]
+  python find_neighbour.py --restart_id --end_id [--full] [--plots] [--diagnostics]
 
 Input arguments:
 
@@ -17,8 +17,6 @@ Input arguments:
 
 --diagnostics       [False] Verbose output
 
---test              ["all"] select a single test to run [climatological/distribution/diurnal
-                     frequent/humidity/odd_cluster/pressure/spike/streaks/timestamp/variance/winds/world_records]
 '''
 
 import os.path
@@ -149,7 +147,7 @@ def get_neighbours(station_list_a, station_list_b=None, diagnostics=False, plots
 #************************************************************************
 def main(restart_id="", end_id="", diagnostics=False, plots=False, full=False):
     """
-    
+    Find all possible neighbours.  Works in chunks to save on resources.
 
     :param str restart_id: which station to start on
     :param str end_id: which station to end on
@@ -165,8 +163,13 @@ def main(restart_id="", end_id="", diagnostics=False, plots=False, full=False):
     neighbours[:, :, 1] = DEFAULT_SEPARATION
 
     # now need to chunk up and process in bits.
-    sub_arrays = np.array_split(station_list, station_list.shape[0]//CHUNKSIZE)
-    
+    if station_list.shape[0] <= CHUNKSIZE:
+        # this avoids an error that otherwise gets thrown by the "//" in below
+        #  likely only during testing situations
+        sub_arrays = [station_list]
+    else:
+        sub_arrays = np.array_split(station_list, station_list.shape[0]//CHUNKSIZE)
+
     # process sub-arrays down
     for sa1, sub_arr1 in enumerate(sub_arrays):
         if diagnostics:
