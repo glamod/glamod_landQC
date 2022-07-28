@@ -23,17 +23,7 @@ CONFIG_FILE="${cwd}/configuration.txt"
 
 # using spaces after setting ID to ensure pull out correct line
 # these are fixed references
-ROOT=$(grep "root " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
-SCRATCH=$(grep "scratch " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
-
-# select where output files go
-RUNON=$(grep runon "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
-# set root dir depending on where QC files end up
-if [ "${RUNON}" == "root" ]; then
-    ROOTDIR=${ROOT}
-elif [ "${RUNON}" == "scratch" ]; then
-    ROOTDIR=${SCRATCH}
-fi
+ROOTDIR=$(grep "root " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
 
 # extract remaining locations
 MFF=$(grep "mff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
@@ -46,7 +36,7 @@ ERR=${QFF%/}_errors/
 
 # set up list of stations
 STATION_LIST=$(grep "station_list " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
-station_list_file=${ROOT}"level1b_sub_daily_data/"${STATION_LIST}
+station_list_file="${STATION_LIST}"
 #echo $station_list_file
 echo `wc -l ${station_list_file}`
 stn_ids=`awk -F" " '{print $1}' ${station_list_file}`
@@ -87,6 +77,7 @@ do
             echo "${stn} missing"
             let unprocessed=unprocessed+1
         fi
+
     elif [ "${STAGE}" == "N" ]; then
         if [ -f "${ROOTDIR}${QFF}${VERSION}${stn}.qff" ]; then
             # external checks completed
