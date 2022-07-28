@@ -92,17 +92,17 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
             # wanting to skip if files exist
             if os.path.exists(os.path.join(setup.SUBDAILY_BAD_DIR, "{:11s}.qff".format(station_id))):
                 print("{} exists and clobber kwarg not set, skipping to next station.".format(
-                    os.path.join(setup.SUBDAILY_BAD_DIR, "{:11s}.qff".format(station_id))))
+                    os.path.join(setup.SUBDAILY_BAD_DIR, "{:11s}.qff".format(target_station_id))))
                 continue
             elif os.path.exists(os.path.join(setup.SUBDAILY_OUT_DIR, "{:11s}.qff".format(station_id))):
                 print("{} exists and clobber kwarg not set, skipping to next station.".format(
-                    os.path.join(setup.SUBDAILY_OUT_DIR, "{:11s}.qff".format(station_id))))
+                    os.path.join(setup.SUBDAILY_OUT_DIR, "{:11s}.qff".format(target_station_id))))
                 continue
             else:
                 # files don't exists, pass
                 pass
         else:
-            print("Overwriting output for {}".format(station_id))
+            print("Overwriting output for {}".format(target_station_id))
 
         startT = dt.datetime.now()
         #*************************

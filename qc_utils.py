@@ -9,7 +9,6 @@ import json
 import pandas as pd
 import numpy as np
 import scipy.special
-import reverse_geocoder as rg
 
 from scipy.optimize import least_squares
 
@@ -895,6 +894,7 @@ def find_country_code(lat, lon):
 
     :returns: [str] country_code
     """
+    import reverse_geocoder as rg
     results = rg.search((lat, lon))
     country = results[0]['cc']
 

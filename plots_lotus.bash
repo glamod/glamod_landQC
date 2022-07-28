@@ -7,6 +7,8 @@
 #SBATCH --time=120:00
 #SBATCH --mem=2000
 
+# Note - only use jaspy for this.
+#   Get segmentation faults on save when using venv - not sure why
 module load jaspy
 
 python plot_map_of_flagging_rates.py

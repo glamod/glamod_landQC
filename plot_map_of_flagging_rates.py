@@ -123,12 +123,13 @@ def main(restart_id="", end_id="", diagnostics=False):
             try:
                 setattr(obs_var, "All", flag_summary[var]["All"])
                 setattr(obs_var, "All_counts".format(test), flag_summary[var]["{}_counts".format("All")])
+                if diagnostics:
+                    print("{} - {}".format(var, flag_summary[var]["{}_counts".format("All")]))
             except KeyError:
                 setattr(obs_var, "All", 0)
                 setattr(obs_var, "All_counts".format(test), 0)
-
-            if diagnostics:
-                print("{} - {}".format(var, flagged.shape[0]))
+                if diagnostics:
+                    print("{} - {}".format(var, 0))
 
         all_stations[station_id] = station
 
@@ -156,6 +157,7 @@ def main(restart_id="", end_id="", diagnostics=False):
                 ax = plt.axes([0.02, 0.02, 0.96, 0.96], projection=ccrs.Robinson())
                 ax.set_global()
                 ax.coastlines('50m')
+
                 try:
                     ax.gridlines()#draw_labels = True)
                 except TypeError:
@@ -206,8 +208,10 @@ def main(restart_id="", end_id="", diagnostics=False):
                 leg=plt.legend(loc='lower center', ncol=4, bbox_to_anchor=(0.5, -0.12), frameon=False, title='', prop={'size':9}, \
                                labelspacing=0.15, columnspacing=0.5, numpoints=1)
 
+                print(os.path.join(IMAGE_LOCS, "All_fails_{}-{}{}_{}.png".format(var, test, suffix, start_time_string)))
                 plt.savefig(os.path.join(IMAGE_LOCS, "All_fails_{}-{}{}_{}.png".format(var, test, suffix, start_time_string)))
                 plt.close()
+
 
 
     return # main
