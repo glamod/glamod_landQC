@@ -110,6 +110,9 @@ for var_list in (obs_var_list, carry_thru_var_list):
     for v, var in enumerate(var_list):
         if var in ["remarks", "pressure_3hr_change"]:
             DTYPE_DICT[var] = str
+        elif "pres_wx" in var:
+            # catch all present weather codes (which may contain character info)
+            DTYPE_DICT[var] = str
         else:
             DTYPE_DICT[var] = np.float64
 
