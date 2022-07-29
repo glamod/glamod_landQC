@@ -1,4 +1,4 @@
 # glamod_landQC
-QC for land data
+QC for sub-daily land data
 
-Initial QC tests and wrapper scripts for sub-daily land QC
+QC tests and wrapper scripts for sub-daily land QC.  Full documentation given in Sphinx autodocs.

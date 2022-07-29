@@ -114,7 +114,7 @@ The ``run_qc_checks.bash`` runs both stages of the QC process by submitting one 
 
 The waiting option presumes that the mff files will be produced in the sequence they are listed in the station list (see the configuration file).  If a file is not present, the script will sleep until it appears.  This allows the QC process to start before the mingle+merge processes have completed.  Finally, you can choose whether to overwrite existing output files, or to skip the processing step if they already exists.  There is helptext for these switches as part of the script.
 
-Once completed, this script also runs a checking process to provide some summary information of the processing run, with station counts and locations.  This can be called separately as ``check_if_processed.bash`` using the ``I`` / ``N`` switches.
+Once completed, this script also runs a checking process to provide some summary information of the processing run, with station counts and locations.  This can be called separately as ``check_if_processed.bash`` using the ``I`` / ``N`` switches. There is also a set of maps which can be produced, to show the flagging rates and counts for each station for each test.  The LOTUS job for this is submitted via the ``plots_lotus.bash`` script using the ``sbatch`` command.
 
 The python scripts (``intra_checks.py`` for the internal checks, and ``inter_checks.py`` for the buddy checks) run through each station in turn, applying the relevant tests.  These, and the top-level test functions are documented below:
 
