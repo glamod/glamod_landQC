@@ -106,7 +106,7 @@ Processing Files
 
 There is a quick bash script which currently is the quickest and easiest to run the system but the longer term intention is that Rose/Cylc will perform this in due course.
 
-The ``run_qc_checks.bash`` runs both stages of the QC process by submitting one job per station to the JASMIN LOTUS cluster.  There are three character switches for this script.::
+The ``run_qc_checks.bash`` runs both stages of the QC process by submitting one job per station to the JASMIN LOTUS cluster.  There are three character switches for this script:
 
 * ``I`` / ``N`` to run the Internal or Neighbour checks
 * ``T`` / ``F`` to wait (True) or not (False) for upstream files to be present
@@ -116,9 +116,7 @@ The waiting option presumes that the mff files will be produced in the sequence 
 
 Once completed, this script also runs a checking process to provide some summary information of the processing run, with station counts and locations.  This can be called separately as ``check_if_processed.bash`` using the ``I`` / ``N`` switches.
 
-
-The main script runs through each station in turn, calling each test
-in turn.  There will be buddy checks in future releases.
+The python scripts (``intra_checks.py`` for the internal checks, and ``inter_checks.py`` for the buddy checks) run through each station in turn, applying the relevant tests.  These, and the top-level test functions are documented below:
 
 .. toctree::
    :maxdepth: 2
@@ -134,6 +132,9 @@ in turn.  There will be buddy checks in future releases.
 
 .. automodule:: qc_tests.frequent
    :members: fvc
+
+.. automodule:: qc_tests.diurnal
+   :members: dcc
 
 .. automodule:: qc_tests.distribution
    :members: dgc
@@ -164,6 +165,19 @@ in turn.  There will be buddy checks in future releases.
 
 .. automodule:: qc_tests.winds
    :members: wcc
+
+.. automodule:: qc_tests.high_flag
+   :members: hfr
+
+.. automodule:: inter_checks
+   :members: run_checks
+
+.. automodule:: qc_tests.neighbour_outlier
+   :members: noc
+
+.. automodule:: qc_tests.clean_up
+   :members: mcu
+
 
 
 References

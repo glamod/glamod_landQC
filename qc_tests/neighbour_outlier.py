@@ -1,6 +1,6 @@
 '''
 Neighbour Outlier Check
-^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^
 
 Check for timestamps where difference to sufficient fraction of neighbours is
 sufficiently high
