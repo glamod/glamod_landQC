@@ -23,68 +23,51 @@ scratch.
 Python Environment on JASMIN
 ----------------------------
 
-The QC requires a specific Python environment to run.  The standard `JasPy <https://help.jasmin.ac.uk/article/4489-python-virtual-environments>`_ environment, although giving access to Python 3, does not contain all the packages.  Hence you need to set up another one.  Full instructions for JASMIN virtual environments are given `here <https://help.jasmin.ac.uk/article/4489-python-virtual-environments>`_.
+The QC requires a specific Python environment to run.  The standard `JasPy <https://help.jasmin.ac.uk/article/4489-python-virtual-environments>`_ environment, although giving access to Python 3, does not contain all the packages.  Hence you need to set up another one.  Full instructions for JASMIN virtual environments are `available <https://help.jasmin.ac.uk/article/4489-python-virtual-environments>`_.
 
-Firstly, you need to load the JasPy environment to ensure that we're working in Python3.::
+A script is used to set up the bespoke virtual environment using the ``venv`` tool. 
 
-  module load jaspy
+Firstly, you need to edit the ``venvdir`` entry in the configuration file.  The default is called ``qc_venv``.::
 
-Then create your own virtual environment, using the command which ensures all the system packages are available from the outset.::
+  bash make_venv.bash
 
-  virtualenv --system-site-packages venv
+Thereafter you can activate the virtual environment::
 
-At this point you can unload JasPy::
-  
-  module unload jaspy
-
-But to be safe, if you log out and back in again, that should clear that session.
-
-Now, to activate the virtual environment::
-
-  source venv/bin/activate
+  source qc_venv/bin/activate
 
 And to deactivate::
 
   deactivate
 
-Now that you'll have a virtual environment, you'll need to install all the versions of the software that the QC takes to run.  The pip package takes care of all of that.  So after activating::
+All the necessary Python libraries should have been installed with the ``make_venv.bash`` script, but these are also listed in the ``qc_venv_requirements.txt`` file.
 
-  pip install -r venv_requirements.txt
-
-Which could take a while.
-
-
-Running the QC
---------------
+Configuring the QC
+------------------
 
 Configuration files handle the over-arching settings for the code,
 including setting the paths to the files and the statistics and
 thresholds to use.  The configuration.txt file contains::
 
-  [SETTINGS]
-  full_reprocess = True
   [PATHS]
-  runon = root
-  version = v20210413/
-  root = /gws/nopw/j04/c3s311a_lot2/data/level1/land/
-  scratch = /work/scratch-pw/rjhd2/c3s311a_lot2/level1/land/
-  mff = level1b_sub_daily_data/
+  mff = /gws/nopw/j04/c3s311a_lot2/data/level1/land/level1b_sub_daily_data/
   mff_version = mff_latest/
+  root = /gws/nopw/j04/c3s311a_lot2/data/level1/land/
   proc = level1b1_sub_daily_data/
   qff = level1c_sub_daily_data/
   config = level1c_sub_daily_data_configs/
   flags = level1c_sub_daily_data_flags/
   images = level1c_sub_daily_data_plots/
   errors = level1c_sub_daily_data_errors/
+  venvdir = qc_venv
   [FILES]
-  station_list = ghcnh-stations-20210116.txt
+  station_list = /gws/nopw/j04/c3s311a_lot2/data/level1/land/level1b_sub_daily_data/ghcnh-stations-20210116.txt
   variables = obs_variables.json
   logic = logic_config.json
   [STATISTICS]
   mean = False
   median = True
   stdev = False
-   iqr = True
+  iqr = True
   mad = False
   [THRESHOLDS]
   min_data_count = 120
@@ -96,10 +79,43 @@ thresholds to use.  The configuration.txt file contains::
   filename = neighbours.txt
   minimum_number = 3
 
-There is a quick bash script which currently is the quickest and easiest to run the system (please ask for details) but the intention is that Rose/Cylc will perform this in due coourse.
+The input "mff" (merged file format) files are in ``mff`` and the relevant sub-directory ``mff_version``, so the combination of these two entries give the location of the mff files.
+
+The QC process produces a whole set of output files, the root directory of which is defined by ``root``.  The ``version`` sets the name of the subdirectory for each processing step, to keep individual runs separate.  This has usually been a datestamp.  Other entries give the directories as follows:
+
+* ``proc`` The intermediate processed files, after internal but before buddy checks
+* ``qff`` The final qff (QC'd file format) files
+* ``config`` The location of the config files [see below]
+* ``flag`` The flag files contining summary flagging rates and counts for each test for each variable
+* ``images`` Any stored plots for an individual run are placed here, usually summary maps.
+* ``errors`` Outputs from any managed errors within the scripts are here (empty files, unreadable inputs etc).
+
+One final directory is as a subdirectory of the ``qff`` directory, called ``bad_stations``, which contains those output files from stations with high flagging rates or with other features that means they are withheld from further processing.
+
+A number of files are required by this QC suite.  A station list, the variables to rprocess, and a set of logic check values.  The ``station_list`` is the full path to the station list used/produced by the mingle process, containing IDs and locational metadata in a fixed-width format.
+
+The QC can be configured to run using various statistics, which can be selected in the configuration file - there are two for the central tendency (``mean`` or ``median``) and three for the spread (``stdev``, ``iqr``, and ``mad`` [Median Absolute Deviation]).  The default settings are as per this repository.
+
+There are a couple of thresholds which are used for when deciding whether to create a distribution or not (``min_data_count``) or for when the proportion of flags is classed as high (``high_flag_proportion``).
+
+Finally, for the buddy/neighbour checks, there are a number of settings for selectig the neighbours (``max_distance`` and ``max_vertical_separation``), how many are selected (``max_number``), the filename to store the information (``filename``) and the minimum number needed for the tests to run (``minimum_number``).
+
 
 Processing Files
 ----------------
+
+There is a quick bash script which currently is the quickest and easiest to run the system but the longer term intention is that Rose/Cylc will perform this in due course.
+
+The ``run_qc_checks.bash`` runs both stages of the QC process by submitting one job per station to the JASMIN LOTUS cluster.  There are three character switches for this script.::
+
+* ``I`` / ``N`` to run the Internal or Neighbour checks
+* ``T`` / ``F`` to wait (True) or not (False) for upstream files to be present
+* ``C`` / ``S`` to overwrite (Clobber) or keep (Skip) existing output files.
+
+The waiting option presumes that the mff files will be produced in the sequence they are listed in the station list (see the configuration file).  If a file is not present, the script will sleep until it appears.  This allows the QC process to start before the mingle+merge processes have completed.  Finally, you can choose whether to overwrite existing output files, or to skip the processing step if they already exists.  There is helptext for these switches as part of the script.
+
+Once completed, this script also runs a checking process to provide some summary information of the processing run, with station counts and locations.  This can be called separately as ``check_if_processed.bash`` using the ``I`` / ``N`` switches.
+
 
 The main script runs through each station in turn, calling each test
 in turn.  There will be buddy checks in future releases.

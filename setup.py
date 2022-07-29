@@ -30,32 +30,28 @@ config.read(CONFIG_FILE)
 #*********************************************
 # locations
 
+# source always the same - currently on GWS
+SUBDAILY_MINGLE_DIR = config.get("PATHS", "mff")
+SUBDAILY_MFF_DIR = os.path.join(SUBDAILY_MINGLE_DIR, config.get("PATHS", "mff_version"))
+
 # base dir to run on - GWS or scratch
 ROOT_DIR = config.get("PATHS", "root")
-
-# source always the same - currently on GWS
-SUBDAILY_ROOT_DIR = config.get("PATHS", "mff")
-SUBDAILY_MINGLE_DIR = SUBDAILY_ROOT_DIR
-SUBDAILY_MFF_DIR = os.path.join(SUBDAILY_ROOT_DIR, config.get("PATHS", "mff_version"))
-
-# where to run
-root_dir = ROOT_DIR
-
 DATESTAMP = config.get("PATHS", "version")
+
 
 # set up suitable paths
 # processing space - for intermediate files, between mff and qff
-if not os.path.exists(os.path.join(root_dir, config.get("PATHS", "proc"))):
-    os.makedirs(os.path.join(root_dir, config.get("PATHS", "proc")))
+if not os.path.exists(os.path.join(ROOT_DIR, config.get("PATHS", "proc"))):
+    os.makedirs(os.path.join(ROOT_DIR, config.get("PATHS", "proc")))
 
-SUBDAILY_PROC_DIR = os.path.join(root_dir, config.get("PATHS", "proc"), DATESTAMP)
+SUBDAILY_PROC_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "proc"), DATESTAMP)
 if not os.path.exists(SUBDAILY_PROC_DIR):
     os.makedirs(SUBDAILY_PROC_DIR)
 
-if not os.path.exists(os.path.join(root_dir, config.get("PATHS", "qff"))):
-    os.mkdir(os.path.join(root_dir, config.get("PATHS", "qff")))
+if not os.path.exists(os.path.join(ROOT_DIR, config.get("PATHS", "qff"))):
+    os.mkdir(os.path.join(ROOT_DIR, config.get("PATHS", "qff")))
 
-SUBDAILY_OUT_DIR = os.path.join(root_dir, config.get("PATHS", "qff"), DATESTAMP)
+SUBDAILY_OUT_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "qff"), DATESTAMP)
 if not os.path.exists(SUBDAILY_OUT_DIR):
     os.makedirs(SUBDAILY_OUT_DIR)
 #    os.chmod(SUBDAILY_OUT_DIR, stat.S_IWGRP)
@@ -64,19 +60,19 @@ SUBDAILY_BAD_DIR = os.path.join(SUBDAILY_OUT_DIR, "bad_stations") #  datestamp i
 if not os.path.exists(SUBDAILY_BAD_DIR):
     os.makedirs(SUBDAILY_BAD_DIR)
 
-SUBDAILY_CONFIG_DIR = os.path.join(root_dir, config.get("PATHS", "config"), DATESTAMP)
+SUBDAILY_CONFIG_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "config"), DATESTAMP)
 if not os.path.exists(SUBDAILY_CONFIG_DIR):
     os.makedirs(SUBDAILY_CONFIG_DIR)
 
-SUBDAILY_IMAGE_DIR = os.path.join(root_dir, config.get("PATHS", "images"), DATESTAMP)
+SUBDAILY_IMAGE_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "images"), DATESTAMP)
 if not os.path.exists(SUBDAILY_IMAGE_DIR):
     os.makedirs(SUBDAILY_IMAGE_DIR)
 
-SUBDAILY_FLAG_DIR = os.path.join(root_dir, config.get("PATHS", "flags"), DATESTAMP)
+SUBDAILY_FLAG_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "flags"), DATESTAMP)
 if not os.path.exists(SUBDAILY_FLAG_DIR):
     os.makedirs(SUBDAILY_FLAG_DIR)
 
-SUBDAILY_ERROR_DIR = os.path.join(root_dir, config.get("PATHS", "errors"), DATESTAMP)
+SUBDAILY_ERROR_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "errors"), DATESTAMP)
 if not os.path.exists(SUBDAILY_ERROR_DIR):
     os.makedirs(SUBDAILY_ERROR_DIR)
 
@@ -84,18 +80,9 @@ if not os.path.exists(SUBDAILY_ERROR_DIR):
 # name of station list
 STATION_LIST = config.get("FILES", "station_list")
 
-
-
 # for cross-timescale checks
 # DAILY_DIR = 
 # MONTHLY_DIR = 
-
-#*********************************************
-# run type
-# TODO - is it best to do this here or with a command line switch?
-FULL_UPDATE = config.getboolean("SETTINGS", "full_reprocess")
-# if False, then it's a NRT append - reading from the defined files if set
-
 
 #*********************************************
 # read in parameter list

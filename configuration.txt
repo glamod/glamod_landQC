@@ -1,10 +1,8 @@
-[SETTINGS]
-full_reprocess = True
 [PATHS]
-version = v20220706_mfftest/
-root = /work/scratch-pw/rjhd2/level1/
 mff = /work/scratch-pw/mennem/
 mff_version = mff/
+root = /work/scratch-pw/rjhd2/level1/
+version = v20220706_mfftest/
 proc = level1b1_sub_daily_data/
 qff = level1c_sub_daily_data/
 config = level1c_sub_daily_data_configs/
