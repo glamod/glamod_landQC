@@ -21,7 +21,13 @@ if [ "${WAIT}" != "T" ] && [ "${WAIT}" != "F" ]; then
     echo Please enter valid waiting option. T [true - wait for upstream files] or F [false - skip missing files]
     exit
 fi
-# remove both positional characters
+CLOBBER=$3
+if [ "${CLOBBER}" != "C" ] && [ "${CLOBBER}" != "S" ]; then
+    echo Please enter valid clobber option. C [clobber - overwrite existing outputs] or S [skip - keep existing outputs]
+    exit
+fi
+# remove all 3 positional characters
+shift
 shift
 shift
 
@@ -31,7 +37,6 @@ elif [ "${STAGE}" == "N" ]; then
     MAX_N_JOBS=50
 fi
 WAIT_N_MINS=1
-CLOBBER="False"
 cwd=`pwd`
 SCRIPT_DIR=${cwd}/lotus_scripts/
 
@@ -231,7 +236,7 @@ do
     if [ $submit == true ]; then
 
         # if overwrite
-        if [ "${CLOBBER}" == "True" ]; then
+        if [ "${CLOBBER}" == "C" ]; then
             sbatch ${lotus_script}
             sleep 1s # allow submission to occur before moving on
 

@@ -7,6 +7,8 @@ withhold station if in more than one.
 
 For the pressure and wind synergistic variables, if one has these flags set,
 then the other will be set too.
+
+Run at the end of both the internal and neighbour checks.
 """
 #************************************************************************
 import numpy as np
