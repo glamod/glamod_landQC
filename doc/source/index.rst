@@ -52,6 +52,7 @@ thresholds to use.  The configuration.txt file contains::
   mff = /gws/nopw/j04/c3s311a_lot2/data/level1/land/level1b_sub_daily_data/
   mff_version = mff_latest/
   root = /gws/nopw/j04/c3s311a_lot2/data/level1/land/
+  version = v20210120
   proc = level1b1_sub_daily_data/
   qff = level1c_sub_daily_data/
   config = level1c_sub_daily_data_configs/
