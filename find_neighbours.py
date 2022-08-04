@@ -21,10 +21,8 @@ Input arguments:
 
 import os.path
 
-#import iris as iris
-#from iris.analysis.cartography import DEFAULT_SPHERICAL_EARTH_RADIUS
 DEFAULT_SPHERICAL_EARTH_RADIUS=6367470
-#import iris.coord_categorisation
+
 import numpy as np
 import scipy.linalg
 

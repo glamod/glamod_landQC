@@ -27,7 +27,7 @@ The QC requires a specific Python environment to run.  The standard `JasPy <http
 
 A script is used to set up the bespoke virtual environment using the ``venv`` tool. 
 
-Firstly, you need to edit the ``venvdir`` entry in the configuration file.  The default is called ``qc_venv``.::
+Firstly, you need to edit the ``venvdir`` entry in the configuration file.  The default is called ``qc_venv``.  (This can take a while.)::
 
   bash make_venv.bash
 
@@ -40,6 +40,18 @@ And to deactivate::
   deactivate
 
 All the necessary Python libraries should have been installed with the ``make_venv.bash`` script, but these are also listed in the ``qc_venv_requirements.txt`` file.
+
+Building the documentation
+--------------------------
+
+To build this Sphinx documentation to include all the doc-strings from the scripts into a pretty html file::
+
+  source qc_venv/bin/activate
+  cd doc
+  make html
+
+Then you can open the ``index.html`` in the `doc/build/html/` directory.
+
 
 Configuring the QC
 ------------------
@@ -111,6 +123,10 @@ The ``run_qc_checks.bash`` runs both stages of the QC process by submitting one 
 * ``I`` / ``N`` to run the Internal or Neighbour checks
 * ``T`` / ``F`` to wait (True) or not (False) for upstream files to be present
 * ``C`` / ``S`` to overwrite (Clobber) or keep (Skip) existing output files.
+
+So an example run for the internal checks::
+
+  bash run_qc_checks.bash I F C
 
 The waiting option presumes that the mff files will be produced in the sequence they are listed in the station list (see the configuration file).  If a file is not present, the script will sleep until it appears.  This allows the QC process to start before the mingle+merge processes have completed.  Finally, you can choose whether to overwrite existing output files, or to skip the processing step if they already exists.  There is helptext for these switches as part of the script.
 
