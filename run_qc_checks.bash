@@ -38,7 +38,16 @@ elif [ "${STAGE}" == "N" ]; then
 fi
 WAIT_N_MINS=1
 cwd=`pwd`
+
 SCRIPT_DIR=${cwd}/lotus_scripts/
+if [ ! -d ${SCRIPT_DIR} ]; then
+    mkdir ${SCRIPT_DIR}
+fi
+
+LOG_DIR=${cwd}/logs/
+if [ ! -d ${LOG_DIR} ]; then
+    mkdir ${LOG_DIR}
+fi
 
 # use configuration file to pull out paths &c
 CONFIG_FILE="${cwd}/configuration.txt"
@@ -139,8 +148,8 @@ do
     echo "#SBATCH --partition=short-serial-4hr" >> ${lotus_script}
     echo "#SBATCH --account=short4hr" >> ${lotus_script}
     echo "#SBATCH --job-name=QC_${stn}" >> ${lotus_script}
-    echo "#SBATCH --output=${cwd}/logs/${stn}.out" >> ${lotus_script}
-    echo "#SBATCH --error=${cwd}/logs/${stn}.err " >> ${lotus_script}
+    echo "#SBATCH --output=${LOG_DIR}/${stn}.out" >> ${lotus_script}
+    echo "#SBATCH --error=${LOG_DIR}/${stn}.err " >> ${lotus_script}
     
     if [ "${STAGE}" == "I" ]; then
         if [ "${stn:0:1}" == "U" ]; then
