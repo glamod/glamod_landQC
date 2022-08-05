@@ -100,6 +100,9 @@ for var_list in (obs_var_list, carry_thru_var_list):
         elif "pres_wx" in var:
             # catch all present weather codes (which may contain character info)
             DTYPE_DICT[var] = str
+        elif "sky_cover" in var:
+            # catch all sky cover codes (which may contain character info)
+            DTYPE_DICT[var] = str
         else:
             DTYPE_DICT[var] = np.float64
 

@@ -110,7 +110,7 @@ The QC can be configured to run using various statistics, which can be selected 
 
 There are a couple of thresholds which are used for when deciding whether to create a distribution or not (``min_data_count``) or for when the proportion of flags is classed as high (``high_flag_proportion``).
 
-Finally, for the buddy/neighbour checks, there are a number of settings for selectig the neighbours (``max_distance`` and ``max_vertical_separation``), how many are selected (``max_number``), the filename to store the information (``filename``) and the minimum number needed for the tests to run (``minimum_number``).
+Finally, for the buddy/neighbour checks, there are a number of settings for selecting the neighbours (``max_distance`` and ``max_vertical_separation``), how many are selected (``max_number``), the filename to store the information (``filename``) and the minimum number needed for the tests to run (``minimum_number``).
 
 
 Processing Files
@@ -132,7 +132,13 @@ The waiting option presumes that the mff files will be produced in the sequence 
 
 Once completed, this script also runs a checking process to provide some summary information of the processing run, with station counts and locations.  This can be called separately as ``check_if_processed.bash`` using the ``I`` / ``N`` switches. There is also a set of maps which can be produced, to show the flagging rates and counts for each station for each test.  The LOTUS job for this is submitted via the ``plots_lotus.bash`` script using the ``sbatch`` command.
 
-The python scripts (``intra_checks.py`` for the internal checks, and ``inter_checks.py`` for the buddy checks) run through each station in turn, applying the relevant tests.  These, and the top-level test functions are documented below:
+The python scripts called by ``run_qc_checks.bash`` have their own options which can be set (see below).  For the moment, the one which allows stored values and thresholds from a previous run to be used (rather than calculated afresh) is not active.  This option was written with the near-real-time updates in mind, however has never been tested on e.g. a "diff" file.  To turn this on, you would need to edit the section of the bash script which generates the LOTUS job.
+
+
+Individual scripts
+------------------
+
+The python scripts (``intra_checks.py`` for the internal checks, and ``inter_checks.py`` for the neighbour/buddy checks) run through each station in turn, applying the relevant tests.  These, and the top-level test functions are documented below:
 
 .. toctree::
    :maxdepth: 2
