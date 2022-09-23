@@ -90,11 +90,11 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
 
         if not clobber:
             # wanting to skip if files exist
-            if os.path.exists(os.path.join(setup.SUBDAILY_BAD_DIR, "{:11s}.qff".format(station_id))):
+            if os.path.exists(os.path.join(setup.SUBDAILY_BAD_DIR, "{:11s}.qff".format(target_station_id))):
                 print("{} exists and clobber kwarg not set, skipping to next station.".format(
                     os.path.join(setup.SUBDAILY_BAD_DIR, "{:11s}.qff".format(target_station_id))))
                 continue
-            elif os.path.exists(os.path.join(setup.SUBDAILY_OUT_DIR, "{:11s}.qff".format(station_id))):
+            elif os.path.exists(os.path.join(setup.SUBDAILY_OUT_DIR, "{:11s}.qff".format(target_station_id))):
                 print("{} exists and clobber kwarg not set, skipping to next station.".format(
                     os.path.join(setup.SUBDAILY_OUT_DIR, "{:11s}.qff".format(target_station_id))))
                 continue
