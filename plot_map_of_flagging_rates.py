@@ -86,7 +86,7 @@ def main(restart_id="", end_id="", diagnostics=False):
             flag_summary = flag_read(os.path.join(setup.SUBDAILY_FLAG_DIR, "{}.flg".format(station_id)))
         except IOError:
             print("flag file missing for {}".format(station_id))
-
+            continue
 
         #*************************
         # read QFF
