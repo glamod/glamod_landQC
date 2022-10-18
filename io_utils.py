@@ -12,9 +12,8 @@ import datetime as dt
 from qc_utils import populate_station, MDI, QC_TESTS
 
 #************************************************************************
-def read_psv(infile, separator, compression="infer"):
+def read_psv(infile, separator):
     '''
-
     http://pandas.pydata.org/pandas-docs/stable/user_guide/io.html#io-read-csv-table
 
     :param str infile: location and name of infile (without extension)
@@ -24,7 +23,7 @@ def read_psv(infile, separator, compression="infer"):
     '''
 
     try:
-        df = pd.read_csv(infile, sep=separator, compression=compression, dtype=setup.DTYPE_DICT, na_values="Null")
+        df = pd.read_csv(infile, sep=separator, compression="infer", dtype=setup.DTYPE_DICT, na_values="Null")
     except ValueError as e:
         print(str(e))
         raise ValueError(str(e))
@@ -107,7 +106,7 @@ def read_station(stationfile, station, read_flags=False):
     return station, station_df # read_station
 
 #************************************************************************
-def write_psv(outfile, df, separator, compression="infer"):
+def write_psv(outfile, df, separator):
     '''
     http://pandas.pydata.org/pandas-docs/stable/user_guide/io.html#io-read-csv-table
 
@@ -115,7 +114,7 @@ def write_psv(outfile, df, separator, compression="infer"):
     :param DataFrame df: data frame to write
     :param str separator: separating character (e.g. ",", "|")
     '''
-    df.to_csv(outfile, index=False, sep=separator, compression=compression)
+    df.to_csv(outfile, index=False, sep=separator, compression="infer")
 
     return # write_psv
 
