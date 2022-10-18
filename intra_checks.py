@@ -61,13 +61,13 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
 
         if not clobber:
             # wanting to skip if files exist
-            if os.path.exists(os.path.join(setup.SUBDAILY_BAD_DIR, "{:11s}.qff".format(station_id))):
+            if os.path.exists(os.path.join(setup.SUBDAILY_BAD_DIR, "{:11s}.qff{}".format(station_id, setup.OUT_COMPRESSION))):
                 print("{} exists and clobber kwarg not set, skipping to next station.".format(
-                    os.path.join(setup.SUBDAILY_BAD_DIR, "{:11s}.qff".format(station_id))))
+                    os.path.join(setup.SUBDAILY_BAD_DIR, "{:11s}.qff{}".format(station_id, setup.OUT_COMPRESSION))))
                 continue
-            elif os.path.exists(os.path.join(setup.SUBDAILY_PROC_DIR, "{:11s}.qff".format(station_id))):
+            elif os.path.exists(os.path.join(setup.SUBDAILY_PROC_DIR, "{:11s}.qff{}".format(station_id, setup.OUT_COMPRESSION))):
                 print("{} exists and clobber kwarg not set, skipping to next station.".format(
-                    os.path.join(setup.SUBDAILY_PROC_DIR, "{:11s}.qff".format(station_id))))
+                    os.path.join(setup.SUBDAILY_PROC_DIR, "{:11s}.qff{}".format(station_id, setup.OUT_COMPRESSION))))
                 continue
             else:
                 # files don't exists, pass
@@ -93,7 +93,7 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
             print(station)
 
         try:
-            station, station_df = io.read_station(os.path.join(setup.SUBDAILY_MFF_DIR, "{:11s}.mff".format(station_id)), station)
+            station, station_df = io.read_station(os.path.join(setup.SUBDAILY_MFF_DIR, "{:11s}.mff{}".format(station_id, setup.IN_COMPRESSION)), station)
         except OSError as e:
             # file missing, move on to next in sequence
             io.write_error(station, "File Missing")
@@ -256,9 +256,9 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         if hfr_vars_set > 1:
             # high flagging rates in more than one variable.  Withholding station completely
             print("{} withheld as too high flagging".format(station.id))
-            io.write(os.path.join(setup.SUBDAILY_BAD_DIR, "{:11s}.qff".format(station_id)), station_df)
+            io.write(os.path.join(setup.SUBDAILY_BAD_DIR, "{:11s}.qff{}".format(station_id, setup.OUT_COMPRESSION)), station_df)
         else:
-            io.write(os.path.join(setup.SUBDAILY_PROC_DIR, "{:11s}.qff".format(station_id)), station_df)
+            io.write(os.path.join(setup.SUBDAILY_PROC_DIR, "{:11s}.qff{}".format(station_id, setup.OUT_COMPRESSION)), station_df)
 
         #*************************
         # Output flagging summary file

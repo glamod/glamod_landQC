@@ -80,6 +80,12 @@ if not os.path.exists(SUBDAILY_ERROR_DIR):
 # name of station list
 STATION_LIST = config.get("FILES", "station_list")
 
+IN_COMPRESSION = config.get("FILES", "in_compression")
+if IN_COMPRESSION == "None":
+    IN_COMPRESSION = ""
+OUT_COMPRESSION = config.get("FILES", "out_compression")
+if OUT_COMPRESSION == "None":
+    OUT_COMPRESSION = ""
 # for cross-timescale checks
 # DAILY_DIR = 
 # MONTHLY_DIR = 
