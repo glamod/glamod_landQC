@@ -45,21 +45,81 @@ if [ ! -d ${LOG_DIR} ]; then
     mkdir ${LOG_DIR}
 fi
 
+function write_kay_script {
+    kay_script=${1}
+    taskfarm_script=${2}
+    batch=${3}
+
+    echo "#!/bin/bash -l" > ${kay_script}
+    echo "#SBATCH -p ShmemQ" >> ${kay_script}
+    echo "#SBATCH -N 1" >> ${kay_script}
+    echo "#SBATCH -t 24:00:00" >> ${kay_script}
+    echo "#SBATCH -A glamod" >> ${kay_script}
+    echo "#SBATCH -o ${LOG_DIR}/qc_${VERSION::-1}_${STAGE}_batch${batch}.out" >> ${kay_script}
+    echo "#SBATCH -e ${LOG_DIR}/qc_${VERSION::-1}_${STAGE}_batch${batch}.err" >> ${kay_script}
+    echo "#SBATCH --mail-user=robert.dunn@metoffice.gov.uk" >> ${kay_script}
+    echo "#SBATCH --mail-type=BEGIN,END" >> ${kay_script}
+    echo "" >> ${kay_script}
+    # TODO sort python environment
+    echo "# activate python environment" >> ${kay_script}
+    echo "source ${VENVDIR}/bin/activate" >> ${kay_script}
+    echo "" >> ${kay_script}
+    echo "# go to scripts and set taskfarm running" >> ${kay_script}
+    echo "cd ${SCRIPT_DIR}" >> ${kay_script}
+    echo "module load taskfarm" >> ${kay_script}
+    echo "taskfarm ${taskfarm_script}" >> ${kay_script}
+
+} # write_kay_script
+
+function write_and_submit_kay_script {
+    taskfarm_script=${1}
+    batch=${2}
+
+    if [ "${STAGE}" == "I" ]; then
+	kay_script="${SCRIPT_DIR}/kay_internal_${batch}.bash"
+    elif  [ "${STAGE}" == "N" ]; then
+	kay_script="${SCRIPT_DIR}/kay_external_${batch}.bash"
+    fi
+    
+    if [ ! -e ${kay_script} ]; then
+	rm ${kay_script}
+    fi
+    write_kay_script "${kay_script}" "${taskfarm_script}" "${batch}"
+    
+    sbatch < ${kay_script}
+
+} # write_and_submit_kay_script
+
+function prepare_taskfarm_script {
+    batch=${1}
+
+    if [ "${STAGE}" == "I" ]; then
+	taskfarm_script="${SCRIPT_DIR}/taskfarm_internal_${batch}.bash"
+    elif  [ "${STAGE}" == "N" ]; then
+	taskfarm_script="${SCRIPT_DIR}/taskfarm_external_${batch}.bash"
+    fi
+    if [ -e ${taskfarm_script} ]; then
+	rm ${taskfarm_script}
+    fi
+    echo ${taskfarm_script}
+} # prepare_taskfarm_script
+
+
 #**************************************
 # use configuration file to pull out paths &c
 CONFIG_FILE="${cwd}/configuration.txt"
 
-VENVDIR=$(grep "venvdir " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
+VENVDIR="$(grep "venvdir " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 # using spaces after setting ID to ensure pull out correct line
 # these are fixed references
-ROOTDIR=$(grep "root " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
+ROOTDIR="$(grep "root " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 
 # extract remaining locations
-MFF=$(grep "mff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
-MFF_VER=$(grep "mff_version " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
-PROC=$(grep "proc " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
-QFF=$(grep "qff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
-VERSION=$(grep "version " "${CONFIG_FILE}" | grep -v "${MFF_VER}" | awk -F'= ' '{print $2}')
+MFF="$(grep "mff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
+MFF_VER="$(grep "mff_version " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
+PROC="$(grep "proc " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
+QFF="$(grep "qff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
+VERSION="$(grep "version " "${CONFIG_FILE}" | grep -v "${MFF_VER}" | awk -F'= ' '{print $2}')"
 ERR=${QFF%/}_errors/
 
 #**************************************
@@ -82,7 +142,7 @@ fi
 
 
 # set up list of stations
-STATION_LIST=$(grep "station_list " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
+STATION_LIST="$(grep "station_list " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 station_list_file="${STATION_LIST}"
 
 echo `wc -l ${station_list_file}`
@@ -128,14 +188,8 @@ if [ ${n_missing} -ne 0 ]; then
 fi
 
 batch=1
-if [ "${STAGE}" == "I" ]; then
-    taskfarm_script="${SCRIPT_DIR}/taskfarm_internal_${batch}.bash"
-elif  [ "${STAGE}" == "N" ]; then
-    taskfarm_script="${SCRIPT_DIR}/taskfarm_external_${batch}.bash"
-fi
-if [ -e ${taskfarm_script} ]; then
-    rm ${taskfarm_script}
-fi
+taskfarm_script="$(prepare_taskfarm_script "${batch}")"
+
 #**************************************
 # spin through each in turn, creating a job
 scnt=1
@@ -260,58 +314,35 @@ do
     
     # batch up 
     if [ ${scnt} -eq ${STATIONS_PER_BATCH} ]; then
-	if [ "${STAGE}" == "I" ]; then
- 	    kay_script="${SCRIPT_DIR}/kay_internal_${batch}.bash"
-	elif  [ "${STAGE}" == "N" ]; then
- 	    kay_script="${SCRIPT_DIR}/kay_external_${batch}.bash"
-	fi
+	write_and_submit_kay_script "${taskfarm_script}" "${batch}"
 	
-	if [ ! -e ${kay_script} ]; then
-	    rm ${kay_script}
-	fi
-	echo "#!/bin/bash -l" > ${kay_script}
-	echo "#SBATCH -p ShmemQ" >> ${kay_script}
-	echo "#SBATCH -N 1" >> ${kay_script}
-	echo "#SBATCH -t 24:00:00" >> ${kay_script}
-	echo "#SBATCH -A glamod" >> ${kay_script}
-	echo "#SBATCH -o ${LOG_DIR}/qc_${VERSION::-1}_${STAGE}_batch${batch}.out" >> ${kay_script}
-	echo "#SBATCH -e ${LOG_DIR}/qc_${VERSION::-1}_${STAGE}_batch${batch}.err" >> ${kay_script}
-	echo "#SBATCH --mail-user=robert.dunn@metoffice.gov.uk" >> ${kay_script}
-	echo "#SBATCH --mail-type=BEGIN,END" >> ${kay_script}
-	echo "" >> ${kay_script}
-	# TODO sort python environment
-	echo "# activate python environment" >> ${kay_script}
-	echo "source ${VENVDIR}/bin/activate" >> ${kay_script}
-	echo "" >> ${kay_script}
-	echo "# go to scripts and set taskfarm running" >> ${kay_script}
-	echo "cd ${SCRIPT_DIR}" >> ${kay_script}
-	echo "module load taskfarm" >> ${kay_script}
-	echo "taskfarm ${taskfarm_script}" >> ${kay_script}
-	
-	sbatch < ${kay_script}
-
 	# and reset counters and scripts
 	let batch=batch+1
+	taskfarm_script="$(prepare_taskfarm_script "${batch}")"
 	scnt=1
 
+	# just for ease of reading the script output
+	sleep 1
 #	exit
 
     fi
 #    exit
       
 done
+# and submit the final batch of stations.
+write_and_submit_kay_script "${taskfarm_script}" "${batch}"
 
 exit
 #**************************************
 # and print summary
-n_jobs=`squeue --user=rjhd2 | wc -l`
+n_jobs=`squeue --user=${USER} | wc -l`
 # deal with Slurm header in output
 let n_jobs=n_jobs-1
 while [ ${n_jobs} -ne 0 ];
 do        
     echo "All submitted, waiting 5min for queue to clear"
     sleep 5m
-    n_jobs=`squeue --user=rjhd2 | wc -l`
+    n_jobs=`squeue --user=${USER} | wc -l`
     let n_jobs=n_jobs-1
 done
 
