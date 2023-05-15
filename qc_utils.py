@@ -9,6 +9,7 @@ import json
 import pandas as pd
 import numpy as np
 import scipy.special
+import pathlib
 
 from scipy.optimize import least_squares
 
@@ -910,8 +911,10 @@ def find_continent(country_code):
     :returns: [str] continent
     """
  
+    # as maybe run from another directory, get the right path
+    cwd = pathlib.Path(__file__).parent.absolute()
     # prepare look up
-    with open('iso_country_codes.json', 'r') as infile:
+    with open('{}/iso_country_codes.json'.format(cwd), 'r') as infile:
         iso_codes = json.load(infile)
 
     concord = {}
