@@ -120,7 +120,7 @@ def frequent_values(obs_var, station, config_dict, plots=False, diagnostics=Fals
             width = float(config_dict["FREQUENT-{}".format(obs_var.name)]["width"])
             suspect_bins = config_dict["FREQUENT-{}".format(obs_var.name)]["{}".format(month)]
         except KeyError:
-            print("Information missing in config file")
+            print("Information missing in config dictionary")
             identify_values(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
             width = float(config_dict["FREQUENT-{}".format(obs_var.name)]["width"])
             suspect_bins = config_dict["FREQUENT-{}".format(obs_var.name)]["{}".format(month)]

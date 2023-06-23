@@ -1,4 +1,4 @@
-b"""
+"""
 Diurnal Cycle Checks
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -212,13 +212,13 @@ def prepare_data(station, obs_var):
     return best_fit_diurnal, best_fit_uncertainty # prepare_data 
 
 #************************************************************************
-def find_offset(obs_var, station, config_file, plots=False, diagnostics=False):
+def find_offset(obs_var, station, config_dict, plots=False, diagnostics=False):
     """
     Find the best offset for a sine curve to represent the cycle
 
     :param MetVar obs_var: Meteorological Variable object
     :param Station station: Station Object for the station
-    :param str configfile: string for configuration file
+    :param str config_dict: dictionary containing configuration info
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
@@ -282,25 +282,31 @@ def find_offset(obs_var, station, config_file, plots=False, diagnostics=False):
                 print("Good fit to diurnal cycle not found")
 
     '''Now have value for best fit diurnal offset'''
-    utils.write_qc_config(config_file, "DIURNAL-{}".format(obs_var.name), "peak", "{}".format(diurnal_peak), diagnostics=diagnostics)
-
+    CD_peak = {"peak" : "{}".format(diurnal_peak)}
+    config_dict["DIURNAL-{}".format(obs_var.name)] = CD_peak
 
     return best_fit_diurnal, best_fit_uncertainty # find_offset
 
 #************************************************************************
-def diurnal_cycle_check(obs_var, station, config_file, plots=False, diagnostics=False, best_fit_diurnal=None, best_fit_uncertainty=None):
+def diurnal_cycle_check(obs_var, station, config_dict, plots=False, diagnostics=False, best_fit_diurnal=None, best_fit_uncertainty=None):
     """
     Use offset to find days where cycle doesn't match
 
     :param MetVar obs_var: Meteorological Variable object
     :param Station station: Station Object for the station
-    :param str configfile: string for configuration file
+    :param str config_dict: dictionary to store configuration info
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
     flags = np.array(["" for i in range(obs_var.data.shape[0])])
 
-    diurnal_offset = int(utils.read_qc_config(config_file, "DIURNAL-{}".format(obs_var.name), "peak"))
+    try:
+        diurnal_offset = int(config_dict["DIURNAL-{}".format(obs_var.name)]["peak"])
+    except KeyError:
+        print("Information missing in config dictionary")
+        best_fit_diurnal, best_fit_uncertainty = find_offset(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
+        diurnal_offset = int(config_dict["DIURNAL-{}".format(obs_var.name)]["peak"])
+
 
     hours = np.arange(24)
     hours = np.roll(hours, 11-int(diurnal_offset))
@@ -412,12 +418,12 @@ def diurnal_cycle_check(obs_var, station, config_file, plots=False, diagnostics=
 
 
 #************************************************************************
-def dcc(station, config_file, full=False, plots=False, diagnostics=False):
+def dcc(station, config_dict, full=False, plots=False, diagnostics=False):
     """
     Pass on to the Diurnal Cycle Check
 
     :param Station station: Station Object for the station
-    :param str configfile: string for configuration file
+    :param str config_dict: dictionary contining configuration info
     :param bool full: run a full update (recalculate thresholds)
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
@@ -426,12 +432,12 @@ def dcc(station, config_file, full=False, plots=False, diagnostics=False):
     obs_var = getattr(station, "temperature")
 
     if full:
-        best_fit_diurnal, best_fit_uncertainty = find_offset(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
-        diurnal_cycle_check(obs_var, station, config_file, plots=plots, diagnostics=diagnostics, \
+        best_fit_diurnal, best_fit_uncertainty = find_offset(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
+        diurnal_cycle_check(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics, \
                                 best_fit_diurnal=best_fit_diurnal, best_fit_uncertainty=best_fit_uncertainty)
 
     else:
-        diurnal_cycle_check(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
+        diurnal_cycle_check(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
 
     return # dgc
 
