@@ -52,14 +52,14 @@ def plot_pressure(sealp, stnlp, times, bad):
     return # plot_pressure
 
 #************************************************************************
-def identify_values(sealp, stnlp, times, config_file, plots=False, diagnostics=False):
+def identify_values(sealp, stnlp, times, config_dict, plots=False, diagnostics=False):
     """
     Find average and spread of differences
 
     :param MetVar sealp: sea level pressure object
     :param MetVar stnlp: station level pressure object
     :param array times: datetime array
-    :param str configfile: string for configuration file
+    :param str config_dict: dictionary for configuration settings
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
@@ -75,13 +75,18 @@ def identify_values(sealp, stnlp, times, config_file, plots=False, diagnostics=F
         elif spread > MAX_SPREAD: # more than XhPa
             spread = MAX_SPREAD
 
-        utils.write_qc_config(config_file, "PRESSURE", "average", "{}".format(average), diagnostics=diagnostics)
-        utils.write_qc_config(config_file, "PRESSURE", "spread", "{}".format(spread), diagnostics=diagnostics)
+        try:
+            config_dict["PRESSURE"]["average"] = average
+        except KeyError:
+            CD_average = {"average" : average}
+            config_dict["PRESSURE"] = CD_average
+            
+        config_dict["PRESSURE"]["spread"] = spread
 
     return # identify_values
 
 #************************************************************************
-def pressure_offset(sealp, stnlp, times, config_file, plots=False, diagnostics=False):
+def pressure_offset(sealp, stnlp, times, config_dict, plots=False, diagnostics=False):
     """
     Flag locations where difference between station and sea-level pressure
     falls outside of bounds
@@ -89,7 +94,7 @@ def pressure_offset(sealp, stnlp, times, config_file, plots=False, diagnostics=F
     :param MetVar sealp: sea level pressure object
     :param MetVar stnlp: station level pressure object
     :param array times: datetime array
-    :param str configfile: string for configuration file
+    :param str config_dict: dictionary for configuration settings
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
@@ -101,19 +106,14 @@ def pressure_offset(sealp, stnlp, times, config_file, plots=False, diagnostics=F
     if len(difference.compressed()) >= utils.DATA_COUNT_THRESHOLD:
 
         try:
-            average = float(utils.read_qc_config(config_file, "PRESSURE", "average"))
-            spread = float(utils.read_qc_config(config_file, "PRESSURE", "spread"))
+            average = float(config_dict["PRESSURE"]["average"])
+            spread = float(config_dict["PRESSURE"]["spread"])
         except KeyError:
-            print("Information missing in config file")
-            average = utils.average(difference)
-            spread = utils.spread(difference)
-            if spread < MIN_SPREAD: # less than XhPa
-                spread = MIN_SPREAD
-            elif spread > MAX_SPREAD: # more than XhPa
-                spread = MAX_SPREAD
-
-            utils.write_qc_config(config_file, "PRESSURE", "average", "{}".format(average), diagnostics=diagnostics)
-            utils.write_qc_config(config_file, "PRESSURE", "spread", "{}".format(spread), diagnostics=diagnostics)
+            print("Information missing in config dictionary")
+            identify_values(sealp, stnlp, times, config_dict, plots=plots, diagnostics=diagnostics)
+            average = float(config_dict["PRESSURE"]["average"])
+            spread = float(config_dict["PRESSURE"]["spread"])
+            
 
         if np.abs(np.ma.mean(difference) - np.ma.median(difference)) > THRESHOLD*spread:
             if diagnostics:
@@ -251,12 +251,12 @@ def pressure_theory(sealp, stnlp, temperature, times, elevation, plots=False, di
     return # pressure_theory
 
 #************************************************************************
-def pcc(station, config_file, full=False, plots=False, diagnostics=False):
+def pcc(station, config_dict, full=False, plots=False, diagnostics=False):
     """
     Extract the variables and pass to the Pressure Cross Checks
 
     :param Station station: Station Object for the station
-    :param str configfile: string for configuration file
+    :param str config_dict: dictionary for configuration settings
     :param bool full: run a full update
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
@@ -266,8 +266,8 @@ def pcc(station, config_file, full=False, plots=False, diagnostics=False):
     stnlp = getattr(station, "station_level_pressure")
 
     if full:
-        identify_values(sealp, stnlp, station.times, config_file, plots=plots, diagnostics=diagnostics)
-    pressure_offset(sealp, stnlp, station.times, config_file, plots=plots, diagnostics=diagnostics)
+        identify_values(sealp, stnlp, station.times, config_dict, plots=plots, diagnostics=diagnostics)
+    pressure_offset(sealp, stnlp, station.times, config_dict, plots=plots, diagnostics=diagnostics)
 
     temperature = getattr(station, "temperature")
     if str(station.elev)[:4] in ["-999", "9999"]:
