@@ -11,6 +11,8 @@
 #     WAIT = T [true] or F [false] # wait for upstream files to be ready
 #****************************************************************** 
 
+#**************************************
+# manage the input arguments
 STAGE=$1
 if [ "${STAGE}" != "I" ] && [ "${STAGE}" != "N" ]; then
     echo Please enter valid switch. I [internal] or N [neighbour]
@@ -31,6 +33,7 @@ shift
 shift
 shift
 
+#**************************************
 # other settings
 cwd=`pwd`
 STATIONS_PER_BATCH=5000
@@ -45,6 +48,8 @@ if [ ! -d ${LOG_DIR} ]; then
     mkdir ${LOG_DIR}
 fi
 
+#**************************************
+# Set functions
 function write_kay_script {
     kay_script=${1}
     taskfarm_script=${2}
@@ -187,6 +192,9 @@ if [ ${n_missing} -ne 0 ]; then
     fi
 fi
 
+#**************************************
+# Batch the stations into a number of taskfarm scripts
+#   one script per $STATIONS_PER_BATCH stations
 batch=1
 taskfarm_script="$(prepare_taskfarm_script "${batch}")"
 
@@ -312,7 +320,7 @@ do
     # increment station counter
     let scnt=scnt+1
     
-    # batch up 
+    # and write script to run this batch
     if [ ${scnt} -eq ${STATIONS_PER_BATCH} ]; then
 	write_and_submit_kay_script "${taskfarm_script}" "${batch}"
 	
