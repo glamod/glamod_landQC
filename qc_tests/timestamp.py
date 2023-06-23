@@ -40,13 +40,13 @@ def plot_multiple(times, obs_var, start):
     return # plot_spike
 
 #************************************************************************
-def identify_multiple_values(obs_var, times, config_file, plots=False, diagnostics=False):
+def identify_multiple_values(obs_var, times, config_dict, plots=False, diagnostics=False):
     """
-    Use config_file to read in critical values, and then assess to find 
+    Use config_dict to read in critical values, and then assess to find 
 
     :param MetVar obs_var: meteorological variable object
     :param array times: array of times (usually in minutes)
-    :param str config_file: configuration file to store critical values
+    :param str config_dict: configuration dictionary to store critical values (UNUSED)
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
@@ -80,13 +80,13 @@ def identify_multiple_values(obs_var, times, config_file, plots=False, diagnosti
 
 
 #************************************************************************
-def tsc(station, var_list, config_file, full=False, plots=False, diagnostics=False):
+def tsc(station, var_list, config_dict, full=False, plots=False, diagnostics=False):
     """
     Run through the variables and pass to the Timestamp Check
 
     :param Station station: Station Object for the station
     :param list var_list: list of variables to test
-    :param str configfile: string for configuration file
+    :param str config_dict: dictionary for configuration settings
     :param bool full: run a full update (recalculate thresholds)
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
@@ -96,7 +96,7 @@ def tsc(station, var_list, config_file, full=False, plots=False, diagnostics=Fal
 
         obs_var = getattr(station, var)
 
-        identify_multiple_values(obs_var, station.times, config_file, plots=plots, diagnostics=diagnostics)
+        identify_multiple_values(obs_var, station.times, config_dict, plots=plots, diagnostics=diagnostics)
 
     return  # tsc
 
