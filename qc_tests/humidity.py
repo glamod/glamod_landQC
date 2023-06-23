@@ -37,13 +37,13 @@ def prepare_data_repeating_dpd(locs, plots=False, diagnostics=False):
     return repeated_string_lengths, grouped_diffs, strings # prepare_data_repeating_dpd
 
 #************************************************************************
-def get_repeating_dpd_threshold(temperatures, dewpoints, config_file, plots=False, diagnostics=False):
+def get_repeating_dpd_threshold(temperatures, dewpoints, config_dict, plots=False, diagnostics=False):
     """
-    Use distribution to determine threshold values.  Then also store in config file.
+    Use distribution to determine threshold values.  Then also store in config dictionary.
 
     :param MetVar temperatures: temperatures object
     :param MetVar dewpoints: dewpoints object
-    :param str config_file: configuration file to store critical values
+    :param str config_dict: configuration dictionary to store critical values
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
@@ -62,11 +62,19 @@ def get_repeating_dpd_threshold(temperatures, dewpoints, config_file, plots=Fals
         threshold = utils.get_critical_values(repeated_string_lengths, binmin=2, binwidth=1.0, plots=plots, diagnostics=diagnostics, title="DPD streak length", xlabel="Repeating DPD length")
 
         # write out the thresholds...
-        utils.write_qc_config(config_file, "HUMIDITY", "DPD", "{}".format(threshold), diagnostics=diagnostics)
+        try:
+            config_dict["HUMIDITY"]["DPD"] = threshold
+        except KeyError:
+            CD_dpd = {"DPD" : threshold}
+            config_dict["HUMIDITY"] = CD_dpd
+            
     else:
         # store high value so threshold never reached
-        utils.write_qc_config(config_file, "HUMIDITY", "DPD", "{}".format(-utils.MDI), diagnostics=diagnostics)
-
+        try:
+            config_dict["HUMIDITY"]["DPD"] = -utils.MDI
+        except KeyError:
+            CD_dpd = {"DPD" : -utils.MDI}
+            config_dict["HUMIDITY"] = CD_dpd
 
     return # repeating_dpd_threshold
 
@@ -181,14 +189,14 @@ def super_saturation_check(station, temperatures, dewpoints, plots=False, diagno
     return # super_saturation_check
 
 #************************************************************************
-def dew_point_depression_streak(times, temperatures, dewpoints, config_file, plots=False, diagnostics=False):
+def dew_point_depression_streak(times, temperatures, dewpoints, config_dict, plots=False, diagnostics=False):
     """
     Flag locations where dewpoint equals air temperature
 
     :param array times: datetime array
     :param MetVar temperatures: temperatures object
     :param MetVar dewpoints: dewpoints object
-    :param str config_file: configuration file to store critical values
+    :param str config_dict: configuration dictionary to store critical values
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
@@ -197,13 +205,13 @@ def dew_point_depression_streak(times, temperatures, dewpoints, config_file, plo
 
     # retrieve the threshold and store in another dictionary
     try:
-        th = utils.read_qc_config(config_file, "HUMIDITY", "DPD")
+        th = config_dict["HUMIDITY"]["DPD"]
         threshold = float(th)
     except KeyError:
         # no threshold set
-        print("Threshold missing in config file")
-        get_repeating_dpd_threshold(temperatures, dewpoints, config_file, plots=plots, diagnostics=diagnostics)
-        th = utils.read_qc_config(config_file, "HUMIDITY", "DPD")
+        print("Threshold missing in config dictionary")
+        get_repeating_dpd_threshold(temperatures, dewpoints, config_dict, plots=plots, diagnostics=diagnostics)
+        th = config_dict["HUMIDITY"]["DPD"]
         threshold = float(th)
 
 
@@ -240,12 +248,12 @@ def dew_point_depression_streak(times, temperatures, dewpoints, config_file, plo
     return # dew_point_depression_streak
 
 #************************************************************************
-def hcc(station, config_file, full=False, plots=False, diagnostics=False):
+def hcc(station, config_dict, full=False, plots=False, diagnostics=False):
     """
     Extract the variables and pass to the Humidity Cross Checks
 
     :param Station station: Station Object for the station
-    :param str configfile: string for configuration file
+    :param str config_dict: dictionary for configuration settings
     :param bool full: run a full update (unused here)
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
@@ -261,8 +269,8 @@ def hcc(station, config_file, full=False, plots=False, diagnostics=False):
     #    Note, won't have cloud-base or past-significant-weather
     #    Note, currently don't have precipitation information
     if full:
-        get_repeating_dpd_threshold(temperatures, dewpoints, config_file, plots=plots, diagnostics=diagnostics)
-    dew_point_depression_streak(station.times, temperatures, dewpoints, config_file, plots=plots, diagnostics=diagnostics)
+        get_repeating_dpd_threshold(temperatures, dewpoints, config_dict, plots=plots, diagnostics=diagnostics)
+    dew_point_depression_streak(station.times, temperatures, dewpoints, config_dict, plots=plots, diagnostics=diagnostics)
 
     # dew point cut-offs (HadISD) not run
     #  greater chance of removing good observations 
