@@ -89,8 +89,8 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
                 os.remove(config_file_name)
                 # JSON stores in dictionary, so create empty one
                 config_dict = {}
-            except IOError:
-                pass
+            except FileNotFoundError:
+                config_dict = {}
         else:
             try:
                 with open(config_file_name , "r") as cfile:

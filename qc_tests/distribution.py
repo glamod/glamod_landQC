@@ -235,7 +235,7 @@ def prepare_all_data(obs_var, station, month, config_dict, full=False, diagnosti
             config_dict["ADISTRIBUTION-{}".format(obs_var.name)]["{}-clim".format(month)] : climatology
         except KeyError:
             CD_clim = {"{}-clim".format(month) : climatology}
-            config_dict["ADISTRIBUTION-{}".format(obs_var.name)] = CD_clim,
+            config_dict["ADISTRIBUTION-{}".format(obs_var.name)] = CD_clim
         config_dict["ADISTRIBUTION-{}".format(obs_var.name)]["{}-spread".format(month)] = spread
 
     else:
