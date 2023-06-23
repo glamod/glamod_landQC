@@ -282,7 +282,7 @@ def find_offset(obs_var, station, config_dict, plots=False, diagnostics=False):
                 print("Good fit to diurnal cycle not found")
 
     '''Now have value for best fit diurnal offset'''
-    CD_peak = {"peak" : "{}".format(diurnal_peak)}
+    CD_peak = {"peak" : int(diurnal_peak)}
     config_dict["DIURNAL-{}".format(obs_var.name)] = CD_peak
 
     return best_fit_diurnal, best_fit_uncertainty # find_offset

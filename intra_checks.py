@@ -99,7 +99,8 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
                 config_dict = {}
             except JSONDecodeError:
                 # empty file    
-                config_dict = {}
+                print("STOP - JSON error")
+                return
     
 
         #*************************
