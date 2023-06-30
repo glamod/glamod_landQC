@@ -264,9 +264,9 @@ do
         if [ "${CLOBBER}" == "C" ]; then
 
 	    if [ "${STAGE}" == "I" ]; then
-		echo "python3 ${cwd}/intra_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics" >> ${taskfarm_script}
+		echo "python3 ${cwd}/intra_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics --clobber" >> ${taskfarm_script}
 	    elif  [ "${STAGE}" == "N" ]; then
-		echo "python3 ${cwd}/inter_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics" >> ${taskfarm_script}
+		echo "python3 ${cwd}/inter_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics --clobber" >> ${taskfarm_script}
 	    fi
 
 	# if not overwrite
