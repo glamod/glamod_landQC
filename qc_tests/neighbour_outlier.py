@@ -104,7 +104,7 @@ def neighbour_outlier(target_station, initial_neighbours, variable, diagnostics=
                                       station_list.iloc[buddy_idx].longitude.values[0], station_list.iloc[buddy_idx].elevation.values[0])
 
             try:
-                buddy, buddy_df = io.read_station(os.path.join(setup.SUBDAILY_PROC_DIR, "{:11s}.qff".format(buddy_id)), buddy, read_flags=True) 
+                buddy, buddy_df = io.read_station(os.path.join(setup.SUBDAILY_PROC_DIR, "{:11s}.qff{}".format(buddy_id, setup.OUT_COMPRESSION)), buddy, read_flags=True) 
 
                 buddy_var = getattr(buddy, variable)
 
