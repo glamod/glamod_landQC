@@ -44,13 +44,13 @@ def plot_spike(times, obs_var, spike_start, spike_length):
     return # plot_spike
 
 #************************************************************************
-def get_critical_values(obs_var, times, config_file, plots=False, diagnostics=False):
+def get_critical_values(obs_var, times, config_dict, plots=False, diagnostics=False):
     """
-    Use distribution to determine critical values.  Then also store in config file.
+    Use distribution to determine critical values.  Then also store in config dictionary.
 
     :param MetVar obs_var: meteorological variable object
     :param array times: array of times (usually in minutes)
-    :param str config_file: configuration file to store critical values
+    :param str config_dict: configuration dictionary to store critical values
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
@@ -86,7 +86,12 @@ def get_critical_values(obs_var, times, config_file, plots=False, diagnostics=Fa
             c_value = utils.get_critical_values(first_differences.compressed(), binmin=0, binwidth=0.5, plots=plots, diagnostics=diagnostics, xlabel="First differences", title="Spike - {} - {}m".format(obs_var.name.capitalize(), t_diff))
 
             # write out the thresholds...
-            utils.write_qc_config(config_file, "SPIKE-{}".format(obs_var.name), "{}".format(t_diff), "{}".format(c_value), diagnostics=diagnostics)
+            try:
+                config_dict["SPIKE-{}".format(obs_var.name)]["{}".format(t_diff)] = float(c_value)
+            except KeyError:
+                CD_diff = {"{}".format(t_diff) : float(c_value)}
+                config_dict["SPIKE-{}".format(obs_var.name)] = CD_diff
+
             if diagnostics:
                 print("   Time Difference: {} minutes".format(t_diff))
                 print("      Number of obs: {}, threshold: {}".format(len(first_differences.compressed()), c_value))
@@ -99,13 +104,13 @@ def get_critical_values(obs_var, times, config_file, plots=False, diagnostics=Fa
     return # get_critical_values
 
 #************************************************************************
-def identify_spikes(obs_var, times, config_file, plots=False, diagnostics=False):
+def identify_spikes(obs_var, times, config_dict, plots=False, diagnostics=False):
     """
-    Use config_file to read in critical values, and then assess to find spikes
+    Use config_dict to read in critical values, and then assess to find spikes
 
     :param MetVar obs_var: meteorological variable object
     :param array times: array of times (usually in minutes)
-    :param str config_file: configuration file to store critical values
+    :param str config_dict: configuration dictionary to store critical values
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
@@ -132,7 +137,7 @@ def identify_spikes(obs_var, times, config_file, plots=False, diagnostics=False)
     critical_values = {}
     for t_diff in unique_diffs:
         try:
-            c_value = utils.read_qc_config(config_file, "SPIKE-{}".format(obs_var.name), "{}".format(t_diff))
+            c_value = config_dict["SPIKE-{}".format(obs_var.name)]["{}".format(t_diff)]
             critical_values[t_diff] = float(c_value)
         except KeyError:
             # no critical value for this time difference
@@ -140,12 +145,12 @@ def identify_spikes(obs_var, times, config_file, plots=False, diagnostics=False)
 
     # if none have been read, give an option to calculate in case that was the reason for none
     if len(critical_values) == 0:
-        get_critical_values(obs_var, times, config_file, plots=plots, diagnostics=diagnostics)
+        get_critical_values(obs_var, times, config_dict, plots=plots, diagnostics=diagnostics)
 
         # and try again
         for t_diff in unique_diffs:
             try:
-                c_value = utils.read_qc_config(config_file, "SPIKE-{}".format(obs_var.name), "{}".format(t_diff))
+                c_value = config_dict["SPIKE-{}".format(obs_var.name)]["{}".format(t_diff)]
                 critical_values[t_diff] = float(c_value)
             except KeyError:
                 # no critical value for this time difference
@@ -307,13 +312,13 @@ def identify_spikes(obs_var, times, config_file, plots=False, diagnostics=False)
 
 
 #************************************************************************
-def sc(station, var_list, config_file, full=False, plots=False, diagnostics=False):
+def sc(station, var_list, config_dict, full=False, plots=False, diagnostics=False):
     """
     Run through the variables and pass to the Spike Check
 
     :param Station station: Station Object for the station
     :param list var_list: list of variables to test
-    :param str configfile: string for configuration file
+    :param str configfile: dictionary for configuration settings
     :param bool full: run a full update (recalculate thresholds)
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
@@ -324,9 +329,9 @@ def sc(station, var_list, config_file, full=False, plots=False, diagnostics=Fals
 
         # decide whether to recalculate
         if full:
-            get_critical_values(obs_var, station.times, config_file, plots=plots, diagnostics=diagnostics)
+            get_critical_values(obs_var, station.times, config_dict, plots=plots, diagnostics=diagnostics)
 
-        identify_spikes(obs_var, station.times, config_file, plots=plots, diagnostics=diagnostics)
+        identify_spikes(obs_var, station.times, config_dict, plots=plots, diagnostics=diagnostics)
 
     return  # sc
 

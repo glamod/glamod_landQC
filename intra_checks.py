@@ -27,6 +27,8 @@ import os
 import datetime as dt
 import numpy as np
 import pandas as pd
+import json
+from json.decoder import JSONDecodeError
 
 # internal utils
 import qc_utils as utils
@@ -76,14 +78,29 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
             print("Overwriting output for {}".format(station_id))
 
         startT = dt.datetime.now()
-        # set up config file to hold thresholds etc
-        config_file = os.path.join(setup.SUBDAILY_CONFIG_DIR, "{:11s}.config".format(station_id))
+
+
+        #*************************
+        # set up & store config file to hold thresholds etc
+        config_file_name = os.path.join(setup.SUBDAILY_CONFIG_DIR, "{:11s}.json".format(station_id))
         if full:
             try:
                 # recreating, so remove completely
-                os.remove(config_file)
-            except IOError:
-                pass
+                os.remove(config_file_name)
+                # JSON stores in dictionary, so create empty one
+                config_dict = {}
+            except FileNotFoundError:
+                config_dict = {}
+        else:
+            try:
+                with open(config_file_name , "r") as cfile:
+                    config_dict = json.load(cfile)
+            except FileNotFoundError:
+                config_dict = {}
+            except JSONDecodeError:
+                # empty file    
+                print("STOP - JSON error")
+                return
     
 
         #*************************
@@ -152,22 +169,22 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         if test in ["all", "odd_cluster"]:
             print("O", dt.datetime.now()-startT)
             # TODO - use suite config file to store all settings for tests
-            qc_tests.odd_cluster.occ(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed"], config_file, full=full, plots=plots, diagnostics=diagnostics)
+            qc_tests.odd_cluster.occ(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed"], config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "frequent"]:
             print("F", dt.datetime.now()-startT)
-            qc_tests.frequent.fvc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_file, full=full, plots=plots, diagnostics=diagnostics)
+            qc_tests.frequent.fvc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         # HadISD only runs on stations where latitude lower than 60(N/S)
         # Takes a long time, this one
         if test in ["all", "diurnal"]:
             print("U", dt.datetime.now()-startT)
             if np.abs(station.lat < 60):
-                qc_tests.diurnal.dcc(station, config_file, full=full, plots=plots, diagnostics=diagnostics)
+                qc_tests.diurnal.dcc(station, config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "distribution"]:
             print("D", dt.datetime.now()-startT)
-            qc_tests.distribution.dgc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_file, full=full, plots=plots, diagnostics=diagnostics)
+            qc_tests.distribution.dgc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "world_records"]:
             print("W", dt.datetime.now()-startT)
@@ -175,36 +192,36 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
 
         if test in ["all", "streaks"]:
             print("K", dt.datetime.now()-startT)
-            qc_tests.streaks.rsc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed", "wind_direction"], config_file, full=full, plots=plots, diagnostics=diagnostics)
+            qc_tests.streaks.rsc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed", "wind_direction"], config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         # not run on pressure data in HadISD.
         if test in ["all", "climatological"]:
             print("C", dt.datetime.now()-startT)
-            qc_tests.climatological.coc(station, ["temperature", "dew_point_temperature"], config_file, full=full, plots=plots, diagnostics=diagnostics)
+            qc_tests.climatological.coc(station, ["temperature", "dew_point_temperature"], config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "timestamp"]:
             print("T", dt.datetime.now()-startT)
-            qc_tests.timestamp.tsc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed"], config_file, full=full, plots=plots, diagnostics=diagnostics)
+            qc_tests.timestamp.tsc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed"], config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "spike"]:
             print("S", dt.datetime.now()-startT)
-            qc_tests.spike.sc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed"], config_file, full=full, plots=plots, diagnostics=diagnostics)
+            qc_tests.spike.sc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed"], config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "humidity"]:
             print("h", dt.datetime.now()-startT)
-            qc_tests.humidity.hcc(station, config_file, full=full, plots=plots, diagnostics=diagnostics)
+            qc_tests.humidity.hcc(station, config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "variance"]:
             print("V", dt.datetime.now()-startT)
-            qc_tests.variance.evc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed"], config_file, full=full, plots=plots, diagnostics=diagnostics)
+            qc_tests.variance.evc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed"], config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "pressure"]:
             print("P", dt.datetime.now()-startT)
-            qc_tests.pressure.pcc(station, config_file, full=full, plots=plots, diagnostics=diagnostics)
+            qc_tests.pressure.pcc(station, config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "winds"]:
             print("w", dt.datetime.now()-startT)
-            qc_tests.winds.wcc(station, config_file, fix=True, full=full, plots=plots, diagnostics=diagnostics)
+            qc_tests.winds.wcc(station, config_dict, fix=True, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "high_flag"]:
             print("H", dt.datetime.now()-startT)
@@ -213,6 +230,12 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
             hfr_vars_set = 0
 
         print(dt.datetime.now()-startT)
+
+        #*************************
+        # Save the config (overwriting)
+        with open(config_file_name , "w") as cfile:
+            json.dump(config_dict, cfile, indent=2)
+
 
         #*************************
         # Insert flags into Data Frame

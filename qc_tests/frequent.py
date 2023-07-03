@@ -15,13 +15,13 @@ BIN_WIDTH = 1.0
 RATIO = 0.5
 
 #************************************************************************
-def identify_values(obs_var, station, config_file, plots=False, diagnostics=False):
+def identify_values(obs_var, station, config_dict, plots=False, diagnostics=False):
     """
     Use distribution to identify frequent values.  Then also store in config file.
 
     :param MetVar obs_var: meteorological variable object
     :param Station station: station object
-    :param str config_file: configuration file to store critical values
+    :param str config_dict: configuration dictionary to store critical values
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
@@ -29,7 +29,9 @@ def identify_values(obs_var, station, config_file, plots=False, diagnostics=Fals
     # TODO - do we want to go down the road of allowing resolution (and hence test)
     #           to vary over the p-o-r?  I.e. 1C in early, to 0.5C to 0.1C in different decades?
 
-    utils.write_qc_config(config_file, "FREQUENT-{}".format(obs_var.name), "width", "{}".format(BIN_WIDTH), diagnostics=diagnostics)
+    # store bin width
+    CD_width = {"width" : "{}".format(BIN_WIDTH)}
+    config_dict["FREQUENT-{}".format(obs_var.name)] = CD_width
 
     for month in range(1, 13):
 
@@ -39,7 +41,7 @@ def identify_values(obs_var, station, config_file, plots=False, diagnostics=Fals
 
         if len(month_data.compressed()) < utils.DATA_COUNT_THRESHOLD:
             # insufficient data, so write out empty config and move on
-            utils.write_qc_config(config_file, "FREQUENT-{}".format(obs_var.name), "{}".format(month), "[{}]".format(",".join(str(s) for s in [])), diagnostics=diagnostics)
+            config_dict["FREQUENT-{}".format(obs_var.name)]["{}".format(month)] = []
             continue
 
         # adjust bin widths according to reporting accuracy
@@ -89,19 +91,19 @@ def identify_values(obs_var, station, config_file, plots=False, diagnostics=Fals
 
 
         # write out the thresholds...
-        utils.write_qc_config(config_file, "FREQUENT-{}".format(obs_var.name), "{}".format(month), "[{}]".format(",".join(str(s) for s in suspect)), diagnostics=diagnostics)
+        config_dict["FREQUENT-{}".format(obs_var.name)]["{}".format(month)] = suspect
 
     return # identify_values
 
 
 #************************************************************************
-def frequent_values(obs_var, station, config_file, plots=False, diagnostics=False):
+def frequent_values(obs_var, station, config_dict, plots=False, diagnostics=False):
     """
     Use config file to read frequent values.  Check each month to see if appear.
 
     :param MetVar obs_var: meteorological variable object
     :param Station station: station object
-    :param str config_file: configuration file to store critical values
+    :param str config_dict: configuration dictionary storing critical values
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
@@ -115,13 +117,13 @@ def frequent_values(obs_var, station, config_file, plots=False, diagnostics=Fals
 
         # read in bin-width and suspect bins for this month
         try:
-            width = float(utils.read_qc_config(config_file, "FREQUENT-{}".format(obs_var.name), "width"))
-            suspect_bins = utils.read_qc_config(config_file, "FREQUENT-{}".format(obs_var.name), "{}".format(month), islist=True)
+            width = float(config_dict["FREQUENT-{}".format(obs_var.name)]["width"])
+            suspect_bins = config_dict["FREQUENT-{}".format(obs_var.name)]["{}".format(month)]
         except KeyError:
-            print("Information missing in config file")
-            identify_values(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
-            width = float(utils.read_qc_config(config_file, "FREQUENT-{}".format(obs_var.name), "width"))
-            suspect_bins = utils.read_qc_config(config_file, "FREQUENT-{}".format(obs_var.name), "{}".format(month), islist=True)
+            print("Information missing in config dictionary")
+            identify_values(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
+            width = float(config_dict["FREQUENT-{}".format(obs_var.name)]["width"])
+            suspect_bins = config_dict["FREQUENT-{}".format(obs_var.name)]["{}".format(month)]
  
         # skip on if nothing to find
         if len(suspect_bins) == 0:
@@ -198,13 +200,13 @@ def frequent_values(obs_var, station, config_file, plots=False, diagnostics=Fals
     return # frequent_values
 
 #************************************************************************
-def fvc(station, var_list, config_file, full=False, plots=False, diagnostics=False):
+def fvc(station, var_list, config_dict, full=False, plots=False, diagnostics=False):
     """
     Run through the variables and pass to the Frequent Value Check
 
     :param Station station: Station Object for the station
     :param list var_list: list of variables to test
-    :param str configfile: string for configuration file
+    :param str config_dict: dictionary containing configuration info
     :param bool full: run a full update (recalculate thresholds)
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
@@ -221,9 +223,9 @@ def fvc(station, var_list, config_file, full=False, plots=False, diagnostics=Fal
 
         # Frequent Values
         if full:
-            identify_values(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
+            identify_values(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
 
-        frequent_values(obs_var, station, config_file, plots=fplots, diagnostics=diagnostics)
+        frequent_values(obs_var, station, config_dict, plots=fplots, diagnostics=diagnostics)
 
 
     return # fvc

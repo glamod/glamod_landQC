@@ -84,12 +84,12 @@ def logical_checks(speed, direction, fix=False, plots=False, diagnostics=False):
     return # logical_checks
 
 #************************************************************************
-def wcc(station, config_file, fix=False, full=False, plots=False, diagnostics=False):
+def wcc(station, config_dict, fix=False, full=False, plots=False, diagnostics=False):
     """
     Extract the variables and pass to the Wind Cross Checks
 
     :param Station station: Station Object for the station
-    :param str configfile: string for configuration file (unused here)
+    :param str config_dict: string for configuration file (unused here)
     :param bool fix: repair/amend values as a result of logical checks [False]
     :param bool full: run a full update (unused here)
     :param bool plots: turn on plots

@@ -76,12 +76,12 @@ def prepare_data_repeating_string(obs_var, plots=False, diagnostics=False):
     return repeated_string_lengths, grouped_diffs, strings # prepare_data_repeating_string
 
 #************************************************************************
-def get_repeating_string_threshold(obs_var, config_file, plots=False, diagnostics=False):
+def get_repeating_string_threshold(obs_var, config_dict, plots=False, diagnostics=False):
     """
     Use distribution to determine threshold values.  Then also store in config file.
 
     :param MetVar obs_var: meteorological variable object
-    :param str config_file: configuration file to store critical values
+    :param str config_dict: configuration dictionary to store critical values
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
@@ -103,16 +103,24 @@ def get_repeating_string_threshold(obs_var, config_file, plots=False, diagnostic
         threshold = utils.get_critical_values(repeated_string_lengths, binmin=2, binwidth=1.0, plots=plots, diagnostics=diagnostics, title=this_var.name.capitalize(), xlabel="Repeating string length")
 
         # write out the thresholds...
-        utils.write_qc_config(config_file, "STREAK-{}".format(this_var.name), "Straight", "{}".format(threshold), diagnostics=diagnostics)
+        try:
+            config_dict["STREAK-{}".format(this_var.name)]["Straight"] = int(threshold)
+        except KeyError:
+            CD_straight = {"Straight" : int(threshold)}
+            config_dict["STREAK-{}".format(this_var.name)] = CD_straight
 
     else:
         # store high value so threshold never reached
-        utils.write_qc_config(config_file, "STREAK-{}".format(this_var.name), "Straight", "{}".format(-utils.MDI), diagnostics=diagnostics)
+        try:
+            config_dict["STREAK-{}".format(this_var.name)]["Straight"] = utils.MDI
+        except KeyError:
+            CD_straight = {"Straight" : utils.MDI}
+            config_dict["STREAK-{}".format(this_var.name)] = CD_straight
 
-    return # repeating_string_threshold
+    return # get_repeating_string_threshold
 
 #************************************************************************
-def repeating_value(obs_var, times, config_file, plots=False, diagnostics=False):
+def repeating_value(obs_var, times, config_dict, plots=False, diagnostics=False):
     """
     AKA straight string
 
@@ -120,7 +128,7 @@ def repeating_value(obs_var, times, config_file, plots=False, diagnostics=False)
 
     :param MetVar obs_var: meteorological variable object
     :param array times: array of times (usually in minutes)
-    :param str config_file: configuration file to store critical values
+    :param str config_dict: configuration file to store critical values
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
@@ -139,14 +147,14 @@ def repeating_value(obs_var, times, config_file, plots=False, diagnostics=False)
     # retrieve the threshold and store in another dictionary
     threshold = {}
     try:
-        th = utils.read_qc_config(config_file, "STREAK-{}".format(this_var.name), "Straight")
-        threshold["Straight"] = float(th)
+        th = config_dict["STREAK-{}".format(this_var.name)]["Straight"]
+        threshold["Straight"] = th
     except KeyError:
         # no threshold set
         print("Threshold missing in config file")
-        get_repeating_string_threshold(this_var, config_file, plots=plots, diagnostics=diagnostics)
-        th = utils.read_qc_config(config_file, "STREAK-{}".format(this_var.name), "Straight")
-        threshold["Straight"] = float(th)
+        get_repeating_string_threshold(this_var, config_dict, plots=plots, diagnostics=diagnostics)
+        th = config_dict["STREAK-{}".format(this_var.name)]["Straight"]
+        threshold["Straight"] = th
 
     # only process further if there is enough data
     if len(this_var.data.compressed()) > 1:
@@ -207,13 +215,13 @@ def hourly_repeat():
 
 
 #************************************************************************
-def rsc(station, var_list, config_file, full=False, plots=False, diagnostics=False):
+def rsc(station, var_list, config_dict, full=False, plots=False, diagnostics=False):
     """
     Run through the variables and pass to the Repeating Streak Checks
 
     :param Station station: Station Object for the station
     :param list var_list: list of variables to test
-    :param str configfile: string for configuration file
+    :param str config_dict: dictionary for configuration settings
     :param bool full: run a full update (recalculate thresholds)
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
@@ -228,9 +236,9 @@ def rsc(station, var_list, config_file, full=False, plots=False, diagnostics=Fal
 
             # repeating (straight) strings
             if full:
-                get_repeating_string_threshold(obs_var, config_file, plots=plots, diagnostics=diagnostics)
+                get_repeating_string_threshold(obs_var, config_dict, plots=plots, diagnostics=diagnostics)
 
-            repeating_value(obs_var, station.times, config_file, plots=plots, diagnostics=diagnostics)
+            repeating_value(obs_var, station.times, config_dict, plots=plots, diagnostics=diagnostics)
 
             # more short strings than reasonable
             # excess_repeating_value()
@@ -240,7 +248,6 @@ def rsc(station, var_list, config_file, full=False, plots=False, diagnostics=Fal
 
             # repeats of whole day
             # day_repeat()
-
 
     return # rsc
 

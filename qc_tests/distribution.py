@@ -51,13 +51,13 @@ def prepare_monthly_data(obs_var, station, month, diagnostics=False):
 
 
 #************************************************************************
-def find_monthly_scaling(obs_var, station, config_file, diagnostics=False):
+def find_monthly_scaling(obs_var, station, config_dict, diagnostics=False):
     """
     Find scaling parameters for monthly values and store in config file
 
     :param MetVar obs_var: meteorological variable object
     :param Station station: station object
-    :param str config_file: configuration file to store critical values
+    :param str config_dict: configuration dictionary to store critical values
     :param bool diagnostics: turn on diagnostic output
     """
 
@@ -76,24 +76,32 @@ def find_monthly_scaling(obs_var, station, config_file, diagnostics=False):
                 spread = SPREAD_LIMIT
 
             # write out the scaling...
-            utils.write_qc_config(config_file, "MDISTRIBUTION-{}".format(obs_var.name), "{}-clim".format(month), "{}".format(climatology), diagnostics=diagnostics)
-            utils.write_qc_config(config_file, "MDISTRIBUTION-{}".format(obs_var.name), "{}-spread".format(month), "{}".format(spread), diagnostics=diagnostics)
+            try:
+                config_dict["MDISTRIBUTION-{}".format(obs_var.name)]["{}-clim".format(month)] = climatology
+            except KeyError:
+                CD_clim = {"{}-clim".format(month): climatology}
+                config_dict["MDISTRIBUTION-{}".format(obs_var.name)] = CD_clim
+            config_dict["MDISTRIBUTION-{}".format(obs_var.name)]["{}-spread".format(month)] = spread
 
         else:
-            utils.write_qc_config(config_file, "MDISTRIBUTION-{}".format(obs_var.name), "{}-clim".format(month), "{}".format(utils.MDI), diagnostics=diagnostics)
-            utils.write_qc_config(config_file, "MDISTRIBUTION-{}".format(obs_var.name), "{}-spread".format(month), "{}".format(utils.MDI), diagnostics=diagnostics)
+            try:
+                config_dict["MDISTRIBUTION-{}".format(obs_var.name)]["{}-clim".format(month)] = utils.MDI
+            except KeyError:
+                CD_clim = {"{}-clim".format(month): utils.MDI}
+                config_dict["MDISTRIBUTION-{}".format(obs_var.name)] = CD_clim
+            config_dict["MDISTRIBUTION-{}".format(obs_var.name)]["{}-spread".format(month)] = utils.MDI
 
 
     return # find_monthly_scaling
 
 #************************************************************************
-def monthly_gap(obs_var, station, config_file, plots=False, diagnostics=False):
+def monthly_gap(obs_var, station, config_dict, plots=False, diagnostics=False):
     """
     Use distribution to identify assymetries.
 
     :param MetVar obs_var: meteorological variable object
     :param Station station: station object
-    :param str config_file: configuration file to store critical values
+    :param str config_dict: configuration dictionary to store critical values
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
@@ -107,13 +115,13 @@ def monthly_gap(obs_var, station, config_file, plots=False, diagnostics=False):
 
         # read in the scaling
         try:
-            climatology = float(utils.read_qc_config(config_file, "MDISTRIBUTION-{}".format(obs_var.name), "{}-clim".format(month)))
-            spread = float(utils.read_qc_config(config_file, "MDISTRIBUTION-{}".format(obs_var.name), "{}-spread".format(month)))
+            climatology = float(config_dict["MDISTRIBUTION-{}".format(obs_var.name)]["{}-clim".format(month)])
+            spread = float(config_dict["MDISTRIBUTION-{}".format(obs_var.name)]["{}-spread".format(month)])
         except KeyError:
-            print("Information missing in config file")
-            find_monthly_scaling(obs_var, station, config_file, diagnostics=diagnostics)
-            climatology = float(utils.read_qc_config(config_file, "MDISTRIBUTION-{}".format(obs_var.name), "{}-clim".format(month)))
-            spread = float(utils.read_qc_config(config_file, "MDISTRIBUTION-{}".format(obs_var.name), "{}-spread".format(month)))
+            print("Information missing in config dictionary")
+            find_monthly_scaling(obs_var, station, config_dict, diagnostics=diagnostics)
+            climatology = float(config_dict["MDISTRIBUTION-{}".format(obs_var.name)]["{}-clim".format(month)])
+            spread = float(config_dict["MDISTRIBUTION-{}".format(obs_var.name)]["{}-spread".format(month)])
 
 
         if climatology == utils.MDI and spread == utils.MDI:
@@ -196,7 +204,7 @@ def monthly_gap(obs_var, station, config_file, plots=False, diagnostics=False):
     return # monthly_gap
 
 #************************************************************************
-def prepare_all_data(obs_var, station, month, config_file, full=False, diagnostics=False):
+def prepare_all_data(obs_var, station, month, config_dict, full=False, diagnostics=False):
     """
     Extract data for the month, make & store or read average and spread.
     Use to calculate normalised anomalies.
@@ -204,7 +212,7 @@ def prepare_all_data(obs_var, station, month, config_file, full=False, diagnosti
     :param MetVar obs_var: meteorological variable object
     :param Station station: station object
     :param int month: month to process
-    :param str config_file: configuration file to store critical values
+    :param str config_dict: configuration dictionary to store critical values
     :param bool diagnostics: turn on diagnostic output
     """
 
@@ -223,14 +231,18 @@ def prepare_all_data(obs_var, station, month, config_file, full=False, diagnosti
             spread = utils.MDI
 
         # write out the scaling...
-        utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-clim".format(month), "{}".format(climatology), diagnostics=diagnostics)
-        utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-spread".format(month), "{}".format(spread), diagnostics=diagnostics)
+        try:
+            config_dict["ADISTRIBUTION-{}".format(obs_var.name)]["{}-clim".format(month)] : climatology
+        except KeyError:
+            CD_clim = {"{}-clim".format(month) : climatology}
+            config_dict["ADISTRIBUTION-{}".format(obs_var.name)] = CD_clim
+        config_dict["ADISTRIBUTION-{}".format(obs_var.name)]["{}-spread".format(month)] = spread
 
     else:
 
         try:
-            climatology = float(utils.read_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-clim".format(month)))
-            spread = float(utils.read_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-spread".format(month)))
+            climatology = float(config_dict["ADISTRIBUTION-{}".format(obs_var.name)]["{}-clim".format(month)])
+            spread = float(config_dict["ADISTRIBUTION-{}".format(obs_var.name)]["{}-spread".format(month)])
         except KeyError:
 
             if len(all_month_data.compressed()) >= utils.DATA_COUNT_THRESHOLD:
@@ -241,10 +253,13 @@ def prepare_all_data(obs_var, station, month, config_file, full=False, diagnosti
                 climatology = utils.MDI
                 spread = utils.MDI
 
-             # write out the scaling...
-            utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-clim".format(month), "{}".format(climatology), diagnostics=diagnostics)
-            utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-spread".format(month), "{}".format(spread), diagnostics=diagnostics)
-
+            # write out the scaling...
+            try:
+                config_dict["ADISTRIBUTION-{}".format(obs_var.name)]["{}-clim".format(month)] = climatology
+            except KeyError:
+                CD_clim = {"{}-clim".format(month) : climatology}
+                config_dict["ADISTRIBUTION-{}".format(obs_var.name)] = CD_clim
+            config_dict["ADISTRIBUTION-{}".format(obs_var.name)]["{}-spread".format(month)] = spread
 
     if climatology == utils.MDI and spread == utils.MDI:
         # these weren't calculable, move on
@@ -256,31 +271,39 @@ def prepare_all_data(obs_var, station, month, config_file, full=False, diagnosti
         return (all_month_data - climatology)/spread  # prepare_all_data
 
 #************************************************************************
-def find_thresholds(obs_var, station, config_file, plots=False, diagnostics=False):
+def find_thresholds(obs_var, station, config_dict, plots=False, diagnostics=False):
     """
     Extract data for month and find thresholds in distribution and store.
 
     :param MetVar obs_var: meteorological variable object
     :param Station station: station object
     :param int month: month to process
-    :param str config_file: configuration file to store critical values
+    :param str config_dict: configuration file to store critical values
     :param bool diagnostics: turn on diagnostic output
     """
 
 
     for month in range(1, 13):
 
-        normalised_anomalies = prepare_all_data(obs_var, station, month, config_file, full=True, diagnostics=diagnostics)
+        normalised_anomalies = prepare_all_data(obs_var, station, month, config_dict, full=True, diagnostics=diagnostics)
 
         if len(normalised_anomalies.compressed()) == 1 and normalised_anomalies[0] == utils.MDI:
             # scaling not possible for this month
-            utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-uthresh".format(month), "{}".format(utils.MDI), diagnostics=diagnostics)
-            utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-lthresh".format(month), "{}".format(utils.MDI), diagnostics=diagnostics)
+            try:
+                config_dict["ADISTRIBUTION-{}".format(obs_var.name)]["{}-uthresh".format(month)] = utils.MDI
+            except KeyError:
+                CD_uthresh = {"{}-uthresh".format(month) : utils.MDI}
+                config_dict["ADISTRIBUTION-{}".format(obs_var.name)] = CD_uthresh
+            config_dict["ADISTRIBUTION-{}".format(obs_var.name)]["{}-lthresh".format(month)] = utils.MDI
             continue
         elif len(np.unique(normalised_anomalies)) == 1:
             # all the same value, so won't be able to fit a histogram
-            utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-uthresh".format(month), "{}".format(utils.MDI), diagnostics=diagnostics)
-            utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-lthresh".format(month), "{}".format(utils.MDI), diagnostics=diagnostics)
+            try:
+                config_dict["ADISTRIBUTION-{}".format(obs_var.name)]["{}-uthresh".format(month)] = utils.MDI
+            except KeyError:
+                CD_uthresh = {"{}-uthresh".format(month) : utils.MDI}
+                config_dict["ADISTRIBUTION-{}".format(obs_var.name)] = CD_uthresh
+            config_dict["ADISTRIBUTION-{}".format(obs_var.name)]["{}-lthresh".format(month)] = utils.MDI
             continue
 
         bins = utils.create_bins(normalised_anomalies, BIN_WIDTH, obs_var.name, anomalies=True)
@@ -327,8 +350,12 @@ def find_thresholds(obs_var, station, config_file, plots=False, diagnostics=Fals
             plt.axvline(lower_threshold, c="r")
             plt.show()
 
-        utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-uthresh".format(month), "{}".format(upper_threshold), diagnostics=diagnostics)
-        utils.write_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-lthresh".format(month), "{}".format(lower_threshold), diagnostics=diagnostics)
+        try:
+            config_dict["ADISTRIBUTION-{}".format(obs_var.name)]["{}-uthresh".format(month)] = upper_threshold
+        except KeyError:
+            CD_uthresh = {"{}-uthresh".format(month) : upper_threshold}
+            config_dict["ADISTRIBUTION-{}".format(obs_var.name)] = CD_uthresh
+        config_dict["ADISTRIBUTION-{}".format(obs_var.name)]["{}-lthresh".format(month)] = lower_threshold
 
     return # find_thresholds
 
@@ -348,13 +375,13 @@ def expand_around_storms(storms, maximum, pad=6):
     return np.unique(storms) # expand_around_storms
 
 #************************************************************************
-def all_obs_gap(obs_var, station, config_file, plots=False, diagnostics=False):
+def all_obs_gap(obs_var, station, config_dict, plots=False, diagnostics=False):
     """
     Extract data for month and find secondary populations in distribution.
 
     :param MetVar obs_var: meteorological variable object
     :param Station station: station object
-    :param str config_file: configuration file to store critical values
+    :param str config_dict: configuration dictionary to store critical values
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
@@ -363,7 +390,7 @@ def all_obs_gap(obs_var, station, config_file, plots=False, diagnostics=False):
 
     for month in range(1, 13):
 
-        normalised_anomalies = prepare_all_data(obs_var, station, month, config_file, full=False, diagnostics=diagnostics)
+        normalised_anomalies = prepare_all_data(obs_var, station, month, config_dict, full=False, diagnostics=diagnostics)
 
         if (len(normalised_anomalies.compressed()) == 1 and normalised_anomalies[0] == utils.MDI):
             # no data to work with for this month, move on.
@@ -373,13 +400,13 @@ def all_obs_gap(obs_var, station, config_file, plots=False, diagnostics=False):
         hist, bin_edges = np.histogram(normalised_anomalies, bins)
 
         try:
-            upper_threshold = float(utils.read_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-uthresh".format(month)))
-            lower_threshold = float(utils.read_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-lthresh".format(month)))
+            upper_threshold = float(config_dict["ADISTRIBUTION-{}".format(obs_var.name)]["{}-uthresh".format(month)])
+            lower_threshold = float(config_dict["ADISTRIBUTION-{}".format(obs_var.name)]["{}-lthresh".format(month)])
         except KeyError:
-            print("Information missing in config file")
-            find_thresholds(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
-            upper_threshold = float(utils.read_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-uthresh".format(month)))
-            lower_threshold = float(utils.read_qc_config(config_file, "ADISTRIBUTION-{}".format(obs_var.name), "{}-lthresh".format(month)))
+            print("Information missing in config dictionary")
+            find_thresholds(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
+            upper_threshold = float(config_dict["ADISTRIBUTION-{}".format(obs_var.name)]["{}-uthresh".format(month)])
+            lower_threshold = float(config_dict["ADISTRIBUTION-{}".format(obs_var.name)]["{}-lthresh".format(month)])
 
 
         if upper_threshold == utils.MDI and lower_threshold == utils.MDI:
@@ -523,13 +550,13 @@ def all_obs_gap(obs_var, station, config_file, plots=False, diagnostics=False):
     return # all_obs_gap
 
 #************************************************************************
-def dgc(station, var_list, config_file, full=False, plots=False, diagnostics=False):
+def dgc(station, var_list, config_dict, full=False, plots=False, diagnostics=False):
     """
     Run through the variables and pass to the Distributional Gap Checks
 
     :param Station station: Station Object for the station
     :param list var_list: list of variables to test
-    :param str configfile: string for configuration file
+    :param str config_dict: dictionary for configuration information
     :param bool full: run a full update (recalculate thresholds)
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
@@ -546,13 +573,13 @@ def dgc(station, var_list, config_file, full=False, plots=False, diagnostics=Fal
 
         # monthly gap
         if full:
-            find_monthly_scaling(obs_var, station, config_file, diagnostics=diagnostics)
-        monthly_gap(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
+            find_monthly_scaling(obs_var, station, config_dict, diagnostics=diagnostics)
+        monthly_gap(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
 
         # all observations gap
         if full:
-            find_thresholds(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
-        all_obs_gap(obs_var, station, config_file, plots=gplots, diagnostics=diagnostics)
+            find_thresholds(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
+        all_obs_gap(obs_var, station, config_dict, plots=gplots, diagnostics=diagnostics)
 
 
     return # dgc

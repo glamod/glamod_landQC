@@ -84,13 +84,13 @@ def prepare_data(obs_var, station, month, diagnostics=False, winsorize=True):
     return variances # prepare_data
 
 #************************************************************************
-def find_thresholds(obs_var, station, config_file, plots=False, diagnostics=False, winsorize=True):
+def find_thresholds(obs_var, station, config_dict, plots=False, diagnostics=False, winsorize=True):
     """
-    Use distribution to identify threshold values.  Then also store in config file.
+    Use distribution to identify threshold values.  Then also store in config dictionary.
 
     :param MetVar obs_var: meteorological variable object
     :param Station station: station object
-    :param str config_file: configuration file to store critical values
+    :param str config_dict: configuration dictionary to store critical values
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     :param bool winsorize: apply winsorization at 5%/95%
@@ -108,19 +108,24 @@ def find_thresholds(obs_var, station, config_file, plots=False, diagnostics=Fals
             average_variance = utils.MDI
             variance_spread = utils.MDI
 
-        utils.write_qc_config(config_file, "VARIANCE-{}".format(obs_var.name), "{}-average".format(month), "{}".format(average_variance), diagnostics=diagnostics)
-        utils.write_qc_config(config_file, "VARIANCE-{}".format(obs_var.name), "{}-spread".format(month), "{}".format(variance_spread), diagnostics=diagnostics)
+        try:
+            config_dict["VARIANCE-{}".format(obs_var.name)]["{}-average".format(month)] =  average_variance
+        except KeyError:
+            CD_average = {"{}-average".format(month) : average_variance}
+            config_dict["VARIANCE-{}".format(obs_var.name)] = CD_average
+            
+        config_dict["VARIANCE-{}".format(obs_var.name)]["{}-spread".format(month)] = variance_spread
 
     return # find_thresholds
 
 #************************************************************************
-def variance_check(obs_var, station, config_file, plots=False, diagnostics=False, winsorize=True):
+def variance_check(obs_var, station, config_dict, plots=False, diagnostics=False, winsorize=True):
     """
     Use distribution to identify threshold values.  Then also store in config file.
 
     :param MetVar obs_var: meteorological variable object
     :param Station station: station object
-    :param str config_file: configuration file to store critical values
+    :param str config_dict: configuration file to store critical values
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     :param bool winsorize: apply winsorization at 5%/95%
@@ -135,13 +140,13 @@ def variance_check(obs_var, station, config_file, plots=False, diagnostics=False
         variances = prepare_data(obs_var, station, month, diagnostics=diagnostics, winsorize=winsorize)
 
         try:
-            average_variance = float(utils.read_qc_config(config_file, "VARIANCE-{}".format(obs_var.name), "{}-average".format(month)))
-            variance_spread = float(utils.read_qc_config(config_file, "VARIANCE-{}".format(obs_var.name), "{}-spread".format(month)))
+            average_variance = float(config_dict["VARIANCE-{}".format(obs_var.name)]["{}-average".format(month)])
+            variance_spread = float(config_dict["VARIANCE-{}".format(obs_var.name)]["{}-spread".format(month)])
         except KeyError:
-            print("Information missing in config file")
-            find_thresholds(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
-            average_variance = float(utils.read_qc_config(config_file, "VARIANCE-{}".format(obs_var.name), "{}-average".format(month)))
-            variance_spread = float(utils.read_qc_config(config_file, "VARIANCE-{}".format(obs_var.name), "{}-spread".format(month)))
+            print("Information missing in config dictionary")
+            find_thresholds(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
+            average_variance = float(config_dict["VARIANCE-{}".format(obs_var.name)]["{}-average".format(month)])
+            variance_spread = float(config_dict["VARIANCE-{}".format(obs_var.name)]["{}-spread".format(month)])
 
 
         if average_variance == utils.MDI and variance_spread == utils.MDI:
@@ -277,13 +282,13 @@ def variance_check(obs_var, station, config_file, plots=False, diagnostics=False
     return # variance_check
 
 #************************************************************************
-def evc(station, var_list, config_file, full=False, plots=False, diagnostics=False):
+def evc(station, var_list, config_dict, full=False, plots=False, diagnostics=False):
     """
     Run through the variables and pass to the Excess Variance Check
 
     :param Station station: Station Object for the station
     :param list var_list: list of variables to test
-    :param str configfile: string for configuration file
+    :param str config_dict: dictionary for configuration settings
     :param bool full: run a full update (recalculate thresholds)
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
@@ -294,8 +299,8 @@ def evc(station, var_list, config_file, full=False, plots=False, diagnostics=Fal
         obs_var = getattr(station, var)
 
         if full:
-            find_thresholds(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
-        variance_check(obs_var, station, config_file, plots=plots, diagnostics=diagnostics)
+            find_thresholds(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
+        variance_check(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
 
 
     return # evc
