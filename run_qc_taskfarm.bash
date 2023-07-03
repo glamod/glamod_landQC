@@ -201,6 +201,12 @@ if [ ${n_missing} -ne 0 ]; then
     if [ "${run_kay}" == "N" ]; then
         exit
     fi
+else
+    read -p "All upstream files present - do you want to run the job Y/N? " run_kay
+    if [ "${run_kay}" == "N" ]; then
+        exit
+    fi
+
 fi
 
 #**************************************
