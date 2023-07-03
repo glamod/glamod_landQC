@@ -226,9 +226,9 @@ do
 		submit=true
             fi
 	elif [ "${STAGE}" == "N" ]; then
-            if [ -f "${ROOTDIR}${PROC}${VERSION}${stn}.qff" ]; then
+            if [ -f "${ROOTDIR}${PROC}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
 		submit=true
-            elif [ -f "${ROOTDIR}${QFF}${VERSION}bad_stations/${stn}.qff" ]; then
+            elif [ -f "${ROOTDIR}${QFF}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
 		# if station not processed, then no point submitting
 		submit=false
             elif [ -f "${ROOTDIR}${ERR}${VERSION}${stn}.err" ]; then
@@ -285,11 +285,11 @@ do
             # check if already processed before setting going
             if [ "${STAGE}" == "I" ]; then
 
-                if [ -f "${ROOTDIR}${PROC}${VERSION}${stn}.qff" ]; then
+                if [ -f "${ROOTDIR}${PROC}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
                     # output exists
                     echo "${stn} already processed"
 
-                elif [ -f "${ROOTDIR}${QFF}${VERSION}bad_stations/${stn}.qff" ]; then
+                elif [ -f "${ROOTDIR}${QFF}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
                     # output exists
                     echo "${stn} already processed - bad station"
 
@@ -304,11 +304,11 @@ do
  
             elif [ "${STAGE}" == "N" ]; then
 
-                if [ -f "${ROOTDIR}${QFF}${VERSION}${stn}.qff" ]; then
+                if [ -f "${ROOTDIR}${QFF}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
                     # output exists
                     echo "${stn} already processed"
 
-                elif [ -f "${ROOTDIR}${QFF}${VERSION}bad_stations/${stn}.qff" ]; then
+                elif [ -f "${ROOTDIR}${QFF}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
                     # output exists
                     echo "${stn} already processed - bad station"
 

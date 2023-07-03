@@ -30,6 +30,7 @@ MFF=$(grep "mff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
 MFF_VER=$(grep "mff_version " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
 PROC=$(grep "proc " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
 QFF=$(grep "qff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
+QFF_ZIP="$(grep "out_compression " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 VERSION=$(grep "version " "${CONFIG_FILE}" | grep -v "${MFF_VER}" | awk -F'= ' '{print $2}')
 ERR=${QFF%/}_errors/
 
@@ -63,10 +64,10 @@ do
     error_dir=${ROOTDIR}${ERR}${VERSION}
 
     if [ "${STAGE}" == "I" ]; then
-        if [ -f "${ROOTDIR}${PROC}${VERSION}${stn}.qff" ]; then
+        if [ -f "${ROOTDIR}${PROC}${VERSION}${stn}${QFF_ZIP}" ]; then
             # internal checks completed
             let processed=processed+1
-        elif [ -f "${ROOTDIR}${QFF}${VERSION}bad_stations/${stn}.qff" ]; then
+        elif [ -f "${ROOTDIR}${QFF}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
             # internal checks led to station being withheld
             let withheld=withheld+1
         elif [ -f "${ROOTDIR}${ERR}${VERSION}${stn}.err" ]; then
@@ -79,10 +80,10 @@ do
         fi
 
     elif [ "${STAGE}" == "N" ]; then
-        if [ -f "${ROOTDIR}${QFF}${VERSION}${stn}.qff" ]; then
+        if [ -f "${ROOTDIR}${QFF}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
             # external checks completed
             let processed=processed+1
-        elif [ -f "${ROOTDIR}${QFF}${VERSION}bad_stations/${stn}.qff" ]; then
+        elif [ -f "${ROOTDIR}${QFF}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
             # internal checks led to station being withheld
             let withheld=withheld+1
         elif [ -f "${ROOTDIR}${ERR}${VERSION}${stn}.err" ]; then
