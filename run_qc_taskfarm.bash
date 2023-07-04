@@ -124,6 +124,7 @@ MFF="$(grep "mff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 MFF_VER="$(grep "mff_version " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 PROC="$(grep "proc " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 QFF="$(grep "qff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
+QFF_ZIP="$(grep "out_compression " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 VERSION="$(grep "version " "${CONFIG_FILE}" | grep -v "${MFF_VER}" | awk -F'= ' '{print $2}')"
 ERR=${QFF%/}_errors/
 
@@ -166,10 +167,10 @@ do
             processed=true
         fi
     elif [ "${STAGE}" == "N" ]; then
-        if [ -f "${ROOTDIR}${PROC}${VERSION}${stn}.qff" ]; then
+        if [ -f "${ROOTDIR}${PROC}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
             processed=true
-        elif [ -f "${ROOTDIR}${QFF}${VERSION}bad_stations/${stn}.qff" ]; then
-            # if station not processed, then has been processed, and won't appear
+        elif [ -f "${ROOTDIR}${QFF}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
+            # if station not processed/withheld, then has been processed, and won't appear
             processed=true
         elif [ -f "${ROOTDIR}${ERR}${VERSION}${stn}.err" ]; then
             # if station has had an error, then has been processed, and won't appear
@@ -183,6 +184,16 @@ do
 
 done
 
+if [ "${STAGE}" == "N" ]; then
+    echo "${ROOTDIR}${PROC}${VERSION}*.qff${QFF_ZIP}"
+    n_processed_successfully=$(eval ls "${ROOTDIR}${PROC}${VERSION}" | wc -l)
+    echo "Internal checks successful on ${n_processed_successfully} stations"
+    n_processed_bad=$(eval ls "${ROOTDIR}${QFF}${VERSION}bad_stations/*.qff${QFF_ZIP}" | wc -l)
+    echo "Internal checks withheld ${n_processed_bad} stations"
+    n_processed_err=$(eval ls "${ROOTDIR}${ERR}${VERSION}/*err" | wc -l)
+    echo "Internal checks had errors on ${n_processed_err} stations"
+fi
+
 echo "Checked for all input files - see missing.txt"
 n_missing=`wc ${missing_file} | awk -F' ' '{print $1}'`
 if [ ${n_missing} -ne 0 ]; then
@@ -190,6 +201,12 @@ if [ ${n_missing} -ne 0 ]; then
     if [ "${run_kay}" == "N" ]; then
         exit
     fi
+else
+    read -p "All upstream files present - do you want to run the job Y/N? " run_kay
+    if [ "${run_kay}" == "N" ]; then
+        exit
+    fi
+
 fi
 
 #**************************************
@@ -215,9 +232,9 @@ do
 		submit=true
             fi
 	elif [ "${STAGE}" == "N" ]; then
-            if [ -f "${ROOTDIR}${PROC}${VERSION}${stn}.qff" ]; then
+            if [ -f "${ROOTDIR}${PROC}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
 		submit=true
-            elif [ -f "${ROOTDIR}${QFF}${VERSION}bad_stations/${stn}.qff" ]; then
+            elif [ -f "${ROOTDIR}${QFF}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
 		# if station not processed, then no point submitting
 		submit=false
             elif [ -f "${ROOTDIR}${ERR}${VERSION}${stn}.err" ]; then
@@ -274,11 +291,11 @@ do
             # check if already processed before setting going
             if [ "${STAGE}" == "I" ]; then
 
-                if [ -f "${ROOTDIR}${PROC}${VERSION}${stn}.qff" ]; then
+                if [ -f "${ROOTDIR}${PROC}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
                     # output exists
                     echo "${stn} already processed"
 
-                elif [ -f "${ROOTDIR}${QFF}${VERSION}bad_stations/${stn}.qff" ]; then
+                elif [ -f "${ROOTDIR}${QFF}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
                     # output exists
                     echo "${stn} already processed - bad station"
 
@@ -293,11 +310,11 @@ do
  
             elif [ "${STAGE}" == "N" ]; then
 
-                if [ -f "${ROOTDIR}${QFF}${VERSION}${stn}.qff" ]; then
+                if [ -f "${ROOTDIR}${QFF}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
                     # output exists
                     echo "${stn} already processed"
 
-                elif [ -f "${ROOTDIR}${QFF}${VERSION}bad_stations/${stn}.qff" ]; then
+                elif [ -f "${ROOTDIR}${QFF}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
                     # output exists
                     echo "${stn} already processed - bad station"
 
