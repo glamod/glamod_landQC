@@ -34,6 +34,12 @@
 	 "sky_cover_13_baseht",
 	 "precipitation_3_hour",
 	 "precipitation_6_hour",
+	 "precipitation_9_hour",
+	 "precipitation_12_hour",
+	 "precipitation_15_hour",
+	 "precipitation_18_hour",
+	 "precipitation_21_hour",
+	 "precipitation_24_hour",
 	 "remarks"
       ]
    }
