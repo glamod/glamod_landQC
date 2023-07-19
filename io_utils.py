@@ -92,16 +92,9 @@ def read_station(stationfile, station, read_flags=False):
                     raise ValueError("Bad date - {}-{}-{}".format(yy, month[y], day[y]))
 
     # explicitly remove any missing data indicators - wind direction only
-    try:
-        # "C-Calm" and 999 should be co-set
-        mc_locs, = np.where(station_df["wind_direction_Measurement_Code"] == "C-Calm")
-        obs_locs, = np.where(station_df["wind_direction"] == 0)
-        np.testing.assert_array_equal(mc_locs, obs_locs)
-        station_df['wind_direction'] = station_df['wind_direction'].replace(999, np.nan, inplace=True)
-    except AssertionError:
-        # if they are not, then need to merge locations
-        combined = (station_df["wind_direction_Measurement_Code"] == "C-Calm") & (station_df["wind_direction"] == 999)
-        station_df.loc[combined, "wind_direction"] = np.nan
+    combined_mask = (station_df["wind_direction_Measurement_Code"] == "C-Calm") &\
+                    (station_df["wind_direction"] == 999)
+    station_df.loc[combined, "wind_direction"] = np.nan
 
     # convert dataframe to station and MetVar objects for internal processing
     populate_station(station, station_df, setup.obs_var_list, read_flags=read_flags)
