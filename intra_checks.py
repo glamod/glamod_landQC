@@ -221,7 +221,8 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
 
         if test in ["all", "winds"]:
             print("w", dt.datetime.now()-startT)
-            qc_tests.winds.wcc(station, config_dict, fix=True, full=full, plots=plots, diagnostics=diagnostics)
+            qc_tests.winds.wcc(station, config_dict, fix=False, full=full, plots=plots, diagnostics=diagnostics)
+            # NOTE: fix only applies to obs_var within station, not to dataframe. Need to copy over if used.
 
         if test in ["all", "high_flag"]:
             print("H", dt.datetime.now()-startT)
@@ -271,6 +272,10 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         for var in setup.obs_var_list:
             obs_var = getattr(station, var)
             station_df["{}_QC_flag".format(var)] = obs_var.flags
+
+
+        # Some wind direction information is "fixed" to match DeGeatano conventions
+        # TODO - move from obs_var into station_df if we decide to
        
 
         #*************************
