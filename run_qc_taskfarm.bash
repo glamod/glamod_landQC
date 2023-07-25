@@ -65,9 +65,14 @@ function write_kay_script {
     echo "#SBATCH --mail-user=robert.dunn@metoffice.gov.uk" >> ${kay_script}
     echo "#SBATCH --mail-type=BEGIN,END" >> ${kay_script}
     echo "" >> ${kay_script}
-    # TODO sort python environment
+#    # TODO sort python environment
+#    echo "# activate python environment" >> ${kay_script}
+#    echo "source ${VENVDIR}/bin/activate" >> ${kay_script}
+    # TODO check that CONDA works
     echo "# activate python environment" >> ${kay_script}
-    echo "source ${VENVDIR}/bin/activate" >> ${kay_script}
+    echo "module load conda" >> ${kay_script}
+    echo "source activate glamod_QC" >> ${kay_script}
+    
     echo "" >> ${kay_script}
     echo "# go to scripts and set taskfarm running" >> ${kay_script}
     echo "cd ${SCRIPT_DIR}" >> ${kay_script}
