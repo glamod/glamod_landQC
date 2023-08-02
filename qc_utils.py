@@ -138,8 +138,9 @@ def get_station_list(restart_id="", end_id=""):
     """
 
     # process the station list
-    station_list = pd.read_fwf(setup.STATION_LIST, widths=(11, 9, 10, 7, 35), 
-                               header=None, names=("id", "latitude", "longitude", "elevation", "name"))
+    station_list = pd.read_fwf(setup.STATION_LIST, widths=(11, 9, 10, 7, 3, 40, 5), 
+                               header=None, names=("id", "latitude", "longitude", "elevation", "state",
+                                                   "name", "wmo"))
 
     # no longer necessary in November 2019 run, kept just in case
 #    station_list2 = pd.read_fwf(os.path.join(setup.SUBDAILY_ROOT_DIR, "ghcnh-stations-2add.txt"), widths=(11, 9, 10, 7, 35), header=None)
@@ -157,7 +158,7 @@ def get_station_list(restart_id="", end_id=""):
         startindex, = np.where(station_IDs == restart_id)
         station_list = station_list.iloc[startindex[0]:]
 
-    return station_list.reset_index() # get_station_list
+    return station_list.reset_index(drop=True) # get_station_list
 
 
 #************************************************************************
@@ -181,12 +182,12 @@ def populate_station(station, df, obs_var_list, read_flags=False):
 
     :param bool read_flags: read in already pre-existing flags
     """
-    
+
     for variable in obs_var_list:
 
         # make a variable
         this_var = Meteorological_Variable(variable, MDI, UNIT_DICT[variable], (float))
-    
+
         # store the data
 #        this_var.data = df[variable].to_numpy()
         indata = df[variable].fillna(MDI).to_numpy()
@@ -200,7 +201,7 @@ def populate_station(station, df, obs_var_list, read_flags=False):
             else:
                 # False
                 this_var.data.mask = np.zeros(this_var.data.shape)
-            
+
         this_var.data.fill_value = MDI
 
         if read_flags:

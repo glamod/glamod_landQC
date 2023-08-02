@@ -76,9 +76,14 @@ SUBDAILY_ERROR_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "errors"), DATES
 if not os.path.exists(SUBDAILY_ERROR_DIR):
     os.makedirs(SUBDAILY_ERROR_DIR)
 
+SUBDAILY_METADATA_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "metadata"), DATESTAMP)
+if not os.path.exists(SUBDAILY_METADATA_DIR):
+    os.makedirs(SUBDAILY_METADATA_DIR)
 
 # name of station list
 STATION_LIST = config.get("FILES", "station_list")
+STATION_FULL_LIST = config.get("FILES", "station_full_list")
+INVENTORY = config.get("FILES", "inventory")
 
 IN_COMPRESSION = config.get("FILES", "in_compression")
 if IN_COMPRESSION == "None":
