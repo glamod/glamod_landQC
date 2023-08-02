@@ -5,7 +5,6 @@
 #*********************************************
 import os
 import numpy as np
-import pandas as pd
 import datetime as dt
 
 import setup
@@ -43,7 +42,7 @@ def main():
             station, station_df = ioutils.read_station(os.path.join(setup.SUBDAILY_OUT_DIR, "{:11s}.{}{}".format(station_id, "qff", setup.IN_COMPRESSION)), station)
         except OSError as e:
             # file missing, move on to next in sequence
-            print(f"{station}, File Missing")
+            print(f"{station}, File Missing, {str(e)}")
             continue
         except ValueError as e:
             # some issue in the raw file

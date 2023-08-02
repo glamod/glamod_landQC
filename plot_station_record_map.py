@@ -73,9 +73,9 @@ def main():
     scat = ax.scatter(lons, lats, transform=ccrs.PlateCarree(), s=1, c=length,
                cmap = plt.cm.viridis, norm=mpl.colors.Normalize(vmin=0, vmax=100))
 
-    cb = plt.colorbar(scat, orientation="horizontal", label="Years of record",
-                      extend="max", ticks=np.arange(0, 110, 10),
-                      pad=0.06, aspect=30, fraction=0.05)
+    plt.colorbar(scat, orientation="horizontal", label="Years of record",
+                 extend="max", ticks=np.arange(0, 110, 10),
+                 pad=0.06, aspect=30, fraction=0.05)
 
 
     plt.savefig(os.path.join(setup.SUBDAILY_IMAGE_DIR, "station_map_record_length.png"))

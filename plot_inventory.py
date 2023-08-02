@@ -3,7 +3,6 @@
 
 import os
 import datetime as dt
-import argparse
 import numpy as np
 import pandas as pd
 import matplotlib as mpl
@@ -36,8 +35,6 @@ def read_stations():
     :returns: list of station objects
     """
 
-    fieldwidths = (7, 6, 30, 5, 3, 5, 8, 9, 8, 9, 9)
-
     all_stations = []
 
     try:
@@ -64,13 +61,13 @@ def read_stations():
 
 
     except OSError:
-        print("{:s} does not exist.  Check download".format(GHCNH_LISTING))
+        print("{:s} does not exist.".format(setup.STATION_LIST))
         raise OSError
     
     print("{} stations in full GHCNH".format(len(station_IDs)))
 
     print("{} stations with defined metadata".format(len(all_stations)))
-  
+    
     return np.array(all_stations) # read_stations
 
 
@@ -182,9 +179,9 @@ def process_inventory(candidate_stations, data_start, data_end):
     ax1 = plt.axes([0.1, 0.02, 0.84, 0.95])
     plt.pcolormesh(years, station_counter, all_counts, cmap=plt.cm.viridis,
                    norm=mpl.colors.Normalize(vmin=0, vmax=1000))
-    cb = plt.colorbar(orientation="horizontal", label="Monthly obs counts",
-                      extend="max", ticks=np.arange(0, 1100, 100),
-                      pad=0.02, aspect=30, fraction=0.02)
+    plt.colorbar(orientation="horizontal", label="Monthly obs counts",
+                 extend="max", ticks=np.arange(0, 1100, 100),
+                 pad=0.02, aspect=30, fraction=0.02)
     
     plt.ylabel("Station sequence number")
 
