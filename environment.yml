@@ -136,5 +136,4 @@ dependencies:
     - wheel==0.38.4
     - xxhash==2.0.2
     - zipp==3.11.0
-prefix: /ichec/home/users/rdunn/.conda/envs/glamod_QC
 
