@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 
 
 import setup
+import qc_utils as utils
 
 # what is available
 START_YEAR = 1800
@@ -22,25 +23,7 @@ DAYS_IN_AVERAGE_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
 TODAY = dt.datetime.strftime(dt.datetime.now(), "%Y%m%d")
 
-#*********************************************
-class Station(object):
-    """
-    Class for station
 
-    At bare minimum contains .id .lat .lon .elev attributes, set in that order
-    """
-    
-    def __init__(self, stn_id, lat, lon, elev):
-        self.sid = stn_id
-        self.lat = lat
-        self.lon = lon
-        self.elev = elev
-        
-    def __str__(self):
-        return "station {}, lat {}, lon {}, elevation {}".format(self.sid, self.lat, self.lon, self.elev)
-    
-    __repr__ = __str__
- 
 #*********************************************
 def read_stations():
     """
@@ -60,13 +43,13 @@ def read_stations():
     try:
         # process the station list
         station_list = pd.read_fwf(setup.STATION_LIST, widths=(11, 9, 10, 7, 3, 40, 5), 
-                               header=None, names=("sid", "latitude", "longitude", "elevation", "state", "name", "wmo"))
+                               header=None, names=("id", "latitude", "longitude", "elevation", "state", "name", "wmo"))
 
-        station_IDs = station_list.sid
+        station_IDs = station_list.id
         for st, station_id in enumerate(station_IDs):
             # print("{} {:11s} ({}/{})".format(dt.datetime.now(), station_id, st+1, station_IDs.shape[0]))
 
-            station = Station(station_id, station_list.latitude[st], station_list.longitude[st],
+            station = utils.Station(station_id, station_list.latitude[st], station_list.longitude[st],
                                     station_list.elevation[st])
  
             if station.lat != "" and station.lon != "" and station.elev != "" and float(station.elev) != -999.9:
@@ -107,7 +90,7 @@ def extract_inventory(station, inventory, data_start, data_end, do_mergers=True)
     monthly_obs = np.zeros([END_YEAR - START_YEAR + 1, 12])
 
     # are WMO IDs sufficient?
-    locs, = np.where(inventory[:, 0] == station.sid)
+    locs, = np.where(inventory[:, 0] == station.id)
 
     if len(locs) == 0:
         return []
@@ -171,9 +154,9 @@ def process_inventory(candidate_stations, data_start, data_end):
     for s, station in enumerate(candidate_stations):
         # print("{}/{}".format(s, len(candidate_stations)))
 
-        if station.sid[0] != last_station:
-            name_labels += [[station.sid[0], f"{s}"]]
-            last_station = station.sid[0]
+        if station.id[0] != last_station:
+            name_labels += [[station.id[0], f"{s}"]]
+            last_station = station.id[0]
             print(last_station)
 
         # extract the observations in each month for this station

@@ -17,7 +17,7 @@ import cartopy.feature as cfeature
 import setup
 
 #*********************************************
-def get_station_list():
+def get_full_station_list():
     """
     Read in station list file(s) and return dataframe
 
@@ -26,12 +26,11 @@ def get_station_list():
 
     # process the station list
     station_list = pd.read_fwf(os.path.join(setup.SUBDAILY_METADATA_DIR, setup.STATION_FULL_LIST),
-                               widths=(11, 9, 10, 7, 3, 41, 5, 11, 9), 
+                               widths=(11, 9, 10, 7, 3, 40, 7, 9, 9), 
                                header=None, names=("id", "latitude", "longitude", "elevation",
                                                    "state", "name", "wmo", "begins", "ends"))
 
     return station_list
-
 
 # ------------------------------------------------------------------------
 # process the station list
@@ -42,7 +41,7 @@ def main():
     """
     
     # read in the station list
-    station_list = get_station_list()
+    station_list = get_full_station_list()
 
     length = np.zeros(station_list.shape[0])
     lats = station_list.latitude
