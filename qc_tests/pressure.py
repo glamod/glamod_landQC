@@ -17,16 +17,14 @@ MIN_SPREAD = 1.0
 MAX_SPREAD = 5.0
 
 #*********************************************
-def plot_pressure(sealp, stnlp, times, bad):
+def plot_pressure_timeseries(sealp, stnlp, times, bad):
     '''
-    Plot each observation of SSS or DPD against surrounding data
+    Plot each observation of SLP or StnLP against surrounding data
 
     :param MetVar sealp: sea level pressure object
     :param MetVar stnlp: station level pressure object
     :param array times: datetime array
-    :param int bad: the location of SSS or DPD
-
-    :returns:
+    :param int bad: the location of SLP or StnLP
     '''
     import matplotlib.pyplot as plt
 
@@ -39,8 +37,10 @@ def plot_pressure(sealp, stnlp, times, bad):
 
     # simple plot
     plt.clf()
-    plt.plot(times[pad_start : pad_end], sealp.data[pad_start : pad_end], 'k-', marker=".", label=sealp.name.capitalize())
-    plt.plot(times[pad_start : pad_end], stnlp.data[pad_start : pad_end], 'b-', marker=".", label=stnlp.name.capitalize())
+    plt.plot(times[pad_start : pad_end], sealp.data[pad_start : pad_end], 'k-',
+             marker=".", label=sealp.name.capitalize())
+    plt.plot(times[pad_start : pad_end], stnlp.data[pad_start : pad_end], 'b-',
+             marker=".", label=stnlp.name.capitalize())
     plt.plot(times[bad], sealp.data[bad], 'r*', ms=10)
     plt.plot(times[bad], stnlp.data[bad], 'r*', ms=10)
 
@@ -49,7 +49,33 @@ def plot_pressure(sealp, stnlp, times, bad):
 
     plt.show()
 
-    return # plot_pressure
+    return # plot_pressure_timeseries
+
+
+#*********************************************
+def plot_pressure_distribution(difference, vlines=[-1, 1]):
+    '''
+    Plot distribution and include the upper and lower thresholds
+
+    :param array difference: values to form histogram from 
+    :param list vlines: lower and upper locations for vertical lines
+    '''
+    import matplotlib.pyplot as plt
+
+    bins = np.arange(np.round(difference.min())-1,
+                     np.round(difference.max())+1, 0.1)
+
+    plt.clf()
+    plt.hist(difference.compressed(), bins=bins)
+    plt.axvline(x=vlines[0], ls="--", c="r")
+    plt.axvline(x=vlines[1], ls="--", c="r")
+    plt.xlim([bins[0] - 1, bins[-1] + 1])
+    plt.ylabel("Observations")
+    plt.xlabel("Difference (hPa)")
+    plt.show()
+
+    return # plot_pressure_distribution
+
 
 #************************************************************************
 def identify_values(sealp, stnlp, times, config_dict, plots=False, diagnostics=False):
@@ -78,6 +104,7 @@ def identify_values(sealp, stnlp, times, config_dict, plots=False, diagnostics=F
         try:
             config_dict["PRESSURE"]["average"] = average
         except KeyError:
+            # Make new entry for Pressure
             CD_average = {"average" : average}
             config_dict["PRESSURE"] = CD_average
             
@@ -127,25 +154,17 @@ def pressure_offset(sealp, stnlp, times, config_dict, plots=False, diagnostics=F
 
             # diagnostic plots
             if plots:
-                bins = np.arange(np.round(difference.min())-1, np.round(difference.max())+1, 0.1)
-                import matplotlib.pyplot as plt
-                plt.clf()
-                plt.hist(difference.compressed(), bins=bins)
-                plt.axvline(x=(average + (THRESHOLD*spread)), ls="--", c="r")
-                plt.axvline(x=(average - (THRESHOLD*spread)), ls="--", c="r")
-                plt.xlim([bins[0] - 1, bins[-1] + 1])
-                plt.ylabel("Observations")
-                plt.xlabel("Difference (hPa)")
-                plt.show()
+                plot_pressure_distribution(difference, [(average + (THRESHOLD*spread)),
+                                                        (average - (THRESHOLD*spread))])
 
             if len(high) != 0:
                 flags[high] = "p"
                 if diagnostics:
-                    print("Pressure".format(stnlp.name))
+                    print("Pressure {}".format(stnlp.name))
                     print("   Number of high differences {}".format(len(high)))
                 if plots:
                     for bad in high:
-                        plot_pressure(sealp, stnlp, times, bad)
+                        plot_pressure_timeseries(sealp, stnlp, times, bad)
 
             if len(low) != 0:
                 flags[low] = "p"
@@ -153,14 +172,13 @@ def pressure_offset(sealp, stnlp, times, config_dict, plots=False, diagnostics=F
                     print("   Number of low differences {}".format(len(low)))
                 if plots:
                     for bad in low:
-                        plot_pressure(sealp, stnlp, times, bad)
+                        plot_pressure_timeseries(sealp, stnlp, times, bad)
 
 
             # only flag the station level pressure
             stnlp.flags = utils.insert_flags(stnlp.flags, flags)
 
     if diagnostics:
-
         print("Pressure {}".format(stnlp.name))
         print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
 
@@ -171,6 +189,12 @@ def calc_slp(stnlp, elevation, temperature):
     '''
     Suggestion from Scott Stevens to calculate the SLP from the StnLP
     Presumes 15C if no temperature available
+
+    Formula from https://keisan.casio.com/keisan/image/Convertpressure.pdf
+
+    :param array stnlp: station level pressure data
+    :param float elevation: station elevation
+    :param array temperature: temperature data
     '''
     filled_temperature = np.ma.copy(temperature)
 
@@ -184,6 +208,18 @@ def calc_slp(stnlp, elevation, temperature):
     sealp = stnlp * (factor ** -5.257)    
 
     return sealp # calc_slp
+
+
+#************************************************************************
+def adjust_preexisting_locs(var, flags):
+    # may have flags already set by previous part of test
+    # find these locations, and adjust new flags to these aren't added again
+    pre_exist = [i for i,item in enumerate(var.flags) if "p" in item]
+    new_flags = flags[:]
+    new_flags[pre_exist] = ""
+
+    return new_flags # adjust_preexisting_locs
+
 
 #************************************************************************
 def pressure_theory(sealp, stnlp, temperature, times, elevation, plots=False, diagnostics=False):
@@ -210,35 +246,18 @@ def pressure_theory(sealp, stnlp, temperature, times, elevation, plots=False, di
 
     # diagnostic plots
     if plots:
-        bins = np.arange(np.round(np.ma.min(difference))-1, np.round(np.ma.max(difference))+1, 0.1)
-        import matplotlib.pyplot as plt
-        plt.clf()
-        plt.hist(difference.compressed(), bins=bins)
-        plt.axvline(x=THEORY_THRESHOLD, ls="--", c="r")
-        plt.axvline(x=-THEORY_THRESHOLD, ls="--", c="r")
-        plt.xlim([bins[0] - 1, bins[-1] + 1])
-        plt.ylabel("Observations")
-        plt.xlabel("Difference (hPa)")
-        plt.show()
+        plot_pressure_distribution(difference, [-THEORY_THRESHOLD,
+                                                THEORY_THRESHOLD])
 
     if len(bad_locs) != 0:
         flags[bad_locs] = "p"
         if diagnostics:
-            print("Pressure".format(stnlp.name))
+            print("Pressure {}".format(stnlp.name))
             print("   Number of mismatches between recorded and theoretical SLPs {}".format(len(bad_locs)))
         if plots:
             for bad in bad_locs:
                 plot_pressure(sealp, stnlp, times, bad)
                 
-    def adjust_preexisting_locs(var, flags):
-        # may have flags already set by previous part of test
-        # find these locations, and adjust new flags to these aren't added again
-        pre_exist = [i for i,item in enumerate(var.flags) if "p" in item]
-        new_flags = flags[:]
-        new_flags[pre_exist] = ""
-
-        return new_flags
-
     # flag both as not sure immediately where the issue lies
     stnlp.flags = utils.insert_flags(stnlp.flags, adjust_preexisting_locs(stnlp, flags))
     sealp.flags = utils.insert_flags(sealp.flags, adjust_preexisting_locs(sealp, flags))

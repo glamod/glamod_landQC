@@ -80,7 +80,37 @@ def test_pcc_bad_elevation(pressure_theory_mock: Mock,
 #def test_pressure_theory():
 
 
-#def test_calc_slp():
+def test_calc_slp_0m():
+
+    stnlp = np.ma.arange(790, 900, 10)
+    stnlp.mask = np.zeros(10)
+
+    elevation = 0
+
+    temperature = np.ma.arange(0, 22, 2)
+    temperature.mask = np.zeros(10)
+
+    sealp = pressure.calc_slp(stnlp, elevation, temperature)
+
+    print(sealp)
+    np.testing.assert_array_equal(stnlp, sealp)
+
+
+def test_calc_slp_1566m():
+
+    stnlp = np.ma.array([790])
+    stnlp.mask = np.zeros(1)
+
+    elevation = 1566
+
+    temperature = np.ma.array([10])
+    temperature.mask = np.zeros(1)
+
+    sealp = pressure.calc_slp(stnlp, elevation, temperature)
+
+    expected_sealp = np.ma.array([951.176798])
+    # checked result by hand 7-Aug-2023
+    np.testing.assert_array_equal(stnlp, sealp)
 
 
 #def test_pressure_offset():
