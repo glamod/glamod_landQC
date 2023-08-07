@@ -2,6 +2,7 @@
 Contains common code for testing the QC tests
 """
 import numpy as np
+import datetime as dt
 
 import qc_utils as utils
 
@@ -29,5 +30,9 @@ def example_test_station(variable,
     station = utils.Station("DummyID", latitude, longitude, elevation)
 
     setattr(station, variable.name, variable)
+
+    start_dt = dt.datetime(2000, 1, 1, 0, 0)
+    station.times = np.array([start_dt + dt.timedelta(hours=i)\
+                              for i in range(len(variable.data))])
 
     return station
