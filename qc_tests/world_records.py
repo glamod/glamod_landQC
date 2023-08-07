@@ -22,14 +22,22 @@ import qc_utils as utils
 
 # last check 27 Jul 2022, RJHD
 
-T_X = {"africa" : 55.0, "asia" : 53.9, "samerica" : 48.9, "namerica" : 56.7, "europe" : 48.8, "oceania" : 50.7, "antarctica" : 18.3, "row" : 56.7}
-T_N = {"africa" : -23.9, "asia" : -67.8, "samerica" : -32.8, "namerica" : -63.0, "europe" : -58.1, "oceania" : -23.0, "antarctica" : -89.2, "row" : -89.2}
-D_X = {"africa" : 55.0, "asia" : 53.9, "samerica" : 48.9, "namerica" : 56.7, "europe" : 48.0, "oceania" : 50.7, "antarctica" : 18.3, "row" : 56.7}
-D_N = {"africa" : -50., "asia" : -100., "samerica" : -60., "namerica" : -100., "europe" : -100., "oceania" : -50., "antarctica" : -100., "row" : -100.}
-W_X = {"africa" : 113.2, "asia" : 113.2, "samerica" : 113.2, "namerica" : 113.2, "europe" : 113.2, "oceania" : 113.2, "antarctica" : 113.2, "row" : 113.2}
-W_N = {"africa" : 0., "asia" : 0., "samerica" : 0., "namerica" : 0., "europe" : 0., "oceania" : 0., "antarctica" : 0., "row" : 0.}
-S_X = {"africa" : 1083.3, "asia" : 1083.3, "samerica" : 1083.3, "namerica" : 1083.3, "europe" : 1083.3, "oceania" : 1083.3, "antarctica" : 1083.3, "row" : 1083.3}
-S_N = {"africa" : 870., "asia" : 870., "samerica" : 870., "namerica" : 870., "europe" : 870., "oceania" : 870., "antarctica" : 870., "row" : 870.}
+T_X = {"africa" : 55.0, "asia" : 53.9, "samerica" : 48.9, "namerica" : 56.7, "europe" : 48.8,
+       "oceania" : 50.7, "antarctica" : 18.3, "row" : 56.7}
+T_N = {"africa" : -23.9, "asia" : -67.8, "samerica" : -32.8, "namerica" : -63.0, "europe" : -58.1,
+       "oceania" : -23.0, "antarctica" : -89.2, "row" : -89.2}
+D_X = {"africa" : 55.0, "asia" : 53.9, "samerica" : 48.9, "namerica" : 56.7, "europe" : 48.0,
+       "oceania" : 50.7, "antarctica" : 18.3, "row" : 56.7}
+D_N = {"africa" : -50., "asia" : -100., "samerica" : -60., "namerica" : -100., "europe" : -100.,
+       "oceania" : -50., "antarctica" : -100., "row" : -100.}
+W_X = {"africa" : 113.2, "asia" : 113.2, "samerica" : 113.2, "namerica" : 113.2, "europe" : 113.2,
+       "oceania" : 113.2, "antarctica" : 113.2, "row" : 113.2}
+W_N = {"africa" : 0., "asia" : 0., "samerica" : 0., "namerica" : 0., "europe" : 0., "oceania" : 0.,
+       "antarctica" : 0., "row" : 0.}
+S_X = {"africa" : 1083.3, "asia" : 1083.3, "samerica" : 1083.3, "namerica" : 1083.3, "europe" : 1083.3,
+       "oceania" : 1083.3, "antarctica" : 1083.3, "row" : 1083.3}
+S_N = {"africa" : 870., "asia" : 870., "samerica" : 870., "namerica" : 870., "europe" : 870.,
+       "oceania" : 870., "antarctica" : 870., "row" : 870.}
 
 # 
 maxes = {"temperature" : T_X, "dew_point_temperature" : D_X, "wind_speed" : W_X, "sea_level_pressure" : S_X}
@@ -47,6 +55,8 @@ def record_check(obs_var, continent, plots=False, diagnostics=False):
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
+    assert isinstance(obs_var, utils.Meteorological_Variable)
+    assert isinstance(continent, str)
     
     flags = np.array(["" for i in range(obs_var.data.shape[0])])
 
