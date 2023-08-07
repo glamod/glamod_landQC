@@ -17,11 +17,11 @@ import setup
 
 
 UNIT_DICT = {"temperature" : "degrees C", \
-                 "dew_point_temperature" :  "degrees C", \
-                 "wind_direction" :  "degrees", \
-                 "wind_speed" : "meters per second", \
-                 "sea_level_pressure" : "hPa hectopascals", \
-                 "station_level_pressure" : "hPa hectopascals"}
+             "dew_point_temperature" :  "degrees C", \
+             "wind_direction" :  "degrees", \
+             "wind_speed" : "meters per second", \
+             "sea_level_pressure" : "hPa hectopascals", \
+             "station_level_pressure" : "hPa hectopascals"}
 
 
 QC_TESTS = {"o" : "Odd Cluster", "F" : "Frequent Value", "D" : "Distribution - Monthly", \
