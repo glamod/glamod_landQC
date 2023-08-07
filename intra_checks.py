@@ -52,6 +52,12 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
     :param bool clobbber: overwrite output file if exists
     """
 
+    if test not in ["all", "climatological", "distribution", "diurnal", "frequent",
+                    "humidity", "odd_cluster", "pressure", "spike", "streaks",
+                    "timestamp", "variance", "winds" ,"world_records"]:
+        print("Invalid test selected")
+        return
+
     # process the station list
     station_list = utils.get_station_list(restart_id=restart_id, end_id=end_id)
 
