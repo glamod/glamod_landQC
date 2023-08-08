@@ -23,10 +23,13 @@ def read_psv(infile, separator):
     '''
 
     try:
-        df = pd.read_csv(infile, sep=separator, compression="infer", dtype=setup.DTYPE_DICT, na_values="Null")
+        df = pd.read_csv(infile, sep=separator, compression="infer", dtype=setup.DTYPE_DICT, na_values="Null", quoting=3)
     except ValueError as e:
         print(str(e))
         raise ValueError(str(e))
+
+    # Number of columns at August 2023
+    assert len(df.columns) == 238
 
     return df #  read_psv
 
