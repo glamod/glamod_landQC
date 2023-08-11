@@ -2,6 +2,7 @@
 Contains tests for pressure.py
 """
 import numpy as np
+import datetime as dt
 from unittest.mock import patch, Mock
 
 import pressure
@@ -77,7 +78,35 @@ def test_pcc_bad_elevation(pressure_theory_mock: Mock,
     pressure_offset_mock.assert_called_once()
     assert not pressure_theory_mock.called
 
-#def test_pressure_theory():
+def test_pressure_theory_0m():
+
+    # Set up data, variables & station
+    test_data = np.arange(5)
+
+    sealp = common.example_test_variable("sea_level_pressure",
+                                         test_data)
+    sealp.flags = np.array(["" for i in test_data])
+
+    stnlp = common.example_test_variable("station_level_pressure",
+                                         test_data)
+    stnlp.flags = np.array(["" for i in test_data])
+
+    temperature = common.example_test_variable("temperature",
+                                               test_data)
+    temperature.flags = np.array(["" for i in test_data])
+
+    start_dt = dt.datetime(2000, 1, 1, 0, 0)
+    times = np.array([start_dt + dt.timedelta(hours=i)\
+                      for i in range(len(sealp.data))])
+
+    pressure.pressure_theory(sealp, stnlp, temperature, times, 0)
+
+
+    np.testing.assert_array_equal(stnlp.flags, np.array(["" for i in test_data]))
+    np.testing.assert_array_equal(sealp.flags, np.array(["" for i in test_data]))
+
+
+#def adjust_preexisting_locs():
 
 
 def test_calc_slp_0m():
@@ -110,7 +139,7 @@ def test_calc_slp_1566m():
 
     expected_sealp = np.ma.array([951.176798])
     # checked result by hand 7-Aug-2023
-    np.testing.assert_array_equal(stnlp, sealp)
+    np.testing.assert_array_almost_equal(expected_sealp, sealp)
 
 
 #def test_pressure_offset():
