@@ -40,7 +40,7 @@ This can take a while.  Once that has completed, you can load the environment wi
 
 And to deactivate::
 
-  deactivate
+  conda deactivate
 
 All the necessary Python libraries should have been installed with the ``make_venv.bash`` script, but these are also listed in the ``qc_venv_requirements.txt`` file.
 
@@ -75,11 +75,16 @@ thresholds to use.  The configuration.txt file contains::
   flags = level1c_sub_daily_data_flags/
   images = level1c_sub_daily_data_plots/
   errors = level1c_sub_daily_data_errors/
+  metadata = level1c_sub_daily_data_metadata/
   venvdir = /ichec/work/glamod/glamod_landQC/qc_venv/
   [FILES]
   station_list = /ichec/work/glamod/data/level1/land/level1b_sub_daily_data/stnlist/ghcnh-station-list-rel6.txt
+  station_full_list = ghcnh_station_list.txt
+  inventory = ghcnd_inventory.txt
   variables = obs_variables.json
   logic = logic_config.json
+  in_compression = None
+  out_compression = .gz
   [STATISTICS]
   mean = False
   median = True
@@ -136,7 +141,7 @@ So an example run for the internal checks::
 
 The waiting option presumes that the mff files will be produced in the sequence they are listed in the station list (see the configuration file).  If a file is not present, the script will sleep until it appears.  This allows the QC process to start before the mingle+merge processes have completed.  Finally, you can choose whether to overwrite existing output files, or to skip the processing step if they already exists.  There is helptext for these switches as part of the script.
 
-Once completed, this script also runs a checking process to provide some summary information of the processing run, with station counts and locations.  This can be called separately as ``check_if_processed.bash`` using the ``I`` / ``N`` switches. There is also a set of maps which can be produced, to show the flagging rates and counts for each station for each test.  The LOTUS job for this is submitted via the ``submit_plot_scripts.bash`` script using the ``sbatch`` command.
+Once completed, this script also runs a checking process to provide some summary information of the processing run, with station counts and locations.  This can be called separately as ``check_if_processed.bash`` using the ``I`` / ``N`` switches. There is also a set of maps which can be produced, to show the flagging rates and counts for each station for each test.  The Kay job for this is submitted via the ``submit_plot_scripts.bash`` script using the ``sbatch`` command.  There is also a script ``submit_metadata_scripts.bash`` which produces some of the metadata files to support the output data.
 
 The python scripts called by ``run_qc_taskfarm.bash`` have their own options which can be set (see below).  For the moment, the one which allows stored values and thresholds from a previous run to be used (rather than calculated afresh) is not active.  This option was written with the near-real-time updates in mind, however has never been tested on e.g. a "diff" file.  To turn this on, you would need to edit the section of the bash script which generates the Kay job.
 
