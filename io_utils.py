@@ -95,9 +95,10 @@ def read_station(stationfile, station, read_flags=False):
                     raise ValueError("Bad date - {}-{}-{}".format(yy, month[y], day[y]))
 
     # explicitly remove any missing data indicators - wind direction only
-    combined_mask = (station_df["wind_direction_Measurement_Code"] == "C-Calm") &\
-                    (station_df["wind_direction"] == 999)
-    station_df.loc[combined_mask, "wind_direction"] = np.nan
+    for wind_flag in ["C-Calm", "V-Variable"]:
+        combined_mask = (station_df["wind_direction_Measurement_Code"] == wind_flag) &\
+                        (station_df["wind_direction"] == 999)
+        station_df.loc[combined_mask, "wind_direction"] = np.nan
 
     # convert dataframe to station and MetVar objects for internal processing
     populate_station(station, station_df, setup.obs_var_list, read_flags=read_flags)
