@@ -36,7 +36,7 @@ shift
 #**************************************
 # other settings
 cwd=`pwd`
-STATIONS_PER_BATCH=5000
+STATIONS_PER_BATCH=1000
 
 SCRIPT_DIR=${cwd}/taskfarm_scripts/
 if [ ! -d ${SCRIPT_DIR} ]; then
@@ -56,7 +56,7 @@ function write_kay_script {
     batch=${3}
 
     echo "#!/bin/bash -l" > ${kay_script}
-    echo "#SBATCH -p ShmemQ" >> ${kay_script}
+    echo "#SBATCH -p ProdQ" >> ${kay_script}
     echo "#SBATCH -N 1" >> ${kay_script}
     echo "#SBATCH -t 24:00:00" >> ${kay_script}
     echo "#SBATCH -A glamod" >> ${kay_script}
