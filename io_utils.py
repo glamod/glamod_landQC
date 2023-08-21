@@ -28,8 +28,8 @@ def read_psv(infile, separator):
         print(str(e))
         raise ValueError(str(e))
 
-    # Number of columns at August 2023
-    assert len(df.columns) == 238
+    # Number of columns at August 2023, or after adding flag columns
+    assert len(df.columns) in [238, 238+len(setup.obs_var_list)]
 
     return df #  read_psv
 
