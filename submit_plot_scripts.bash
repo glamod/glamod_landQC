@@ -1,18 +1,20 @@
 #!/bin/bash -l
 #SBATCH -p ProdQ
 #SBATCH -A glamod
-#SBTACH -N 1
-#SBATCH -o /ichec/home/users/${USER}/glamod_landQC/logs/plots.out
-#SBATCH -e /ichec/home/users/${USER}/glamod_landQC/logs/plots.err 
-#SBATCH -t 120:00
+#SBATCH -N 1
+#SBATCH -o /ichec/home/users/rdunn/glamod_landQC/logs/plots.out
+#SBATCH -e /ichec/home/users/rdunn/glamod_landQC/logs/plots.err 
+#SBATCH -t 02:00:00
+#SBATCH --mail-user=robert.dunn@metoffice.gov.uk
+#SBATCH --mail-type=BEGIN,END
 
 # activate python environment
 module load conda
 conda activate glamod_QC
 
 # make the logs directory
-if [ ! -d /ichec/home/users/${USER}/glamod_landQC/logs/ ]; then
-    mkdir -p /ichec/home/users/${USER}/glamod_landQC/logs/
+if [ ! -d /ichec/home/users/rdunn/glamod_landQC/logs/ ]; then
+    mkdir -p /ichec/home/users/rdunn/glamod_landQC/logs/
 fi
     
 

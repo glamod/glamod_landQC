@@ -1,10 +1,12 @@
 #!/bin/bash -l
 #SBATCH -p ProdQ
 #SBATCH -A glamod
-#SBTACH -N 1
-#SBATCH -o /ichec/home/users/${USER}/glamod_landQC/logs/plots.out
-#SBATCH -e /ichec/home/users/${USER}/glamod_landQC/logs/plots.err 
-#SBATCH -t 120:00
+#SBATCH -N 1
+#SBATCH -o /ichec/home/users/rdunn/glamod_landQC/logs/metadata.out
+#SBATCH -e /ichec/home/users/rdunn/glamod_landQC/logs/metadata.err 
+#SBATCH -t 12:00:00
+#SBATCH --mail-user=robert.dunn@metoffice.gov.uk
+#SBATCH --mail-type=BEGIN,END
 
 # activate python environment
 module load conda
