@@ -194,7 +194,9 @@ def populate_station(station, df, obs_var_list, read_flags=False):
         indata = df[variable].fillna(MDI).to_numpy()
         indata = indata.astype(float)
 
-        # for wind direction and speed only, account for some measurement flags
+        # For wind direction and speed only, account for some measurement flags
+        #  Mask data in the Met_Var object used for the tests, but leave dataframe
+        #  unaffected.
         if variable in ["wind_direction", "wind_speed"]:
             m_code = df[f"{variable}_Measurement_Code"]
 
