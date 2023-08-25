@@ -220,8 +220,6 @@ def populate_station(station, df, obs_var_list, read_flags=False):
             # invert mask and set to missing
             indata[~mask] = MDI
 
-            input("stop")
-
         this_var.data = np.ma.masked_where(indata == MDI, indata)
         if len(this_var.data.mask.shape) == 0:
             # single mask value, replace with arrage of True/False's
