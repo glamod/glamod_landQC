@@ -33,6 +33,8 @@ QC_TESTS = {"o" : "Odd Cluster", "F" : "Frequent Value", "D" : "Distribution - M
 
 MDI = -1.e30
 
+WIND_MEASUREMENT_CODES = ["", "N-Normal", "C-Calm"]
+
 
 #*********************************************
 # Process the Configuration File
@@ -189,9 +191,37 @@ def populate_station(station, df, obs_var_list, read_flags=False):
         this_var = Meteorological_Variable(variable, MDI, UNIT_DICT[variable], (float))
 
         # store the data
-#        this_var.data = df[variable].to_numpy()
         indata = df[variable].fillna(MDI).to_numpy()
         indata = indata.astype(float)
+
+        # for wind direction and speed only, account for some measurement flags
+        if variable in ["wind_direction", "wind_speed"]:
+            m_code = df[f"{variable}_Measurement_Code"]
+
+            # Build up the mask
+            for c, code in enumerate(WIND_MEASUREMENT_CODES):
+                if code == "":
+                    # Empty flags converted to NaNs on reading
+                    code = float("NaN")
+                    if c == 0:
+                        mask = (m_code == code)
+                    else:
+                        mask = (m_code == code) | mask
+                else:
+                    # Doing string comparison
+                    if c == 0:
+                        # Initialise
+                        mask = (m_code.str.startswith(code))
+                    else:
+                        # Combine using or
+                        #   e.g. if code = "N-Normal" or "C-Calm" or "" set True
+                        mask = (m_code.str.startswith(code)) | mask
+
+            # invert mask and set to missing
+            indata[~mask] = MDI
+
+            input("stop")
+
         this_var.data = np.ma.masked_where(indata == MDI, indata)
         if len(this_var.data.mask.shape) == 0:
             # single mask value, replace with arrage of True/False's
