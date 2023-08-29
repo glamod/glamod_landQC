@@ -54,6 +54,7 @@ function write_kay_script {
     kay_script=${1}
     taskfarm_script=${2}
     batch=${3}
+    email=${4}
 
     echo "#!/bin/bash -l" > ${kay_script}
     echo "#SBATCH -p ProdQ" >> ${kay_script}
@@ -62,7 +63,7 @@ function write_kay_script {
     echo "#SBATCH -A glamod" >> ${kay_script}
     echo "#SBATCH -o ${LOG_DIR}/qc_${VERSION::-1}_${STAGE}_batch${batch}.out" >> ${kay_script}
     echo "#SBATCH -e ${LOG_DIR}/qc_${VERSION::-1}_${STAGE}_batch${batch}.err" >> ${kay_script}
-    echo "#SBATCH --mail-user=robert.dunn@metoffice.gov.uk" >> ${kay_script}
+    echo "#SBATCH --mail-user=${email}" >> ${kay_script}
     echo "#SBATCH --mail-type=BEGIN,END" >> ${kay_script}
     echo "" >> ${kay_script}
 #    # TODO sort python environment
@@ -84,6 +85,7 @@ function write_kay_script {
 function write_and_submit_kay_script {
     taskfarm_script=${1}
     batch=${2}
+    email=${3}
 
     if [ "${STAGE}" == "I" ]; then
 	kay_script="${SCRIPT_DIR}/kay_internal_${batch}.bash"
@@ -94,7 +96,7 @@ function write_and_submit_kay_script {
     if [ ! -e ${kay_script} ]; then
 	rm ${kay_script}
     fi
-    write_kay_script "${kay_script}" "${taskfarm_script}" "${batch}"
+    write_kay_script "${kay_script}" "${taskfarm_script}" "${batch}" "${email}"
     
     sbatch < ${kay_script}
 
@@ -133,6 +135,9 @@ QFF_ZIP="$(grep "out_compression " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 VERSION="$(grep "version " "${CONFIG_FILE}" | grep -v "${MFF_VER}" | awk -F'= ' '{print $2}')"
 ERR=${QFF%/}_errors/
 
+# other bits of information from the config file.
+email="$(grep "email " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
+
 #**************************************
 # if neighbour checks make sure all files in place
 if [ "${STAGE}" == "N" ]; then
@@ -140,7 +145,7 @@ if [ "${STAGE}" == "N" ]; then
     if [ ! -f "${ROOTDIR}${QFF%/}_configs/${VERSION}neighbours.txt" ]; then
         read -p "Neighbour file missing - do you want to run Y/N" run_neighbours
 
-	    if [ "${run_neighbours}" == "Y" ]; then
+	    if [ "${run_neighbours}" == "Y" ] || [ "${run_neighbours}" == "y" ]; then
 	         echo "Running neighbour finding routine"
                  source ${VENVDIR}/bin/activate
                  python ${cwd}/find_neighbours.py
@@ -203,12 +208,12 @@ echo "Checked for all input files - see missing.txt"
 n_missing=`wc ${missing_file} | awk -F' ' '{print $1}'`
 if [ ${n_missing} -ne 0 ]; then
     read -p "${n_missing} upstream files missing - do you want to run remainder Y/N? " run_kay
-    if [ "${run_kay}" == "N" ]; then
+    if [ "${run_kay}" == "N" ] || [ "${run_kay}" == "n" ]; then
         exit
     fi
 else
     read -p "All upstream files present - do you want to run the job Y/N? " run_kay
-    if [ "${run_kay}" == "N" ]; then
+    if [ "${run_kay}" == "N" ] || [ "${run_kay}" == "n" ]; then
         exit
     fi
 
@@ -344,7 +349,7 @@ do
     
     # and write script to run this batch
     if [ ${scnt} -eq ${STATIONS_PER_BATCH} ]; then
-	write_and_submit_kay_script "${taskfarm_script}" "${batch}"
+	write_and_submit_kay_script "${taskfarm_script}" "${batch}" "${email}"
 	
 	# and reset counters and scripts
 	let batch=batch+1
