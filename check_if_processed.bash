@@ -63,8 +63,9 @@ do
     withheld_dir=${ROOTDIR}${QFF}${VERSION}bad_stations
     error_dir=${ROOTDIR}${ERR}${VERSION}
 
+
     if [ "${STAGE}" == "I" ]; then
-        if [ -f "${ROOTDIR}${PROC}${VERSION}${stn}${QFF_ZIP}" ]; then
+        if [ -f "${ROOTDIR}${PROC}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
             # internal checks completed
             let processed=processed+1
         elif [ -f "${ROOTDIR}${QFF}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then

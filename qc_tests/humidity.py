@@ -65,7 +65,8 @@ def get_repeating_dpd_threshold(temperatures, dewpoints, config_dict, plots=Fals
         try:
             config_dict["HUMIDITY"]["DPD"] = threshold
         except KeyError:
-            CD_dpd = {"DPD" : threshold}
+            # ensuring that threshold is stored as a float, not an np.array.
+            CD_dpd = {"DPD" : float(threshold)}
             config_dict["HUMIDITY"] = CD_dpd
             
     else:
@@ -73,7 +74,7 @@ def get_repeating_dpd_threshold(temperatures, dewpoints, config_dict, plots=Fals
         try:
             config_dict["HUMIDITY"]["DPD"] = -utils.MDI
         except KeyError:
-            CD_dpd = {"DPD" : -utils.MDI}
+            CD_dpd = {"DPD" : float(-utils.MDI)}
             config_dict["HUMIDITY"] = CD_dpd
 
     return # repeating_dpd_threshold
