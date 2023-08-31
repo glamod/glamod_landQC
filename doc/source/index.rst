@@ -76,6 +76,7 @@ thresholds to use.  The configuration.txt file contains::
   images = level1c_sub_daily_data_plots/
   errors = level1c_sub_daily_data_errors/
   metadata = level1c_sub_daily_data_metadata/
+  logs = level1c_sub_daily_data_logs/
   venvdir = /ichec/work/glamod/glamod_landQC/qc_venv/
   [FILES]
   station_list = /ichec/work/glamod/data/level1/land/level1b_sub_daily_data/stnlist/ghcnh-station-list-rel6.txt
@@ -100,6 +101,8 @@ thresholds to use.  The configuration.txt file contains::
   max_number = 20
   filename = neighbours.txt
   minimum_number = 3
+  [MISC]
+  email = your.email@domain.com
 
 The input "mff" (merged file format) files are in ``mff`` and the relevant sub-directory ``mff_version``, so the combination of these two entries give the location of the mff files.
 
@@ -111,6 +114,7 @@ The QC process produces a whole set of output files, the root directory of which
 * ``flag`` The flag files contining summary flagging rates and counts for each test for each variable
 * ``images`` Any stored plots for an individual run are placed here, usually summary maps.
 * ``errors`` Outputs from any managed errors within the scripts are here (empty files, unreadable inputs etc).
+* ``logs`` Logs from the cluster processes (Taskfarm).
 
 One final directory is as a subdirectory of the ``qff`` directory, called ``bad_stations``, which contains those output files from stations with high flagging rates or with other features that means they are withheld from further processing.
 
