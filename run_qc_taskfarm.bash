@@ -43,11 +43,6 @@ if [ ! -d ${SCRIPT_DIR} ]; then
     mkdir ${SCRIPT_DIR}
 fi
 
-LOG_DIR=${cwd}/taskfarm_logs/
-if [ ! -d ${LOG_DIR} ]; then
-    mkdir ${LOG_DIR}
-fi
-
 #**************************************
 # Set functions
 function write_kay_script {
@@ -61,8 +56,8 @@ function write_kay_script {
     echo "#SBATCH -N 1" >> ${kay_script}
     echo "#SBATCH -t 24:00:00" >> ${kay_script}
     echo "#SBATCH -A glamod" >> ${kay_script}
-    echo "#SBATCH -o ${LOG_DIR}/qc_${VERSION::-1}_${STAGE}_batch${batch}.out" >> ${kay_script}
-    echo "#SBATCH -e ${LOG_DIR}/qc_${VERSION::-1}_${STAGE}_batch${batch}.err" >> ${kay_script}
+    echo "#SBATCH -o ${ROOTDIR}/${LOG_DIR}/${VERSION::-1}_QC_${STAGE}_batch-${batch}.out" >> ${kay_script}
+    echo "#SBATCH -e ${ROOTDIR}/${LOG_DIR}/${VERSION::-1}_QC_${STAGE}_batch-${batch}.err" >> ${kay_script}
     echo "#SBATCH --mail-user=${email}" >> ${kay_script}
     echo "#SBATCH --mail-type=BEGIN,END" >> ${kay_script}
     echo "" >> ${kay_script}
@@ -97,7 +92,7 @@ function write_and_submit_kay_script {
 	rm ${kay_script}
     fi
     write_kay_script "${kay_script}" "${taskfarm_script}" "${batch}" "${email}"
-    
+
     sbatch < ${kay_script}
 
 } # write_and_submit_kay_script
@@ -121,19 +116,23 @@ function prepare_taskfarm_script {
 # use configuration file to pull out paths &c
 CONFIG_FILE="${cwd}/configuration.txt"
 
-VENVDIR="$(grep "venvdir " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
+# VENVDIR="$(grep "venvdir " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 # using spaces after setting ID to ensure pull out correct line
 # these are fixed references
 ROOTDIR="$(grep "root " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 
 # extract remaining locations
-MFF="$(grep "mff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
+MFF_DIR="$(grep "mff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 MFF_VER="$(grep "mff_version " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
-PROC="$(grep "proc " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
-QFF="$(grep "qff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
+PROC_DIR="$(grep "proc " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
+QFF_DIR="$(grep "qff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 QFF_ZIP="$(grep "out_compression " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 VERSION="$(grep "version " "${CONFIG_FILE}" | grep -v "${MFF_VER}" | awk -F'= ' '{print $2}')"
-ERR=${QFF%/}_errors/
+ERR_DIR="$(grep "errors " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
+LOG_DIR="$(grep "logs " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
+if [ ! -d ${ROOTDIR}${LOG_DIR} ]; then
+    mkdir ${ROOTDIR}${LOG_DIR}
+fi
 
 # other bits of information from the config file.
 email="$(grep "email " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
@@ -141,13 +140,15 @@ email="$(grep "email " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 #**************************************
 # if neighbour checks make sure all files in place
 if [ "${STAGE}" == "N" ]; then
-    echo "${ROOTDIR}${QFF%/}_configs/${VERSION}neighbours.txt"
-    if [ ! -f "${ROOTDIR}${QFF%/}_configs/${VERSION}neighbours.txt" ]; then
+    echo "${ROOTDIR}${QFF_DIR%/}_configs/${VERSION}neighbours.txt"
+    if [ ! -f "${ROOTDIR}${QFF_DIR%/}_configs/${VERSION}neighbours.txt" ]; then
         read -p "Neighbour file missing - do you want to run Y/N" run_neighbours
 
 	    if [ "${run_neighbours}" == "Y" ] || [ "${run_neighbours}" == "y" ]; then
 	         echo "Running neighbour finding routine"
-                 source ${VENVDIR}/bin/activate
+		 module load conda
+		 source activate glamod_QC
+                 # source ${VENVDIR}/bin/activate
                  python ${cwd}/find_neighbours.py
 	    else
 	         echo "Not running neighbour finding routine, exit"
@@ -173,16 +174,16 @@ for stn in ${stn_ids}
 do
     processed=false
     if [ "${STAGE}" == "I" ]; then
-        if [ -f "${MFF}${MFF_VER}${stn}.mff" ]; then
+        if [ -f "${MFF_DIR}${MFF_VER}${stn}.mff" ]; then
             processed=true
         fi
     elif [ "${STAGE}" == "N" ]; then
-        if [ -f "${ROOTDIR}${PROC}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
+        if [ -f "${ROOTDIR}${PROC_DIR}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
             processed=true
-        elif [ -f "${ROOTDIR}${QFF}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
+        elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
             # if station not processed/withheld, then has been processed, and won't appear
             processed=true
-        elif [ -f "${ROOTDIR}${ERR}${VERSION}${stn}.err" ]; then
+        elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}.err" ]; then
             # if station has had an error, then has been processed, and won't appear
             processed=true
         fi
@@ -195,12 +196,12 @@ do
 done
 
 if [ "${STAGE}" == "N" ]; then
-    echo "${ROOTDIR}${PROC}${VERSION}*.qff${QFF_ZIP}"
-    n_processed_successfully=$(eval ls "${ROOTDIR}${PROC}${VERSION}" | wc -l)
+    echo "${ROOTDIR}${PROC_DIR}${VERSION}*.qff${QFF_ZIP}"
+    n_processed_successfully=$(eval ls "${ROOTDIR}${PROC_DIR}${VERSION}" | wc -l)
     echo "Internal checks successful on ${n_processed_successfully} stations"
-    n_processed_bad=$(eval ls "${ROOTDIR}${QFF}${VERSION}bad_stations/*.qff${QFF_ZIP}" | wc -l)
+    n_processed_bad=$(eval ls "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/*.qff${QFF_ZIP}" | wc -l)
     echo "Internal checks withheld ${n_processed_bad} stations"
-    n_processed_err=$(eval ls "${ROOTDIR}${ERR}${VERSION}/*err" | wc -l)
+    n_processed_err=$(eval ls "${ROOTDIR}${ERR_DIR}${VERSION}/*err" | wc -l)
     echo "Internal checks had errors on ${n_processed_err} stations"
 fi
 
@@ -238,16 +239,16 @@ do
     do
     # check if upstream data files are present
 	if [ "${STAGE}" == "I" ]; then
-            if [ -f "${MFF}${MFF_VER}${stn}.mff" ]; then
+            if [ -f "${MFF_DIR}${MFF_VER}${stn}.mff" ]; then
 		submit=true
             fi
 	elif [ "${STAGE}" == "N" ]; then
-            if [ -f "${ROOTDIR}${PROC}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
+            if [ -f "${ROOTDIR}${PROC_DIR}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
 		submit=true
-            elif [ -f "${ROOTDIR}${QFF}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
+            elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
 		# if station not processed, then no point submitting
 		submit=false
-            elif [ -f "${ROOTDIR}${ERR}${VERSION}${stn}.err" ]; then
+            elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}.err" ]; then
 		# if station has had an error, then no point in submitting
 		submit=false
 #            else
@@ -278,12 +279,12 @@ do
     if [ ${submit} == true ]; then
 
         if [ "${STAGE}" == "I" ]; then
-	    if [ ! -e "${ROOTDIR}${PROC}${VERSION}" ]; then
-		mkdir ${ROOTDIR}${PROC}${VERSION}
+	    if [ ! -e "${ROOTDIR}${PROC_DIR}${VERSION}" ]; then
+		mkdir ${ROOTDIR}${PROC_DIR}${VERSION}
 	    fi
 	elif [ "${STAGE}" == "N" ]; then
-	    if [ ! -e "${ROOTDIR}${QFF}${VERSION}" ]; then
-		mkdir ${ROOTDIR}${QFF}${VERSION}
+	    if [ ! -e "${ROOTDIR}${QFF_DIR}${VERSION}" ]; then
+		mkdir ${ROOTDIR}${QFF_DIR}${VERSION}
 	    fi
 	fi
 
@@ -301,15 +302,15 @@ do
             # check if already processed before setting going
             if [ "${STAGE}" == "I" ]; then
 
-                if [ -f "${ROOTDIR}${PROC}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
+                if [ -f "${ROOTDIR}${PROC_DIR}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
                     # output exists
                     echo "${stn} already processed"
 
-                elif [ -f "${ROOTDIR}${QFF}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
+                elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
                     # output exists
                     echo "${stn} already processed - bad station"
 
-                elif [ -f "${ROOTDIR}${ERR}${VERSION}${stn}.err" ]; then
+                elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}.err" ]; then
                     # output exists
                     echo "${stn} already processed - managed error"
 
@@ -320,15 +321,15 @@ do
  
             elif [ "${STAGE}" == "N" ]; then
 
-                if [ -f "${ROOTDIR}${QFF}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
+                if [ -f "${ROOTDIR}${QFF_DIR}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
                     # output exists
                     echo "${stn} already processed"
 
-                elif [ -f "${ROOTDIR}${QFF}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
+                elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
                     # output exists
                     echo "${stn} already processed - bad station"
 
-                elif [ -f "${ROOTDIR}${ERR}${VERSION}${stn}.err" ]; then
+                elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}.err" ]; then
                     # output exists
                     echo "${stn} already processed - managed error"
 
