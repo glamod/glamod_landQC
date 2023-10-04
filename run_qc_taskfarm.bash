@@ -35,11 +35,11 @@ shift
 
 #**************************************
 # other settings
-cwd=`pwd`
+cwd=$(pwd)
 STATIONS_PER_BATCH=1000
 
 SCRIPT_DIR=${cwd}/taskfarm_scripts/
-if [ ! -d ${SCRIPT_DIR} ]; then
+if [ ! -d "${SCRIPT_DIR}" ]; then
     mkdir ${SCRIPT_DIR}
 fi
 
@@ -130,8 +130,8 @@ QFF_ZIP="$(grep "out_compression " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 VERSION="$(grep "version " "${CONFIG_FILE}" | grep -v "${MFF_VER}" | awk -F'= ' '{print $2}')"
 ERR_DIR="$(grep "errors " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 LOG_DIR="$(grep "logs " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
-if [ ! -d ${ROOTDIR}${LOG_DIR} ]; then
-    mkdir ${ROOTDIR}${LOG_DIR}
+if [ ! -d "${ROOTDIR}${LOG_DIR}" ]; then
+    mkdir "${ROOTDIR}${LOG_DIR}"
 fi
 
 # other bits of information from the config file.
@@ -142,10 +142,10 @@ email="$(grep "email " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 if [ "${STAGE}" == "N" ]; then
     echo "${ROOTDIR}${QFF_DIR%/}_configs/${VERSION}neighbours.txt"
     if [ ! -f "${ROOTDIR}${QFF_DIR%/}_configs/${VERSION}neighbours.txt" ]; then
-        read -p "Neighbour file missing - do you want to create? Y/N" run_neighbours
+        read -p "Neighbour file missing - do you want to create? (Y/N): " run_neighbours
 
     else
-	read -p "Neighbour file exists - do you want to rebuild? Y/N" run_neighbours
+	read -p "Neighbour file exists - do you want to rebuild? (Y/N): " run_neighbours
     fi
     # check if needing to run
     if [ "${run_neighbours}" == "Y" ] || [ "${run_neighbours}" == "y" ]; then
@@ -153,10 +153,14 @@ if [ "${STAGE}" == "N" ]; then
 	module load conda
 	source activate glamod_QC
         # source ${VENVDIR}/bin/activate
-        python ${cwd}/find_neighbours.py
+        python "${cwd}/find_neighbours.py"
+
+	wc -l "${ROOTDIR}${QFF_DIR%/}_configs/${VERSION}neighbours.txt"
     else
-	echo "Not running neighbour finding routine, exit"
-	exit
+	if [ ! -f "${ROOTDIR}${QFF_DIR%/}_configs/${VERSION}neighbours.txt" ]; then
+	    echo "Not running neighbour finding routine and doesn't exist: Exit"
+	    exit
+	fi
     fi
 fi
 
@@ -165,8 +169,8 @@ fi
 STATION_LIST="$(grep "station_list " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 station_list_file="${STATION_LIST}"
 
-echo `wc -l ${station_list_file}`
-stn_ids=`awk -F" " '{print $1}' ${station_list_file}`
+wc -l "${station_list_file}"
+stn_ids=$(awk -F" " '{print $1}' "${station_list_file}")
 
 #**************************************
 echo "Check all upstream stations present"
@@ -193,7 +197,7 @@ do
     fi
 
     if [ ${processed} == false ]; then
-        echo ${stn} >> ${missing_file}
+        echo "${stn}" >> ${missing_file}
     fi
 
 done
@@ -209,8 +213,8 @@ if [ "${STAGE}" == "N" ]; then
 fi
 
 echo "Checked for all input files - see missing.txt"
-n_missing=`wc ${missing_file} | awk -F' ' '{print $1}'`
-if [ ${n_missing} -ne 0 ]; then
+n_missing=$(wc "${missing_file}" | awk -F' ' '{print $1}')
+if [ "${n_missing}" -ne 0 ]; then
     read -p "${n_missing} upstream files missing - do you want to run remainder Y/N? " run_kay
     if [ "${run_kay}" == "N" ] || [ "${run_kay}" == "n" ]; then
         exit
