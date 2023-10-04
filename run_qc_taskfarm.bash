@@ -142,18 +142,21 @@ email="$(grep "email " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 if [ "${STAGE}" == "N" ]; then
     echo "${ROOTDIR}${QFF_DIR%/}_configs/${VERSION}neighbours.txt"
     if [ ! -f "${ROOTDIR}${QFF_DIR%/}_configs/${VERSION}neighbours.txt" ]; then
-        read -p "Neighbour file missing - do you want to run Y/N" run_neighbours
+        read -p "Neighbour file missing - do you want to create? Y/N" run_neighbours
 
-	    if [ "${run_neighbours}" == "Y" ] || [ "${run_neighbours}" == "y" ]; then
-	         echo "Running neighbour finding routine"
-		 module load conda
-		 source activate glamod_QC
-                 # source ${VENVDIR}/bin/activate
-                 python ${cwd}/find_neighbours.py
-	    else
-	         echo "Not running neighbour finding routine, exit"
-	         exit
-	    fi
+    else
+	read -p "Neighbour file exists - do you want to rebuild? Y/N" run_neighbours
+    fi
+    # check if needing to run
+    if [ "${run_neighbours}" == "Y" ] || [ "${run_neighbours}" == "y" ]; then
+	echo "Running neighbour finding routine"
+	module load conda
+	source activate glamod_QC
+        # source ${VENVDIR}/bin/activate
+        python ${cwd}/find_neighbours.py
+    else
+	echo "Not running neighbour finding routine, exit"
+	exit
     fi
 fi
 
