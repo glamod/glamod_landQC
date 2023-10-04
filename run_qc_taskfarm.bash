@@ -40,7 +40,7 @@ STATIONS_PER_BATCH=1000
 
 SCRIPT_DIR=${cwd}/taskfarm_scripts/
 if [ ! -d "${SCRIPT_DIR}" ]; then
-    mkdir ${SCRIPT_DIR}
+    mkdir "${SCRIPT_DIR}"
 fi
 
 #**************************************
@@ -51,29 +51,29 @@ function write_kay_script {
     batch=${3}
     email=${4}
 
-    echo "#!/bin/bash -l" > ${kay_script}
-    echo "#SBATCH -p ProdQ" >> ${kay_script}
-    echo "#SBATCH -N 1" >> ${kay_script}
-    echo "#SBATCH -t 24:00:00" >> ${kay_script}
-    echo "#SBATCH -A glamod" >> ${kay_script}
-    echo "#SBATCH -o ${ROOTDIR}/${LOG_DIR}/${VERSION::-1}_QC_${STAGE}_batch-${batch}.out" >> ${kay_script}
-    echo "#SBATCH -e ${ROOTDIR}/${LOG_DIR}/${VERSION::-1}_QC_${STAGE}_batch-${batch}.err" >> ${kay_script}
-    echo "#SBATCH --mail-user=${email}" >> ${kay_script}
-    echo "#SBATCH --mail-type=BEGIN,END" >> ${kay_script}
+    echo "#!/bin/bash -l" > "${kay_script}"
+    echo "#SBATCH -p ProdQ" >> "${kay_script}"
+    echo "#SBATCH -N 1" >> "${kay_script}"
+    echo "#SBATCH -t 24:00:00" >> "${kay_script}"
+    echo "#SBATCH -A glamod" >> "${kay_script}"
+    echo "#SBATCH -o ${ROOTDIR}/${LOG_DIR}/${VERSION::-1}_QC_${STAGE}_batch-${batch}.out" >> "${kay_script}"
+    echo "#SBATCH -e ${ROOTDIR}/${LOG_DIR}/${VERSION::-1}_QC_${STAGE}_batch-${batch}.err" >> "${kay_script}"
+    echo "#SBATCH --mail-user=${email}" >> "${kay_script}"
+    echo "#SBATCH --mail-type=BEGIN,END" >> "${kay_script}"
     echo "" >> ${kay_script}
 #    # TODO sort python environment
 #    echo "# activate python environment" >> ${kay_script}
 #    echo "source ${VENVDIR}/bin/activate" >> ${kay_script}
     # TODO check that CONDA works
-    echo "# activate python environment" >> ${kay_script}
-    echo "module load conda" >> ${kay_script}
-    echo "source activate glamod_QC" >> ${kay_script}
+    echo "# activate python environment" >> "${kay_script}"
+    echo "module load conda" >> "${kay_script}"
+    echo "source activate glamod_QC" >> "${kay_script}"
     
     echo "" >> ${kay_script}
-    echo "# go to scripts and set taskfarm running" >> ${kay_script}
-    echo "cd ${SCRIPT_DIR}" >> ${kay_script}
-    echo "module load taskfarm" >> ${kay_script}
-    echo "taskfarm ${taskfarm_script}" >> ${kay_script}
+    echo "# go to scripts and set taskfarm running" >> "${kay_script}"
+    echo "cd ${SCRIPT_DIR}" >> "${kay_script}"
+    echo "module load taskfarm" >> "${kay_script}"
+    echo "taskfarm ${taskfarm_script}" >> "${kay_script}"
 
 } # write_kay_script
 
@@ -88,12 +88,12 @@ function write_and_submit_kay_script {
 	kay_script="${SCRIPT_DIR}/kay_external_${batch}.bash"
     fi
     
-    if [ ! -e ${kay_script} ]; then
-	rm ${kay_script}
+    if [ ! -e "${kay_script}" ]; then
+	rm "${kay_script}"
     fi
     write_kay_script "${kay_script}" "${taskfarm_script}" "${batch}" "${email}"
 
-    sbatch < ${kay_script}
+    sbatch < "${kay_script}"
 
 } # write_and_submit_kay_script
 
@@ -105,10 +105,10 @@ function prepare_taskfarm_script {
     elif  [ "${STAGE}" == "N" ]; then
 	taskfarm_script="${SCRIPT_DIR}/taskfarm_external_${batch}.bash"
     fi
-    if [ -e ${taskfarm_script} ]; then
-	rm ${taskfarm_script}
+    if [ -e "${taskfarm_script}" ]; then
+	rm "${taskfarm_script}"
     fi
-    echo ${taskfarm_script}
+    echo "${taskfarm_script}"
 } # prepare_taskfarm_script
 
 
@@ -299,7 +299,7 @@ do
         if [ "${CLOBBER}" == "C" ]; then
 
 	    if [ "${STAGE}" == "I" ]; then
-		echo "python3 ${cwd}/intra_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics --clobber" >> ${taskfarm_script}
+		echo "python3 ${cwd}/intra_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics --clobber" >> "${taskfarm_script}"
 	    elif  [ "${STAGE}" == "N" ]; then
 		echo "python3 ${cwd}/inter_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics --clobber" >> "${taskfarm_script}"
 	    fi
