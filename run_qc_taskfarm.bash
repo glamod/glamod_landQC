@@ -238,7 +238,7 @@ taskfarm_script="$(prepare_taskfarm_script "${batch}")"
 scnt=1
 for stn in ${stn_ids}
 do
-    echo ${stn}
+    echo "${stn}"
     
     # check target file exists (in case waiting on upstream process)
     submit=false
@@ -287,11 +287,11 @@ do
 
         if [ "${STAGE}" == "I" ]; then
 	    if [ ! -e "${ROOTDIR}${PROC_DIR}${VERSION}" ]; then
-		mkdir ${ROOTDIR}${PROC_DIR}${VERSION}
+		mkdir "${ROOTDIR}${PROC_DIR}${VERSION}"
 	    fi
 	elif [ "${STAGE}" == "N" ]; then
 	    if [ ! -e "${ROOTDIR}${QFF_DIR}${VERSION}" ]; then
-		mkdir ${ROOTDIR}${QFF_DIR}${VERSION}
+		mkdir "${ROOTDIR}${QFF_DIR}${VERSION}"
 	    fi
 	fi
 
@@ -301,7 +301,7 @@ do
 	    if [ "${STAGE}" == "I" ]; then
 		echo "python3 ${cwd}/intra_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics --clobber" >> ${taskfarm_script}
 	    elif  [ "${STAGE}" == "N" ]; then
-		echo "python3 ${cwd}/inter_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics --clobber" >> ${taskfarm_script}
+		echo "python3 ${cwd}/inter_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics --clobber" >> "${taskfarm_script}"
 	    fi
 
 	# if not overwrite
@@ -323,7 +323,7 @@ do
 
                 else
 		    # no output, include
-		    echo "python3 ${cwd}/intra_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics" >> ${taskfarm_script}
+		    echo "python3 ${cwd}/intra_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics" >> "${taskfarm_script}"
                 fi
  
             elif [ "${STAGE}" == "N" ]; then
@@ -342,7 +342,7 @@ do
 
                 else
 		    # no output, include
-                    echo "python3 ${cwd}/inter_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics" >> ${taskfarm_script}
+                    echo "python3 ${cwd}/inter_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics" >> "${taskfarm_script}"
                 fi
 
 	    fi # stage
@@ -378,17 +378,17 @@ write_and_submit_kay_script "${taskfarm_script}" "${batch}"
 exit
 #**************************************
 # and print summary
-n_jobs=`squeue --user=${USER} | wc -l`
+n_jobs=$(squeue --user="${USER}" | wc -l)
 # deal with Slurm header in output
 let n_jobs=n_jobs-1
 while [ ${n_jobs} -ne 0 ];
 do        
     echo "All submitted, waiting 5min for queue to clear"
     sleep 5m
-    n_jobs=`squeue --user=${USER} | wc -l`
+    n_jobs=$(squeue --user="${USER}" | wc -l)
     let n_jobs=n_jobs-1
 done
 
-source check_if_processed.bash ${STAGE}
+source check_if_processed.bash "${STAGE}"
 
 echo "ends"
