@@ -15,17 +15,17 @@
 # manage the input arguments
 STAGE=$1
 if [ "${STAGE}" != "I" ] && [ "${STAGE}" != "N" ]; then
-    echo Please enter valid switch. I (internal) or N (neighbour)
+    echo "Please enter valid switch. I (internal) or N (neighbour)"
     exit
 fi
 WAIT=$2
 if [ "${WAIT}" != "T" ] && [ "${WAIT}" != "F" ]; then
-    echo Please enter valid waiting option. T (true - wait for upstream files) or F (false - skip missing files)
+    echo "Please enter valid waiting option. T (true - wait for upstream files) or F (false - skip missing files)"
     exit
 fi
 CLOBBER=$3
 if [ "${CLOBBER}" != "C" ] && [ "${CLOBBER}" != "S" ]; then
-    echo Please enter valid clobber option. C (clobber - overwrite existing outputs) or S (skip - keep existing outputs)
+    echo "Please enter valid clobber option. C (clobber - overwrite existing outputs) or S (skip - keep existing outputs)"
     exit
 fi
 # remove all 3 positional characters
