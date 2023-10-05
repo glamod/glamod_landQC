@@ -15,17 +15,17 @@
 # manage the input arguments
 STAGE=$1
 if [ "${STAGE}" != "I" ] && [ "${STAGE}" != "N" ]; then
-    echo Please enter valid switch. I [internal] or N [neighbour]
+    echo "Please enter valid switch. I (internal) or N (neighbour)"
     exit
 fi
 WAIT=$2
 if [ "${WAIT}" != "T" ] && [ "${WAIT}" != "F" ]; then
-    echo Please enter valid waiting option. T [true - wait for upstream files] or F [false - skip missing files]
+    echo "Please enter valid waiting option. T (true - wait for upstream files) or F (false - skip missing files)"
     exit
 fi
 CLOBBER=$3
 if [ "${CLOBBER}" != "C" ] && [ "${CLOBBER}" != "S" ]; then
-    echo Please enter valid clobber option. C [clobber - overwrite existing outputs] or S [skip - keep existing outputs]
+    echo "Please enter valid clobber option. C (clobber - overwrite existing outputs) or S (skip - keep existing outputs)"
     exit
 fi
 # remove all 3 positional characters
@@ -35,12 +35,12 @@ shift
 
 #**************************************
 # other settings
-cwd=`pwd`
+cwd=$(pwd)
 STATIONS_PER_BATCH=1000
 
 SCRIPT_DIR=${cwd}/taskfarm_scripts/
-if [ ! -d ${SCRIPT_DIR} ]; then
-    mkdir ${SCRIPT_DIR}
+if [ ! -d "${SCRIPT_DIR}" ]; then
+    mkdir "${SCRIPT_DIR}"
 fi
 
 #**************************************
@@ -51,29 +51,29 @@ function write_kay_script {
     batch=${3}
     email=${4}
 
-    echo "#!/bin/bash -l" > ${kay_script}
-    echo "#SBATCH -p ProdQ" >> ${kay_script}
-    echo "#SBATCH -N 1" >> ${kay_script}
-    echo "#SBATCH -t 24:00:00" >> ${kay_script}
-    echo "#SBATCH -A glamod" >> ${kay_script}
-    echo "#SBATCH -o ${ROOTDIR}/${LOG_DIR}/${VERSION::-1}_QC_${STAGE}_batch-${batch}.out" >> ${kay_script}
-    echo "#SBATCH -e ${ROOTDIR}/${LOG_DIR}/${VERSION::-1}_QC_${STAGE}_batch-${batch}.err" >> ${kay_script}
-    echo "#SBATCH --mail-user=${email}" >> ${kay_script}
-    echo "#SBATCH --mail-type=BEGIN,END" >> ${kay_script}
-    echo "" >> ${kay_script}
+    echo "#!/bin/bash -l" > "${kay_script}"
+    echo "#SBATCH -p ProdQ" >> "${kay_script}"
+    echo "#SBATCH -N 1" >> "${kay_script}"
+    echo "#SBATCH -t 24:00:00" >> "${kay_script}"
+    echo "#SBATCH -A glamod" >> "${kay_script}"
+    echo "#SBATCH -o ${ROOTDIR}/${LOG_DIR}/${VERSION::-1}_QC_${STAGE}_batch-${batch}.out" >> "${kay_script}"
+    echo "#SBATCH -e ${ROOTDIR}/${LOG_DIR}/${VERSION::-1}_QC_${STAGE}_batch-${batch}.err" >> "${kay_script}"
+    echo "#SBATCH --mail-user=${email}" >> "${kay_script}"
+    echo "#SBATCH --mail-type=BEGIN,END" >> "${kay_script}"
+    echo "" >> "${kay_script}"
 #    # TODO sort python environment
-#    echo "# activate python environment" >> ${kay_script}
-#    echo "source ${VENVDIR}/bin/activate" >> ${kay_script}
+#    echo "# activate python environment" >> "${kay_script}"
+#    echo "source ${VENVDIR}/bin/activate" >> "${kay_script}"
     # TODO check that CONDA works
-    echo "# activate python environment" >> ${kay_script}
-    echo "module load conda" >> ${kay_script}
-    echo "source activate glamod_QC" >> ${kay_script}
+    echo "# activate python environment" >> "${kay_script}"
+    echo "module load conda" >> "${kay_script}"
+    echo "source activate glamod_QC" >> "${kay_script}"
     
-    echo "" >> ${kay_script}
-    echo "# go to scripts and set taskfarm running" >> ${kay_script}
-    echo "cd ${SCRIPT_DIR}" >> ${kay_script}
-    echo "module load taskfarm" >> ${kay_script}
-    echo "taskfarm ${taskfarm_script}" >> ${kay_script}
+    echo "" >> "${kay_script}"
+    echo "# go to scripts and set taskfarm running" >> "${kay_script}"
+    echo "cd ${SCRIPT_DIR}" >> "${kay_script}"
+    echo "module load taskfarm" >> "${kay_script}"
+    echo "taskfarm ${taskfarm_script}" >> "${kay_script}"
 
 } # write_kay_script
 
@@ -88,12 +88,12 @@ function write_and_submit_kay_script {
 	kay_script="${SCRIPT_DIR}/kay_external_${batch}.bash"
     fi
     
-    if [ ! -e ${kay_script} ]; then
-	rm ${kay_script}
+    if [ ! -e "${kay_script}" ]; then
+	rm "${kay_script}"
     fi
     write_kay_script "${kay_script}" "${taskfarm_script}" "${batch}" "${email}"
 
-    sbatch < ${kay_script}
+    sbatch < "${kay_script}"
 
 } # write_and_submit_kay_script
 
@@ -105,10 +105,10 @@ function prepare_taskfarm_script {
     elif  [ "${STAGE}" == "N" ]; then
 	taskfarm_script="${SCRIPT_DIR}/taskfarm_external_${batch}.bash"
     fi
-    if [ -e ${taskfarm_script} ]; then
-	rm ${taskfarm_script}
+    if [ -e "${taskfarm_script}" ]; then
+	rm "${taskfarm_script}"
     fi
-    echo ${taskfarm_script}
+    echo "${taskfarm_script}"
 } # prepare_taskfarm_script
 
 
@@ -130,8 +130,8 @@ QFF_ZIP="$(grep "out_compression " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 VERSION="$(grep "version " "${CONFIG_FILE}" | grep -v "${MFF_VER}" | awk -F'= ' '{print $2}')"
 ERR_DIR="$(grep "errors " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 LOG_DIR="$(grep "logs " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
-if [ ! -d ${ROOTDIR}${LOG_DIR} ]; then
-    mkdir ${ROOTDIR}${LOG_DIR}
+if [ ! -d "${ROOTDIR}${LOG_DIR}" ]; then
+    mkdir "${ROOTDIR}${LOG_DIR}"
 fi
 
 # other bits of information from the config file.
@@ -142,18 +142,25 @@ email="$(grep "email " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 if [ "${STAGE}" == "N" ]; then
     echo "${ROOTDIR}${QFF_DIR%/}_configs/${VERSION}neighbours.txt"
     if [ ! -f "${ROOTDIR}${QFF_DIR%/}_configs/${VERSION}neighbours.txt" ]; then
-        read -p "Neighbour file missing - do you want to run Y/N" run_neighbours
+        read -p "Neighbour file missing - do you want to create? (Y/N): " run_neighbours
 
-	    if [ "${run_neighbours}" == "Y" ] || [ "${run_neighbours}" == "y" ]; then
-	         echo "Running neighbour finding routine"
-		 module load conda
-		 source activate glamod_QC
-                 # source ${VENVDIR}/bin/activate
-                 python ${cwd}/find_neighbours.py
-	    else
-	         echo "Not running neighbour finding routine, exit"
-	         exit
-	    fi
+    else
+	read -p "Neighbour file exists - do you want to rebuild? (Y/N): " run_neighbours
+    fi
+    # check if needing to run
+    if [ "${run_neighbours}" == "Y" ] || [ "${run_neighbours}" == "y" ]; then
+	echo "Running neighbour finding routine"
+	module load conda
+	source activate glamod_QC
+        # source ${VENVDIR}/bin/activate
+        python "${cwd}/find_neighbours.py"
+
+	wc -l "${ROOTDIR}${QFF_DIR%/}_configs/${VERSION}neighbours.txt"
+    else
+	if [ ! -f "${ROOTDIR}${QFF_DIR%/}_configs/${VERSION}neighbours.txt" ]; then
+	    echo "Not running neighbour finding routine and doesn't exist: Exit"
+	    exit
+	fi
     fi
 fi
 
@@ -162,8 +169,8 @@ fi
 STATION_LIST="$(grep "station_list " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 station_list_file="${STATION_LIST}"
 
-echo `wc -l ${station_list_file}`
-stn_ids=`awk -F" " '{print $1}' ${station_list_file}`
+wc -l "${station_list_file}"
+stn_ids=$(awk -F" " '{print $1}' "${station_list_file}")
 
 #**************************************
 echo "Check all upstream stations present"
@@ -190,7 +197,7 @@ do
     fi
 
     if [ ${processed} == false ]; then
-        echo ${stn} >> ${missing_file}
+        echo "${stn}" >> ${missing_file}
     fi
 
 done
@@ -206,8 +213,8 @@ if [ "${STAGE}" == "N" ]; then
 fi
 
 echo "Checked for all input files - see missing.txt"
-n_missing=`wc ${missing_file} | awk -F' ' '{print $1}'`
-if [ ${n_missing} -ne 0 ]; then
+n_missing=$(wc "${missing_file}" | awk -F' ' '{print $1}')
+if [ "${n_missing}" -ne 0 ]; then
     read -p "${n_missing} upstream files missing - do you want to run remainder Y/N? " run_kay
     if [ "${run_kay}" == "N" ] || [ "${run_kay}" == "n" ]; then
         exit
@@ -231,7 +238,7 @@ taskfarm_script="$(prepare_taskfarm_script "${batch}")"
 scnt=1
 for stn in ${stn_ids}
 do
-    echo ${stn}
+    echo "${stn}"
     
     # check target file exists (in case waiting on upstream process)
     submit=false
@@ -280,11 +287,11 @@ do
 
         if [ "${STAGE}" == "I" ]; then
 	    if [ ! -e "${ROOTDIR}${PROC_DIR}${VERSION}" ]; then
-		mkdir ${ROOTDIR}${PROC_DIR}${VERSION}
+		mkdir "${ROOTDIR}${PROC_DIR}${VERSION}"
 	    fi
 	elif [ "${STAGE}" == "N" ]; then
 	    if [ ! -e "${ROOTDIR}${QFF_DIR}${VERSION}" ]; then
-		mkdir ${ROOTDIR}${QFF_DIR}${VERSION}
+		mkdir "${ROOTDIR}${QFF_DIR}${VERSION}"
 	    fi
 	fi
 
@@ -292,9 +299,9 @@ do
         if [ "${CLOBBER}" == "C" ]; then
 
 	    if [ "${STAGE}" == "I" ]; then
-		echo "python3 ${cwd}/intra_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics --clobber" >> ${taskfarm_script}
+		echo "python3 ${cwd}/intra_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics --clobber" >> "${taskfarm_script}"
 	    elif  [ "${STAGE}" == "N" ]; then
-		echo "python3 ${cwd}/inter_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics --clobber" >> ${taskfarm_script}
+		echo "python3 ${cwd}/inter_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics --clobber" >> "${taskfarm_script}"
 	    fi
 
 	# if not overwrite
@@ -316,7 +323,7 @@ do
 
                 else
 		    # no output, include
-		    echo "python3 ${cwd}/intra_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics" >> ${taskfarm_script}
+		    echo "python3 ${cwd}/intra_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics" >> "${taskfarm_script}"
                 fi
  
             elif [ "${STAGE}" == "N" ]; then
@@ -335,7 +342,7 @@ do
 
                 else
 		    # no output, include
-                    echo "python3 ${cwd}/inter_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics" >> ${taskfarm_script}
+                    echo "python3 ${cwd}/inter_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics" >> "${taskfarm_script}"
                 fi
 
 	    fi # stage
@@ -371,17 +378,17 @@ write_and_submit_kay_script "${taskfarm_script}" "${batch}"
 exit
 #**************************************
 # and print summary
-n_jobs=`squeue --user=${USER} | wc -l`
+n_jobs=$(squeue --user="${USER}" | wc -l)
 # deal with Slurm header in output
 let n_jobs=n_jobs-1
 while [ ${n_jobs} -ne 0 ];
 do        
     echo "All submitted, waiting 5min for queue to clear"
     sleep 5m
-    n_jobs=`squeue --user=${USER} | wc -l`
+    n_jobs=$(squeue --user="${USER}" | wc -l)
     let n_jobs=n_jobs-1
 done
 
-source check_if_processed.bash ${STAGE}
+source check_if_processed.bash "${STAGE}"
 
 echo "ends"
