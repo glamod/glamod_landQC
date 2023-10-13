@@ -53,9 +53,9 @@ function write_kay_script {
 
     echo "#!/bin/bash -l" > "${kay_script}"
     if [ "${STAGE}" == "I" ]; then
-	echo "#SBATCH -p ProdQ" >> "${kay_script}"
+	     echo "#SBATCH -p ProdQ" >> "${kay_script}"
     elif  [ "${STAGE}" == "N" ]; then
-	echo "#SBATCH -p ShmemQ" >> "${kay_script}"
+	     echo "#SBATCH -p ShmemQ" >> "${kay_script}"
     fi
     echo "#SBATCH -N 1" >> "${kay_script}"
     echo "#SBATCH -t 24:00:00" >> "${kay_script}"
