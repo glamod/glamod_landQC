@@ -13,4 +13,7 @@ dependencies:
   - coverage
   - ipython[version='>=8.12']
   - pandas=1.5.3
-prefix: /ichec/home/users/rdunn/.conda/envs/glamod_QC
+# Security fixes
+ - libwebp-base >= 1.3.2
+ - libwebp >= 1.3.2
+ prefix: /ichec/home/users/rdunn/.conda/envs/glamod_QC
