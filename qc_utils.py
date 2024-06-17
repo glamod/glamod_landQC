@@ -145,6 +145,9 @@ def get_station_list(restart_id="", end_id=""):
                                header=None, names=("id", "latitude", "longitude", "elevation", "state",
                                                    "name", "wmo"))
 
+    # fill empty entries (default NaN) with blank strings
+    station_list = station_list.fillna("")
+
     # no longer necessary in November 2019 run, kept just in case
 #    station_list2 = pd.read_fwf(os.path.join(setup.SUBDAILY_ROOT_DIR, "ghcnh-stations-2add.txt"), widths=(11, 9, 10, 7, 35), header=None)
 #    station_list = station_list.append(station_list2, ignore_index=True)
