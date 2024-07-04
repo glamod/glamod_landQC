@@ -290,26 +290,26 @@ do
     if [ ${submit} == true ]; then
 
         if [ "${STAGE}" == "I" ]; then
-	    if [ ! -e "${ROOTDIR}${PROC_DIR}${VERSION}" ]; then
-		mkdir "${ROOTDIR}${PROC_DIR}${VERSION}"
-	    fi
-	elif [ "${STAGE}" == "N" ]; then
-	    if [ ! -e "${ROOTDIR}${QFF_DIR}${VERSION}" ]; then
-		mkdir "${ROOTDIR}${QFF_DIR}${VERSION}"
-	    fi
-	fi
+	        if [ ! -e "${ROOTDIR}${PROC_DIR}${VERSION}" ]; then
+		        mkdir "${ROOTDIR}${PROC_DIR}${VERSION}"
+	        fi
+	    elif [ "${STAGE}" == "N" ]; then
+	        if [ ! -e "${ROOTDIR}${QFF_DIR}${VERSION}" ]; then
+		        mkdir "${ROOTDIR}${QFF_DIR}${VERSION}"
+	        fi
+    	fi
 
         # if overwrite
         if [ "${CLOBBER}" == "C" ]; then
 
-	    if [ "${STAGE}" == "I" ]; then
-		echo "python3 ${cwd}/intra_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics --clobber" >> "${taskfarm_script}"
-	    elif  [ "${STAGE}" == "N" ]; then
-		echo "python3 ${cwd}/inter_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics --clobber" >> "${taskfarm_script}"
-	    fi
+	        if [ "${STAGE}" == "I" ]; then
+		        echo "python3 ${cwd}/intra_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics --clobber" >> "${taskfarm_script}"
+	        elif  [ "${STAGE}" == "N" ]; then
+		        echo "python3 ${cwd}/inter_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics --clobber" >> "${taskfarm_script}"
+	        fi
 
-	# if not overwrite
-	else
+	    # if not overwrite
+	    else
             # check if already processed before setting going
             if [ "${STAGE}" == "I" ]; then
 
