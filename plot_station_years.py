@@ -327,7 +327,7 @@ def plot_station_number_over_time(station_list, outfile):
     plt.plot(np.arange(START_YEAR, END_YEAR+1), station_numbers, 'co', ls='-', label="raw")
 
     # prettify the plot
-    plt.ylim([0, 9000])
+    plt.ylim([0, 20000])
     plt.ylabel("Stations with data")
     plt.xlim([START_YEAR, END_YEAR+2])
     plt.xticks(np.arange(START_YEAR, END_YEAR+2, 20))
@@ -349,7 +349,7 @@ def plot_station_number_over_time(station_list, outfile):
     plt.plot(np.arange(START_YEAR, END_YEAR+1), station_numbers, 'co', ls='-', label="raw")
 
     # prettify the plot
-    plt.ylim([1, 9000])
+    plt.ylim([1, 20000])
     plt.gca().set_yscale("log")
     plt.ylabel("Stations with data")
     plt.xlim([START_YEAR, END_YEAR+2])

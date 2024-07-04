@@ -61,7 +61,7 @@ def main():
 
     station_list.to_string(os.path.join(setup.SUBDAILY_METADATA_DIR, setup.STATION_FULL_LIST),
                            index=False, header=False, index_names=False,
-                           formatters={"wmo": "{:05.0f}".format,
+                           formatters={"wmo": "{:5s}".format,
                                        "name": "{:<40s}".format}, na_rep="")
     
     return

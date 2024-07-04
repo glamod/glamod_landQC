@@ -92,11 +92,11 @@ function write_and_submit_kay_script {
 	kay_script="${SCRIPT_DIR}/kay_external_${batch}.bash"
     fi
     
-    if [ ! -e "${kay_script}" ]; then
+    if [ -e "${kay_script}" ]; then
 	rm "${kay_script}"
     fi
     write_kay_script "${kay_script}" "${taskfarm_script}" "${batch}" "${email}"
-
+    
     sbatch < "${kay_script}"
 
 } # write_and_submit_kay_script
@@ -308,6 +308,9 @@ do
 		echo "python3 ${cwd}/inter_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics --clobber" >> "${taskfarm_script}"
 	    fi
 
+            # increment station counter
+            let scnt=scnt+1
+
 	# if not overwrite
 	else
             # check if already processed before setting going
@@ -328,6 +331,10 @@ do
                 else
 		    # no output, include
 		    echo "python3 ${cwd}/intra_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics" >> "${taskfarm_script}"
+
+                    # increment station counter (don't for other elifs to reduce jobs)
+                    let scnt=scnt+1
+
                 fi
  
             elif [ "${STAGE}" == "N" ]; then
@@ -347,6 +354,10 @@ do
                 else
 		    # no output, include
                     echo "python3 ${cwd}/inter_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics" >> "${taskfarm_script}"
+
+                    # increment station counter (don't for other elifs to reduce jobs)
+                    let scnt=scnt+1
+
                 fi
 
 	    fi # stage
@@ -355,9 +366,6 @@ do
     else
 	echo "${stn} not submitted, upstream file not available"
     fi # submit
-
-    # increment station counter
-    let scnt=scnt+1
     
     # and write script to run this batch
     if [ ${scnt} -eq ${STATIONS_PER_BATCH} ]; then
