@@ -179,7 +179,9 @@ stn_ids=$(awk -F" " '{print $1}' "${station_list_file}")
 #**************************************
 echo "Check all upstream stations present"
 missing_file=missing.txt
-rm ${missing_file}
+if [ -e ${missing_file} ]; then
+    rm ${missing_file}
+fi
 touch ${missing_file}
 for stn in ${stn_ids}
 do

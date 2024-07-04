@@ -55,7 +55,7 @@ fi
 # use configuration file to pull out paths &c
 CONFIG_FILE="${cwd}/configuration.txt"
 
-VENVDIR="$(grep "venvdir " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
+# VENVDIR="$(grep "venvdir " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 # using spaces after setting ID to ensure pull out correct line
 # these are fixed references
 ROOTDIR="$(grep "root " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
@@ -63,12 +63,14 @@ ROOTDIR="$(grep "root " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 # extract remaining locations
 MFF_DIR="$(grep "mff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 MFF_VER="$(grep "mff_version " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
+MFF_ZIP="$(grep "in_compression " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 PROC_DIR="$(grep "proc " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 QFF_DIR="$(grep "qff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 QFF_ZIP="$(grep "out_compression " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 VERSION="$(grep "version " "${CONFIG_FILE}" | grep -v "${MFF_VER}" | awk -F'= ' '{print $2}')"
 ERR_DIR="$(grep "errors " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"  # ${QFF_DIR%/}_errors/
 
+#**************************************
 # if neighbour checks make sure all files in place
 if [ "${STAGE}" == "N" ]; then
     echo "${ROOTDIR}${QFF_DIR%/}_configs/${VERSION}neighbours.txt"
@@ -97,13 +99,15 @@ stn_ids=`awk -F" " '{print $1}' ${station_list_file}`
 #**************************************
 echo "Check all upstream stations present"
 missing_file=missing.txt
-rm ${missing_file}
+if [ -e ${missing_file} ]; then
+    rm ${missing_file}
+fi
 touch ${missing_file}
 for stn in ${stn_ids}
 do
     processed=false
     if [ "${STAGE}" == "I" ]; then
-        if [ -f "${MFF_DIR}${MFF_VER}${stn}.mff" ]; then
+        if [ -f "${MFF_DIR}${MFF_VER}${stn}.mff${MFF_ZIP}" ]; then
             processed=true
         fi
     elif [ "${STAGE}" == "N" ]; then
@@ -158,9 +162,12 @@ do
  	    lotus_script="${SCRIPT_DIR}/lotus_external_${stn}.bash"
     fi
     echo "#!/bin/bash -l" > ${lotus_script}
-#    echo "#SBATCH --partition=short-serial" >> ${lotus_script}
-    echo "#SBATCH --partition=short-serial-4hr" >> ${lotus_script}
-    echo "#SBATCH --account=short4hr" >> ${lotus_script}
+    # ICHEC settings
+    # echo "#SBATCH --partition=short-serial-4hr" >> ${lotus_script}
+    # echo "#SBATCH --account=short4hr" >> ${lotus_script}
+    # SPICE settings
+    echo "#SBATCH --qos=normal" >> ${lotus_script}
+
     echo "#SBATCH --job-name=QC_${stn}" >> ${lotus_script}
     echo "#SBATCH --output=${LOG_DIR}/${stn}.out" >> ${lotus_script}
     echo "#SBATCH --error=${LOG_DIR}/${stn}.err " >> ${lotus_script}
@@ -177,7 +184,8 @@ do
     fi
     echo "#SBATCH --mem=6000" >> ${lotus_script}
     echo "" >> ${lotus_script}
-    echo "source ${VENVDIR}/bin/activate" >> ${lotus_script}
+    # echo "source ${VENVDIR}/bin/activate" >> ${lotus_script}
+    echo "conda activate glamod_QC" >> ${lotus_script}
     echo "" >> ${lotus_script}
 
     if [ "${STAGE}" == "I" ]; then
@@ -197,11 +205,11 @@ do
     done
 
 # SUBSETTING FOR DIAGNOSTICS
-#    let scnt=scnt+1
-#    if [ ${stn} == "BHM00078584" ]; then
-#        # test first 1000 (20190913)
-#        exit
-#    fi
+   let scnt=scnt+1
+   if [ ${stn} == "AYW00057801" ]; then
+       # test first 1000 (20240704)
+       exit
+   fi
 #    if [ ${scnt} -le 2000 ]; then
 #        # test first 1000 (20190913)
 #        continue
@@ -214,7 +222,7 @@ do
     while [ ${submit} == false ];
     do
         if [ "${STAGE}" == "I" ]; then
-            if [ -f "${MFF_DIR}${MFF_VER}${stn}.mff" ]; then
+            if [ -f "${MFF_DIR}${MFF_VER}${stn}.mff${MFF_ZIP}" ]; then
                 submit=true
             fi
         elif [ "${STAGE}" == "N" ]; then
