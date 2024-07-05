@@ -32,6 +32,7 @@ QC_TESTS = {"o" : "Odd Cluster", "F" : "Frequent Value", "D" : "Distribution - M
 
 
 MDI = -1.e30
+FIRST_YEAR = 1750
 
 # These data are retained and processed by the QC tests.  All others are not.
 WIND_MEASUREMENT_CODES = ["", "N-Normal", "C-Calm", "V-Variable", "9-Missing"]
