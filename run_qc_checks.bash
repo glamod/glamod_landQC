@@ -204,12 +204,12 @@ do
         n_jobs=`squeue --user="${USER}" | wc -l`
     done
 
+    let scnt=scnt+1
 # SUBSETTING FOR DIAGNOSTICS
-   let scnt=scnt+1
-   if [ ${stn} == "AYW00057801" ]; then
-       # test first 1000 (20240704)
-       exit
-   fi
+#   if [ ${stn} == "AYW00057801" ]; then
+#       # test first 1000 (20240704)
+#       exit
+#   fi
 #    if [ ${scnt} -le 2000 ]; then
 #        # test first 1000 (20190913)
 #        continue
