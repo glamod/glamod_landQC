@@ -252,38 +252,38 @@ do
     do
     # check if upstream data files are present
 	if [ "${STAGE}" == "I" ]; then
-            if [ -f "${MFF_DIR}${MFF_VER}${stn}.mff" ]; then
-		submit=true
-            fi
+        if [ -f "${MFF_DIR}${MFF_VER}${stn}.mff" ]; then
+		    submit=true
+        fi
 	elif [ "${STAGE}" == "N" ]; then
-            if [ -f "${ROOTDIR}${PROC_DIR}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
-		submit=true
-            elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
-		# if station not processed, then no point submitting
-		submit=false
-            elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}.err" ]; then
-		# if station has had an error, then no point in submitting
-		submit=false
+        if [ -f "${ROOTDIR}${PROC_DIR}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
+		    submit=true
+        elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
+		    # if station not processed, then no point submitting
+		    submit=false
+        elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}.err" ]; then
+		    # if station has had an error, then no point in submitting
+		    submit=false
 #            else
 #                # file may well have been withheld, so skip for the moment
 #                # 2020-06-01 - needs to be sorted better (checking the bad_stations folder)
 #                submit=true
-            fi
+        fi
 	fi
         
 	# option to skip over if upstream missing through unexpected way
 	if [ "${WAIT}" == "T" ]; then	    
-            if [ ${submit} == false ]; then
-		echo "upstream file ${stn} missing, sleeping 1m"
-		sleep 1m
-            fi
+        if [ ${submit} == false ]; then
+		    echo "upstream file ${stn} missing, sleeping 1m"
+		    sleep 1m
+        fi
 	    
 	elif [ "${WAIT}" == "F" ]; then	    
-            if [ ${submit} == false ]; then
-		echo "upstream file ${stn} missing, skipping"
-		break
+        if [ ${submit} == false ]; then
+		    echo "upstream file ${stn} missing, skipping"
+		    break
 	        # to escape the loop as we will skip this file
-            fi
+        fi
 	fi
     done
     
@@ -328,8 +328,8 @@ do
                     echo "${stn} already processed - managed error"
 
                 else
-		    # no output, include
-		    echo "python3 ${cwd}/intra_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics" >> "${taskfarm_script}"
+		            # no output, include
+		            echo "python3 ${cwd}/intra_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics" >> "${taskfarm_script}"
                 fi
  
             elif [ "${STAGE}" == "N" ]; then
@@ -347,15 +347,14 @@ do
                     echo "${stn} already processed - managed error"
 
                 else
-		    # no output, include
+		            # no output, include
                     echo "python3 ${cwd}/inter_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics" >> "${taskfarm_script}"
                 fi
-
-	    fi # stage
-	fi # clobber
+	        fi # stage
+	    fi # clobber
 
     else
-	echo "${stn} not submitted, upstream file not available"
+	    echo "${stn} not submitted, upstream file not available"
     fi # submit
 
     # increment station counter
