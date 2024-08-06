@@ -16,7 +16,6 @@ def test_read_wrc(record_check_mock: Mock):
 
     this_var = common.example_test_variable("temperature",
                                             test_data)
-    this_var.flags = np.array(["" for i in test_data])
 
     station = common.example_test_station(this_var)
     station.continent="row"

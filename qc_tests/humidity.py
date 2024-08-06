@@ -12,29 +12,8 @@ import numpy as np
 import qc_utils as utils
 
 HIGH_FLAGGING_THRESHOLD = 0.4
+TOLERANCE = 1.e-10
 
-#************************************************************************
-def prepare_data_repeating_dpd(locs, plots=False, diagnostics=False):
-    """
-    Prepare the data for repeating strings
-
-    :param MetVar obs_var: meteorological variable object
-    :param bool plots: turn on plots
-    :param bool diagnostics: turn on diagnostic output
-    """
-
-    # want locations where first differences are zero
-    index_diffs = np.ma.diff(locs)
-
-    # group the differences
-    #     array of (value_diff, count) pairs
-    grouped_diffs = np.array([[g[0], len(list(g[1]))] for g in itertools.groupby(index_diffs)])
-
-    # all adjacent values, hence difference in array-index is 1
-    strings, = np.where(grouped_diffs[:, 0] == 1)
-    repeated_string_lengths = grouped_diffs[strings, 1] + 1
- 
-    return repeated_string_lengths, grouped_diffs, strings # prepare_data_repeating_dpd
 
 #************************************************************************
 def get_repeating_dpd_threshold(temperatures, dewpoints, config_dict, plots=False, diagnostics=False):
@@ -48,6 +27,7 @@ def get_repeating_dpd_threshold(temperatures, dewpoints, config_dict, plots=Fals
     :param bool diagnostics: turn on diagnostic output
     """
 
+    # identical equality
     dpd = temperatures.data - dewpoints.data
 
     # find only the DPD=0 locations, and then see if there are streaks
@@ -55,11 +35,15 @@ def get_repeating_dpd_threshold(temperatures, dewpoints, config_dict, plots=Fals
 
     # only process further if there are enough locations
     if len(locs) > 1:
-        repeated_string_lengths, grouped_diffs, strings = prepare_data_repeating_dpd(locs, plots=plots, diagnostics=diagnostics)
+        repeated_string_lengths, grouped_diffs, strings = utils.prepare_data_repeating_string(locs, diff=1, plots=plots, diagnostics=diagnostics)
 
         # bin width is 1 as dealing with the index.
         # minimum bin value is 2 as this is the shortest string possible
-        threshold = utils.get_critical_values(repeated_string_lengths, binmin=2, binwidth=1.0, plots=plots, diagnostics=diagnostics, title="DPD streak length", xlabel="Repeating DPD length")
+        threshold = utils.get_critical_values(repeated_string_lengths, binmin=2,
+                                              binwidth=1.0, plots=plots,
+                                              diagnostics=diagnostics,
+                                              title="DPD streak length",
+                                              xlabel="Repeating DPD length")
 
         # write out the thresholds...
         try:
@@ -138,10 +122,10 @@ def plot_humidity_streak(times, T, D, streak_start, streak_end):
     plt.clf()
     plt.plot(times[pad_start: pad_end], T.data.compressed()[pad_start: pad_end], 'k-', marker=".", label=T.name.capitalize())
     plt.plot(times[pad_start: pad_end], D.data.compressed()[pad_start: pad_end], 'b-', marker=".", label=D.name.capitalize())
-    plt.plot(times[streak_start: streak_end], T_var.data.compressed()[streak_start: streak_end], 'k-', marker=".", label=T.name.capitalize())
-    plt.plot(times[streak_start: streak_end], D_var.data.compressed()[streak_start: streak_end], 'b-', marker=".", label=D.name.capitalize())
+    plt.plot(times[streak_start: streak_end], T.data.compressed()[streak_start: streak_end], 'k-', marker=".", label=T.name.capitalize())
+    plt.plot(times[streak_start: streak_end], D.data.compressed()[streak_start: streak_end], 'b-', marker=".", label=D.name.capitalize())
 
-    plt.ylabel(obs_var.units)
+    plt.ylabel(T.units)
     plt.show()
 
     return # plot_humidity_streak
@@ -160,19 +144,20 @@ def super_saturation_check(station, temperatures, dewpoints, plots=False, diagno
 
     flags = np.array(["" for i in range(temperatures.data.shape[0])])
 
-    sss, = np.ma.where(dewpoints.data > temperatures.data)
+    sss, = np.ma.where(dewpoints.data > (temperatures.data + TOLERANCE))
 
     flags[sss] = "h"
 
-    # and if month has a high proportion
+    # and whole month of dewpoints if month has a high proportion (of dewpoint obs)
     for year in np.unique(station.years):
         for month in range(1, 13):
-            month_locs, = np.where(np.logical_and(station.years == year, station.months == month))
+            month_locs, = np.where(np.logical_and(station.years == year,
+                                                  station.months == month,
+                                                  dewpoints.data.mask == True))
             if month_locs.shape[0] != 0:
                 flagged, = np.where(flags[month_locs] == "h")
-
                 if (flagged.shape[0]/month_locs.shape[0]) > HIGH_FLAGGING_THRESHOLD:
-                    flags[month_locs] == "h"
+                    flags[month_locs] = "h"
 
     # only flag the dewpoints
     dewpoints.flags = utils.insert_flags(dewpoints.flags, flags)
@@ -183,7 +168,6 @@ def super_saturation_check(station, temperatures, dewpoints, plots=False, diagno
             plot_humidities(temperatures, dewpoints, station.times, bad)
 
     if diagnostics:
-
         print("Supersaturation {}".format(dewpoints.name))
         print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
 
@@ -223,7 +207,7 @@ def dew_point_depression_streak(times, temperatures, dewpoints, config_dict, plo
 
     # only process further if there are enough locations
     if len(locs) > 1:
-        repeated_string_lengths, grouped_diffs, strings = prepare_data_repeating_dpd(locs, plots=plots, diagnostics=diagnostics)
+        repeated_string_lengths, grouped_diffs, strings = utils.prepare_data_repeating_string(locs, diff=1, plots=plots, diagnostics=diagnostics)
 
         # above threshold
         bad, = np.where(repeated_string_lengths >= threshold)
@@ -236,13 +220,12 @@ def dew_point_depression_streak(times, temperatures, dewpoints, config_dict, plo
             flags[start : end] = "h"
 
             if plots:
-                plot_humiditystreak(times, temperatures, dewpoints, start, end)
+                plot_humidity_streak(times, temperatures, dewpoints, start, end)
 
         # only flag the dewpoints
         dewpoints.flags = utils.insert_flags(dewpoints.flags, flags)
 
     if diagnostics:
-
         print("Dewpoint Depression {}".format(dewpoints.name))
         print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
 
