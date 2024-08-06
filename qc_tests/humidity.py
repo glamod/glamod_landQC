@@ -165,8 +165,8 @@ def super_saturation_check(station: utils.Station,
     for year in np.unique(station.years):
         for month in range(1, 13):
             month_locs, = np.nonzero(np.logical_and(station.years == year,
-                                                  station.months == month,
-                                                  dewpoints.data.mask == True))
+                                                    station.months == month,
+                                                    dewpoints.data.mask == True))
             if month_locs.shape[0] != 0:
                 flagged, = np.nonzero(flags[month_locs] == "h")
                 if (flagged.shape[0]/month_locs.shape[0]) > HIGH_FLAGGING_THRESHOLD:
