@@ -48,6 +48,7 @@ def get_repeating_dpd_threshold(temperatures, dewpoints, config_dict, plots=Fals
     :param bool diagnostics: turn on diagnostic output
     """
 
+    # identical equality
     dpd = temperatures.data - dewpoints.data
 
     # find only the DPD=0 locations, and then see if there are streaks
@@ -138,10 +139,10 @@ def plot_humidity_streak(times, T, D, streak_start, streak_end):
     plt.clf()
     plt.plot(times[pad_start: pad_end], T.data.compressed()[pad_start: pad_end], 'k-', marker=".", label=T.name.capitalize())
     plt.plot(times[pad_start: pad_end], D.data.compressed()[pad_start: pad_end], 'b-', marker=".", label=D.name.capitalize())
-    plt.plot(times[streak_start: streak_end], T_var.data.compressed()[streak_start: streak_end], 'k-', marker=".", label=T.name.capitalize())
-    plt.plot(times[streak_start: streak_end], D_var.data.compressed()[streak_start: streak_end], 'b-', marker=".", label=D.name.capitalize())
+    plt.plot(times[streak_start: streak_end], T.data.compressed()[streak_start: streak_end], 'k-', marker=".", label=T.name.capitalize())
+    plt.plot(times[streak_start: streak_end], D.data.compressed()[streak_start: streak_end], 'b-', marker=".", label=D.name.capitalize())
 
-    plt.ylabel(obs_var.units)
+    plt.ylabel(T.units)
     plt.show()
 
     return # plot_humidity_streak
@@ -164,15 +165,18 @@ def super_saturation_check(station, temperatures, dewpoints, plots=False, diagno
 
     flags[sss] = "h"
 
-    # and if month has a high proportion
+    # and whole month of dewpoints if month has a high proportion (of dewpoint obs)
     for year in np.unique(station.years):
         for month in range(1, 13):
-            month_locs, = np.where(np.logical_and(station.years == year, station.months == month))
+            month_locs, = np.where(np.logical_and(station.years == year,
+                                                  station.months == month,
+                                                  dewpoints.data.mask == True))
             if month_locs.shape[0] != 0:
                 flagged, = np.where(flags[month_locs] == "h")
 
                 if (flagged.shape[0]/month_locs.shape[0]) > HIGH_FLAGGING_THRESHOLD:
                     flags[month_locs] == "h"
+                    input("stop")
 
     # only flag the dewpoints
     dewpoints.flags = utils.insert_flags(dewpoints.flags, flags)
@@ -183,7 +187,6 @@ def super_saturation_check(station, temperatures, dewpoints, plots=False, diagno
             plot_humidities(temperatures, dewpoints, station.times, bad)
 
     if diagnostics:
-
         print("Supersaturation {}".format(dewpoints.name))
         print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
 
@@ -236,13 +239,12 @@ def dew_point_depression_streak(times, temperatures, dewpoints, config_dict, plo
             flags[start : end] = "h"
 
             if plots:
-                plot_humiditystreak(times, temperatures, dewpoints, start, end)
+                plot_humidity_streak(times, temperatures, dewpoints, start, end)
 
         # only flag the dewpoints
         dewpoints.flags = utils.insert_flags(dewpoints.flags, flags)
 
     if diagnostics:
-
         print("Dewpoint Depression {}".format(dewpoints.name))
         print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
 
