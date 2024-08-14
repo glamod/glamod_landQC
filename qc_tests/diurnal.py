@@ -30,7 +30,7 @@ for h in range(24):
 
 
 #************************************************************************
-def quartile_check(minutes):
+def quartile_check(minutes: np.array) -> bool:
     """
     Check if >=3 quartiles of the day have data
 
@@ -71,7 +71,7 @@ def quartile_check(minutes):
         return False # quartile_check
 
 #************************************************************************
-def find_fit(this_day, this_day_mins):
+def find_fit(this_day: np.array, this_day_mins: np.array) -> tuple[int, int]:
     """
     Find the best fit of a theoretical sine curve to the data
 
@@ -148,7 +148,7 @@ def find_fit(this_day, this_day_mins):
     return best_fit, uncertainty
 
 #************************************************************************
-def get_daily_offset(station, locs, obs_var):
+def get_daily_offset(station: utils.Station, locs: np.array, obs_var: utils.Meteorological_Variable) -> tuple[int, int]:
     """
     Extract data for a single 24h period, and pass to offset finder
 
@@ -176,7 +176,7 @@ def get_daily_offset(station, locs, obs_var):
     return best_fit, uncertainty # get_daily_offset
 
 #************************************************************************
-def prepare_data(station, obs_var):
+def prepare_data(station: utils.Station, obs_var: utils.Meteorological_Variable) -> tuple[np.array, np.array]:
     """
     For each 24h period, find diurnal cycle offset and uncertainty
 
@@ -212,7 +212,7 @@ def prepare_data(station, obs_var):
     return best_fit_diurnal, best_fit_uncertainty # prepare_data 
 
 #************************************************************************
-def find_offset(obs_var, station, config_dict, plots=False, diagnostics=False):
+def find_offset(obs_var: utils.Meteorological_Variable, station: utils.Station, config_dict: dict, plots: bool = False, diagnostics: bool = False) -> tuple[np.array, np.array]:
     """
     Find the best offset for a sine curve to represent the cycle
 
@@ -288,7 +288,9 @@ def find_offset(obs_var, station, config_dict, plots=False, diagnostics=False):
     return best_fit_diurnal, best_fit_uncertainty # find_offset
 
 #************************************************************************
-def diurnal_cycle_check(obs_var, station, config_dict, plots=False, diagnostics=False, best_fit_diurnal=None, best_fit_uncertainty=None):
+def diurnal_cycle_check(obs_var: utils.Meteorological_Variable, station: utils.Station, config_dict: dict,
+                        plots: bool = False, diagnostics: bool = False, best_fit_diurnal: np.array = None,
+                        best_fit_uncertainty: np.array = None) -> None:
     """
     Use offset to find days where cycle doesn't match
 
@@ -418,7 +420,7 @@ def diurnal_cycle_check(obs_var, station, config_dict, plots=False, diagnostics=
 
 
 #************************************************************************
-def dcc(station, config_dict, full=False, plots=False, diagnostics=False):
+def dcc(station: utils.Station, config_dict: dict, full: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Pass on to the Diurnal Cycle Check
 
