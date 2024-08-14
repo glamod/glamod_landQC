@@ -13,7 +13,7 @@ import io_utils as ioutils
 
 # ------------------------------------------------------------------------
 # process the station list
-def main():
+def main() -> None:
     """
     Main script.  Makes inventory and other metadata files
 

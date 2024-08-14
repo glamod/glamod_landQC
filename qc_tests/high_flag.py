@@ -16,7 +16,7 @@ import numpy as np
 import qc_utils as utils
 
 #************************************************************************
-def set_synergistic_flags(station, var):
+def set_synergistic_flags(station: utils.Station, var: str) -> None:
     """
     Set the flags on a synergistic variable.
 
@@ -40,13 +40,16 @@ def set_synergistic_flags(station, var):
     return # set_synergistic_flags
 
 #************************************************************************
-def high_flag_rate(obs_var, plots=False, diagnostics=False):
+def high_flag_rate(obs_var: utils.Meteorological_Variable,
+                   plots: bool = False, diagnostics: bool = False) -> tuple[np.array, bool]:
     """
     Check for high flag rates, and remove any remaining observations.
 
     :param MetVar obs_var: meteorological variable object
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
+
+    :returns: (array, bool) - new flags and if any have been set
     """
     any_flags_set = False
     new_flags = np.array(["" for i in range(obs_var.data.shape[0])])
@@ -84,7 +87,7 @@ def high_flag_rate(obs_var, plots=False, diagnostics=False):
     return new_flags, any_flags_set # high_flag_rate
 
 #************************************************************************
-def hfr(station, var_list, full=False, plots=False, diagnostics=False):
+def hfr(station: utils.Station, var_list: list, full: bool = False, plots: bool = False, diagnostics: bool = False) -> int:
     """
     Run through the variables and pass to the High Flag Rate Check
 

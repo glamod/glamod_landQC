@@ -24,6 +24,7 @@ import os.path
 DEFAULT_SPHERICAL_EARTH_RADIUS=6367470
 
 import numpy as np
+import pandas as pd
 import scipy.linalg
 
 
@@ -36,7 +37,7 @@ DEFAULT_SEPARATION = 9999
 CHUNKSIZE = 1000 # size of arrays to split ID list into for distances
 
 #************************************************************************
-def get_cartesian(latitudes, longitudes):
+def get_cartesian(latitudes: np.array, longitudes: np.array) -> np.array:
     """
     Compute the matrix of coranges between all location in a grid
     Args:
@@ -57,7 +58,7 @@ def get_cartesian(latitudes, longitudes):
     return cartesian_coords # get_cartesian
 
 #************************************************************************
-def compute_corange_matrix(cartesian_coords_a, cartesian_coords_b=None):
+def compute_corange_matrix(cartesian_coords_a: np.array, cartesian_coords_b: np.array = None) -> np.array:
     """Compute the matrix of coranges between all location in a grid
     Args:
         cartesian_coords_a:
@@ -77,7 +78,8 @@ def compute_corange_matrix(cartesian_coords_a, cartesian_coords_b=None):
     return coranges # compute_corange_matrix
 
 #************************************************************************
-def get_neighbours(station_list_a, station_list_b=None, diagnostics=False, plots=False, full=False):
+def get_neighbours(station_list_a: pd.DataFrame, station_list_b: pd.DataFrame = None,
+                   diagnostics: bool = False, plots: bool = False, full: bool = False) -> np.array:
     """
     Find the neighbour indices and distances for the list supplied 
 
@@ -143,7 +145,7 @@ def get_neighbours(station_list_a, station_list_b=None, diagnostics=False, plots
     return neighbours # get_neighbours
 
 #************************************************************************
-def main(restart_id="", end_id="", diagnostics=False, plots=False, full=False):
+def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False, plots: bool = False, full: bool = False) -> None:
     """
     Find all possible neighbours.  Works in chunks to save on resources.
 

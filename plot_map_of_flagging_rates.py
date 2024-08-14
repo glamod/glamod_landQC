@@ -36,7 +36,7 @@ start_time_string = dt.datetime.strftime(dt.datetime.now(), "%Y%m%d")
 
 
 #************************************************************************
-def flag_read(infilename):
+def flag_read(infilename: str) -> None:
     """
     Read flag summary file into dictionary of dicts
     """
@@ -52,7 +52,7 @@ def flag_read(infilename):
     return flags # flag_read
 
 #************************************************************************
-def main(restart_id="", end_id="", diagnostics=False):
+def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False) -> None:
     """
     Main plot function.
 

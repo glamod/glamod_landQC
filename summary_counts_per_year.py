@@ -27,7 +27,7 @@ import setup
 #************************************************************************
 
 #************************************************************************
-def get_summary(stage="N", restart_id="", end_id="", diagnostics=False):
+def get_summary(stage: str = "N", restart_id: str = "", end_id: str = "", diagnostics: bool = False) -> None:
     """
     Main script.  Reads in station data, populates internal objects extracts counts per year.
 

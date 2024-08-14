@@ -18,7 +18,7 @@ GAP_SIZE = 2
 BIN_WIDTH = 0.5
 
 #************************************************************************
-def get_weights(monthly_anoms, monthly_subset, filter_subset):
+def get_weights(monthly_anoms: np.array, monthly_subset: np.array, filter_subset: np.array) -> float:
     '''
     Get the weights for the low pass filter.
 
@@ -40,7 +40,7 @@ def get_weights(monthly_anoms, monthly_subset, filter_subset):
     return weights # get_weights
 
 #************************************************************************
-def low_pass_filter(normed_anomalies, station, monthly_anoms, month):
+def low_pass_filter(normed_anomalies: np.array, station: utils.Station, monthly_anoms: np.array, month: int) -> np.array:
     '''
     Run the low pass filter - get suitable ranges, get weights, and apply
 
@@ -81,7 +81,8 @@ def low_pass_filter(normed_anomalies, station, monthly_anoms, month):
     return normed_anomalies # low_pass_filter
 
 #************************************************************************
-def prepare_data(obs_var, station, month, diagnostics=False, winsorize=True):
+def prepare_data(obs_var: utils.Meteorological_Variable, station: utils.Station,
+                 month: int, diagnostics: bool = False, winsorize: bool = True) -> np.ma.array:
     """
     Prepare the data for the climatological check.  Makes anomalies and applies low-pass filter
 
@@ -157,7 +158,9 @@ def prepare_data(obs_var, station, month, diagnostics=False, winsorize=True):
         return anomalies # prepare_data
 
 #************************************************************************
-def find_month_thresholds(obs_var, station, config_dict, plots=False, diagnostics=False, winsorize=True):
+def find_month_thresholds(obs_var: utils.Meteorological_Variable, station: utils.Station,
+                          config_dict: dict, plots: bool = False, diagnostics: bool = False,
+                          winsorize: bool = True) -> None:
     """
     Use distribution to identify threshold values.  Then also store in config file.
 
@@ -237,7 +240,8 @@ def find_month_thresholds(obs_var, station, config_dict, plots=False, diagnostic
     return # find_month_thresholds
 
 #************************************************************************
-def monthly_clim(obs_var, station, config_dict, logfile="", plots=False, diagnostics=False, winsorize=True):
+def monthly_clim(obs_var: utils.Meteorological_Variable, station: utils.Station, config_dict: dict,
+                 logfile: str = "", plots: bool = False, diagnostics: bool = False, winsorize: bool = True):
     """
     Run through the variables and pass to the Distributional Gap Checks
 
@@ -326,7 +330,8 @@ def monthly_clim(obs_var, station, config_dict, logfile="", plots=False, diagnos
 
 
 #************************************************************************
-def coc(station, var_list, config_dict, full=False, plots=False, diagnostics=False):
+def coc(station: utils.Station, var_list: list, config_dict: dict, full: bool = False,
+        plots: bool = False, diagnostics: bool = False) -> None:
     """
     Run through the variables and pass to the Climatological Outlier Checks
 

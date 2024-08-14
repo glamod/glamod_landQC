@@ -24,7 +24,7 @@ TODAY = dt.datetime.strftime(dt.datetime.now(), "%Y%m%d")
 
 
 #*********************************************
-def read_stations():
+def read_stations() -> None:
     """
     Process the GHCNH history file
     
@@ -72,7 +72,8 @@ def read_stations():
 
 
 #*********************************************
-def extract_inventory(station, inventory, data_start, data_end, do_mergers=True):
+def extract_inventory(station: utils.Station, inventory: np.array, data_start: int,
+                      data_end: int, do_mergers:bool = True) -> np.array:
     """
     Extract the information from the ISD inventory file
 
@@ -125,7 +126,7 @@ def extract_inventory(station, inventory, data_start, data_end, do_mergers=True)
 
 
 #*********************************************
-def process_inventory(candidate_stations, data_start, data_end):
+def process_inventory(candidate_stations: list, data_start: int, data_end: int) -> None:
 
     """
     Process the ISD inventory file

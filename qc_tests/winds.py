@@ -14,7 +14,8 @@ import qc_utils as utils
 #************************************************************************
 
 #************************************************************************
-def logical_checks(speed, direction, fix=False, plots=False, diagnostics=False):
+def logical_checks(speed: utils.Meteorological_Variable, direction: utils.Meteorological_Variable,
+                   fix: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Select occurrences of wind speed and direction which are 
     logically inconsistent with measuring practices.
@@ -84,7 +85,8 @@ def logical_checks(speed, direction, fix=False, plots=False, diagnostics=False):
     return # logical_checks
 
 #************************************************************************
-def wcc(station, config_dict, fix=False, full=False, plots=False, diagnostics=False):
+def wcc(station: utils.Station, config_dict: dict, fix: bool = False,
+        full: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Extract the variables and pass to the Wind Cross Checks
 

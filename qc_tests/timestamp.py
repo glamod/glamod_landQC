@@ -9,7 +9,7 @@ import numpy as np
 import qc_utils as utils
 #************************************************************************
 #*********************************************
-def plot_multiple(times, obs_var, start):
+def plot_multiple(times: np.array, obs_var: utils.Meteorological_Variable, start: int) -> None:
     '''
     Plot each instance of multiple values against surrounding data
 
@@ -40,7 +40,8 @@ def plot_multiple(times, obs_var, start):
     return # plot_spike
 
 #************************************************************************
-def identify_multiple_values(obs_var, times, config_dict, plots=False, diagnostics=False):
+def identify_multiple_values(obs_var: utils.Meteorological_Variable, times: np.array,
+                             config_dict: dict, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Use config_dict to read in critical values, and then assess to find 
 
@@ -80,7 +81,8 @@ def identify_multiple_values(obs_var, times, config_dict, plots=False, diagnosti
 
 
 #************************************************************************
-def tsc(station, var_list, config_dict, full=False, plots=False, diagnostics=False):
+def tsc(station: utils.Station, var_list: list, config_dict: dict, full: bool = False,
+        plots: bool = False, diagnostics: bool = False) -> None:
     """
     Run through the variables and pass to the Timestamp Check
 

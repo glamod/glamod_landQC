@@ -23,16 +23,15 @@ SPREAD_LIMIT = 5 # matches HadISD which used 5*IQR
 
 
 #************************************************************************
-def plot_neighbour_flags(times, flagged_time, target, buddies):
+def plot_neighbour_flags(times: np.array, flagged_time: int,
+                         target: utils.Meteorological_Variable, buddies: np.array) -> None:
     '''
     Plot each spike against surrounding data
 
     :param array times: datetime array
-    :param MetVar target: Meteorological variable object
-    :param int spike_start: the location of the spike
-    :param int spike_length: the length of the spike
-
-    :returns:
+    :param int flagged_time: location of flagged value
+    :param MetVar target: meteorological variable to plot
+    :param array buddies: 2d array of all buddy's data
     '''
     import matplotlib.pyplot as plt
 
@@ -58,7 +57,9 @@ def plot_neighbour_flags(times, flagged_time, target, buddies):
     return # plot_neighbour_flags
 
 #************************************************************************
-def neighbour_outlier(target_station, initial_neighbours, variable, diagnostics=False, plots=False, full=False):
+def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.array,
+                      variable: utils.Meteorological_Variable, diagnostics: bool = False,
+                      plots: bool = False, full: bool = False) -> None:
     """
     Works on a single station and variable.  Reads in neighbour's data, finds locations where sufficent are sufficiently different.
 
@@ -225,11 +226,12 @@ def neighbour_outlier(target_station, initial_neighbours, variable, diagnostics=
     return # neighbour_outlier
 
 #************************************************************************
-def noc(target_station, initial_neighbours, var_list, full=False, plots=False, diagnostics=False):
+def noc(target_station: utils.Stations, initial_neighbours: np.array, var_list: list, full: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Run through the variables and pass to the Neighbour Outlier Check
 
     :param Station station: Station Object for the station
+    :param array initial_neighbours: input neighbours (ID, distance) pairs
     :param list var_list: list of variables to test
     :param bool full: run a full update (recalculate thresholds)
     :param bool plots: turn on plots
