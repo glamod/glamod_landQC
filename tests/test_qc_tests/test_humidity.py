@@ -8,8 +8,9 @@ from unittest.mock import patch, Mock
 import humidity
 
 import common
+import qc_utils as utils
 
-def setup_station():
+def _setup_station() -> utils.Station:
 
     # set up the data
     temps = np.ma.arange(10)
@@ -41,9 +42,9 @@ def setup_station():
 
 # NOT TESTING PLOTTING
 
-def test_super_saturation_check():
+def test_super_saturation_check() -> None:
 
-    station = setup_station()
+    station = _setup_station()
     # manually trigger the super saturation
     station.dew_point_temperature.data[:3] = station.temperature.data[:3]+1
 
@@ -53,9 +54,9 @@ def test_super_saturation_check():
 
     np.testing.assert_array_equal(station.dew_point_temperature.flags, expected)
                                           
-def test_super_saturation_check_w_mask():
+def test_super_saturation_check_w_mask() -> None:
 
-    station = setup_station()
+    station = _setup_station()
 
     # mask the first 3 entries
     station.temperature.data = np.ma.masked_where(station.temperature.data <=3,
@@ -70,9 +71,9 @@ def test_super_saturation_check_w_mask():
     np.testing.assert_array_equal(station.dew_point_temperature.flags, expected)
 
                                           
-def test_super_saturation_check_proportion():
+def test_super_saturation_check_proportion() -> None:
 
-    station = setup_station()
+    station = _setup_station()
 
     # of the 10 element array set over 40% as Super Saturated
     station.dew_point_temperature.data[:5] = station.temperature.data[:5]+1
@@ -84,7 +85,7 @@ def test_super_saturation_check_proportion():
     np.testing.assert_array_equal(station.dew_point_temperature.flags, expected)
 
 
-#def test_dew_point_depression_check():
+#def test_dew_point_depression_check() -> None:
 
     # streaks of length 5
 #    config_dict = {"HUMIDITY" : {"DPD" : 5}}
@@ -93,9 +94,9 @@ def test_super_saturation_check_proportion():
 @patch("humidity.super_saturation_check")
 @patch("humidity.dew_point_depression_streak")
 def test_read_hcc(supersat_check_mock: Mock,
-                  dpd_check_mock: Mock):
+                  dpd_check_mock: Mock) -> None:
 
-    station = setup_station()
+    station = _setup_station()
 
     # Do the call
     humidity.hcc(station, {})

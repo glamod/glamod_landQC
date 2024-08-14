@@ -16,7 +16,11 @@ TOLERANCE = 1.e-10
 
 
 #************************************************************************
-def get_repeating_dpd_threshold(temperatures, dewpoints, config_dict, plots=False, diagnostics=False):
+def get_repeating_dpd_threshold(temperatures: utils.Meteorological_Variable,
+                                dewpoints: utils.Meteorological_Variable,
+                                config_dict: dict,
+                                plots: bool = False,
+                                diagnostics: bool = False) -> None:
     """
     Use distribution to determine threshold values.  Then also store in config dictionary.
 
@@ -64,7 +68,10 @@ def get_repeating_dpd_threshold(temperatures, dewpoints, config_dict, plots=Fals
     return # repeating_dpd_threshold
 
 #*********************************************
-def plot_humidities(T, D, times, bad):
+def plot_humidities(T: utils.Meteorological_Variable,
+                    D: utils.Meteorological_Variable, 
+                    times: np.array,
+                    bad: int) -> None:
     '''
     Plot each observation of SSS or DPD against surrounding data
 
@@ -72,8 +79,6 @@ def plot_humidities(T, D, times, bad):
     :param MetVar D: Meteorological variable object - dewpoints
     :param array times: datetime array
     :param int bad: the location of SSS
-
-    :returns:
     '''
     import matplotlib.pyplot as plt
 
@@ -97,7 +102,10 @@ def plot_humidities(T, D, times, bad):
     return # plot_humidities
 
 #*********************************************
-def plot_humidity_streak(times, T, D, streak_start, streak_end):
+def plot_humidity_streak(times: np.array,
+                         T: utils.Meteorological_Variable,
+                         D: utils.Meteorological_Variable,
+                         streak_start: int, streak_end: int) -> None:
     '''
     Plot each streak against surrounding data
 
@@ -131,7 +139,10 @@ def plot_humidity_streak(times, T, D, streak_start, streak_end):
     return # plot_humidity_streak
 
 #************************************************************************
-def super_saturation_check(station, temperatures, dewpoints, plots=False, diagnostics=False):
+def super_saturation_check(station: utils.Station,
+                           temperatures: utils.Meteorological_Variable,
+                           dewpoints: utils.Meteorological_Variable,
+                           plots: bool = False, diagnostics: bool = False) -> None:
     """
     Flag locations where dewpoint is greater than air temperature
 
@@ -174,7 +185,12 @@ def super_saturation_check(station, temperatures, dewpoints, plots=False, diagno
     return # super_saturation_check
 
 #************************************************************************
-def dew_point_depression_streak(times, temperatures, dewpoints, config_dict, plots=False, diagnostics=False):
+def dew_point_depression_streak(times: np.array,
+                                temperatures: utils.Meteorological_Variable,
+                                dewpoints: utils.Meteorological_Variable,
+                                config_dict: dict,
+                                plots: bool = False,
+                                diagnostics: bool = False) -> None:
     """
     Flag locations where dewpoint equals air temperature
 
@@ -232,7 +248,9 @@ def dew_point_depression_streak(times, temperatures, dewpoints, config_dict, plo
     return # dew_point_depression_streak
 
 #************************************************************************
-def hcc(station, config_dict, full=False, plots=False, diagnostics=False):
+def hcc(station: utils.Station, config_dict: dict,
+        full: bool = False, plots: bool = False,
+        diagnostics:bool = False) -> None:
     """
     Extract the variables and pass to the Humidity Cross Checks
 
