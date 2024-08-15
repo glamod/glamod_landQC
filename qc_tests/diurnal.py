@@ -194,7 +194,8 @@ def prepare_data(station: utils.Station, obs_var: utils.Meteorological_Variable)
         for month in np.unique(station.months):
             for day in np.unique(station.days):
                 try:
-                    dummy = dt.datetime(year, month, day)
+                    # if Datetime doesn't throw an error, then valid date
+                    _ = dt.datetime(year, month, day)
                 except ValueError:
                     # not a valid day (e.g. Leap years, short months etc)
                     continue

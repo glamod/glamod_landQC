@@ -25,10 +25,9 @@ DEFAULT_SPHERICAL_EARTH_RADIUS=6367470
 
 import numpy as np
 import pandas as pd
-import scipy.linalg
 
 
-from geometry import polar2d_to_cartesian, cross_distance, vector_angle
+from geometry import polar2d_to_cartesian, cross_distance
 
 import qc_utils as utils
 from setup import SUBDAILY_CONFIG_DIR

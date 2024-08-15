@@ -86,7 +86,7 @@ def copy_files(source: str, destination: str, extension:str = "",
                 
             else:
                 if diagnostics:
-                    print(" exists".format(filename))
+                    print("{} exists".format(filename))
     
         # force update of timestamps
         os.utime(os.path.join(destination, filename.split("/")[-1]), None)

@@ -78,7 +78,7 @@ def logical_checks(speed: utils.Meteorological_Variable, direction: utils.Meteor
 
     if diagnostics:
 
-        print("Wind Logical".format(speed.name))
+        print("Wind Logical")
         print("   Cumulative number of {} flags set: {}".format(speed.name, len(np.where(sflags != "")[0])))
         print("   Cumulative number of {} flags set: {}".format(direction.name, len(np.where(dflags != "")[0])))
 

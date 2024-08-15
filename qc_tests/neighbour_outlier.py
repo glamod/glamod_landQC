@@ -7,14 +7,11 @@ sufficiently high
 '''
 #************************************************************************
 import os
-import datetime as dt
-import pandas as pd
 import numpy as np
 
 # internal utils
 import qc_utils as utils
 import io_utils as io
-import qc_tests
 import setup
 #************************************************************************
 
@@ -61,7 +58,8 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.arra
                       variable: utils.Meteorological_Variable, diagnostics: bool = False,
                       plots: bool = False, full: bool = False) -> None:
     """
-    Works on a single station and variable.  Reads in neighbour's data, finds locations where sufficent are sufficiently different.
+    Works on a single station and variable.  Reads in neighbour's data,
+    finds locations where sufficent are sufficiently different.
 
     :param Station target_station: station to run on 
     :param array initial_neighbours: input neighbours (ID, distance) pairs
@@ -101,11 +99,15 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.arra
 
             # set up station object to hold information
             buddy_idx, = np.where(station_list.id == buddy_id)
-            buddy = utils.Station(buddy_id, station_list.iloc[buddy_idx].latitude.values[0], \
-                                      station_list.iloc[buddy_idx].longitude.values[0], station_list.iloc[buddy_idx].elevation.values[0])
+            buddy = utils.Station(buddy_id, station_list.iloc[buddy_idx].latitude.values[0],
+                                  station_list.iloc[buddy_idx].longitude.values[0],
+                                  station_list.iloc[buddy_idx].elevation.values[0])
 
             try:
-                buddy, buddy_df = io.read_station(os.path.join(setup.SUBDAILY_PROC_DIR, "{:11s}.qff{}".format(buddy_id, setup.OUT_COMPRESSION)), buddy, read_flags=True) 
+                buddy, buddy_df = io.read_station(os.path.join(setup.SUBDAILY_PROC_DIR,
+                                                               "{:11s}.qff{}".format(buddy_id,
+                                                                                     setup.OUT_COMPRESSION)),
+                                                  buddy, read_flags=True) 
 
                 buddy_var = getattr(buddy, variable)
 
@@ -113,7 +115,7 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.arra
                 flag_locs, = np.where(buddy_var.flags != "") 
                 buddy_var.data.mask[flag_locs] = True
 
-            except OSError as e:
+            except OSError: # as e:
                 # file missing, move on to next in sequence
                 io.write_error(target_station, "File Missing (Buddy, {}) - {}".format(variable, buddy_id))
                 continue
@@ -226,7 +228,8 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.arra
     return # neighbour_outlier
 
 #************************************************************************
-def noc(target_station: utils.Stations, initial_neighbours: np.array, var_list: list, full: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
+def noc(target_station: utils.Station, initial_neighbours: np.array, var_list: list,
+        full: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Run through the variables and pass to the Neighbour Outlier Check
 
@@ -240,7 +243,8 @@ def noc(target_station: utils.Stations, initial_neighbours: np.array, var_list: 
 
     for var in var_list:
 
-        neighbour_outlier(target_station, initial_neighbours, var, diagnostics=diagnostics, plots=plots, full=full)
+        neighbour_outlier(target_station, initial_neighbours, var,
+                          diagnostics=diagnostics, plots=plots, full=full)
 
     return # noc
 

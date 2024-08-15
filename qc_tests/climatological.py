@@ -264,7 +264,7 @@ def monthly_clim(obs_var: utils.Meteorological_Variable, station: utils.Station,
         if len(normalised_anomalies.compressed()) >= utils.DATA_COUNT_THRESHOLD:
 
             bins = utils.create_bins(normalised_anomalies, BIN_WIDTH, obs_var.name)
-            bincentres = bins[1:] - (BIN_WIDTH/2)
+            # bincentres = bins[1:] - (BIN_WIDTH/2)
             hist, bin_edges = np.histogram(normalised_anomalies.compressed(), bins)
 
             try:

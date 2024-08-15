@@ -63,7 +63,7 @@ def find_monthly_scaling(obs_var: utils.Meteorological_Variable, station: utils.
     :param bool diagnostics: turn on diagnostic output
     """
 
-    all_years = np.unique(station.years)
+    # all_years = np.unique(station.years)
 
     for month in range(1, 13):
 

@@ -5,7 +5,6 @@ io_utils - contains scripts for read/write of main files
 import os
 import pandas as pd
 import numpy as np
-import sys
 import setup
 import datetime as dt
         
@@ -88,7 +87,8 @@ def read_station(stationfile: str, station: Station, read_flags: bool = False) -
             day = station_df["Day"]
             for y, yy in enumerate(year):
                 try:
-                    dummy = dt.datetime(yy, month[y], day[y])
+                    # if Datatime doesn't throw an error here, then it's valid
+                    _ = dt.datetime(yy, month[y], day[y])
                 except ValueError:
                     print(yy, month[y], day[y])
                     print("Bad Date")

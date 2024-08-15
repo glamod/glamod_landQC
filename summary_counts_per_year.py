@@ -18,7 +18,6 @@ Input arguments:
 import os
 import datetime as dt
 import numpy as np
-import pandas as pd
 
 # internal utils
 import qc_utils as utils
@@ -61,11 +60,11 @@ def get_summary(stage: str = "N", restart_id: str = "", end_id: str = "", diagno
             elif stage == "N":
                 station, station_df = io.read_station(os.path.join(setup.SUBDAILY_OUT_DIR, "{:11s}.qff".format(station_id)), station)
 
-        except OSError as e:
+        except OSError: # as e:
             # file missing, move on to next in sequence
-            # io.write_error(station, "File Missing")
+            # io.write_error(station, "File Missing", error=str(e))
             continue
-        except ValueError as e:
+        except ValueError: # as e:
             # some issue in the raw file
             # io.write_error(station, "Error in input file", error=str(e))
             continue

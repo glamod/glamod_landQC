@@ -1,6 +1,5 @@
 import os
 import datetime as dt
-import argparse
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -119,8 +118,8 @@ def process_inventory(candidate_stations: list) -> list:
         pass
 
     present_stations = []
-    long_stations = []
-    final_stations = []
+    # long_stations = []
+    # final_stations = []
     # spin through each station
     for s, station in enumerate(candidate_stations):
         # print("{}/{}".format(s, len(candidate_stations)))
@@ -189,7 +188,7 @@ def plot_stations(station_list: list, outfile: str, title: str = "") -> None:
     ax.set_extent([-180.1, 180.1, -90, 90], crs=ccrs.PlateCarree())
 
     lats, lons = [], []
-    mlats, mlons = [], []
+    # mlats, mlons = [], []
 
     for stn in station_list:
 
@@ -231,7 +230,7 @@ def plot_gridded_map(station_list: list, outfile: str, title: str = "") -> None:
     rawlats = np.arange(-90., 90.+delta_lat, delta_lat)
     gridlon, gridlat = np.meshgrid(rawlons, rawlats)
     # set up empty array for gridded data
-    griddata = np.zeros(list(gridlon.shape))
+    # griddata = np.zeros(list(gridlon.shape))
 
     UsedStation = np.zeros(len(station_list))
 

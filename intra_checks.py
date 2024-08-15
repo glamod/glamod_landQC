@@ -26,7 +26,6 @@ Input arguments:
 import os
 import datetime as dt
 import numpy as np
-import pandas as pd
 import json
 from json.decoder import JSONDecodeError
 
@@ -118,7 +117,7 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
 
         try:
             station, station_df = io.read_station(os.path.join(setup.SUBDAILY_MFF_DIR, "{:11s}.mff{}".format(station_id, setup.IN_COMPRESSION)), station)
-        except OSError as e:
+        except OSError: # as e:
             # file missing, move on to next in sequence
             io.write_error(station, "File Missing")
             continue
@@ -249,7 +248,7 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
         # Insert flags into Data Frame
 
         # need to insert columns in correct place
-        column_names = station_df.columns.values
+        # column_names = station_df.columns.values
 
         #*************************
         # add QC flag columns to each variable

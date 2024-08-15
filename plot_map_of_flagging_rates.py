@@ -2,7 +2,6 @@
 import cartopy.crs as ccrs
 import os
 import datetime as dt
-import pandas as pd
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
@@ -10,8 +9,6 @@ import matplotlib.pyplot as plt
 
 # internal utils
 import qc_utils as utils
-import io_utils as io
-import qc_tests
 import setup
 #************************************************************************
 
@@ -122,12 +119,12 @@ def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False) -> N
             # setattr(obs_var, "All_counts".format(test), flagged.shape[0])
             try:
                 setattr(obs_var, "All", flag_summary[var]["All"])
-                setattr(obs_var, "All_counts".format(test), flag_summary[var]["{}_counts".format("All")])
+                setattr(obs_var, "All_counts", flag_summary[var]["{}_counts".format("All")])
                 if diagnostics:
                     print("{} - {}".format(var, flag_summary[var]["{}_counts".format("All")]))
             except KeyError:
                 setattr(obs_var, "All", 0)
-                setattr(obs_var, "All_counts".format(test), 0)
+                setattr(obs_var, "All_counts", 0)
                 if diagnostics:
                     print("{} - {}".format(var, 0))
 
@@ -205,7 +202,7 @@ def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False) -> N
                     os.path.basename( __file__ )+"   "+dt.datetime.strftime(dt.datetime.now(), "%d-%b-%Y %H:%M")
                 plt.figtext(0.01,0.01,watermarkstring,size=5)
 
-                leg=plt.legend(loc='lower center', ncol=4, bbox_to_anchor=(0.5, -0.12), frameon=False, title='', prop={'size':9}, \
+                plt.legend(loc='lower center', ncol=4, bbox_to_anchor=(0.5, -0.12), frameon=False, title='', prop={'size':9}, \
                                labelspacing=0.15, columnspacing=0.5, numpoints=1)
 
                 print(os.path.join(IMAGE_LOCS, "All_fails_{}-{}{}_{}.png".format(var, test, suffix, start_time_string)))

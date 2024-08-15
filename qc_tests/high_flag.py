@@ -26,7 +26,7 @@ def set_synergistic_flags(station: utils.Station, var: str) -> None:
     obs_var = getattr(station, var)
 
     new_flags = np.array(["" for i in range(obs_var.data.shape[0])])
-    old_flags = obs_var.flags
+    # old_flags = obs_var.flags
     obs_locs, = np.where(obs_var.data.mask == False)
 
     if obs_locs.shape[0] > 10 * utils.DATA_COUNT_THRESHOLD:

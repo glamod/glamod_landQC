@@ -144,7 +144,7 @@ def pressure_offset(sealp: utils.Meteorological_Variable, stnlp: utils.Meteorolo
             if len(high) != 0:
                 flags[high] = "p"
                 if diagnostics:
-                    print("Pressure".format(stnlp.name))
+                    print("Pressure")
                     print("   Number of high differences {}".format(len(high)))
                 if plots:
                     for bad in high:
@@ -235,7 +235,7 @@ def pressure_theory(sealp: utils.Meteorological_Variable, stnlp: utils.Meteorolo
     if len(bad_locs) != 0:
         flags[bad_locs] = "p"
         if diagnostics:
-            print("Pressure".format(stnlp.name))
+            print("Pressure")
             print("   Number of mismatches between recorded and theoretical SLPs {}".format(len(bad_locs)))
         if plots:
             for bad in bad_locs:

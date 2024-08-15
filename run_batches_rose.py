@@ -22,13 +22,12 @@ import argparse
 import numpy as np
 
 # internal utils
-import setup
 import qc_utils as utils
 
 # scripts to call
 import intra_checks as intra
-import inter_checks as inter
-import copy_files
+#import inter_checks as inter
+#import copy_files
 
 
 #*******************
