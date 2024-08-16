@@ -4,6 +4,7 @@ Contains tests for humidity.py
 import numpy as np
 import datetime as dt
 from unittest.mock import patch, Mock
+import pytest
 
 import humidity
 
@@ -37,8 +38,49 @@ def _setup_station() -> utils.Station:
     return station
 
 
+@pytest.mark.parametrize("config_dict", [{}, {"HUMIDITY" : {}}])
+def test_get_repeating_dpd_threshold_short_record(config_dict):
 
-# def test_get_repeating_dpd_threshold():
+    # set up the data
+    temps = np.arange(1)
+    dewps = np.arange(1)-1
+
+    # make MetVars
+    temperature = common.example_test_variable("temperature", temps)
+    dew_point_temperature = common.example_test_variable("dew_point_temperature", dewps)
+
+    humidity.get_repeating_dpd_threshold(temperature, dew_point_temperature, config_dict)
+
+    assert config_dict["HUMIDITY"]["DPD"] == -utils.MDI
+
+
+@pytest.mark.parametrize("config_dict", [{}, {"HUMIDITY" : {}}])
+def test_get_repeating_dpd_threshold(config_dict):
+
+    # set up the data
+    temps = np.arange(75)
+    dewps = np.arange(75) - 2.
+    # use same array as in qc_utils test
+    locs = np.array([0,
+                     10, 11, 12, 13, 14, 15,
+                     20, 21, 22, 23,
+                     30, 31, 32, 33,
+                     40, 41, 42,
+                     50, 51, 52,
+                     60, 61, 62,
+                     70])
+    # create the DPD=0
+    dewps[locs] = temps[locs]
+
+    # make MetVars
+    temperature = common.example_test_variable("temperature", temps)
+    dew_point_temperature = common.example_test_variable("dew_point_temperature", dewps)
+
+    humidity.get_repeating_dpd_threshold(temperature, dew_point_temperature, config_dict)
+
+    assert config_dict["HUMIDITY"]["DPD"] == 9.0
+
+
 
 # NOT TESTING PLOTTING
 

@@ -58,7 +58,7 @@ def get_repeating_dpd_threshold(temperatures: utils.Meteorological_Variable,
             config_dict["HUMIDITY"] = CD_dpd
             
     else:
-        # store high value so threshold never reached
+        # store high value so threshold never reached (MDI already negative)
         try:
             config_dict["HUMIDITY"]["DPD"] = -utils.MDI
         except KeyError:
