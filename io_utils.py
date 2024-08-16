@@ -5,20 +5,19 @@ io_utils - contains scripts for read/write of main files
 import os
 import pandas as pd
 import numpy as np
-import sys
 import setup
 import datetime as dt
         
-from qc_utils import populate_station, MDI, QC_TESTS
+from qc_utils import Station, populate_station, MDI, QC_TESTS
 
 #************************************************************************
-def read_psv(infile, separator):
+def read_psv(infile: str, separator: str) -> pd.DataFrame:
     '''
     http://pandas.pydata.org/pandas-docs/stable/user_guide/io.html#io-read-csv-table
 
     :param str infile: location and name of infile (without extension)
     :param str separator: separating character (e.g. ",", "|")
-    :param str extension: infile extension [mff]
+ 
     :returns: df - DataFrame
     '''
 
@@ -34,7 +33,7 @@ def read_psv(infile, separator):
     return df #  read_psv
 
 #************************************************************************
-def read(infile):
+def read(infile:str) -> pd.DataFrame:
     """
     Wrapper for read functions to allow remainder to be file format agnostic.
 
@@ -55,7 +54,7 @@ def read(infile):
     return df # read
 
 #************************************************************************
-def read_station(stationfile, station, read_flags=False):
+def read_station(stationfile: str, station: Station, read_flags: bool = False) -> tuple[Station, pd.DataFrame]:
     """
     Read station info, and populate with data.
 
@@ -88,7 +87,8 @@ def read_station(stationfile, station, read_flags=False):
             day = station_df["Day"]
             for y, yy in enumerate(year):
                 try:
-                    dummy = dt.datetime(yy, month[y], day[y])
+                    # if Datatime doesn't throw an error here, then it's valid
+                    _ = dt.datetime(yy, month[y], day[y])
                 except ValueError:
                     print(yy, month[y], day[y])
                     print("Bad Date")
@@ -113,7 +113,7 @@ def read_station(stationfile, station, read_flags=False):
     return station, station_df # read_station
 
 #************************************************************************
-def write_psv(outfile, df, separator):
+def write_psv(outfile: str, df: pd.DataFrame, separator: str) -> None:
     '''
     http://pandas.pydata.org/pandas-docs/stable/user_guide/io.html#io-read-csv-table
 
@@ -126,7 +126,7 @@ def write_psv(outfile, df, separator):
     return # write_psv
 
 #************************************************************************
-def write(outfile, df, formatters={}):
+def write(outfile: str, df: pd.DataFrame, formatters: dict = {}) -> None:
     """
     Wrapper for write functions to allow remainder to be file format agnostic.
 
@@ -151,12 +151,13 @@ def write(outfile, df, formatters={}):
     return # write
 
 #************************************************************************
-def flag_write(outfilename, df, diagnostics=False):
+def flag_write(outfilename: str, df: pd.DataFrame, diagnostics: bool = False) -> None:
     """
     Write out flag summary files to enable quicker plotting
 
     :param str outfile: location and name of outfile
     :param DataFrame df: data frame to write
+    :param bool diagnostics: verbose output
     """
     with open(outfilename, "w") as outfile:
 
@@ -182,7 +183,7 @@ def flag_write(outfilename, df, diagnostics=False):
     return # flag_write
 
 #************************************************************************
-def write_error(station, message, error="", diagnostics=False):
+def write_error(station: Station, message: str, error: str = "", diagnostics:bool = False) -> None:
     """
     Write out quick failure message for station
 

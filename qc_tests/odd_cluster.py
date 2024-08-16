@@ -22,7 +22,7 @@ MIN_SEPARATION = 28*24 # separated by Z hours on either side from other data
 
 
 #*********************************************
-def plot_cluster(times, obs_var, oc_start, oc_end):
+def plot_cluster(times: np.array, obs_var: utils.Meteorological_Variable, oc_start: int, oc_end: int) -> None:
     '''
     Plot each odd cluster highlighted against surrounding data
 
@@ -30,8 +30,6 @@ def plot_cluster(times, obs_var, oc_start, oc_end):
     :param MetVar obs_var: Meteorological variable object
     :param int oc_start: start of cluster in data array index
     :param int oc_end: end of cluster in data array index
-
-    :returns:
     '''
     import matplotlib.pyplot as plt
 
@@ -60,7 +58,8 @@ def plot_cluster(times, obs_var, oc_start, oc_end):
     return # plot_cluster
 
 #************************************************************************
-def flag_clusters(obs_var, station, plots=False, diagnostics=False):
+def flag_clusters(obs_var: utils.Meteorological_Variable, station: utils.Station,
+                  plots: bool = False, diagnostics: bool = False) -> None:
     """
     Go through the clusters of data and flag if meet requirements
 
@@ -126,7 +125,7 @@ def flag_clusters(obs_var, station, plots=False, diagnostics=False):
     return # flag_clusters
 
 #************************************************************************
-def occ(station, var_list, config_file, full=False, plots=False, diagnostics=False):
+def occ(station: utils.Station, var_list: list, config_file: str, full: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Run through the variables and pass to the Odd Cluster Check
 

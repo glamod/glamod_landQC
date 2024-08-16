@@ -1,6 +1,5 @@
 import os
 import datetime as dt
-import argparse
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -25,7 +24,7 @@ TODAY = dt.datetime.strftime(dt.datetime.now(), "%Y%m%d")
 
  
 #*********************************************
-def read_stations():
+def read_stations() -> np.array:
     """
     Process the GHCNH history file
 
@@ -65,7 +64,7 @@ def read_stations():
 
 
 #*********************************************
-def extract_inventory(station, inventory):
+def extract_inventory(station: utils.Station, inventory: np.array) -> np.array:
     """
     Extract the information from the ISD inventory file
 
@@ -81,7 +80,7 @@ def extract_inventory(station, inventory):
     locs, = np.where(inventory[:, 0] == station.id)
 
     if len(locs) == 0:
-        return []
+        return np.array([])
     else:
         this_station = inventory[locs, :]
 
@@ -96,7 +95,7 @@ def extract_inventory(station, inventory):
 
 
 #*********************************************
-def process_inventory(candidate_stations):
+def process_inventory(candidate_stations: list) -> list:
 
     """
     Process the ISD inventory file
@@ -119,8 +118,8 @@ def process_inventory(candidate_stations):
         pass
 
     present_stations = []
-    long_stations = []
-    final_stations = []
+    # long_stations = []
+    # final_stations = []
     # spin through each station
     for s, station in enumerate(candidate_stations):
         # print("{}/{}".format(s, len(candidate_stations)))
@@ -138,7 +137,7 @@ def process_inventory(candidate_stations):
     return present_stations # process_inventory
 
 #*********************************************
-def stations_per_year(candidate_stations):
+def stations_per_year(candidate_stations: list) -> list:
     """
     Return list of which years each station is present in
 
@@ -164,14 +163,13 @@ def stations_per_year(candidate_stations):
     return stations_active_in_years # stations_per_year
 
 #*********************************************
-def plot_stations(station_list, outfile, title=""):
+def plot_stations(station_list: list, outfile: str, title: str = "") -> None:
     """
     Plot the stations on a global map
 
     :param list station_list: list of station objects
     :param str outfile: name of output file
     :param str title: plot title
-    :returns:
     """
 
 
@@ -190,7 +188,7 @@ def plot_stations(station_list, outfile, title=""):
     ax.set_extent([-180.1, 180.1, -90, 90], crs=ccrs.PlateCarree())
 
     lats, lons = [], []
-    mlats, mlons = [], []
+    # mlats, mlons = [], []
 
     for stn in station_list:
 
@@ -218,7 +216,7 @@ def plot_stations(station_list, outfile, title=""):
 
 
 #****************************************************
-def plot_gridded_map(station_list, outfile, title=""):
+def plot_gridded_map(station_list: list, outfile: str, title: str = "") -> None:
 
     #*************************
     # plot a gridded map
@@ -232,7 +230,7 @@ def plot_gridded_map(station_list, outfile, title=""):
     rawlats = np.arange(-90., 90.+delta_lat, delta_lat)
     gridlon, gridlat = np.meshgrid(rawlons, rawlats)
     # set up empty array for gridded data
-    griddata = np.zeros(list(gridlon.shape))
+    # griddata = np.zeros(list(gridlon.shape))
 
     UsedStation = np.zeros(len(station_list))
 
@@ -304,15 +302,12 @@ def plot_gridded_map(station_list, outfile, title=""):
 
 
 #****************************************************
-def plot_station_number_over_time(station_list, outfile):
+def plot_station_number_over_time(station_list: list, outfile: str) -> None:
     """
     Plot the number of stations in each year
 
     :param list station_list: list of station objects
-
     :param str outfile: name of output file
-
-    :returns:
     """
     # flatten list
     stations_active_in_years = stations_per_year(station_list)
@@ -363,7 +358,7 @@ def plot_station_number_over_time(station_list, outfile):
 
 
 #*********************************************
-def main():
+def main() -> None:
 
     # parse text file into candidate list, with lat, lon, elev and time span limits applied
     all_stations = read_stations()      

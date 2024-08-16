@@ -25,7 +25,6 @@ Input arguments:
 #************************************************************************
 import os
 import datetime as dt
-import pandas as pd
 import numpy as np
 
 # internal utils
@@ -36,7 +35,7 @@ import setup
 #************************************************************************
 
 #************************************************************************
-def read_neighbours(restart_id="", end_id=""):
+def read_neighbours(restart_id: str = "", end_id: str = "") -> np.array:
     """
     Read the neighbour file to store neighbours and distances [station, neighbours, distances]
 
@@ -64,7 +63,8 @@ def read_neighbours(restart_id="", end_id=""):
     return all_entries # read_neighbours
 
 #************************************************************************
-def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=False, test="all", clobber=False):
+def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, plots: bool = False,
+               full: bool = False, test: str = "all", clobber: bool = False) -> None:
     """
     Main script.  Reads in station data, populates internal objects and passes to the tests.
 

@@ -7,14 +7,11 @@ sufficiently high
 '''
 #************************************************************************
 import os
-import datetime as dt
-import pandas as pd
 import numpy as np
 
 # internal utils
 import qc_utils as utils
 import io_utils as io
-import qc_tests
 import setup
 #************************************************************************
 
@@ -23,16 +20,15 @@ SPREAD_LIMIT = 5 # matches HadISD which used 5*IQR
 
 
 #************************************************************************
-def plot_neighbour_flags(times, flagged_time, target, buddies):
+def plot_neighbour_flags(times: np.array, flagged_time: int,
+                         target: utils.Meteorological_Variable, buddies: np.array) -> None:
     '''
     Plot each spike against surrounding data
 
     :param array times: datetime array
-    :param MetVar target: Meteorological variable object
-    :param int spike_start: the location of the spike
-    :param int spike_length: the length of the spike
-
-    :returns:
+    :param int flagged_time: location of flagged value
+    :param MetVar target: meteorological variable to plot
+    :param array buddies: 2d array of all buddy's data
     '''
     import matplotlib.pyplot as plt
 
@@ -58,9 +54,12 @@ def plot_neighbour_flags(times, flagged_time, target, buddies):
     return # plot_neighbour_flags
 
 #************************************************************************
-def neighbour_outlier(target_station, initial_neighbours, variable, diagnostics=False, plots=False, full=False):
+def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.array,
+                      variable: utils.Meteorological_Variable, diagnostics: bool = False,
+                      plots: bool = False, full: bool = False) -> None:
     """
-    Works on a single station and variable.  Reads in neighbour's data, finds locations where sufficent are sufficiently different.
+    Works on a single station and variable.  Reads in neighbour's data,
+    finds locations where sufficent are sufficiently different.
 
     :param Station target_station: station to run on 
     :param array initial_neighbours: input neighbours (ID, distance) pairs
@@ -100,11 +99,15 @@ def neighbour_outlier(target_station, initial_neighbours, variable, diagnostics=
 
             # set up station object to hold information
             buddy_idx, = np.where(station_list.id == buddy_id)
-            buddy = utils.Station(buddy_id, station_list.iloc[buddy_idx].latitude.values[0], \
-                                      station_list.iloc[buddy_idx].longitude.values[0], station_list.iloc[buddy_idx].elevation.values[0])
+            buddy = utils.Station(buddy_id, station_list.iloc[buddy_idx].latitude.values[0],
+                                  station_list.iloc[buddy_idx].longitude.values[0],
+                                  station_list.iloc[buddy_idx].elevation.values[0])
 
             try:
-                buddy, buddy_df = io.read_station(os.path.join(setup.SUBDAILY_PROC_DIR, "{:11s}.qff{}".format(buddy_id, setup.OUT_COMPRESSION)), buddy, read_flags=True) 
+                buddy, buddy_df = io.read_station(os.path.join(setup.SUBDAILY_PROC_DIR,
+                                                               "{:11s}.qff{}".format(buddy_id,
+                                                                                     setup.OUT_COMPRESSION)),
+                                                  buddy, read_flags=True) 
 
                 buddy_var = getattr(buddy, variable)
 
@@ -112,7 +115,7 @@ def neighbour_outlier(target_station, initial_neighbours, variable, diagnostics=
                 flag_locs, = np.where(buddy_var.flags != "") 
                 buddy_var.data.mask[flag_locs] = True
 
-            except OSError as e:
+            except OSError: # as e:
                 # file missing, move on to next in sequence
                 io.write_error(target_station, "File Missing (Buddy, {}) - {}".format(variable, buddy_id))
                 continue
@@ -225,11 +228,13 @@ def neighbour_outlier(target_station, initial_neighbours, variable, diagnostics=
     return # neighbour_outlier
 
 #************************************************************************
-def noc(target_station, initial_neighbours, var_list, full=False, plots=False, diagnostics=False):
+def noc(target_station: utils.Station, initial_neighbours: np.array, var_list: list,
+        full: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Run through the variables and pass to the Neighbour Outlier Check
 
     :param Station station: Station Object for the station
+    :param array initial_neighbours: input neighbours (ID, distance) pairs
     :param list var_list: list of variables to test
     :param bool full: run a full update (recalculate thresholds)
     :param bool plots: turn on plots
@@ -238,7 +243,8 @@ def noc(target_station, initial_neighbours, var_list, full=False, plots=False, d
 
     for var in var_list:
 
-        neighbour_outlier(target_station, initial_neighbours, var, diagnostics=diagnostics, plots=plots, full=full)
+        neighbour_outlier(target_station, initial_neighbours, var,
+                          diagnostics=diagnostics, plots=plots, full=full)
 
     return # noc
 

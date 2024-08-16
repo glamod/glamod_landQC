@@ -22,17 +22,16 @@ import argparse
 import numpy as np
 
 # internal utils
-import setup
 import qc_utils as utils
 
 # scripts to call
 import intra_checks as intra
-import inter_checks as inter
-import copy_files
+#import inter_checks as inter
+#import copy_files
 
 
 #*******************
-def process_batches(batch, total):
+def process_batches(batch: int, total: int) -> tuple[str, str]:
     '''
     Use batch number and the total number of batches to return
     the restart_id and end_id for the run.
@@ -57,7 +56,7 @@ def process_batches(batch, total):
     return station_IDs.iloc[starts[batch]], station_IDs.iloc[ends[batch]] # process_batches
 
 #************************************************************************
-def run_intra_station_checks(restart_id, end_id, full):
+def run_intra_station_checks(restart_id: str, end_id: str, full: bool) -> None:
     '''
     Run intra-station checks with standard settings
     '''
@@ -67,7 +66,7 @@ def run_intra_station_checks(restart_id, end_id, full):
     return # run_intra_station_checks
 
 #************************************************************************
-def run_inter_station_checks(restart_id, end_id, full):
+def run_inter_station_checks(restart_id: str, end_id: str, full: bool) -> None:
     '''
     Run inter-station (buddy/neighbour) checks with standard settings
     '''

@@ -14,7 +14,8 @@ LOW_COUNT_THRESHOLD = 0
 HIGH_FLAGGING_THRESHOLD = 0.6
 
 #************************************************************************
-def clean_up(obs_var, station, plots=False, diagnostics=False):
+def clean_up(obs_var: utils.Meteorological_Variable, station: utils.Station,
+             plots: bool = False, diagnostics:bool = False) -> np.array:
     """
     Check for high flagging rates within a calendar month and flag remaining
 
@@ -64,7 +65,8 @@ def clean_up(obs_var, station, plots=False, diagnostics=False):
     return new_flags # clean_up
 
 #************************************************************************
-def mcu(station, var_list, full=False, plots=False, diagnostics=False):
+def mcu(station: utils.Meteorological_Variable, var_list: list, full: bool = False,
+        plots: bool = False, diagnostics: bool = False) -> None:
     """
     Run through the variables and pass to monthly clean up
 

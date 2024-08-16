@@ -17,7 +17,8 @@ MIN_SPREAD = 1.0
 MAX_SPREAD = 5.0
 
 #*********************************************
-def plot_pressure(sealp, stnlp, times, bad):
+def plot_pressure(sealp: utils.Meteorological_Variable, stnlp: utils.Meteorological_Variable,
+                  times: np.array, bad: int) -> None:
     '''
     Plot each observation of SSS or DPD against surrounding data
 
@@ -52,7 +53,8 @@ def plot_pressure(sealp, stnlp, times, bad):
     return # plot_pressure
 
 #************************************************************************
-def identify_values(sealp, stnlp, times, config_dict, plots=False, diagnostics=False):
+def identify_values(sealp: utils.Meteorological_Variable, stnlp: utils.Meteorological_Variable, times: np.array,
+                    config_dict: dict, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Find average and spread of differences
 
@@ -86,7 +88,8 @@ def identify_values(sealp, stnlp, times, config_dict, plots=False, diagnostics=F
     return # identify_values
 
 #************************************************************************
-def pressure_offset(sealp, stnlp, times, config_dict, plots=False, diagnostics=False):
+def pressure_offset(sealp: utils.Meteorological_Variable, stnlp: utils.Meteorological_Variable,
+                    times: np.array, config_dict: dict, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Flag locations where difference between station and sea-level pressure
     falls outside of bounds
@@ -141,7 +144,7 @@ def pressure_offset(sealp, stnlp, times, config_dict, plots=False, diagnostics=F
             if len(high) != 0:
                 flags[high] = "p"
                 if diagnostics:
-                    print("Pressure".format(stnlp.name))
+                    print("Pressure")
                     print("   Number of high differences {}".format(len(high)))
                 if plots:
                     for bad in high:
@@ -167,10 +170,16 @@ def pressure_offset(sealp, stnlp, times, config_dict, plots=False, diagnostics=F
     return # pressure_offset
 
 #*********************************************
-def calc_slp(stnlp, elevation, temperature):
+def calc_slp(stnlp: np.array, elevation: float, temperature: np.array) -> np.array:
     '''
     Suggestion from Scott Stevens to calculate the SLP from the StnLP
     Presumes 15C if no temperature available
+
+    :param array stnlp: station level pressure
+    :param float elevation: station elevation
+    :param array temperature: station temperature
+
+    :returns: array of SLP
     '''
     filled_temperature = np.ma.copy(temperature)
 
@@ -186,7 +195,9 @@ def calc_slp(stnlp, elevation, temperature):
     return sealp # calc_slp
 
 #************************************************************************
-def pressure_theory(sealp, stnlp, temperature, times, elevation, plots=False, diagnostics=False):
+def pressure_theory(sealp: utils.Meteorological_Variable, stnlp: utils.Meteorological_Variable,
+                    temperature: utils.Meteorological_Variable, times: np.array, elevation: float,
+                    plots: bool = False, diagnostics: bool = False) -> None:
     """
     Flag locations where difference between recorded and calculated sea-level pressure 
     falls outside of bounds
@@ -224,7 +235,7 @@ def pressure_theory(sealp, stnlp, temperature, times, elevation, plots=False, di
     if len(bad_locs) != 0:
         flags[bad_locs] = "p"
         if diagnostics:
-            print("Pressure".format(stnlp.name))
+            print("Pressure")
             print("   Number of mismatches between recorded and theoretical SLPs {}".format(len(bad_locs)))
         if plots:
             for bad in bad_locs:
@@ -251,7 +262,8 @@ def pressure_theory(sealp, stnlp, temperature, times, elevation, plots=False, di
     return # pressure_theory
 
 #************************************************************************
-def pcc(station, config_dict, full=False, plots=False, diagnostics=False):
+def pcc(station: utils.Station, config_dict: dict, full: bool = False,
+        plots: bool = False, diagnostics: bool = False) -> None:
     """
     Extract the variables and pass to the Pressure Cross Checks
 

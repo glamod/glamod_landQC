@@ -46,7 +46,8 @@ mins = {"temperature" : T_N, "dew_point_temperature" : D_N, "wind_speed" : W_N, 
   
 
 #************************************************************************
-def record_check(obs_var, continent, plots=False, diagnostics=False):
+def record_check(obs_var: utils.Meteorological_Variable, continent: str,
+                 plots: bool = False, diagnostics: bool = False) -> np.array:
     """
     Check for exceedences of world record values
 
@@ -54,6 +55,8 @@ def record_check(obs_var, continent, plots=False, diagnostics=False):
     :param str continent: continent of the station location
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
+
+    :returns: np.array of flags
     """
     assert isinstance(obs_var, utils.Meteorological_Variable)
     assert isinstance(continent, str)
@@ -81,7 +84,8 @@ def record_check(obs_var, continent, plots=False, diagnostics=False):
     return flags # record_check
 
 #************************************************************************
-def wrc(station, var_list, full=False, plots=False, diagnostics=False):
+def wrc(station: utils.Station, var_list: list, full: bool = False,
+        plots: bool = False,diagnostics: bool = False) -> None:
     """
     Run through the variables and pass to the World Record Check.
 
