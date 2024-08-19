@@ -232,8 +232,7 @@ def dew_point_depression_streak(times: np.array,
         for string in bad:
             start = int(np.sum(grouped_diffs[:strings[string], 1]))
             end = start + int(grouped_diffs[strings[string], 1]) + 1
-
-            flags[start : end] = "h"
+            flags[locs[start : end]] = "h"
 
             if plots:
                 plot_humidity_streak(times, temperatures, dewpoints, start, end)

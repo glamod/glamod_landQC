@@ -127,11 +127,41 @@ def test_super_saturation_check_proportion() -> None:
     np.testing.assert_array_equal(station.dew_point_temperature.flags, expected)
 
 
-#def test_dew_point_depression_check() -> None:
+def test_dew_point_depression_check() -> None:
 
     # streaks of length 5
-#    config_dict = {"HUMIDITY" : {"DPD" : 5}}
+    config_dict = {"HUMIDITY" : {"DPD" : 5}}
 
+    # set up the data
+    temps = np.arange(75)
+    dewps = np.arange(75) - 2.
+    # use same array as in qc_utils test
+    locs = np.array([0,
+                     10, 11, 12, 13, 14, 15,  # this set should be flagged
+                     20, 21, 22, 23,  # <-  all of these are too short 
+                     30, 31, 32, 33,
+                     40, 41, 42,
+                     50, 51, 52,
+                     60, 61, 62,
+                     70])
+    
+    expected = np.array(["" for _ in range(75)])
+    expected[10:16] = "h"
+
+    # create the DPD=0
+    dewps[locs] = temps[locs]
+
+    temperature = common.example_test_variable("temperature", temps)
+    dewpoint = common.example_test_variable("dew_point_temperature", dewps)
+
+    times = np.array([dt.datetime(2024, 1, 1, 12, 0) +
+                     (i * dt.timedelta(seconds=60*60))
+                     for i in range(len(dewps))])
+
+    humidity.dew_point_depression_streak(times, temperature, dewpoint, config_dict)
+
+    np.testing.assert_array_equal(dewpoint.flags, expected)
+ 
 
 @patch("humidity.super_saturation_check")
 @patch("humidity.dew_point_depression_streak")
