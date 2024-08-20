@@ -39,7 +39,7 @@ def get_repeating_dpd_threshold(temperatures: utils.Meteorological_Variable,
 
     # only process further if there are enough locations
     if len(locs) > 1:
-        repeated_string_lengths, _, strings = utils.prepare_data_repeating_string(locs, diff=1, plots=plots, diagnostics=diagnostics)
+        repeated_string_lengths, _, _ = utils.prepare_data_repeating_string(locs, diff=1, plots=plots, diagnostics=diagnostics)
 
         # bin width is 1 as dealing with the index.
         # minimum bin value is 2 as this is the shortest string possible
