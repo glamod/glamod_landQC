@@ -317,11 +317,18 @@ def get_critical_values(indata: np.array, binmin: float = 0, binwidth: float = 1
     :returns:
        critical value
 
-    """    
+    """
+    MAX_N_BINS = 20000
+
     if len(set(indata)) > 1:
 
         # set up the bins and make a histogram.  Use Absolute values
-        max_bin = np.max([2 * max(np.ceil(np.abs(indata))), 10]) # so that have sufficient to fit to
+        max_bin = np.max([2 * max(np.ceil(np.abs(indata))), 10]) # so that have sufficient x-bins to fit to
+        if (max_bin - binmin)/binwidth > MAX_N_BINS:
+            # too many bins, will run out of memory
+            print("Too many bins requested: {} to {} in steps of {}".format(binmin, max_bin, binwidth))
+            max_bin = binmin + (MAX_N_BINS * binwidth)
+            print("Setting max_bin to {}".format(max_bin))
         bins = np.arange(binmin, max_bin, binwidth)
         full_hist, full_edges = np.histogram(np.abs(indata), bins=bins)
 

@@ -44,7 +44,7 @@ def plot_spike(times, obs_var, spike_start, spike_length):
     return # plot_spike
 
 #************************************************************************
-def get_critical_values(obs_var, times, config_dict, plots=False, diagnostics=False):
+def calculate_critical_values(obs_var, times, config_dict, plots=False, diagnostics=False):
     """
     Use distribution to determine critical values.  Then also store in config dictionary.
 
@@ -81,7 +81,7 @@ def get_critical_values(obs_var, times, config_dict, plots=False, diagnostics=Fa
 
         # ensure sufficient non-masked observations
         if len(first_differences.compressed()) >= utils.DATA_COUNT_THRESHOLD:
-
+            
             # fit decay curve to one-sided distribution
             c_value = utils.get_critical_values(first_differences.compressed(), binmin=0, binwidth=0.5, plots=plots, diagnostics=diagnostics, xlabel="First differences", title="Spike - {} - {}m".format(obs_var.name.capitalize(), t_diff))
 
@@ -101,7 +101,7 @@ def get_critical_values(obs_var, times, config_dict, plots=False, diagnostics=Fa
                 print("      Number of obs insufficient: {} < {}".format(len(first_differences.compressed()), utils.DATA_COUNT_THRESHOLD))
 
 
-    return # get_critical_values
+    return # calculate_critical_values
 
 #************************************************************************
 def identify_spikes(obs_var, times, config_dict, plots=False, diagnostics=False):
@@ -145,7 +145,7 @@ def identify_spikes(obs_var, times, config_dict, plots=False, diagnostics=False)
 
     # if none have been read, give an option to calculate in case that was the reason for none
     if len(critical_values) == 0:
-        get_critical_values(obs_var, times, config_dict, plots=plots, diagnostics=diagnostics)
+        calculate_critical_values(obs_var, times, config_dict, plots=plots, diagnostics=diagnostics)
 
         # and try again
         for t_diff in unique_diffs:
@@ -329,7 +329,7 @@ def sc(station, var_list, config_dict, full=False, plots=False, diagnostics=Fals
 
         # decide whether to recalculate
         if full:
-            get_critical_values(obs_var, station.times, config_dict, plots=plots, diagnostics=diagnostics)
+            calculate_critical_values(obs_var, station.times, config_dict, plots=plots, diagnostics=diagnostics)
 
         identify_spikes(obs_var, station.times, config_dict, plots=plots, diagnostics=diagnostics)
 
