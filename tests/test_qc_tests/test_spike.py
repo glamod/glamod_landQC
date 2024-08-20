@@ -69,7 +69,29 @@ def test_retreive_critical_values():
     assert values == {60.0 : 1.0, 120.0: 2.0}
 
 
-# def test_assess_potential_spike():
+@pytest.mark.parametrize("spike_points", [[10], [10, 11], [10, 11, 12]])
+def test_assess_potential_spike_single(spike_points):
+    
+    series_length = 20
+    values = np.ma.ones(series_length)
+    values.mask = np.zeros(series_length)
+    values.mask[0] = True
+    values[spike_points] = 10
+
+    times = np.ma.arange(series_length) * 60 # minutes
+    times.mask = values.mask
+
+    value_diffs = np.ma.diff(values)
+    time_diffs = np.diff(times)
+    critical_values = {60: 5}
+
+    possible_spike, = np.nonzero(value_diffs > critical_values[60])
+
+    is_spike, spike_len = spike.assess_potential_spike(time_diffs, value_diffs,
+                                                         possible_spike[0], critical_values)
+
+    assert is_spike == True
+    assert spike_len == len(spike_points)
 
 # def test_assess_inside_spike():
 

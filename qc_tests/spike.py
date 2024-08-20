@@ -128,6 +128,7 @@ def retreive_critical_values(unique_diffs: np.array, config_dict: dict, name: st
     return critical_values
 
 
+#************************************************************************
 def assess_potential_spike(time_diffs: np.array, value_diffs: np.array,
                            possible_in_spike: int, critical_values: dict) -> tuple[bool, int]:
     """
@@ -140,8 +141,8 @@ def assess_potential_spike(time_diffs: np.array, value_diffs: np.array,
     :param dict critical_values: threshold values for this spike
 
     :returns: (bool, int) of spike and length
-    
     """
+
     is_spike = False
     spike_len = 1
 
@@ -180,11 +181,22 @@ def assess_potential_spike(time_diffs: np.array, value_diffs: np.array,
     return is_spike, spike_len
 
 
+#************************************************************************
 def assess_inside_spike(time_diffs: np.array, value_diffs: np.array,
                         possible_in_spike: int, critical_values: dict,
                         is_spike: bool, spike_len: int) -> bool:
-    
-    # test within spike differences (chosing correct time difference)
+    """
+    Check if points inside the spike don't vary too much (low noise)
+
+    :param array time_diffs: time differences to look at
+    :param array value_diffs: value first differences
+    :param int possible_in_spike: location of potential start of spike
+    :param dict critical_values: threshold values for this spike
+
+    :returns: (bool, int) of spike and length
+    """
+
+     # test within spike differences (chosing correct time difference)
     within = 1
     while within < spike_len:
         within_t_diff = time_diffs[possible_in_spike + within]
@@ -212,9 +224,20 @@ def assess_inside_spike(time_diffs: np.array, value_diffs: np.array,
     return is_spike
 
 
+#************************************************************************
 def assess_outside_spike(time_diffs: np.array, value_diffs: np.array,
                         possible_in_spike: int, critical_values: dict,
                         is_spike: bool, spike_len: int) -> tuple[bool, int]:
+    """
+    Check if points outside the spike don't vary too much (low noise)
+
+    :param array time_diffs: time differences to look at
+    :param array value_diffs: value first differences
+    :param int possible_in_spike: location of potential start of spike
+    :param dict critical_values: threshold values for this spike
+
+    :returns: (bool, int) of spike and length
+    """
 
     # test either side (either before or after is too big)
     try:
@@ -280,7 +303,6 @@ def identify_spikes(obs_var: utils.Meteorological_Variable, times: np.array, con
     """
 
     # TODO check works with missing data (compressed?)
-    # TODO monthly?
 
     masked_times = np.ma.masked_array(times, mask=obs_var.data.mask)
 
@@ -328,7 +350,7 @@ def identify_spikes(obs_var: utils.Meteorological_Variable, times: np.array, con
         # TODO - sort spikes at very beginning or very end of sequence, 
         #    when don't have a departure from/return to a normal level
 
-        # potential spikes
+        # assess identified potential spikes
         for ps, possible_in_spike in enumerate(t_locs[c_locs]):
 
             is_spike, spike_len = assess_potential_spike(time_diffs, value_diffs,
