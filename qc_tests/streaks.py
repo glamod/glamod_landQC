@@ -72,7 +72,7 @@ def get_repeating_string_threshold(obs_var, config_dict, plots=False, diagnostic
     # only process further if there is enough data
     if len(this_var.data.compressed()) > 1:
 
-        repeated_string_lengths, grouped_diffs, strings = utils.prepare_data_repeating_string(this_var.data.compressed(), diff=0, plots=plots, diagnostics=diagnostics)
+        repeated_string_lengths, _, strings = utils.prepare_data_repeating_string(this_var.data.compressed(), diff=0, plots=plots, diagnostics=diagnostics)
 
         # bin width is 1 as dealing in time index.
         # minimum bin value is 2 as this is the shortest string possible
