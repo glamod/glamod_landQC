@@ -66,3 +66,6 @@ def test_gcv_calculate_binmax_large():
     binmax = qc_utils.gcv_calculate_binmax(indata, binmin, binwidth)
 
     assert binmax == 2000
+
+# def test_gcv_central_section():
+    
