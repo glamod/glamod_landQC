@@ -176,7 +176,7 @@ def test_generate_differences():
                           (i * dt.timedelta(seconds=60*60))
                           for i in range(len(values))])
     
-    expected_value_diffs = np.ma.diff(values)
+    expected_value_diffs = np.ma.zeros(19)
     expected_value_diffs.mask = np.zeros(expected_value_diffs.shape[0])
 
     expected_times_diffs = np.ma.diff(times)/np.timedelta64(1, "m")
