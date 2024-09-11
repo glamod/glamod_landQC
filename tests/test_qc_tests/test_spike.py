@@ -70,17 +70,17 @@ def test_calculate_critical_values():
     # qc_utils routine to be tested elsewhere
     assert config_dict["SPIKE-temperature"] == {"60.0" : 6.5}
 
-
-def test_retreive_critical_values():
+@pytest.mark.parametrize("name, expected",
+                         [("temps", {60.0 : 1.0, 120.0: 2.0}),
+                          ("dummy", {})])
+def test_retreive_critical_values(name, expected):
     
     diffs = np.array([60.0, 120.0])
     config_dict = {"SPIKE-temps" : {"60.0" : "1.0", "120.0" : "2.0"}}
-    name = "temps"
 
     values = spike.retreive_critical_values(diffs, config_dict, name)
 
-    assert values == {60.0 : 1.0, 120.0: 2.0}
-
+    assert values == expected
 
 @pytest.mark.parametrize("spike_points, expected", [([10], True),
                                                     ([10, 11], True),
@@ -168,6 +168,24 @@ def test_assess_outside_spike_affore(spike_points, before_values, expected_is_sp
 
     assert result_is_spike == expected_is_spike
 
+
+def test_generate_differences():
+
+    values = np.ma.ones(20)
+    times = pd.Series([dt.datetime(2024, 1, 1, 12, 0) +
+                          (i * dt.timedelta(seconds=60*60))
+                          for i in range(len(values))])
+    
+    expected_value_diffs = np.ma.diff(values)
+    expected_value_diffs.mask = np.zeros(expected_value_diffs.shape[0])
+
+    expected_times_diffs = np.ma.diff(times)/np.timedelta64(1, "m")
+    
+    value_diffs, time_diffs, unique_diffs = spike.generate_differences(times, values)
+
+    np.testing.assert_array_equal(value_diffs.data, expected_value_diffs.data)
+    np.testing.assert_array_equal(time_diffs, expected_times_diffs)
+    assert unique_diffs == np.array([60])
 
 # def test_identify_spikes():
 

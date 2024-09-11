@@ -268,7 +268,6 @@ def assess_outside_spike(time_diffs: np.array, value_diffs: np.array,
 
         try:
             if value_diffs.mask[possible_in_spike + outside] == False:
-                print(value_diffs[possible_in_spike + outside])
                 if np.abs(value_diffs[possible_in_spike + outside]) > outside_critical_value/2.:
                     # spike fails test
                     is_spike = False
@@ -278,6 +277,36 @@ def assess_outside_spike(time_diffs: np.array, value_diffs: np.array,
             pass
 
     return is_spike
+
+
+def generate_differences(times: np.array,
+                         data: np.array) -> tuple[np.array, np.array, np.array]:
+    """
+    Generate the first differences for the times and the data values
+
+    :param array times: array of times (usually in minutes)
+    :param array data: array of data
+
+    :returns: (value_diffs, time_diffs, unique_diffs)
+    """
+
+    masked_times = np.ma.masked_array(times, mask=data.mask)
+
+    time_diffs = np.ma.diff(masked_times)/np.timedelta64(1, "m") # presuming minutes
+    value_diffs = np.ma.diff(data)
+
+    if len(value_diffs.mask.shape) == 0:
+        # single mask value, replace with array of True/False's
+        if value_diffs.mask:
+            value_diffs.mask = np.ones(value_diffs.shape)
+        else:
+            value_diffs.mask = np.zeros(value_diffs.shape)
+
+    # get thresholds for each unique time differences
+    unique_diffs = np.unique(time_diffs.compressed())
+
+    return value_diffs, time_diffs, unique_diffs
+
 
 #************************************************************************
 def identify_spikes(obs_var: utils.Meteorological_Variable, times: np.array, config_dict: dict,
@@ -293,21 +322,7 @@ def identify_spikes(obs_var: utils.Meteorological_Variable, times: np.array, con
     """
 
     # TODO check works with missing data (compressed?)
-
-    masked_times = np.ma.masked_array(times, mask=obs_var.data.mask)
-
-    time_diffs = np.ma.diff(masked_times)/np.timedelta64(1, "m") # presuming minutes
-    value_diffs = np.ma.diff(obs_var.data)
-
-    if len(value_diffs.mask.shape) == 0:
-        # single mask value, replace with array of True/False's
-        if value_diffs.mask:
-            value_diffs.mask = np.ones(value_diffs.shape)
-        else:
-            value_diffs.mask = np.zeros(value_diffs.shape)
-
-    # get thresholds for each unique time differences
-    unique_diffs = np.unique(time_diffs.compressed())
+    value_diffs, time_diffs, unique_diffs = generate_differences(times, obs_var.data)
 
     # retrieve the critical values
     critical_values = retreive_critical_values(unique_diffs, config_dict, obs_var.name)
