@@ -2,7 +2,6 @@
 Contains tests for qc_utils.py
 """
 import numpy as np
-from unittest.mock import patch
 
 import qc_utils
 

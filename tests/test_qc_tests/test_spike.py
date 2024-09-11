@@ -4,11 +4,9 @@ Contains tests for spike.py
 import numpy as np
 import datetime as dt
 import pandas as pd
-from unittest.mock import patch, Mock
 import pytest
 
 import spike
-import qc_utils as utils
 
 import common
 
