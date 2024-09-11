@@ -127,19 +127,42 @@ def test_assess_inside_spike(spike_points, spike_values, expected_is_spike):
     assert result_is_spike == expected_is_spike
 
 @pytest.mark.parametrize("spike_points, before_values, expected_is_spike",
-                         [([10], [10], True),
-                          ([10, 11], [10, 10], True),
-                          ([10, 11, 12], [10, 10, 10], True),])
-def test_assess_outside_spike_before(spike_points, spike_values, expected_is_spike):
+                         [([10], [2, 3], True),
+                          ([10, 11], [2, 3], True),
+                          ([10], [0, 3], False), # diff > 5/2
+                         ])
+def test_assess_outside_spike_before(spike_points, before_values, expected_is_spike):
 
     values, times, critical_values = _set_up_data()
     values[spike_points] = 10
+    values[spike_points[0]-len(before_values) : spike_points[0]] = before_values
     value_diffs = np.ma.diff(values)
     time_diffs = np.diff(times)
-
+ 
     possible_spike, = np.nonzero(value_diffs > critical_values[60])
 
-    result_is_spike = spike.assess_inside_spike(time_diffs, value_diffs,
+    result_is_spike = spike.assess_outside_spike(time_diffs, value_diffs,
+                                         possible_spike[0], critical_values,
+                                         True, len(spike_points))
+
+    assert result_is_spike == expected_is_spike
+
+@pytest.mark.parametrize("spike_points, before_values, expected_is_spike",
+                         [([10], [3, 2], True),
+                          ([10, 11], [3, 2], True),
+                          ([10], [3, 0], False), # diff > 5/2
+                         ])
+def test_assess_outside_spike_affore(spike_points, before_values, expected_is_spike):
+
+    values, times, critical_values = _set_up_data()
+    values[spike_points] = 10
+    values[spike_points[-1]+1: spike_points[-1]+1 + len(before_values)] = before_values
+    value_diffs = np.ma.diff(values)
+    time_diffs = np.diff(times)
+ 
+    possible_spike, = np.nonzero(value_diffs > critical_values[60])
+
+    result_is_spike = spike.assess_outside_spike(time_diffs, value_diffs,
                                          possible_spike[0], critical_values,
                                          True, len(spike_points))
 
