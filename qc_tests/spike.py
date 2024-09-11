@@ -192,19 +192,23 @@ def assess_inside_spike(time_diffs: np.array, value_diffs: np.array,
     :param array value_diffs: value first differences
     :param int possible_in_spike: location of potential start of spike
     :param dict critical_values: threshold values for this spike
+    :param bool is_spike: flag to indicate presence of spike
+    :param int spike_len: length of spike (number of time stamps)
 
-    :returns: (bool, int) of spike and length
+    :returns: bool
     """
 
-     # test within spike differences (chosing correct time difference)
+    # test within spike differences (chosing correct time difference)
     within = 1
+    # if single timestep spike, then this assessment not necessary
     while within < spike_len:
+        # find the time difference between appropriate neighbouring points
         within_t_diff = time_diffs[possible_in_spike + within]
+
+        # obtain relevant critical value for time diff
         if time_diffs.mask[possible_in_spike + within] == False:
             try:
                 within_critical_value = critical_values[within_t_diff]
-                if value_diffs[possible_in_spike + within] > within_critical_value/2.:
-                    is_spike = False 
             except KeyError:
                 # don't have a value for this time difference, so use the maximum of all as a proxy
                 within_critical_value = max(critical_values.values())
@@ -212,11 +216,13 @@ def assess_inside_spike(time_diffs: np.array, value_diffs: np.array,
             # time difference masked
             within_critical_value = max(critical_values.values())
 
+        # check if any differences are greater than 1/2 critical value for time diff
         if value_diffs.mask[possible_in_spike + within] == False:
-            if value_diffs[possible_in_spike + within] > within_critical_value/2.:
+            if np.abs(value_diffs[possible_in_spike + within]) > within_critical_value/2.:
+                print(value_diffs[possible_in_spike + within])
                 is_spike = False 
         else:
-            # if masked then no data, so can't say if it's not a spike
+            # if value is masked then no data, so cannot say if it's not a spike
             pass
 
         within += 1
@@ -229,7 +235,8 @@ def assess_outside_spike(time_diffs: np.array, value_diffs: np.array,
                         possible_in_spike: int, critical_values: dict,
                         is_spike: bool, spike_len: int) -> tuple[bool, int]:
     """
-    Check if points outside the spike don't vary too much (low noise)
+    Check if points outside the spike don't vary too much (low noise).
+    Using "side" to act as parameter for the timestamps before/after the spike
 
     :param array time_diffs: time differences to look at
     :param array value_diffs: value first differences
@@ -240,52 +247,34 @@ def assess_outside_spike(time_diffs: np.array, value_diffs: np.array,
     """
 
     # test either side (either before or after is too big)
-    try:
-        before_t_diff = time_diffs[possible_in_spike - 1]
-        if time_diffs.mask[possible_in_spike - 1] == False:
-            before_critical_value = critical_values[before_t_diff]
-        else:
-            # time difference masked
-            before_critical_value = max(critical_values.values())
-    except KeyError:
-        # don't have a value for this time difference, so use the maximum of all as a proxy
-        before_critical_value = max(critical_values.values())
-    except IndexError:
-        # off the front of the data array
-        before_critical_value = max(critical_values.values())
 
-    try:
-        after_t_diff = time_diffs[possible_in_spike + spike_len + 1]
-        if time_diffs.mask[possible_in_spike + spike_len + 1] == False:
-            after_critical_value = critical_values[after_t_diff]
-        else:
-            # time difference masked
-            after_critical_value = max(critical_values.values())
-    except KeyError:
-        # don't have a value for this time difference, so use the maximum of all as a proxy
-        after_critical_value = max(critical_values.values())
-    except IndexError:
-        # off the back of the data array
-        after_critical_value = max(critical_values.values())
+    for side in [-1, spike_len + 1]:
+        # if side = -1, then before
+        # if side = length+1, then after
 
-    try:
-        if value_diffs.mask[possible_in_spike - 1] == False:
-            if value_diffs[possible_in_spike - 1] > before_critical_value/2.:
-                # before spike fails test
-                is_spike = False
+        try:
+            side_t_diff = time_diffs[possible_in_spike + side]
+            if time_diffs.mask[possible_in_spike + side] == False:
+                side_critical_value = critical_values[side_t_diff]
+            else:
+                # time difference masked
+                side_critical_value = max(critical_values.values())
+        except KeyError:
+            # don't have a value for this time difference, so use the maximum of all as a proxy
+            side_critical_value = max(critical_values.values())
+        except IndexError:
+            # off the front/back of the data array
+            side_critical_value = max(critical_values.values())
 
-    except IndexError:
-        # off the front of the data array
-        pass
+        try:
+            if value_diffs.mask[possible_in_spike + side] == False:
+                if value_diffs[possible_in_spike + side] > side_critical_value/2.:
+                    # spike fails test
+                    is_spike = False
 
-    try:
-        if value_diffs.mask[possible_in_spike + spike_len + 1] == False:
-            if value_diffs[possible_in_spike + spike_len + 1] > after_critical_value/2.:
-                # after spike fails test
-                is_spike = False
-    except IndexError:
-        # off the back of the data array
-        pass
+        except IndexError:
+            # off the front/back of the data array
+            pass
 
     return is_spike
 
