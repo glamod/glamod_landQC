@@ -215,7 +215,6 @@ def assess_inside_spike(time_diffs: np.array, value_diffs: np.array,
         # check if any differences are greater than 1/2 critical value for time diff
 
         if np.abs(value_diffs[possible_in_spike + within]) > within_critical_value/2.:
-            print(value_diffs[possible_in_spike + within])
             is_spike = False 
 
         within += 1
@@ -323,7 +322,7 @@ def identify_spikes(obs_var: utils.Meteorological_Variable, times: np.array, con
         calculate_critical_values(obs_var, times, config_dict, plots=plots, diagnostics=diagnostics)
         critical_values = retreive_critical_values(unique_diffs, config_dict, obs_var.name)
 
-    # pre select for each time difference that can be tested
+    # pre select for each time difference that can be testedlen
     for t_diff in unique_diffs:
 
         if t_diff == 0:
@@ -371,8 +370,8 @@ def identify_spikes(obs_var: utils.Meteorological_Variable, times: np.array, con
         # Uncompress the flags & insert
         flags = np.array(["" for i in range(obs_var.data.shape[0])])
         # offset of 1 from use of the difference arrays
-        locs, = np.nonzero(obs_var.data.mask[1:] == False)
-        flags[1:][locs] = compressed_flags
+        locs, = np.nonzero(obs_var.data.mask == False)
+        flags[locs[1:]] = compressed_flags
         obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
 

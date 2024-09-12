@@ -390,5 +390,6 @@ def test_identify_spikes(spike_points: np.array) -> None:
 
     #check the flags set correctly
     np.testing.assert_array_equal(obs_var.flags, spike_flags)
+    assert obs_var.flags[spike_points[0]] == "S"
 
 # def test_sc():
