@@ -347,7 +347,7 @@ def identify_spikes(obs_var: utils.Meteorological_Variable, times: np.array, con
         #    when don't have a departure from/return to a normal level
 
         # assess identified potential spikes
-        for ps, possible_in_spike in enumerate(potential_spike_locs):
+        for possible_in_spike in potential_spike_locs:
 
             is_spike, spike_len = assess_potential_spike(time_diffs, value_diffs,
                                                          possible_in_spike, critical_values)
