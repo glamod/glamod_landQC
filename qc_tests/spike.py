@@ -12,7 +12,8 @@ import qc_utils as utils
 MAX_SPIKE_LENGTH = 3
 
 #*********************************************
-def plot_spike(times, obs_var, spike_start, spike_length):
+def plot_spike(times: np.array, obs_var: utils.Meteorological_Variable,
+               spike_start: int, spike_length: int) -> None:
     '''
     Plot each spike against surrounding data
 
@@ -50,7 +51,8 @@ def plot_spike(times, obs_var, spike_start, spike_length):
     return # plot_spike
 
 #************************************************************************
-def calculate_critical_values(obs_var, times, config_dict, plots=False, diagnostics=False):
+def calculate_critical_values(obs_var: utils.Meteorological_Variable, times: np.array,
+                              config_dict: dict, plots: bool=False, diagnostics: bool=False) -> None:
     """
     Use distribution to determine critical values.  Then also store in config dictionary.
 
@@ -88,9 +90,9 @@ def calculate_critical_values(obs_var, times, config_dict, plots=False, diagnost
 
             # write out the thresholds...
             try:
-                config_dict["SPIKE-{}".format(obs_var.name)]["{}".format(t_diff)] = float(c_value)
+                config_dict["SPIKE-{}".format(obs_var.name)][t_diff] = float(c_value)
             except KeyError:
-                CD_diff = {"{}".format(t_diff) : float(c_value)}
+                CD_diff = {t_diff : float(c_value)}
                 config_dict["SPIKE-{}".format(obs_var.name)] = CD_diff
 
             if diagnostics:
@@ -116,9 +118,10 @@ def retreive_critical_values(unique_diffs: np.array, config_dict: dict, name: st
     """
     # Read in the dictionary
     critical_values = {}
+
     for t_diff in unique_diffs:
         try:
-            c_value = config_dict["SPIKE-{}".format(name)]["{}".format(t_diff)]
+            c_value = config_dict["SPIKE-{}".format(name)][t_diff]
             critical_values[t_diff] = float(c_value)
         except KeyError:
             # no critical value for this time difference
@@ -154,7 +157,6 @@ def assess_potential_spike(time_diffs: np.array, value_diffs: np.array,
             # TODO got to end of data run, can't test final value at the moment
             break
 
-
         try:
             # find critical value for time-difference of way out of spike
             out_critical_value = critical_values[out_spike_t_diff]
@@ -165,14 +167,13 @@ def assess_potential_spike(time_diffs: np.array, value_diffs: np.array,
             # time or value difference masked
             out_critical_value = max(critical_values.values())
 
-
         if np.abs(possible_out_spike) > out_critical_value:
             # check that the signs are opposite
             if np.sign(value_diffs[possible_in_spike]) != np.sign(value_diffs[possible_in_spike + spike_len]):
                 is_spike = True
                 break
 
-        spike_len += 1    
+        spike_len += 1
 
     return is_spike, spike_len
 
@@ -322,9 +323,9 @@ def identify_spikes(obs_var: utils.Meteorological_Variable, times: np.array, con
         calculate_critical_values(obs_var, times, config_dict, plots=plots, diagnostics=diagnostics)
         critical_values = retreive_critical_values(unique_diffs, config_dict, obs_var.name)
 
-
     # pre select for each time difference that can be tested
     for t_diff in unique_diffs:
+
         if t_diff == 0:
             # not a spike or jump, but 2 values at the same time.
             #  should be zero value difference, so fitting histogram not going to work
@@ -334,10 +335,10 @@ def identify_spikes(obs_var: utils.Meteorological_Variable, times: np.array, con
         # new blank flag array (redone for each difference)
         compressed_flags = np.array(["" for i in range(value_diffs.shape[0])])
 
-        # select the locations with the relevant time difference
-        t_locs, = np.where(time_diffs == t_diff)
+        # select the locations above critical value and with the relevant time difference
         try:
-            c_locs, = np.where(np.abs(value_diffs[t_locs]) > critical_values[t_diff])
+            potential_spike_locs, = np.nonzero(np.logical_and((np.abs(value_diffs) > critical_values[t_diff]),
+                                              (time_diffs == t_diff)))
         except:
             # no critical value for this time difference
             continue # to next loop
@@ -346,7 +347,7 @@ def identify_spikes(obs_var: utils.Meteorological_Variable, times: np.array, con
         #    when don't have a departure from/return to a normal level
 
         # assess identified potential spikes
-        for ps, possible_in_spike in enumerate(t_locs[c_locs]):
+        for ps, possible_in_spike in enumerate(potential_spike_locs):
 
             is_spike, spike_len = assess_potential_spike(time_diffs, value_diffs,
                                                          possible_in_spike, critical_values)
@@ -361,8 +362,7 @@ def identify_spikes(obs_var: utils.Meteorological_Variable, times: np.array, con
 
             # if the spike is still set, set the flags
             if is_spike:
-                # "+1" because of difference arrays
-                compressed_flags[possible_in_spike+1 : possible_in_spike+1+spike_len] = "S"
+                compressed_flags[possible_in_spike : possible_in_spike+spike_len] = "S"
 
                 # diagnostic plots
                 if plots:
@@ -370,12 +370,13 @@ def identify_spikes(obs_var: utils.Meteorological_Variable, times: np.array, con
 
         # Uncompress the flags & insert
         flags = np.array(["" for i in range(obs_var.data.shape[0])])
-        flags[obs_var.data.mask == False] = compressed_flags
-
+        # offset of 1 from use of the difference arrays
+        locs, = np.nonzero(obs_var.data.mask[1:] == False)
+        flags[1:][locs] = compressed_flags
         obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
-        if diagnostics:
 
+        if diagnostics:
             print("Spike {}".format(obs_var.name))
             print("   Time Difference: {} minutes".format(t_diff))
             print("      Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
@@ -384,7 +385,8 @@ def identify_spikes(obs_var: utils.Meteorological_Variable, times: np.array, con
 
 
 #************************************************************************
-def sc(station, var_list, config_dict, full=False, plots=False, diagnostics=False):
+def sc(station: utils.Meteorological_Variable, var_list: list, config_dict: dict, 
+       full: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Run through the variables and pass to the Spike Check
 
