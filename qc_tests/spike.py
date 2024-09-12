@@ -25,18 +25,24 @@ def plot_spike(times, obs_var, spike_start, spike_length):
     '''
     import matplotlib.pyplot as plt
 
+    # Need to apply masks to match counting in identification steps
+    mdata = obs_var.data.compressed()
+    mtimes = np.ma.masked_array(times, mask=obs_var.data.mask).compressed()
+
     # simple plot
     plt.clf()
     pad_start = spike_start-24
     if pad_start < 0:
         pad_start = 0
     pad_end = spike_start+spike_length+24
-    if pad_end > len(obs_var.data):
-        pad_end = len(obs_var.data)
+    if pad_end > len(mdata):
+        pad_end = len(mdata)
 
-    plt.plot(times[pad_start: pad_end], obs_var.data[pad_start: pad_end], 'k-', marker=".")
+    plt.plot(mtimes[pad_start: pad_end],
+             mdata[pad_start: pad_end], 'k-', marker=".")
 
-    plt.plot(times[spike_start: spike_start+spike_length], obs_var.data[spike_start: spike_start+spike_length], 'r*', ms=10)
+    plt.plot(mtimes[spike_start: spike_start+spike_length],
+             mdata[spike_start: spike_start+spike_length], 'r*', ms=10)
 
     plt.ylabel(obs_var.name.capitalize())
     plt.show()
@@ -54,18 +60,10 @@ def calculate_critical_values(obs_var, times, config_dict, plots=False, diagnost
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
+    # generate the first difference metrics
+    value_diffs, time_diffs, unique_diffs = generate_differences(times, obs_var.data)
 
-    # use all first differences
-    # TODO monthly?
- 
-    masked_times = np.ma.masked_array(times, mask=obs_var.data.mask)
-
-    time_diffs = np.ma.diff(masked_times)/np.timedelta64(1, "m") # presuming minutes
-    value_diffs = np.ma.diff(obs_var.data)
-
-    # get thresholds for each unique time differences
-    unique_diffs = np.unique(time_diffs.compressed())
-
+    # Now go through each unique time difference to calculate critical values
     for t_diff in unique_diffs:
 
         if t_diff == 0:
@@ -116,6 +114,7 @@ def retreive_critical_values(unique_diffs: np.array, config_dict: dict, name: st
 
     :returns: dict    
     """
+    # Read in the dictionary
     critical_values = {}
     for t_diff in unique_diffs:
         try:
@@ -155,16 +154,13 @@ def assess_potential_spike(time_diffs: np.array, value_diffs: np.array,
             # TODO got to end of data run, can't test final value at the moment
             break
 
-        # TODO need to test mask/unmasked using array rather than values extracted above
-        #    as if values unmasked, then no mask attribute to test!
-        if time_diffs.mask[possible_in_spike + spike_len] == False and \
-                value_diffs.mask[possible_in_spike + spike_len] == False:
-            try:
-                # find critical value for time-difference of way out of spike
-                out_critical_value = critical_values[out_spike_t_diff]
-            except KeyError:
-                # don't have a value for this time difference, so use the maximum of all as a proxy
-                out_critical_value = max(critical_values.values())
+
+        try:
+            # find critical value for time-difference of way out of spike
+            out_critical_value = critical_values[out_spike_t_diff]
+        except KeyError:
+            # don't have a value for this time difference, so use the maximum of all as a proxy
+            out_critical_value = max(critical_values.values())
         else:
             # time or value difference masked
             out_critical_value = max(critical_values.values())
@@ -206,24 +202,20 @@ def assess_inside_spike(time_diffs: np.array, value_diffs: np.array,
         within_t_diff = time_diffs[possible_in_spike + within]
 
         # obtain relevant critical value for time diff
-        if time_diffs.mask[possible_in_spike + within] == False:
-            try:
-                within_critical_value = critical_values[within_t_diff]
-            except KeyError:
-                # don't have a value for this time difference, so use the maximum of all as a proxy
-                within_critical_value = max(critical_values.values())
+        try:
+            within_critical_value = critical_values[within_t_diff]
+        except KeyError:
+            # don't have a value for this time difference, so use the maximum of all as a proxy
+            within_critical_value = max(critical_values.values())
         else:
             # time difference masked
             within_critical_value = max(critical_values.values())
 
         # check if any differences are greater than 1/2 critical value for time diff
-        if value_diffs.mask[possible_in_spike + within] == False:
-            if np.abs(value_diffs[possible_in_spike + within]) > within_critical_value/2.:
-                print(value_diffs[possible_in_spike + within])
-                is_spike = False 
-        else:
-            # if value is masked then no data, so cannot say if it's not a spike
-            pass
+
+        if np.abs(value_diffs[possible_in_spike + within]) > within_critical_value/2.:
+            print(value_diffs[possible_in_spike + within])
+            is_spike = False 
 
         within += 1
 
@@ -254,11 +246,7 @@ def assess_outside_spike(time_diffs: np.array, value_diffs: np.array,
 
         try:
             outside_t_diff = time_diffs[possible_in_spike + outside]
-            if time_diffs.mask[possible_in_spike + outside] == False:
-                outside_critical_value = critical_values[outside_t_diff]
-            else:
-                # time difference masked
-                outside_critical_value = max(critical_values.values())
+            outside_critical_value = critical_values[outside_t_diff]
         except KeyError:
             # don't have a value for this time difference, so use the maximum of all as a proxy
             outside_critical_value = max(critical_values.values())
@@ -267,10 +255,9 @@ def assess_outside_spike(time_diffs: np.array, value_diffs: np.array,
             outside_critical_value = max(critical_values.values())
 
         try:
-            if value_diffs.mask[possible_in_spike + outside] == False:
-                if np.abs(value_diffs[possible_in_spike + outside]) > outside_critical_value/2.:
-                    # spike fails test
-                    is_spike = False
+            if np.abs(value_diffs[possible_in_spike + outside]) > outside_critical_value/2.:
+                # spike fails test
+                is_spike = False
 
         except IndexError:
             # off the front/back of the data array
@@ -279,6 +266,7 @@ def assess_outside_spike(time_diffs: np.array, value_diffs: np.array,
     return is_spike
 
 
+#************************************************************************
 def generate_differences(times: np.array,
                          data: np.array) -> tuple[np.array, np.array, np.array]:
     """
@@ -289,11 +277,13 @@ def generate_differences(times: np.array,
 
     :returns: (value_diffs, time_diffs, unique_diffs)
     """
-
+    # apply mask to times too
     masked_times = np.ma.masked_array(times, mask=data.mask)
 
-    time_diffs = np.ma.diff(masked_times)/np.timedelta64(1, "m") # presuming minutes
-    value_diffs = np.ma.diff(data)
+    # Using .compressed() to remove any masked points
+    #   If masks remain, then one of the differences will be masked, and hence unassessed
+    time_diffs = np.ma.diff(masked_times.compressed())/np.timedelta64(1, "m") # presuming minutes
+    value_diffs = np.ma.diff(data.compressed())
 
     if len(value_diffs.mask.shape) == 0:
         # single mask value, replace with array of True/False's
@@ -320,8 +310,8 @@ def identify_spikes(obs_var: utils.Meteorological_Variable, times: np.array, con
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
-
-    # TODO check works with missing data (compressed?)
+    
+    # get the first differences
     value_diffs, time_diffs, unique_diffs = generate_differences(times, obs_var.data)
 
     # retrieve the critical values
@@ -342,10 +332,10 @@ def identify_spikes(obs_var: utils.Meteorological_Variable, times: np.array, con
             continue
 
         # new blank flag array (redone for each difference)
-        flags = np.array(["" for i in range(obs_var.data.shape[0])])
+        compressed_flags = np.array(["" for i in range(value_diffs.shape[0])])
 
+        # select the locations with the relevant time difference
         t_locs, = np.where(time_diffs == t_diff)
-
         try:
             c_locs, = np.where(np.abs(value_diffs[t_locs]) > critical_values[t_diff])
         except:
@@ -372,11 +362,15 @@ def identify_spikes(obs_var: utils.Meteorological_Variable, times: np.array, con
             # if the spike is still set, set the flags
             if is_spike:
                 # "+1" because of difference arrays
-                flags[possible_in_spike+1 : possible_in_spike+1+spike_len] = "S"
+                compressed_flags[possible_in_spike+1 : possible_in_spike+1+spike_len] = "S"
 
                 # diagnostic plots
                 if plots:
                     plot_spike(times, obs_var, possible_in_spike+1, spike_len)
+
+        # Uncompress the flags & insert
+        flags = np.array(["" for i in range(obs_var.data.shape[0])])
+        flags[obs_var.data.mask == False] = compressed_flags
 
         obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
