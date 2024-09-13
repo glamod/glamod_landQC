@@ -272,7 +272,8 @@ def pressure_theory(sealp: utils.Meteorological_Variable,
     # diagnostic plots
     if plots:
         plot_pressure_distribution(difference, vmin=-THEORY_THRESHOLD,
-                                   vmax=THEORY_THRESHOLD])
+                                   vmax=THEORY_THRESHOLD)
+
 
     if len(bad_locs) != 0:
         flags[bad_locs] = "p"
