@@ -4,7 +4,6 @@ Contains tests for pressure.py
 import numpy as np
 import datetime as dt
 from unittest.mock import patch, Mock
-import pytest
 
 import pressure
 

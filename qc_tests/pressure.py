@@ -55,12 +55,13 @@ def plot_pressure_timeseries(sealp: utils.Meteorological_Variable,
 
 
 #*********************************************
-def plot_pressure_distribution(difference: np.array, vlines: list=[-1, 1]) -> None:
+def plot_pressure_distribution(difference: np.array, vmin: int=-1, vmax:int=1) -> None:
     '''
     Plot distribution and include the upper and lower thresholds
 
     :param array difference: values to form histogram from 
-    :param list vlines: lower and upper locations for vertical lines
+    :param int vmin: lower locations for vertical line
+    :param int vmax: upper locations for vertical line
     '''
     import matplotlib.pyplot as plt
 
@@ -69,8 +70,8 @@ def plot_pressure_distribution(difference: np.array, vlines: list=[-1, 1]) -> No
 
     plt.clf()
     plt.hist(difference.compressed(), bins=bins)
-    plt.axvline(x=vlines[0], ls="--", c="r")
-    plt.axvline(x=vlines[1], ls="--", c="r")
+    plt.axvline(x=vmin, ls="--", c="r")
+    plt.axvline(x=vmax, ls="--", c="r")
     plt.xlim([bins[0] - 1, bins[-1] + 1])
     plt.ylabel("Observations")
     plt.xlabel("Difference (hPa)")
@@ -162,8 +163,8 @@ def pressure_offset(sealp: utils.Meteorological_Variable,
 
             # diagnostic plots
             if plots:
-                plot_pressure_distribution(difference, [(average + (THRESHOLD*spread)),
-                                                        (average - (THRESHOLD*spread))])
+                plot_pressure_distribution(difference, vmin=(average + (THRESHOLD*spread)),
+                                           vmax=(average - (THRESHOLD*spread)))
 
             if len(high) != 0:
                 flags[high] = "p"
@@ -270,8 +271,8 @@ def pressure_theory(sealp: utils.Meteorological_Variable,
 
     # diagnostic plots
     if plots:
-        plot_pressure_distribution(difference, [-THEORY_THRESHOLD,
-                                                THEORY_THRESHOLD])
+        plot_pressure_distribution(difference, vmin=-THEORY_THRESHOLD,
+                                   vmax=THEORY_THRESHOLD])
 
     if len(bad_locs) != 0:
         flags[bad_locs] = "p"
