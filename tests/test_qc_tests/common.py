@@ -19,6 +19,8 @@ def example_test_variable(name,
 
     variable.data = np.ma.masked_where(vardata == mdi, vardata)
 
+    variable.flags = np.array(["" for i in range(len(vardata))])
+
     return variable
 
 

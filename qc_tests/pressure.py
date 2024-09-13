@@ -17,7 +17,9 @@ MIN_SPREAD = 1.0
 MAX_SPREAD = 5.0
 
 #*********************************************
-def plot_pressure_timeseries(sealp, stnlp, times, bad):
+def plot_pressure_timeseries(sealp: utils.Meteorological_Variable,
+                             stnlp: utils.Meteorological_Variable,
+                             times: np.array, bad: int) -> None:
     '''
     Plot each observation of SLP or StnLP against surrounding data
 
@@ -53,7 +55,7 @@ def plot_pressure_timeseries(sealp, stnlp, times, bad):
 
 
 #*********************************************
-def plot_pressure_distribution(difference, vlines=[-1, 1]):
+def plot_pressure_distribution(difference: np.array, vlines: list=[-1, 1]) -> None:
     '''
     Plot distribution and include the upper and lower thresholds
 
@@ -78,13 +80,15 @@ def plot_pressure_distribution(difference, vlines=[-1, 1]):
 
 
 #************************************************************************
-def identify_values(sealp, stnlp, times, config_dict, plots=False, diagnostics=False):
+def identify_values(sealp: utils.Meteorological_Variable,
+                    stnlp: utils.Meteorological_Variable,
+                    config_dict: dict,
+                    plots: bool=False, diagnostics: bool=False) -> None:
     """
     Find average and spread of differences
 
     :param MetVar sealp: sea level pressure object
     :param MetVar stnlp: station level pressure object
-    :param array times: datetime array
     :param str config_dict: dictionary for configuration settings
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
@@ -113,7 +117,10 @@ def identify_values(sealp, stnlp, times, config_dict, plots=False, diagnostics=F
     return # identify_values
 
 #************************************************************************
-def pressure_offset(sealp, stnlp, times, config_dict, plots=False, diagnostics=False):
+def pressure_offset(sealp: utils.Meteorological_Variable,
+                    stnlp: utils.Meteorological_Variable,
+                    times: np.array, config_dict: dict,
+                    plots: bool=False, diagnostics: bool=False) -> None:
     """
     Flag locations where difference between station and sea-level pressure
     falls outside of bounds
@@ -137,11 +144,12 @@ def pressure_offset(sealp, stnlp, times, config_dict, plots=False, diagnostics=F
             spread = float(config_dict["PRESSURE"]["spread"])
         except KeyError:
             print("Information missing in config dictionary")
-            identify_values(sealp, stnlp, times, config_dict, plots=plots, diagnostics=diagnostics)
+            identify_values(sealp, stnlp, config_dict, plots=plots, diagnostics=diagnostics)
             average = float(config_dict["PRESSURE"]["average"])
             spread = float(config_dict["PRESSURE"]["spread"])
             
-
+        print(np.ma.mean(difference))
+        print(np.ma.median(difference))
         if np.abs(np.ma.mean(difference) - np.ma.median(difference)) > THRESHOLD*spread:
             if diagnostics:
                 print("Large difference between mean and median")
@@ -185,7 +193,7 @@ def pressure_offset(sealp, stnlp, times, config_dict, plots=False, diagnostics=F
     return # pressure_offset
 
 #*********************************************
-def calc_slp(stnlp, elevation, temperature):
+def calc_slp(stnlp: np.array, elevation: float, temperature: np.array) -> np.array:
     '''
     Suggestion from Scott Stevens to calculate the SLP from the StnLP
     Presumes 15C if no temperature available
@@ -195,11 +203,14 @@ def calc_slp(stnlp, elevation, temperature):
     :param array stnlp: station level pressure data
     :param float elevation: station elevation
     :param array temperature: temperature data
+
+    :returns: np.array
     '''
     filled_temperature = np.ma.copy(temperature)
 
     # find locations where we could calculate the SLP, but temperatures are missing
-    missing_Ts, = np.where(np.logical_and(filled_temperature.mask == True, stnlp.mask == False))
+    missing_Ts, = np.where(np.logical_and(filled_temperature.mask == True,
+                                          stnlp.mask == False))
     if len(missing_Ts) > 0:
         filled_temperature[missing_Ts] = 15.0
 
@@ -211,18 +222,31 @@ def calc_slp(stnlp, elevation, temperature):
 
 
 #************************************************************************
-def adjust_preexisting_locs(var, flags):
-    # may have flags already set by previous part of test
-    # find these locations, and adjust new flags to these aren't added again
+def adjust_existing_flag_locs(var: utils.Meteorological_Variable,
+                            flags: np.array) -> np.array:
+    """
+    There may be flags already set by previous part of test
+    Find these locations, and adjust new flags to these aren't added again
+    
+    :param MetVar var: the variable object
+    :param array flags: the flag array
+
+    :returns: updated flag array
+    """
     pre_exist = [i for i,item in enumerate(var.flags) if "p" in item]
     new_flags = flags[:]
+    # remove flags if "p" already in the existing flag so as not to duplicate
     new_flags[pre_exist] = ""
 
-    return new_flags # adjust_preexisting_locs
+    return new_flags # adjust_existing_flag_locs
 
 
 #************************************************************************
-def pressure_theory(sealp, stnlp, temperature, times, elevation, plots=False, diagnostics=False):
+def pressure_theory(sealp: utils.Meteorological_Variable,
+                    stnlp: utils.Meteorological_Variable,
+                    temperature: utils.Meteorological_Variable,
+                    times: np.array, elevation: int,
+                    plots: bool=False, diagnostics: bool=False) -> None:
     """
     Flag locations where difference between recorded and calculated sea-level pressure 
     falls outside of bounds
@@ -256,11 +280,11 @@ def pressure_theory(sealp, stnlp, temperature, times, elevation, plots=False, di
             print("   Number of mismatches between recorded and theoretical SLPs {}".format(len(bad_locs)))
         if plots:
             for bad in bad_locs:
-                plot_pressure(sealp, stnlp, times, bad)
+                plot_pressure_timeseries(sealp, stnlp, times, bad)
                 
     # flag both as not sure immediately where the issue lies
-    stnlp.flags = utils.insert_flags(stnlp.flags, adjust_preexisting_locs(stnlp, flags))
-    sealp.flags = utils.insert_flags(sealp.flags, adjust_preexisting_locs(sealp, flags))
+    stnlp.flags = utils.insert_flags(stnlp.flags, adjust_existing_flag_locs(stnlp, flags))
+    sealp.flags = utils.insert_flags(sealp.flags, adjust_existing_flag_locs(sealp, flags))
 
     if diagnostics:
 
@@ -285,7 +309,7 @@ def pcc(station, config_dict, full=False, plots=False, diagnostics=False):
     stnlp = getattr(station, "station_level_pressure")
 
     if full:
-        identify_values(sealp, stnlp, station.times, config_dict, plots=plots, diagnostics=diagnostics)
+        identify_values(sealp, stnlp, config_dict, plots=plots, diagnostics=diagnostics)
     pressure_offset(sealp, stnlp, station.times, config_dict, plots=plots, diagnostics=diagnostics)
 
     temperature = getattr(station, "temperature")
