@@ -20,7 +20,6 @@ MAX_SPREAD = 5.0
 def plot_pressure_timeseries(sealp: utils.Meteorological_Variable,
                              stnlp: utils.Meteorological_Variable,
                              times: np.array, bad: int) -> None:
-
     '''
     Plot each observation of SLP or StnLP against surrounding data
 
@@ -86,7 +85,6 @@ def identify_values(sealp: utils.Meteorological_Variable,
                     stnlp: utils.Meteorological_Variable,
                     config_dict: dict,
                     plots: bool=False, diagnostics: bool=False) -> None:
-
     """
     Find average and spread of differences
 
@@ -118,6 +116,7 @@ def identify_values(sealp: utils.Meteorological_Variable,
         config_dict["PRESSURE"]["spread"] = spread
 
     return # identify_values
+
 
 #************************************************************************
 def pressure_offset(sealp: utils.Meteorological_Variable,
@@ -168,7 +167,6 @@ def pressure_offset(sealp: utils.Meteorological_Variable,
                 plot_pressure_distribution(difference, vmin=(average + (THRESHOLD*spread)),
                                            vmax=(average - (THRESHOLD*spread)))
 
-
             if len(high) != 0 or len(low) != 0:   
                 print("Pressure {}".format(stnlp.name))
             if len(high) != 0:
@@ -187,7 +185,6 @@ def pressure_offset(sealp: utils.Meteorological_Variable,
                     for bad in low:
                         plot_pressure_timeseries(sealp, stnlp, times, bad)
 
-
             # only flag the station level pressure
             stnlp.flags = utils.insert_flags(stnlp.flags, flags)
 
@@ -196,6 +193,7 @@ def pressure_offset(sealp: utils.Meteorological_Variable,
         print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
 
     return # pressure_offset
+
 
 #*********************************************
 def calc_slp(stnlp: np.array, elevation: float, temperature: np.array) -> np.array:
@@ -210,8 +208,8 @@ def calc_slp(stnlp: np.array, elevation: float, temperature: np.array) -> np.arr
     :param array temperature: temperature data
 
     :returns: np.array
-
     '''
+
     filled_temperature = np.ma.copy(temperature)
 
     # find locations where we could calculate the SLP, but temperatures are missing
@@ -239,8 +237,10 @@ def adjust_existing_flag_locs(var: utils.Meteorological_Variable,
 
     :returns: updated flag array
     """
+
     pre_exist = [i for i,item in enumerate(var.flags) if "p" in item]
     new_flags = flags[:]
+
     # remove flags if "p" already in the existing flag so as not to duplicate
     new_flags[pre_exist] = ""
 
@@ -298,6 +298,7 @@ def pressure_theory(sealp: utils.Meteorological_Variable,
 
     return # pressure_theory
 
+
 #************************************************************************
 def pcc(station: utils.Station, config_dict: dict, full: bool = False,
         plots: bool = False, diagnostics: bool = False) -> None:
@@ -327,6 +328,7 @@ def pcc(station: utils.Station, config_dict: dict, full: bool = False,
         pressure_theory(sealp, stnlp, temperature, station.times, station.elev, plots=plots, diagnostics=diagnostics)
 
     return # pcc
+
 
 #************************************************************************
 if __name__ == "__main__":
