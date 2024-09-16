@@ -7,12 +7,34 @@ import pytest
 from unittest.mock import patch, Mock
 
 import precision
+import qc_utils
 
 import common
 
 # not testing plotting
 all_flagged = np.array(["n" for _ in range(120)])
 none_flagged = np.array(["" for _ in range(120)])
+
+def _make_station(temps: np.array, dewps: np.array) -> qc_utils.Station:
+    """
+    Create a station with two paired variables
+
+    :returns: tuple(station)
+    
+    """
+    primary = common.example_test_variable("temperature", temps)
+    secondary = common.example_test_variable("dew_point_temperature", dewps)
+
+    times = np.array([dt.datetime(2024, 1, 1, 12, 0) +
+                     (i * dt.timedelta(seconds=60*60))
+                     for i in range(len(dewps))])
+    
+    station = common.example_test_station(primary)
+    station.dew_point_temperature = secondary
+    common.add_times_to_example_station(station, times)
+
+    return station
+
 
 @pytest.mark.parametrize("t_divisor, d_divisor, expected", [(10, 1, all_flagged),
                                                              (10, 10, none_flagged)])
@@ -24,20 +46,13 @@ def test_precision_cross_check(t_divisor: int, d_divisor: int, expected: np.arra
     dewps = np.ma.arange(0, length/d_divisor, 1/d_divisor)
     dewps.mask = np.zeros(dewps.shape[0])
  
-    primary = common.example_test_variable("temperature", temps)
-    secondary = common.example_test_variable("dew_point_temperature", dewps)
+    station = _make_station(temps, dewps)
 
-    times = np.array([dt.datetime(2024, 1, 1, 12, 0) +
-                     (i * dt.timedelta(seconds=60*60))
-                     for i in range(len(dewps))])
-    
-    station = common.example_test_station(primary)
-    station.dew_point_temperature = secondary
-    common.add_times_to_example_station(station, times)
-    
-    precision.precision_cross_check(station, primary, secondary)
+    precision.precision_cross_check(station,
+                                    station.temperature,
+                                    station.dew_point_temperature)
 
-    np.testing.assert_array_equal(secondary.flags, expected)
+    np.testing.assert_array_equal(station.dew_point_temperature.flags, expected)
 
 
 def test_precision_cross_check_short_record():
@@ -49,22 +64,14 @@ def test_precision_cross_check_short_record():
     temps.mask = np.zeros(temps.shape[0])
     dewps = np.ma.arange(0, length, 1)
     dewps.mask = np.zeros(dewps.shape[0])
-
-    primary = common.example_test_variable("temperature", temps)
-    secondary = common.example_test_variable("dew_point_temperature", dewps)
-
-    times = np.array([dt.datetime(2024, 1, 1, 12, 0) +
-                     (i * dt.timedelta(seconds=60*60))
-                     for i in range(len(dewps))])
     
-    station = common.example_test_station(primary)
-    station.dew_point_temperature = secondary
-    common.add_times_to_example_station(station, times)
-    
-    precision.precision_cross_check(station, primary, secondary)
+    station = _make_station(temps, dewps)
 
-    np.testing.assert_array_equal(secondary.flags, expected)
+    precision.precision_cross_check(station,
+                                    station.temperature,
+                                    station.dew_point_temperature)
 
+    np.testing.assert_array_equal(station.dew_point_temperature.flags, expected)
 
 
 # def test_pcc():
@@ -75,17 +82,8 @@ def test_pcc(cross_check_mock: Mock) -> None:
     length = 120
     temps = np.ma.arange(0, length)
     dewps = np.ma.arange(0, length)
- 
-    primary = common.example_test_variable("temperature", temps)
-    secondary = common.example_test_variable("dew_point_temperature", dewps)
 
-    times = np.array([dt.datetime(2024, 1, 1, 12, 0) +
-                     (i * dt.timedelta(seconds=60*60))
-                     for i in range(len(dewps))])
-    
-    station = common.example_test_station(primary)
-    station.dew_point_temperature = secondary
-    common.add_times_to_example_station(station, times)
+    station = _make_station(temps, dewps)
 
     # Set up flags to uses mocked return
     cross_check_mock.return_value = True
