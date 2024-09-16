@@ -5,6 +5,7 @@ import numpy as np
 import datetime as dt
 import pandas as pd
 import pytest
+from unittest.mock import patch, Mock
 
 import spike
 
@@ -392,4 +393,20 @@ def test_identify_spikes(spike_points: np.array) -> None:
     np.testing.assert_array_equal(obs_var.flags, spike_flags)
     assert obs_var.flags[spike_points[0]] == "S"
 
-# def test_sc():
+
+@pytest.mark.parametrize("full", [True, False])
+@patch("spike.calculate_critical_values")
+@patch("spike.identify_spikes")
+def test_sc(critical_values_mock: Mock,
+            identify_spikes_mock: Mock, 
+            full: bool):
+    
+    var = common.example_test_variable("dummy", np.array([]))
+    station = common.example_test_station(var)
+    station.times = []
+
+    spike.sc(station, ["dummy"], {}, full=full)
+
+    if full:
+        critical_values_mock.assert_called_once
+    identify_spikes_mock.assert_called_once
