@@ -110,6 +110,37 @@ def test_pressure_offset_bad_population():
     np.testing.assert_array_equal(stnlp.flags, expected_flags)
 
 
+def test_pressure_offset_no_config():
+
+    # Set up data, variables &c
+    test_data = np.arange(150)
+    expected_flags = np.array(["" for _ in test_data])
+
+    sealp = common.example_test_variable("sea_level_pressure",
+                                         test_data)
+
+    # set fraction to high offset
+    test_data[:20] += 10
+    test_data[-20:] -= 10
+    expected_flags = np.array(["" for _ in test_data])
+    expected_flags[:20] = "p"
+    expected_flags[-20:] = "p"
+    stnlp = common.example_test_variable("station_level_pressure",
+                                         test_data)
+    
+    start_dt = dt.datetime(2000, 1, 1, 0, 0)
+    times = np.array([start_dt + dt.timedelta(hours=i)\
+                      for i in range(len(sealp.data))])
+    
+    config_dict = {"PRESSURE": {}}
+
+    pressure.pressure_offset(sealp, stnlp, times, config_dict, diagnostics=True)
+
+    assert config_dict["PRESSURE"] == {"average": 0, "spread": 1}
+    np.testing.assert_array_equal(stnlp.flags, expected_flags)
+   
+
+
 def test_calc_slp_0m():
 
     stnlp = np.ma.arange(790, 900, 10)
@@ -175,6 +206,7 @@ def test_pressure_theory_0m():
                                          test_data)
     sealp.flags = np.array(["" for i in test_data])
 
+    test_data[4] = -90  # to trigger flag
     stnlp = common.example_test_variable("station_level_pressure",
                                          test_data)
     stnlp.flags = np.array(["" for i in test_data])
@@ -190,9 +222,11 @@ def test_pressure_theory_0m():
 
     pressure.pressure_theory(sealp, stnlp, temperature, times, 0)
 
+    expected_flags = np.array(["" for i in test_data])
+    expected_flags[4] = "p"
 
-    np.testing.assert_array_equal(stnlp.flags, np.array(["" for i in test_data]))
-    np.testing.assert_array_equal(sealp.flags, np.array(["" for i in test_data]))
+    np.testing.assert_array_equal(stnlp.flags, expected_flags)
+    np.testing.assert_array_equal(sealp.flags, expected_flags)
 
   
 @patch("pressure.identify_values")

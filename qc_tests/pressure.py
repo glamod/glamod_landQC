@@ -149,8 +149,7 @@ def pressure_offset(sealp: utils.Meteorological_Variable,
             average = float(config_dict["PRESSURE"]["average"])
             spread = float(config_dict["PRESSURE"]["spread"])
             
-        print(np.ma.mean(difference))
-        print(np.ma.median(difference))
+
         if np.abs(np.ma.mean(difference) - np.ma.median(difference)) > THRESHOLD*spread:
             if diagnostics:
                 print("Large difference between mean and median")
@@ -274,7 +273,6 @@ def pressure_theory(sealp: utils.Meteorological_Variable,
         plot_pressure_distribution(difference, vmin=-THEORY_THRESHOLD,
                                    vmax=THEORY_THRESHOLD)
 
-
     if len(bad_locs) != 0:
         flags[bad_locs] = "p"
         if diagnostics:
@@ -289,7 +287,6 @@ def pressure_theory(sealp: utils.Meteorological_Variable,
     sealp.flags = utils.insert_flags(sealp.flags, adjust_existing_flag_locs(sealp, flags))
 
     if diagnostics:
-
         print("Pressure {}".format(stnlp.name))
         print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
 
