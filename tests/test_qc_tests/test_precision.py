@@ -4,6 +4,7 @@ Contains tests for precision.py
 import numpy as np
 import datetime as dt
 import pytest
+from unittest.mock import patch, Mock
 
 import precision
 
@@ -67,3 +68,30 @@ def test_precision_cross_check_short_record():
 
 
 # def test_pcc():
+@patch("precision.precision_cross_check")
+def test_pcc(cross_check_mock: Mock) -> None:
+
+    # Set up data, variable & station
+    length = 120
+    temps = np.ma.arange(0, length)
+    dewps = np.ma.arange(0, length)
+ 
+    primary = common.example_test_variable("temperature", temps)
+    secondary = common.example_test_variable("dew_point_temperature", dewps)
+
+    times = np.array([dt.datetime(2024, 1, 1, 12, 0) +
+                     (i * dt.timedelta(seconds=60*60))
+                     for i in range(len(dewps))])
+    
+    station = common.example_test_station(primary)
+    station.dew_point_temperature = secondary
+    common.add_times_to_example_station(station, times)
+
+    # Set up flags to uses mocked return
+    cross_check_mock.return_value = True
+
+    # Do the call
+    precision.pcc(station, {})
+
+    # Mock to check call occurs as expected with right return
+    cross_check_mock.assert_called_once()
