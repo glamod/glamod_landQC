@@ -18,7 +18,7 @@ Input arguments:
 --diagnostics       [False] Verbose output
 
 --test              ["all"] select a single test to run [climatological/distribution/diurnal
-                     frequent/humidity/odd_cluster/pressure/spike/streaks/timestamp/variance/winds/world_records]
+                     frequent/humidity/odd_cluster/pressure/spike/streaks/timestamp/variance/winds/world_records/precision]
 
 --clobber           Overwrite output files if already existing.  If not set, will skip if output exists
 '''
@@ -48,13 +48,13 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
     :param bool plots: create plots from each test
     :param bool full: run full reprocessing rather than using stored values.
     :param str test: specify a single test to run (useful for diagnostics) [climatological/distribution/diurnal
-                     frequent/humidity/odd_cluster/pressure/spike/streaks/timestamp/variance/winds/world_records]
+                     frequent/humidity/odd_cluster/pressure/spike/streaks/timestamp/variance/winds/world_records/precision]
     :param bool clobbber: overwrite output file if exists
     """
 
     if test not in ["all", "climatological", "distribution", "diurnal", "frequent",
                     "humidity", "odd_cluster", "pressure", "spike", "streaks",
-                    "timestamp", "variance", "winds" ,"world_records"]:
+                    "timestamp", "variance", "winds" ,"world_records", "precision"]:
         print("Invalid test selected")
         return
 
@@ -208,6 +208,10 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
         if test in ["all", "timestamp"]:
             print("T", dt.datetime.now()-startT)
             qc_tests.timestamp.tsc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed"], config_dict, full=full, plots=plots, diagnostics=diagnostics)
+
+        if test in ["all", "precision"]:
+            print("T", dt.datetime.now()-startT)
+            qc_tests.precision.pcc(station, config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "spike"]:
             print("S", dt.datetime.now()-startT)

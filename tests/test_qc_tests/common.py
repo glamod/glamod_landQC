@@ -38,3 +38,14 @@ def example_test_station(variable: utils.Meteorological_Variable,
                               for i in range(len(variable.data))])
 
     return station
+
+
+def add_times_to_example_station(station: utils.Station,
+                                 times: np.array) -> None:
+    
+    station.years = np.array([d.year for d in times])
+    station.months = np.array([d.month for d in times])
+    station.days = np.array([d.day for d in times])
+    station.hours = np.array([d.hour for d in times])
+    station.times = times
+
