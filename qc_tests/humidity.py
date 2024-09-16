@@ -65,7 +65,8 @@ def get_repeating_dpd_threshold(temperatures, dewpoints, config_dict, plots=Fals
         try:
             config_dict["HUMIDITY"]["DPD"] = threshold
         except KeyError:
-            CD_dpd = {"DPD" : threshold}
+            # ensuring that threshold is stored as a float, not an np.array.
+            CD_dpd = {"DPD" : float(threshold)}
             config_dict["HUMIDITY"] = CD_dpd
             
     else:
@@ -73,7 +74,7 @@ def get_repeating_dpd_threshold(temperatures, dewpoints, config_dict, plots=Fals
         try:
             config_dict["HUMIDITY"]["DPD"] = -utils.MDI
         except KeyError:
-            CD_dpd = {"DPD" : -utils.MDI}
+            CD_dpd = {"DPD" : float(-utils.MDI)}
             config_dict["HUMIDITY"] = CD_dpd
 
     return # repeating_dpd_threshold
@@ -137,10 +138,10 @@ def plot_humidity_streak(times, T, D, streak_start, streak_end):
     plt.clf()
     plt.plot(times[pad_start: pad_end], T.data.compressed()[pad_start: pad_end], 'k-', marker=".", label=T.name.capitalize())
     plt.plot(times[pad_start: pad_end], D.data.compressed()[pad_start: pad_end], 'b-', marker=".", label=D.name.capitalize())
-    plt.plot(times[streak_start: streak_end], T_var.data.compressed()[streak_start: streak_end], 'k-', marker=".", label=T.name.capitalize())
-    plt.plot(times[streak_start: streak_end], D_var.data.compressed()[streak_start: streak_end], 'b-', marker=".", label=D.name.capitalize())
+    plt.plot(times[streak_start: streak_end], T.data.compressed()[streak_start: streak_end], 'k-', marker=".", label=T.name.capitalize())
+    plt.plot(times[streak_start: streak_end], D.data.compressed()[streak_start: streak_end], 'b-', marker=".", label=D.name.capitalize())
 
-    plt.ylabel(obs_var.units)
+    plt.ylabel(T.units)
     plt.show()
 
     return # plot_humidity_streak
@@ -235,7 +236,7 @@ def dew_point_depression_streak(times, temperatures, dewpoints, config_dict, plo
             flags[start : end] = "h"
 
             if plots:
-                plot_humiditystreak(times, temperatures, dewpoints, start, end)
+                plot_humidity_streak(times, temperatures, dewpoints, start, end)
 
         # only flag the dewpoints
         dewpoints.flags = utils.insert_flags(dewpoints.flags, flags)

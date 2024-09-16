@@ -16,7 +16,7 @@ SPREAD_THRESHOLD = 8.
 MIN_VALUES = 30
 
 #************************************************************************
-def prepare_data(obs_var, station, month, diagnostics=False, winsorize=True):
+def prepare_data(obs_var: utils.Meteorological_Variable, station: utils.Station, month:int, diagnostics: bool = False, winsorize: bool = True) -> np.array:
     """
     Calculate the monthly variances
 
@@ -84,7 +84,8 @@ def prepare_data(obs_var, station, month, diagnostics=False, winsorize=True):
     return variances # prepare_data
 
 #************************************************************************
-def find_thresholds(obs_var, station, config_dict, plots=False, diagnostics=False, winsorize=True):
+def find_thresholds(obs_var: utils.Meteorological_Variable, station: utils.Station, config_dict: dict,
+                    plots: bool = False, diagnostics: bool = False, winsorize: bool = True) -> None:
     """
     Use distribution to identify threshold values.  Then also store in config dictionary.
 
@@ -119,7 +120,7 @@ def find_thresholds(obs_var, station, config_dict, plots=False, diagnostics=Fals
     return # find_thresholds
 
 #************************************************************************
-def variance_check(obs_var, station, config_dict, plots=False, diagnostics=False, winsorize=True):
+def variance_check(obs_var: utils.Meteorological_Variable, station: utils.Station, config_dict: dict, plots: bool = False, diagnostics: bool = False, winsorize: bool = True) -> None:
     """
     Use distribution to identify threshold values.  Then also store in config file.
 
@@ -282,7 +283,7 @@ def variance_check(obs_var, station, config_dict, plots=False, diagnostics=False
     return # variance_check
 
 #************************************************************************
-def evc(station, var_list, config_dict, full=False, plots=False, diagnostics=False):
+def evc(station: utils.Station, var_list: list, config_dict: dict, full: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Run through the variables and pass to the Excess Variance Check
 

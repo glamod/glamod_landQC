@@ -20,6 +20,7 @@ MAX_SPREAD = 5.0
 def plot_pressure_timeseries(sealp: utils.Meteorological_Variable,
                              stnlp: utils.Meteorological_Variable,
                              times: np.array, bad: int) -> None:
+
     '''
     Plot each observation of SLP or StnLP against surrounding data
 
@@ -85,6 +86,7 @@ def identify_values(sealp: utils.Meteorological_Variable,
                     stnlp: utils.Meteorological_Variable,
                     config_dict: dict,
                     plots: bool=False, diagnostics: bool=False) -> None:
+
     """
     Find average and spread of differences
 
@@ -122,6 +124,7 @@ def pressure_offset(sealp: utils.Meteorological_Variable,
                     stnlp: utils.Meteorological_Variable,
                     times: np.array, config_dict: dict,
                     plots: bool=False, diagnostics: bool=False) -> None:
+
     """
     Flag locations where difference between station and sea-level pressure
     falls outside of bounds
@@ -165,10 +168,12 @@ def pressure_offset(sealp: utils.Meteorological_Variable,
                 plot_pressure_distribution(difference, vmin=(average + (THRESHOLD*spread)),
                                            vmax=(average - (THRESHOLD*spread)))
 
+
+            if len(high) != 0 or len(low) != 0:   
+                print("Pressure {}".format(stnlp.name))
             if len(high) != 0:
                 flags[high] = "p"
                 if diagnostics:
-                    print("Pressure {}".format(stnlp.name))
                     print("   Number of high differences {}".format(len(high)))
                 if plots:
                     for bad in high:
@@ -205,6 +210,7 @@ def calc_slp(stnlp: np.array, elevation: float, temperature: np.array) -> np.arr
     :param array temperature: temperature data
 
     :returns: np.array
+
     '''
     filled_temperature = np.ma.copy(temperature)
 
@@ -293,7 +299,8 @@ def pressure_theory(sealp: utils.Meteorological_Variable,
     return # pressure_theory
 
 #************************************************************************
-def pcc(station, config_dict, full=False, plots=False, diagnostics=False):
+def pcc(station: utils.Station, config_dict: dict, full: bool = False,
+        plots: bool = False, diagnostics: bool = False) -> None:
     """
     Extract the variables and pass to the Pressure Cross Checks
 

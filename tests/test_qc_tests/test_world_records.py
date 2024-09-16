@@ -9,7 +9,7 @@ import world_records
 import common
 
 @patch("world_records.record_check")
-def test_read_wrc(record_check_mock: Mock):
+def test_read_wrc(record_check_mock: Mock) -> None:
 
     # Set up data, variable & station
     test_data = np.arange(5)
@@ -33,7 +33,7 @@ def test_read_wrc(record_check_mock: Mock):
     np.testing.assert_array_equal(station.temperature.flags, test_flags)
 
 
-def test_record_check_nolocation():
+def test_record_check_nolocation() -> None:
 
     # Set up test data, with value to flag, and variable
     test_data = np.arange(5)
@@ -49,7 +49,7 @@ def test_record_check_nolocation():
     np.testing.assert_array_equal(flags, np.array(["W", "", "", "", ""]))
 
 
-def test_record_check_africa():
+def test_record_check_africa() -> None:
 
     # Set up test data, with value to flag, and variable
     test_data = np.arange(5)
@@ -65,7 +65,7 @@ def test_record_check_africa():
     np.testing.assert_array_equal(flags, np.array(["W", "", "", "", ""]))
 
 
-def test_record_check_europe():
+def test_record_check_europe() -> None:
 
     # Set up test data, with value to flag, and variable
     test_data = np.arange(5)
@@ -81,7 +81,7 @@ def test_record_check_europe():
     np.testing.assert_array_equal(flags, np.array(["W", "", "", "", ""]))
 
 
-def test_record_check_samerica():
+def test_record_check_samerica() -> None:
 
     # Set up test data, with value to flag, and variable
     test_data = np.arange(5)

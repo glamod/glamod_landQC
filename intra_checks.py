@@ -26,7 +26,6 @@ Input arguments:
 import os
 import datetime as dt
 import numpy as np
-import pandas as pd
 import json
 from json.decoder import JSONDecodeError
 
@@ -38,7 +37,8 @@ import setup
 #************************************************************************
 
 #************************************************************************
-def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=False, test="all", clobber=False):
+def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False, plots: bool = False,
+               full: bool = False, test: str = "all", clobber: bool = False) -> None:
     """
     Main script.  Reads in station data, populates internal objects and passes to the tests.
 
@@ -51,6 +51,12 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
                      frequent/humidity/odd_cluster/pressure/spike/streaks/timestamp/variance/winds/world_records]
     :param bool clobbber: overwrite output file if exists
     """
+
+    if test not in ["all", "climatological", "distribution", "diurnal", "frequent",
+                    "humidity", "odd_cluster", "pressure", "spike", "streaks",
+                    "timestamp", "variance", "winds" ,"world_records"]:
+        print("Invalid test selected")
+        return
 
     # process the station list
     station_list = utils.get_station_list(restart_id=restart_id, end_id=end_id)
@@ -111,7 +117,7 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
 
         try:
             station, station_df = io.read_station(os.path.join(setup.SUBDAILY_MFF_DIR, "{:11s}.mff{}".format(station_id, setup.IN_COMPRESSION)), station)
-        except OSError as e:
+        except OSError: # as e:
             # file missing, move on to next in sequence
             io.write_error(station, "File Missing")
             continue
@@ -242,7 +248,7 @@ def run_checks(restart_id="", end_id="", diagnostics=False, plots=False, full=Fa
         # Insert flags into Data Frame
 
         # need to insert columns in correct place
-        column_names = station_df.columns.values
+        # column_names = station_df.columns.values
 
         #*************************
         # add QC flag columns to each variable

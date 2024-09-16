@@ -24,7 +24,7 @@ TODAY_MONTH = dt.datetime.strftime(TODAY, "%B").upper()
 
 # ------------------------------------------------------------------------
 # process the station list
-def main(restart_id="", end_id="", clobber=False):
+def main(restart_id: str = "", end_id: str = "", clobber: bool = False) -> None:
     """
     Main script.  Makes inventory and other metadata files
 
@@ -61,7 +61,7 @@ def main(restart_id="", end_id="", clobber=False):
             station = utils.Station(station_id, station_list.latitude[st], station_list.longitude[st], station_list.elevation[st])
 
             try:
-                station, station_df = ioutils.read_station(os.path.join(setup.SUBDAILY_OUT_DIR, "{:11s}.{}{}".format(station_id, "qff", setup.IN_COMPRESSION)), station)
+                station, station_df = ioutils.read_station(os.path.join(setup.SUBDAILY_OUT_DIR, "{:11s}.{}{}".format(station_id, "qff", setup.OUT_COMPRESSION)), station)
             except OSError as e:
                 # file missing, move on to next in sequence
                 print(f"{station}, File Missing, {str(e)}")

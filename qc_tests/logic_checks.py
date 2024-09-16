@@ -20,13 +20,16 @@ with open(utils.LOGICFILE, "r") as lf:
     REASONABLE_LIMITS = json.load(lf)["logic_limits"]
 
 #************************************************************************
-def logic_check(obs_var, plots=False, diagnostics=False):
+def logic_check(obs_var: utils.Meteorological_Variable, plots: bool = False,
+                diagnostics: bool = False) -> np.array:
     """
     Check for exceedences of world record values
 
     :param MetVar obs_var: meteorological variable object
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
+
+    :returns: array of flags
     """
 
     flags = np.array(["" for i in range(obs_var.data.shape[0])])
@@ -57,7 +60,7 @@ def logic_check(obs_var, plots=False, diagnostics=False):
     return flags # logic_check 
 
 #************************************************************************
-def write_logic_error(station, message, diagnostics=False):
+def write_logic_error(station: utils.Station, message: str, diagnostics: bool = False) -> None:
     """
     Write a logic error at the station metadata level to file
 
@@ -75,7 +78,7 @@ def write_logic_error(station, message, diagnostics=False):
     return # write_logic_error
 
 #************************************************************************
-def lc(station, var_list, full=False, plots=False, diagnostics=False):
+def lc(station: utils.Station, var_list: list, full: bool = False, plots: bool = False, diagnostics: bool = False) -> int:
     """
     Run through the variables and pass to the Logic Checks
 
@@ -84,6 +87,8 @@ def lc(station, var_list, full=False, plots=False, diagnostics=False):
     :param bool full: run a full update (unused here)
     :param book plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
+
+    :returns: return_code, int of 0 (pass) or -1 (fail)
     """
     # https://github.com/glamod/glamod-dm/blob/master/glamod-parser/glamod/parser/filters/observations_table.py
     # database parser has these, for future reference

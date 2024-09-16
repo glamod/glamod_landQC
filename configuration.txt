@@ -1,17 +1,21 @@
 [PATHS]
-mff = /ichec/work/glamod/data/level1/land/level1b_sub_daily_data/
-mff_version = mff_test/
+mff = /ichec/work/glamod/merge/
+mff_version = files/
 root = /ichec/work/glamod/data/level1/land/
-version = v202304/
+version = v202308_test_sn/
 proc = level1b1_sub_daily_data/
 qff = level1c_sub_daily_data/
 config = level1c_sub_daily_data_configs/
 flags = level1c_sub_daily_data_flags/
 images = level1c_sub_daily_data_plots/
 errors = level1c_sub_daily_data_errors/
+metadata = level1c_sub_daily_data_metadata/
+logs = level1c_sub_daily_data_logs/
 venvdir = /ichec/work/glamod/glamod_landQC/qc_venv/
 [FILES]
-station_list = /ichec/work/glamod/data/level1/land/level1b_sub_daily_data/stnlist/ghcnh-station-list-rel5.txt
+station_list = /ichec/work/glamod/merge/metadata/ghcnh-station-list-rel6-20230928.txt
+station_full_list = ghcnh_full_station_list_rel6.txt
+inventory = ghcnh_inventory.txt
 variables = obs_variables.json
 logic = logic_config.json
 in_compression = None
@@ -31,3 +35,5 @@ max_vertical_separation = 200
 max_number = 20
 filename = neighbours.txt
 minimum_number = 3
+[MISC]
+email = robert.dunn@metoffice.gov.uk

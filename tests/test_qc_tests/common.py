@@ -9,11 +9,11 @@ import qc_utils as utils
 # Tests are called with a station, and some variables.
 #   Need to build a station and empty variables to use
 
-def example_test_variable(name,
-                          vardata,
-                          mdi=-1.e30,
-                          units="degrees C",
-                          dtype=(float)):
+def example_test_variable(name: str,
+                          vardata: np.array,
+                          mdi: float = -1.e30,
+                          units: str = "degrees C",
+                          dtype: tuple = (float)) -> utils.Meteorological_Variable:
 
     variable = utils.Meteorological_Variable(name, mdi, units, dtype)
 
@@ -24,10 +24,10 @@ def example_test_variable(name,
     return variable
 
 
-def example_test_station(variable,
-                         latitude=45,
-                         longitude=100,
-                         elevation=10):
+def example_test_station(variable: utils.Meteorological_Variable,
+                         latitude: int = 45,
+                         longitude: int = 100,
+                         elevation: int = 10) -> utils.Station:
 
     station = utils.Station("DummyID", latitude, longitude, elevation)
 
