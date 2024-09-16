@@ -2,6 +2,7 @@
 Contains common code for testing the QC tests
 """
 import numpy as np
+import datetime as dt
 
 import qc_utils as utils
 
@@ -18,6 +19,8 @@ def example_test_variable(name: str,
 
     variable.data = np.ma.masked_where(vardata == mdi, vardata)
 
+    variable.flags = np.array(["" for i in range(len(vardata))])
+
     return variable
 
 
@@ -29,5 +32,9 @@ def example_test_station(variable: utils.Meteorological_Variable,
     station = utils.Station("DummyID", latitude, longitude, elevation)
 
     setattr(station, variable.name, variable)
+
+    start_dt = dt.datetime(2000, 1, 1, 0, 0)
+    station.times = np.array([start_dt + dt.timedelta(hours=i)\
+                              for i in range(len(variable.data))])
 
     return station

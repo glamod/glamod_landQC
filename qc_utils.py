@@ -24,11 +24,26 @@ UNIT_DICT = {"temperature" : "degrees C", \
              "station_level_pressure" : "hPa hectopascals"}
 
 
-QC_TESTS = {"o" : "Odd Cluster", "F" : "Frequent Value", "D" : "Distribution - Monthly", \
-            "d" : "Distribution - all", "W" : "World Records", "K" : "Streaks", \
-            "C" : "Climatological", "T" : "Timestamp", "S" : "Spike", "h" : "Humidity", \
-            "V" : "Variance", "p" : "Pressure", "w" : "Winds", "L" : "Logic", "U" : "Diurnal", \
-            "E" : "Clean Up", "N" : "Neighbour", "H" : "High Flag Rate"}
+QC_TESTS = {"C" : "Climatological",
+            "D" : "Distribution - Monthly",
+            "E" : "Clean Up",
+            "F" : "Frequent Value",
+            "H" : "High Flag Rate",
+            "K" : "Streaks",
+            "L" : "Logic",
+            "N" : "Neighbour",
+            "S" : "Spike",
+            "T" : "Timestamp",
+            "U" : "Diurnal",
+            "V" : "Variance",
+            "W" : "World Records",
+            "d" : "Distribution - all",
+            "h" : "Humidity",
+            "n" : "Precision",
+            "o" : "Odd Cluster",
+            "p" : "Pressure",
+            "w" : "Winds",
+            }
 
 
 MDI = -1.e30
@@ -749,6 +764,13 @@ def reporting_accuracy(indata: np.array, winddir: bool = False, plots: bool = Fa
                     resolution = 1.0
             else:
                 resolution = 0.1
+
+            if plots:
+                import matplotlib.pyplot as plt
+                print(hist)
+                plt.clf()
+                plt.hist(remainders, bins=np.arange(-0.05, 1.05, 0.1), density=True)
+                plt.show()
 
     return resolution # reporting_accuracy
 
