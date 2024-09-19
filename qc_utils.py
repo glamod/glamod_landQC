@@ -314,6 +314,69 @@ def residuals_linear(p: np.array, Y: np.array, X: np.array) -> np.array:
 
     return err # residuals_linear
 
+
+#*********************************************
+def gcv_calculate_binmax(indata: np.array, binmin: float, binwidth: float) -> float:
+    """
+    Determine the appropriate largest bin to use.
+
+    :param array indata: input data to bin up
+    :param float binmin: minimum bin value
+    :param float binwidth: bin width
+
+    :returns: binmax (float)       
+    """
+
+    MAX_N_BINS = 20000
+    # so that have sufficient x-bins to fit to
+    binmax = np.max([2 * max(np.ceil(np.abs(indata))), 10])
+
+    # if too big, then adjust
+    if (binmax - binmin)/binwidth > MAX_N_BINS:
+        # too many bins, will run out of memory
+        print("Too many bins requested: {} to {} in steps of {}".format(binmin, binmax, binwidth))
+        binmax = binmin + (MAX_N_BINS * binwidth)
+        print("Setting binmax to {}".format(binmax))
+
+    return binmax  #gcv_calculate_binmax
+    
+
+
+def gcv_central_section(full_hist: np.array) -> tuple[int, int]:
+    """
+    A routine to determine if, for a distribution with multiple peaks, the central
+    section is sufficiently big.
+    
+    """
+
+
+    # use only the central section (as long as it's 5(10) or more bins)
+    for limit_threshold in [5, 10]:
+        i = 0
+        n_zeros = 0
+        limit = 0
+        while limit < limit_threshold:
+            # count outwards until there is a zero-valued bin
+            try:
+                limit = np.argwhere(full_hist == 0)[i][0]
+                n_zeros += 1
+                i += 1
+            except IndexError:
+                # no zero bins in this histogram
+                limit = len(full_hist)
+                break
+
+        if n_zeros >= 3 and limit == 5:
+            # check the next limit
+            pass
+        else:
+            # got a decent enough central region
+            #   or extended limit isn't enough either, caught later
+            break
+
+    return limit, n_zeros  # gcv_central_section
+
+
 #*********************************************
 def get_critical_values(indata: np.array, binmin: float = 0, binwidth: float = 1, plots: bool = False, diagnostics: bool = False, \
                         line_label: str = "", xlabel: str = "", title: str = "", old_threshold: float = 0) -> float:
@@ -332,39 +395,18 @@ def get_critical_values(indata: np.array, binmin: float = 0, binwidth: float = 1
     :returns:
        critical value
 
-    """    
+    """
+
     if len(set(indata)) > 1:
 
         # set up the bins and make a histogram.  Use Absolute values
-        max_bin = np.max([2 * max(np.ceil(np.abs(indata))), 10]) # so that have sufficient to fit to
-        bins = np.arange(binmin, max_bin, binwidth)
+        binmax = gcv_calculate_binmax(indata, binmin, binwidth)
+        bins = np.arange(binmin, binmax, binwidth)
         full_hist, full_edges = np.histogram(np.abs(indata), bins=bins)
 
         if len(full_hist) > 1:
 
-            # use only the central section (as long as it's 5(10) or more bins)
-            for limit_threshold in [5, 10]:
-                i = 0
-                n_zeros = 0
-                limit = 0
-                while limit < limit_threshold:
-                    # count outwards until there is a zero-valued bin
-                    try:
-                        limit = np.argwhere(full_hist == 0)[i][0]
-                        n_zeros += 1
-                        i += 1
-                    except IndexError:
-                        # no zero bins in this histogram
-                        limit = len(full_hist)
-                        break
-
-                if n_zeros >= 3 and limit == 5:
-                    # check the next limit
-                    pass
-                else:
-                    # got a decent enough central region
-                    #   or extended limit isn't enough either, caught later
-                    break
+            limit, n_zeros = gcv_central_section(full_hist)
 
             if limit == 10 and n_zeros >= 7:
                 # extended central bit is mainly zeros
