@@ -7,6 +7,8 @@ import pandas as pd
 import numpy as np
 import setup
 import datetime as dt
+import logging
+logger = logging.getLogger(__name__)
         
 from qc_utils import Station, populate_station, MDI, QC_TESTS
 
@@ -24,6 +26,7 @@ def read_psv(infile: str, separator: str) -> pd.DataFrame:
     try:
         df = pd.read_csv(infile, sep=separator, compression="infer", dtype=setup.DTYPE_DICT, na_values="Null", quoting=3)
     except ValueError as e:
+        logger.warn(f"Error reading psv: {str(e)}")
         print(str(e))
         raise ValueError(str(e))
 
@@ -70,10 +73,12 @@ def read_station(stationfile: str, station: Station, read_flags: bool = False) -
     try:
         station_df = read(stationfile)
     except OSError:
-        print("Missing station file {}".format(stationfile))
+        print(f"Missing station file {stationfile}")
+        logger.warn(f"Missing station file {stationfile}")
         raise OSError
     except ValueError as e:
-        print("Issue in station file {}".format(stationfile))
+        print(f"Issue in station file {stationfile}")
+        logger.warn(f"Missing station file {stationfile}")
         raise ValueError(str(e))
 
 
@@ -92,7 +97,8 @@ def read_station(stationfile: str, station: Station, read_flags: bool = False) -
                 except ValueError:
                     print(yy, month[y], day[y])
                     print("Bad Date")
-                    raise ValueError("Bad date - {}-{}-{}".format(yy, month[y], day[y]))
+                    logger.warn(f"Bad date: {yy}-{month[y]}-{day[y]}")
+                    raise ValueError(f"Bad date - {yy}-{month[y]}-{day[y]}")
 
     # explicitly remove any missing data indicators - wind direction only
     for wind_flag in ["C-Calm", "V-Variable"]:

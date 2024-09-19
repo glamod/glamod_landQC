@@ -26,6 +26,7 @@ Input arguments:
 import os
 import datetime as dt
 import numpy as np
+import logging
 import json
 from json.decoder import JSONDecodeError
 
@@ -66,6 +67,16 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
     # now spin through each ID in the curtailed list
     for st, station_id in enumerate(station_IDs):
         print("{} {:11s} ({}/{})".format(dt.datetime.now(), station_id, st+1, station_IDs.shape[0]))
+
+            
+        # set up logging
+        logfile = os.path.join(setup.SUBDAILY_LOG_DIR, f"{station_id}_internal_checks.log")
+        logger = logging.basicConfig(
+            filename=logfile,
+            format='%(asctime)s %(module)s %(levelname)-8s %(message)s',
+            level=logging.DEBUG,
+            datefmt='%Y-%m-%d %H:%M:%S',
+            filemode='w')
 
         if not clobber:
             # wanting to skip if files exist
@@ -116,22 +127,24 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
             print(station)
 
         try:
-            station, station_df = io.read_station(os.path.join(setup.SUBDAILY_MFF_DIR, "{:11s}.mff{}".format(station_id, setup.IN_COMPRESSION)), station)
+            station, station_df = io.read_station(os.path.join(setup.SUBDAILY_MFF_DIR,
+                                                               "{:11s}.mff{}".format(station_id, setup.IN_COMPRESSION)), station)
         except OSError: # as e:
             # file missing, move on to next in sequence
             io.write_error(station, "File Missing")
+            logging.warn(f"File for {station.id} missing")
             continue
         except ValueError as e:
             # some issue in the raw file
             io.write_error(station, "Error in input file", error=str(e))
+            logging.warn(f"Error in input file for {station.id}")
             continue
 
         # some may have no data (for whatever reason)
         if station.times.shape[0] == 0:
-            if diagnostics:
-                print("No data in station {}".format(station.id))
-            # scoot onto next station
             io.write_error(station, "No data in input file")
+            logging.warn(f"No data in input file for {station.id}")
+            # and scoot onto next station
             continue
 
         #*************************
@@ -165,7 +178,13 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
             # incl lat, lon and elev checks
 #
             print("L", dt.datetime.now()-startT)
-            good_metadata = qc_tests.logic_checks.lc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed", "wind_direction"], full=full, plots=plots, diagnostics=diagnostics)
+            good_metadata = qc_tests.logic_checks.lc(station, ["temperature",
+                                                               "dew_point_temperature",
+                                                               "station_level_pressure", 
+                                                                "sea_level_pressure",
+                                                                "wind_speed",
+                                                                "wind_direction"],
+                                                     full=full, plots=plots, diagnostics=diagnostics)
 
             if good_metadata != 0:
                 print("Issue with station metadata")
