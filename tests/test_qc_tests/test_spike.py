@@ -395,8 +395,8 @@ def test_identify_spikes(spike_points: np.array) -> None:
 
 
 @pytest.mark.parametrize("full", [True, False])
-@patch("spike.calculate_critical_values")
 @patch("spike.identify_spikes")
+@patch("spike.calculate_critical_values")
 def test_sc(critical_values_mock: Mock,
             identify_spikes_mock: Mock, 
             full: bool):
@@ -408,5 +408,5 @@ def test_sc(critical_values_mock: Mock,
     spike.sc(station, ["dummy"], {}, full=full)
 
     if full:
-        critical_values_mock.assert_called_once
-    identify_spikes_mock.assert_called_once
+        critical_values_mock.assert_called_once()
+    identify_spikes_mock.assert_called_once()
