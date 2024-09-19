@@ -6,6 +6,8 @@ Check for observation values which occur much more frequently than expected.
 """
 #************************************************************************
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 import qc_utils as utils
 #************************************************************************
@@ -122,7 +124,6 @@ def frequent_values(obs_var: utils.Meteorological_Variable, station: utils.Stati
             width = float(config_dict["FREQUENT-{}".format(obs_var.name)]["width"])
             suspect_bins = config_dict["FREQUENT-{}".format(obs_var.name)]["{}".format(month)]
         except KeyError:
-            print("Information missing in config dictionary")
             identify_values(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
             width = float(config_dict["FREQUENT-{}".format(obs_var.name)]["width"])
             suspect_bins = config_dict["FREQUENT-{}".format(obs_var.name)]["{}".format(month)]
@@ -194,10 +195,11 @@ def frequent_values(obs_var: utils.Meteorological_Variable, station: utils.Stati
     # append flags to object
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
+    logger.info(f"Frequent Values {obs_var.name}")
+    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != "")[0])}")
     if diagnostics:
-
-        print("Frequent Values {}".format(obs_var.name))
-        print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
+        print(f"Frequent Values {obs_var.name}")
+        print(f"   Cumulative number of flags set: {len(np.where(flags != "")[0])}")
 
     return # frequent_values
 

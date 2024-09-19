@@ -6,6 +6,8 @@ Find isolated data (single points and small runs)
 """
 #************************************************************************
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 import qc_utils as utils
 #************************************************************************
@@ -117,10 +119,12 @@ def flag_clusters(obs_var: utils.Meteorological_Variable, station: utils.Station
     # append flags to object
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
+    logger.info(f"Odd Cluster {obs_var.name}")
+    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != "")[0])}")
     if diagnostics:
 
-        print("Odd Cluster {}".format(obs_var.name))
-        print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
+        print(f"Odd Cluster {obs_var.name}")
+        print(f"   Cumulative number of flags set: {len(np.where(flags != "")[0])}")
 
     return # flag_clusters
 

@@ -53,7 +53,7 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
     :param bool clobbber: overwrite output file if exists
     """
 
-    if test not in ["all", "climatological", "distribution", "diurnal", "frequent",
+    if test not in ["all", "logic", "climatological", "distribution", "diurnal", "frequent",
                     "humidity", "odd_cluster", "pressure", "spike", "streaks",
                     "timestamp", "variance", "winds" ,"world_records", "precision"]:
         print("Invalid test selected")
@@ -71,12 +71,15 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
             
         # set up logging
         logfile = os.path.join(setup.SUBDAILY_LOG_DIR, f"{station_id}_internal_checks.log")
-        logger = logging.basicConfig(
+        logger = logging.getLogger(__name__)
+        logging.basicConfig(
             filename=logfile,
             format='%(asctime)s %(module)s %(levelname)-8s %(message)s',
             level=logging.DEBUG,
             datefmt='%Y-%m-%d %H:%M:%S',
             filemode='w')
+        logger.info(f"Internal Checks on {station_id}")
+        logger.info("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
 
         if not clobber:
             # wanting to skip if files exist
