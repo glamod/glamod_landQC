@@ -127,7 +127,7 @@ def test_super_saturation_check_proportion() -> None:
     np.testing.assert_array_equal(station.dew_point_temperature.flags, expected)
 
 
-def test_dew_point_depression_check() -> None:
+def test_dew_point_depression_streak() -> None:
 
     # streaks of length 5
     config_dict = {"HUMIDITY" : {"DPD" : 5}}
@@ -163,17 +163,42 @@ def test_dew_point_depression_check() -> None:
     np.testing.assert_array_equal(dewpoint.flags, expected)
  
 
-@patch("humidity.super_saturation_check")
+def test_dew_point_depression_streak_dict() -> None:
+
+    config_dict = {"HUMIDITY" : {}}
+    # set up the data
+    temps = np.arange(75)
+    dewps = np.arange(75) - 2.
+
+    temperature = common.example_test_variable("temperature", temps)
+    dewpoint = common.example_test_variable("dew_point_temperature", dewps)
+   
+    times = np.array([dt.datetime(2024, 1, 1, 12, 0) +
+                     (i * dt.timedelta(seconds=60*60))
+                     for i in range(len(dewps))])
+ 
+    humidity.dew_point_depression_streak(times, temperature, dewpoint, config_dict)
+
+    assert config_dict["HUMIDITY"]["DPD"] == -utils.MDI
+
+
+@pytest.mark.parametrize("full", [True, False])
+@patch("humidity.get_repeating_dpd_threshold")
 @patch("humidity.dew_point_depression_streak")
+@patch("humidity.super_saturation_check")
 def test_read_hcc(supersat_check_mock: Mock,
-                  dpd_check_mock: Mock) -> None:
+                  dpd_check_mock: Mock,
+                  get_threshold_mock: Mock,
+                  full: bool) -> None:
 
     station = _setup_station()
 
     # Do the call
-    humidity.hcc(station, {})
+    humidity.hcc(station, {}, full=full)
 
     # Mock to check call occurs as expected with right return
     supersat_check_mock.assert_called_once()
     dpd_check_mock.assert_called_once()
 
+    if full:
+        get_threshold_mock.assert_called_once()
