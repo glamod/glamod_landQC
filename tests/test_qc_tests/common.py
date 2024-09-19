@@ -18,6 +18,7 @@ def example_test_variable(name: str,
     variable = utils.Meteorological_Variable(name, mdi, units, dtype)
 
     variable.data = np.ma.masked_where(vardata == mdi, vardata)
+    variable.flags = np.array(["" for _ in vardata])
 
     variable.flags = np.array(["" for i in range(len(vardata))])
 

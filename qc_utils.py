@@ -10,6 +10,7 @@ import pandas as pd
 import numpy as np
 import scipy.special
 import pathlib
+import itertools
 
 from scipy.optimize import least_squares
 
@@ -943,3 +944,31 @@ def find_continent(country_code: str) -> str:
         concord[entry["Code"]] = entry["continent"]
 
     return concord[country_code]
+
+#************************************************************************
+def prepare_data_repeating_string(data, diff=0, plots=False, diagnostics=False):
+    """
+    Prepare the data for repeating strings
+
+    :param np.array data: data to assess
+    :param int diff: difference to look for (0 in strings of data, 1 in strings of indices)
+    :param bool plots: turn on plots
+    :param bool diagnostics: turn on diagnostic output
+    """
+
+    # want locations where first differences are zero
+    #   does not change if time or instrumental resolution changes.
+    #   if there is zero difference between one obs or index and the next, that's the main thing
+    value_diffs = np.ma.diff(data)
+
+    # group the differences
+    #     array of (value_diff, count) pairs
+    grouped_diffs = np.array([[g[0], len(list(g[1]))] for g in itertools.groupby(value_diffs)])
+
+    # all string lengths
+    strings, = np.where(grouped_diffs[:, 0] == diff)
+    repeated_string_lengths = grouped_diffs[strings, 1] + 1
+ 
+    return repeated_string_lengths, grouped_diffs, strings # prepare_data_repeating_string
+
+
