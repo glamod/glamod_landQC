@@ -72,7 +72,7 @@ def high_flag_rate(obs_var: utils.Meteorological_Variable,
 
         if flagged.shape[0] / obs_locs.shape[0] > utils.HIGH_FLAGGING:
             if diagnostics:
-                print("{} flagging rate of {:5.1f}%".format(
+                print(" {} flagging rate of {:5.1f}%".format(
                     obs_var.name, 100*(flagged.shape[0] / obs_locs.shape[0]))
                 )
             # Set flags only obs currently unflagged.
