@@ -173,7 +173,8 @@ def pressure_offset(sealp: utils.Meteorological_Variable,
 
             if len(high) != 0 or len(low) != 0:
                 logger.info(f"Pressure {stnlp.name}")
-                print(f"Pressure {stnlp.name}")
+                if diagnostics:
+                    print(f"Pressure {stnlp.name}")
             if len(high) != 0:
                 flags[high] = "p"
                 logger.info(f"   Number of high differences {len(high)}")

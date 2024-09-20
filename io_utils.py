@@ -179,8 +179,9 @@ def flag_write(outfilename: str, df: pd.DataFrame, diagnostics: bool = False) ->
             outfile.write("{} : {} : {}\n".format(var, "All", flagged.shape[0]/flags.shape[0]))
             outfile.write("{} : {} : {}\n".format(var, "{}_counts".format("All"), flagged.shape[0]))
 
+            logging.info(f"{var} - {flagged.shape[0]}")
             if diagnostics:
-                print("{} - {}".format(var, flagged.shape[0]))
+                print(f"{var} - {flagged.shape[0]}")
 
     return # flag_write
 

@@ -253,7 +253,7 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
         else:
             hfr_vars_set = 0
 
-        print(dt.datetime.now()-startT)
+        print(f" QC checks complete in: {dt.datetime.now()-startT}")
 
         #*************************
         # Save the config (overwriting)
@@ -314,10 +314,10 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
         #*************************
         # Output flagging summary file
         io.flag_write(os.path.join(setup.SUBDAILY_FLAG_DIR, "{:11s}.flg".format(station_id)), station_df, diagnostics=diagnostics)
+        print(" Files written\n")
 
         if diagnostics or plots:
-            print(dt.datetime.now()-startT)
-            input("Stop")
+            input(f"Stop after {dt.datetime.now()-startT} of processing")
             return
 
     return # run_checks
