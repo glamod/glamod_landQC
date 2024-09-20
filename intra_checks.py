@@ -68,19 +68,6 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
     for st, station_id in enumerate(station_IDs):
         print("{} {:11s} ({}/{})".format(dt.datetime.now(), station_id, st+1, station_IDs.shape[0]))
 
-            
-        # set up logging
-        logfile = os.path.join(setup.SUBDAILY_LOG_DIR, f"{station_id}_internal_checks.log")
-        logger = logging.getLogger(__name__)
-        logging.basicConfig(
-            filename=logfile,
-            format='%(asctime)s %(module)s %(levelname)-8s %(message)s',
-            level=logging.DEBUG,
-            datefmt='%Y-%m-%d %H:%M:%S',
-            filemode='w')
-        logger.info(f"Internal Checks on {station_id}")
-        logger.info("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
-
         if not clobber:
             # wanting to skip if files exist
             if os.path.exists(os.path.join(setup.SUBDAILY_BAD_DIR, "{:11s}.qff{}".format(station_id, setup.OUT_COMPRESSION))):
@@ -96,9 +83,20 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
                 pass
         else:
             print("Overwriting output for {}".format(station_id))
-
         startT = dt.datetime.now()
-
+        
+        #*************************                    
+        # set up logging
+        logfile = os.path.join(setup.SUBDAILY_LOG_DIR, f"{station_id}_internal_checks.log")
+        logger = logging.getLogger(__name__)
+        logging.basicConfig(
+            filename=logfile,
+            format='%(asctime)s %(module)s %(levelname)-8s %(message)s',
+            level=logging.DEBUG,
+            datefmt='%Y-%m-%d %H:%M:%S',
+            filemode='w')
+        logger.info(f"Internal Checks on {station_id}")
+        logger.info("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
 
         #*************************
         # set up & store config file to hold thresholds etc

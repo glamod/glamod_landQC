@@ -48,12 +48,11 @@ def logic_check(obs_var: utils.Meteorological_Variable, plots: bool = False,
         if (bad_locs.shape[0] / obs_var.data.compressed().shape[0]) > BAD_THRESHOLD: # 99.5% good, 0.5% bad
 
             flags[bad_locs] = "L"
-            nflags = len(np.where(flags != "")[0])
             logger.info(f"Logic Checks {obs_var.name}")
-            logger.info(f"   Cumulative number of flags set: {nflags}")
+            logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
             if diagnostics:
                 print(f"Logic Checks {obs_var.name}")
-                print(f"   Cumulative number of flags set: {nflags}")
+                print(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
         else:
             logger.info(f"Logic Checks {obs_var.name}")
             logger.info(f"   Number of issues found: {len(bad_locs)}")

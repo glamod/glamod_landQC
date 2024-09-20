@@ -9,6 +9,8 @@ and extra knowledge where available
 """
 #************************************************************************
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 import qc_utils as utils
 
@@ -77,9 +79,11 @@ def record_check(obs_var: utils.Meteorological_Variable, continent: str,
     flags[too_high] = "W"
     flags[too_low] = "W"
 
+    logger.info(f"World Records {obs_var.name} ({continent})")
+    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
     if diagnostics:
-        print("World Records {} ({})".format(obs_var.name, continent))
-        print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
+        print(f"World Records {obs_var.name} ({continent})")
+        print(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return flags # record_check
 

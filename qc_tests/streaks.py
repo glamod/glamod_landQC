@@ -14,7 +14,8 @@ Repeated Streaks Check
 import copy
 import itertools
 import numpy as np
-
+import logging
+logger = logging.getLogger(__name__)
 
 import qc_utils as utils
 
@@ -127,7 +128,6 @@ def repeating_value(obs_var, times, config_dict, plots=False, diagnostics=False)
         threshold["Straight"] = th
     except KeyError:
         # no threshold set
-        print("Threshold missing in config file")
         get_repeating_string_threshold(this_var, config_dict, plots=plots, diagnostics=diagnostics)
         th = config_dict["STREAK-{}".format(this_var.name)]["Straight"]
         threshold["Straight"] = th
@@ -153,10 +153,12 @@ def repeating_value(obs_var, times, config_dict, plots=False, diagnostics=False)
         flags[this_var.data.mask == False] = compressed_flags
         obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
+    logger.info(f"Repeated Strings {this_var.name}")
+    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
     if diagnostics:
 
-        print("Repeated Strings {}".format(this_var.name))
-        print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
+        print(f"Repeated Strings {this_var.name}")
+        print(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # repeating_value
 

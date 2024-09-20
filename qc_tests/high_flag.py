@@ -12,6 +12,8 @@ Run at the end of both the internal and neighbour checks.
 """
 #************************************************************************
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 import qc_utils as utils
 
@@ -78,11 +80,11 @@ def high_flag_rate(obs_var: utils.Meteorological_Variable,
             new_flags[obs_locs[unflagged]] = "H"
             any_flags_set = True
 
+    logger.info(f"High Flag Rate {obs_var.name}")
+    logger.info(f"   Cumulative number of flags set: {len(np.where(new_flags == 'H')[0])}")
     if diagnostics:
-        print("High Flag Rate {}".format(obs_var.name))
-        print("   Cumulative number of flags set: {}".format(
-            len(np.where(new_flags == "H")[0]))
-        )
+        print(f"High Flag Rate {obs_var.name}")
+        print(f"   Cumulative number of flags set: {len(np.where(new_flags == 'H')[0])}")
 
     return new_flags, any_flags_set # high_flag_rate
 

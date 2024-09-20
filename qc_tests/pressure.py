@@ -6,6 +6,8 @@ Check for observations where difference between station and sea level pressure
 falls outside of the expected range.
 """
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 import qc_utils as utils
 #************************************************************************
@@ -146,13 +148,15 @@ def pressure_offset(sealp: utils.Meteorological_Variable,
             average = float(config_dict["PRESSURE"]["average"])
             spread = float(config_dict["PRESSURE"]["spread"])
         except KeyError:
-            print("Information missing in config dictionary")
             identify_values(sealp, stnlp, config_dict, plots=plots, diagnostics=diagnostics)
             average = float(config_dict["PRESSURE"]["average"])
             spread = float(config_dict["PRESSURE"]["spread"])
             
 
         if np.abs(np.ma.mean(difference) - np.ma.median(difference)) > THRESHOLD*spread:
+            logger.warn("Large difference between mean and median")
+            logger.warn("Likely to have two populations of roughly equal size")
+            logger.warn("Test won't work")
             if diagnostics:
                 print("Large difference between mean and median")
                 print("Likely to have two populations of roughly equal size")
@@ -167,20 +171,23 @@ def pressure_offset(sealp: utils.Meteorological_Variable,
                 plot_pressure_distribution(difference, vmin=(average + (THRESHOLD*spread)),
                                            vmax=(average - (THRESHOLD*spread)))
 
-            if len(high) != 0 or len(low) != 0:   
-                print("Pressure {}".format(stnlp.name))
+            if len(high) != 0 or len(low) != 0:
+                logger.info(f"Pressure {stnlp.name}")
+                print(f"Pressure {stnlp.name}")
             if len(high) != 0:
                 flags[high] = "p"
+                logger.info(f"   Number of high differences {len(high)}")
                 if diagnostics:
-                    print("   Number of high differences {}".format(len(high)))
+                    print(f"   Number of high differences {len(high)}")
                 if plots:
                     for bad in high:
                         plot_pressure_timeseries(sealp, stnlp, times, bad)
 
             if len(low) != 0:
                 flags[low] = "p"
+                logger.info(f"   Number of low differences {len(low)}")
                 if diagnostics:
-                    print("   Number of low differences {}".format(len(low)))
+                    print(f"   Number of low differences {len(low)}")
                 if plots:
                     for bad in low:
                         plot_pressure_timeseries(sealp, stnlp, times, bad)
@@ -188,9 +195,11 @@ def pressure_offset(sealp: utils.Meteorological_Variable,
             # only flag the station level pressure
             stnlp.flags = utils.insert_flags(stnlp.flags, flags)
 
+    logger.info(f"Pressure {stnlp.name}")
+    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
     if diagnostics:
-        print("Pressure {}".format(stnlp.name))
-        print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
+        print(f"Pressure {stnlp.name}")
+        print(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # pressure_offset
 
@@ -281,9 +290,11 @@ def pressure_theory(sealp: utils.Meteorological_Variable,
 
     if len(bad_locs) != 0:
         flags[bad_locs] = "p"
+        logger.info(f"Pressure {stnlp.name}")
+        logger.info(f"   Number of mismatches between recorded and theoretical SLPs {len(bad_locs)}")
         if diagnostics:
-            print("Pressure {}".format(stnlp.name))
-            print("   Number of mismatches between recorded and theoretical SLPs {}".format(len(bad_locs)))
+            print(f"Pressure {stnlp.name}")
+            print(f"   Number of mismatches between recorded and theoretical SLPs {len(bad_locs)}")
         if plots:
             for bad in bad_locs:
                 plot_pressure_timeseries(sealp, stnlp, times, bad)
@@ -292,9 +303,11 @@ def pressure_theory(sealp: utils.Meteorological_Variable,
     stnlp.flags = utils.insert_flags(stnlp.flags, adjust_existing_flag_locs(stnlp, flags))
     sealp.flags = utils.insert_flags(sealp.flags, adjust_existing_flag_locs(sealp, flags))
 
+    logger.info(f"Pressure {stnlp.name}")
+    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
     if diagnostics:
-        print("Pressure {}".format(stnlp.name))
-        print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
+        print(f"Pressure {stnlp.name}")
+        print(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # pressure_theory
 
@@ -322,7 +335,9 @@ def pcc(station: utils.Station, config_dict: dict, full: bool = False,
     temperature = getattr(station, "temperature")
     if str(station.elev)[:4] in ["-999", "9999"]:
         # missing elevation, so can't run this check
-        print("Station Elevation missing ({}m)".format(station.elev))
+        logger.warn(f"Station Elevation missing ({station.elev}m)")
+        logger.warn("   Theoretical SLP/StnLP cross check not run.")
+        print(f"Station Elevation missing ({station.elev}m)")
         print("   Theoretical SLP/StnLP cross check not run.")
     else:
         pressure_theory(sealp, stnlp, temperature, station.times, station.elev, plots=plots, diagnostics=diagnostics)

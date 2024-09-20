@@ -8,6 +8,8 @@ sufficiently high
 #************************************************************************
 import os
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 # internal utils
 import qc_utils as utils
@@ -73,7 +75,8 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.arra
     # if sufficient
     n_neighbours = len(np.where(initial_neighbours[:, 0] != "-")[0])-1
     if n_neighbours < utils.MIN_NEIGHBOURS:
-        print("{} has insufficient neighbours ({}<{})".format(target_station.id, n_neighbours, utils.MIN_NEIGHBOURS))
+        logger.warn(f"{target_station.id} has insufficient neighbours ({n_neighbours}<{utils.MIN_NEIGHBOURS})")
+        print(f"{target_station.id} has insufficient neighbours ({n_neighbours}<{utils.MIN_NEIGHBOURS})")
 
     else:
         #*************************
@@ -133,6 +136,7 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.arra
                 all_buddy_data[bid, match] = buddy_var.data[match_back]
 
 
+        logger.info("All buddies read in")
         if diagnostics:
             print("All buddies read in")
                     
@@ -201,6 +205,7 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.arra
             dubious[dubious_locs] = 1
 
 
+        logger.info("cross checks complete - assessing all outcomes")
         if diagnostics:
             print("cross checks complete - assessing all outcomes")
         #*************************
@@ -220,10 +225,11 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.arra
         # append flags to object
         obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
+        logger.info(f"Neighbour Outlier {obs_var.name}")
+        logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
         if diagnostics:
-
-            print("Neighbour Outlier {}".format(obs_var.name))
-            print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
+            print(f"Neighbour Outlier {obs_var.name}")
+            print(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # neighbour_outlier
 

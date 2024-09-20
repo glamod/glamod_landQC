@@ -7,6 +7,8 @@ Checks for months with higher/lower variance than expected
 """
 #************************************************************************
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 import qc_utils as utils
 #************************************************************************
@@ -144,11 +146,9 @@ def variance_check(obs_var: utils.Meteorological_Variable, station: utils.Statio
             average_variance = float(config_dict["VARIANCE-{}".format(obs_var.name)]["{}-average".format(month)])
             variance_spread = float(config_dict["VARIANCE-{}".format(obs_var.name)]["{}-spread".format(month)])
         except KeyError:
-            print("Information missing in config dictionary")
             find_thresholds(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
             average_variance = float(config_dict["VARIANCE-{}".format(obs_var.name)]["{}-average".format(month)])
             variance_spread = float(config_dict["VARIANCE-{}".format(obs_var.name)]["{}-spread".format(month)])
-
 
         if average_variance == utils.MDI and variance_spread == utils.MDI:
             # couldn't be calculated, move on
@@ -275,10 +275,11 @@ def variance_check(obs_var: utils.Meteorological_Variable, station: utils.Statio
     # append flags to object
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
+    logger.info(f"Variance {obs_var.name}")
+    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
     if diagnostics:
-
-        print("Variance {}".format(obs_var.name))
-        print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
+        print(f"Variance {obs_var.name}")
+        print(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # variance_check
 

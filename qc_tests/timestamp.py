@@ -5,6 +5,8 @@ Timestamp Check
 Checks for instances of more than one reading at the same time, with different values
 """
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 import qc_utils as utils
 #************************************************************************
@@ -72,10 +74,12 @@ def identify_multiple_values(obs_var: utils.Meteorological_Variable, times: np.a
 
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
+    logger.info(f"Timestamp {obs_var.name}")
+    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
     if diagnostics:
 
-        print("Timestamp {}".format(obs_var.name))
-        print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
+        print(f"Timestamp {obs_var.name}")
+        print(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # identify_multiple_values
 

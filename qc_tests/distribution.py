@@ -9,6 +9,8 @@ Distributional Gap Checks
 import copy
 import numpy as np
 from scipy.stats import skew
+import logging
+logger = logging.getLogger(__name__)
 
 import qc_utils as utils
 #************************************************************************
@@ -199,10 +201,12 @@ def monthly_gap(obs_var: utils.Meteorological_Variable, station: utils.Station, 
     # append flags to object
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
+    logger.info(f"Distribution (monthly) {obs_var.name}")
+    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
     if diagnostics:
 
-        print("Distribution (monthly) {}".format(obs_var.name))
-        print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
+        print(f"Distribution (monthly) {obs_var.name}")
+        print(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # monthly_gap
 
@@ -408,7 +412,6 @@ def all_obs_gap(obs_var: utils.Meteorological_Variable, station: utils.Station,
             upper_threshold = float(config_dict["ADISTRIBUTION-{}".format(obs_var.name)]["{}-uthresh".format(month)])
             lower_threshold = float(config_dict["ADISTRIBUTION-{}".format(obs_var.name)]["{}-lthresh".format(month)])
         except KeyError:
-            print("Information missing in config dictionary")
             find_thresholds(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
             upper_threshold = float(config_dict["ADISTRIBUTION-{}".format(obs_var.name)]["{}-uthresh".format(month)])
             lower_threshold = float(config_dict["ADISTRIBUTION-{}".format(obs_var.name)]["{}-lthresh".format(month)])
@@ -547,10 +550,12 @@ def all_obs_gap(obs_var: utils.Meteorological_Variable, station: utils.Station,
     # append flags to object
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
-    if diagnostics:
 
-        print("Distribution (all) {}".format(obs_var.name))
-        print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
+    logger.info(f"Distribution (all) {obs_var.name}")
+    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
+    if diagnostics:
+        print(f"Distribution (all) {obs_var.name}")
+        print(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # all_obs_gap
 

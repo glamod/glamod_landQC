@@ -9,6 +9,8 @@ A low pass filter reduces the effect of long-term changes.
 #************************************************************************
 import numpy as np
 from scipy.stats import skew
+import logging
+logger = logging.getLogger(__name__)
 
 import qc_utils as utils
 #************************************************************************
@@ -321,10 +323,11 @@ def monthly_clim(obs_var: utils.Meteorological_Variable, station: utils.Station,
     # append flags to object
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
+    logger.info(f"Climatological {obs_var.name}")
+    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
     if diagnostics:
-
-        print("Climatological {}".format(obs_var.name))
-        print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
+        print(f"Climatological {obs_var.name}")
+        print(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # monthly_clim
 

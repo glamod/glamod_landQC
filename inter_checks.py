@@ -26,6 +26,7 @@ Input arguments:
 import os
 import datetime as dt
 import numpy as np
+import logging
 
 # internal utils
 import qc_utils as utils
@@ -103,8 +104,21 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
                 pass
         else:
             print("Overwriting output for {}".format(target_station_id))
-
         startT = dt.datetime.now()
+
+        #*************************
+        # set up logging
+        logfile = os.path.join(setup.SUBDAILY_LOG_DIR, f"{target_station_id}_internal_checks.log")
+        logger = logging.getLogger(__name__)
+        logging.basicConfig(
+            filename=logfile,
+            format='%(asctime)s %(module)s %(levelname)-8s %(message)s',
+            level=logging.DEBUG,
+            datefmt='%Y-%m-%d %H:%M:%S',
+            filemode='w')
+        logger.info(f"External (Buddy) Checks on {target_station_id}")
+        logger.info("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
+
         #*************************
         # set up the stations
         target_station = utils.Station(target_station_id, station_list.latitude[st], station_list.longitude[st], station_list.elevation[st])
@@ -117,12 +131,14 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
                                                                 target_station, read_flags=True)
         except OSError:
             # file missing, move on to next in sequence
+            logging.warn(f"File for {target_station.id} missing")
             continue
 
         # some may have no data (for whatever reason)
         if target_station.times.shape[0] == 0:
+            logging.warn(f"No data in station {target_station.id}")
             if diagnostics:
-                print("No data in station {}".format(target_station.id))
+                print("No data in station {target_station.id}")
             # scoot onto next station
             continue
 
@@ -159,7 +175,8 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
         # write out the dataframe to output format
         if hfr_vars_set > 1:
             # high flagging rates in more than one variable.  Withholding station completely
-            print("{} withheld as too high flagging".format(target_station.id))
+            print(f"{target_station.id} withheld as too high flagging")
+            logging.info(f"{target_station.id} withheld as too high flagging")
             io.write(os.path.join(setup.SUBDAILY_BAD_DIR, "{:11s}.qff{}".format(target_station_id, setup.OUT_COMPRESSION)),
                      target_station_df, formatters={"Latitude" : "{:7.4f}", "Longitude" : "{:7.4f}", "Month": "{:02d}", "Day": "{:02d}", "Hour" : "{:02d}", "Minute" : "{:02d}"})
                                                             
