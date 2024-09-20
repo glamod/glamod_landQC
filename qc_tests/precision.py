@@ -99,9 +99,6 @@ def precision_cross_check(station: utils.Station, primary: utils.Meteorological_
 
     logger.info(f"Precision {secondary.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
-    if diagnostics:
-        print(f"Precision {secondary.name}")
-        print(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # precision_cross_check
 

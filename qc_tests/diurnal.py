@@ -281,8 +281,7 @@ def find_offset(obs_var: utils.Meteorological_Variable, station: utils.Station, 
             diurnal_peak = all_match[0]
         else:
             diurnal_peak = MISSING
-            if diagnostics:
-                print("Good fit to diurnal cycle not found")
+            logger.warn("Good fit to diurnal cycle not found")
 
     '''Now have value for best fit diurnal offset'''
     CD_peak = {"peak" : int(diurnal_peak)}
@@ -412,15 +411,9 @@ def diurnal_cycle_check(obs_var: utils.Meteorological_Variable, station: utils.S
 
         logger.info(f"Diurnal Check {obs_var.name}")
         logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
-        if diagnostics:
-
-            print(f"Diurnal Check {obs_var.name}")
-            print(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     else:
         logger.info("Diurnal fit not found")
-        if diagnostics:
-            print("Diurnal fit not found")
 
     return # diurnal_cycle_check
 

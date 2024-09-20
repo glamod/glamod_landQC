@@ -81,9 +81,6 @@ def record_check(obs_var: utils.Meteorological_Variable, continent: str,
 
     logger.info(f"World Records {obs_var.name} ({continent})")
     logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
-    if diagnostics:
-        print(f"World Records {obs_var.name} ({continent})")
-        print(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return flags # record_check
 

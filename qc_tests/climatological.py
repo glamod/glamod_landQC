@@ -20,7 +20,8 @@ GAP_SIZE = 2
 BIN_WIDTH = 0.5
 
 #************************************************************************
-def get_weights(monthly_anoms: np.array, monthly_subset: np.array, filter_subset: np.array) -> float:
+def get_weights(monthly_anoms: np.array, monthly_subset: np.array,
+                filter_subset: np.array) -> float:
     '''
     Get the weights for the low pass filter.
 
@@ -42,7 +43,8 @@ def get_weights(monthly_anoms: np.array, monthly_subset: np.array, filter_subset
     return weights # get_weights
 
 #************************************************************************
-def low_pass_filter(normed_anomalies: np.array, station: utils.Station, monthly_anoms: np.array, month: int) -> np.array:
+def low_pass_filter(normed_anomalies: np.array, station: utils.Station,
+                    monthly_anoms: np.array, month: int) -> np.array:
     '''
     Run the low pass filter - get suitable ranges, get weights, and apply
 
@@ -325,9 +327,6 @@ def monthly_clim(obs_var: utils.Meteorological_Variable, station: utils.Station,
 
     logger.info(f"Climatological {obs_var.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
-    if diagnostics:
-        print(f"Climatological {obs_var.name}")
-        print(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # monthly_clim
 

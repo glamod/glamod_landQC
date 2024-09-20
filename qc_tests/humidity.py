@@ -182,9 +182,6 @@ def super_saturation_check(station: utils.Station,
 
     logger.info(f"Supersaturation {dewpoints.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
-    if diagnostics:
-        print(f"Supersaturation {dewpoints.name}")
-        print(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # super_saturation_check
 
@@ -245,9 +242,6 @@ def dew_point_depression_streak(times: np.array,
 
     logger.info(f"Dewpoint Depression {dewpoints.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
-    if diagnostics:
-        print(f"Dewpoint Depression {dewpoints.name}")
-        print(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # dew_point_depression_streak
 

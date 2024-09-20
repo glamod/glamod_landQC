@@ -63,8 +63,8 @@ def identify_multiple_values(obs_var: utils.Meteorological_Variable, times: np.a
     value_diffs = np.ma.diff(obs_var.data)
 
     multiple_obs_at_time, = np.where(time_diffs == 0)
-#    if diagnostics:
-#        print("number of identical timestamps {}".format(multiple_obs_at_time.shape[0]))
+    if diagnostics:
+        print("number of identical timestamps {}".format(multiple_obs_at_time.shape[0]))
 
     suspect_locs, = np.ma.where(value_diffs[multiple_obs_at_time] != 0)
 
@@ -76,10 +76,6 @@ def identify_multiple_values(obs_var: utils.Meteorological_Variable, times: np.a
 
     logger.info(f"Timestamp {obs_var.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
-    if diagnostics:
-
-        print(f"Timestamp {obs_var.name}")
-        print(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # identify_multiple_values
 

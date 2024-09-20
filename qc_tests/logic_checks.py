@@ -50,18 +50,10 @@ def logic_check(obs_var: utils.Meteorological_Variable, plots: bool = False,
             flags[bad_locs] = "L"
             logger.info(f"Logic Checks {obs_var.name}")
             logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
-            if diagnostics:
-                print(f"Logic Checks {obs_var.name}")
-                print(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
         else:
             logger.info(f"Logic Checks {obs_var.name}")
             logger.info(f"   Number of issues found: {len(bad_locs)}")
             logger.info("   No flags set as proportion small enough")
-            if diagnostics:
-                print(f"Logic Checks {obs_var.name}")
-                print(f"   Number of issues found: {len(bad_locs)}")
-                print("   No flags set as proportion small enough")
-                
 
     return flags # logic_check 
 
@@ -105,22 +97,16 @@ def lc(station: utils.Station, var_list: list, full: bool = False,
     if station.lat < -90 or station.lat > 90:
         write_logic_error(station, "Bad latitude: {}".format(station.lat), diagnostics=diagnostics)
         logger.info(f"Bad latitude: {station.lat}")
-        if diagnostics:
-            print("Bad latitude: {}".format(station.lat))
         return_code = -1
 
     if station.lon < -180 or station.lon > 180:
         write_logic_error(station, "Bad longtitude: {}".format(station.lon), diagnostics=diagnostics)
         logger.info(f"Bad longitude: {station.lon}")
-        if diagnostics:
-            print("Bad longtitude: {}".format(station.lon))
         return_code = -1
 
     if station.lon == 0 and station.lat == 0:
         write_logic_error(station, "Bad longtitude & latitude combination: lon={}, lat={}".format(station.lon, station.lat), diagnostics=diagnostics)
         logger.info(f"Bad longitude/latitude combination: {station.lon} & {station.lat}")
-        if diagnostics:
-            print("Bad longtitude/latitude: {} & {}".format(station.lon, station.lat))
         return_code = -1
 
     # Missing elevation acceptable - removed this for the moment (7 November 2019, RJHD)
@@ -129,26 +115,18 @@ def lc(station: utils.Station, var_list: list, full: bool = False,
         if str(station.elev)[:4] not in ["-999", "9999"]:
             write_logic_error(station, "Bad elevation: {}".format(station.elev), diagnostics=diagnostics)
             logger.info(f"Bad elevation: {station.elev}")
-            if diagnostics:
-                print("Bad elevation: {}".format(station.elev))
             return_code = -1
         else:
             logger.info(f"Elevation (but not flagged): {station.elev}")
-            if diagnostics:
-                print("Missing elevation, but not flagged: {}".format(station.elev))
 
     if station.times.iloc[0] < dt.datetime(1650, 1, 1):
         write_logic_error(station, "Bad start time: {}".format(station.times[0]), diagnostics=diagnostics)
         logger.info(f"Bad start time: {station.times[0]}")
-        if diagnostics:
-            print("Bad start time: {}".format(station.times[0]))
         return_code = -1
 
     elif station.times.iloc[-1] > dt.datetime.now():
         write_logic_error(station, "Bad end time: {}".format(station.times[-1]), diagnostics=diagnostics)
         logger.info(f"Bad start time: {station.times[-1]}")
-        if diagnostics:
-            print("Bad end time: {}".format(station.times[-1]))
         return_code = -1
     
 

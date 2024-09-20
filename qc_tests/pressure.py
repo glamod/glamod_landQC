@@ -197,9 +197,6 @@ def pressure_offset(sealp: utils.Meteorological_Variable,
 
     logger.info(f"Pressure {stnlp.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
-    if diagnostics:
-        print(f"Pressure {stnlp.name}")
-        print(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # pressure_offset
 
@@ -292,9 +289,6 @@ def pressure_theory(sealp: utils.Meteorological_Variable,
         flags[bad_locs] = "p"
         logger.info(f"Pressure {stnlp.name}")
         logger.info(f"   Number of mismatches between recorded and theoretical SLPs {len(bad_locs)}")
-        if diagnostics:
-            print(f"Pressure {stnlp.name}")
-            print(f"   Number of mismatches between recorded and theoretical SLPs {len(bad_locs)}")
         if plots:
             for bad in bad_locs:
                 plot_pressure_timeseries(sealp, stnlp, times, bad)
@@ -305,9 +299,6 @@ def pressure_theory(sealp: utils.Meteorological_Variable,
 
     logger.info(f"Pressure {stnlp.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
-    if diagnostics:
-        print(f"Pressure {stnlp.name}")
-        print(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # pressure_theory
 

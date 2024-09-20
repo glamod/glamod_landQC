@@ -42,43 +42,31 @@ def logical_checks(speed: utils.Meteorological_Variable, direction: utils.Meteor
     else:
         dflags[fix_zero_direction] = "w"
     logger.info(f"  Zero direction : {len(fix_zero_direction[0])}")
-    if diagnostics:
-        print(f"  Zero direction : {len(fix_zero_direction[0])}")
 
     # negative speeds (can't fix)
     negative_speed = np.ma.where(speed.data < 0)
     sflags[negative_speed] = "w"
     logger.info(f"  Negative speed : {len(negative_speed[0])}")
-    if diagnostics:
-        print(f"  Negative speed : {len(negative_speed[0])}")
 
     # negative directions (don't try to adjust)
     negative_direction = np.ma.where(direction.data < 0)
     dflags[negative_direction] = "w"
     logger.info(f"  Negative direction : {len(negative_direction[0])}")
-    if diagnostics:
-        print(f"  Negative direction : {len(negative_direction[0])}")
 
     # wrapped directions (don't try to adjust)
     wrapped_direction = np.ma.where(direction.data > 360)
     dflags[wrapped_direction] = "w"
     logger.info(f"  Wrapped direction : {len(wrapped_direction[0])}")
-    if diagnostics:
-        print(f"  Wrapped direction : {len(wrapped_direction[0])}")
 
     # no direction possible if speed == 0
     bad_direction = np.ma.where(np.logical_and(speed.data == 0, direction.data != 0))
     dflags[bad_direction] = "w"
     logger.info(f"  Bad direction : {len(bad_direction[0])}")
-    if diagnostics:
-        print(f"  Bad direction : {len(bad_direction[0])}")
 
     # northerlies given as 360, not 0 --> calm
     bad_speed = np.ma.where(np.logical_and(direction.data == 0, speed.data != 0))
     sflags[bad_speed] = "w"
     logger.info(f"  Bad speed : {len(bad_speed[0])}")
-    if diagnostics:
-        print(f"  Bad speed : {len(bad_speed[0])}")
 
     # copy flags into attribute
     speed.flags = utils.insert_flags(speed.flags, sflags)
@@ -87,10 +75,6 @@ def logical_checks(speed: utils.Meteorological_Variable, direction: utils.Meteor
     logger.info("Wind Logical")
     logger.info(f"   Cumulative number of {speed.name} flags set: {len(np.where(sflags != '')[0])}")
     logger.info(f"   Cumulative number of {direction.name} flags set: {len(np.where(dflags != '')[0])}")
-    if diagnostics:
-        print("Wind Logical")
-        print(f"   Cumulative number of {speed.name} flags set: {len(np.where(sflags != '')[0])}")
-        print(f"   Cumulative number of {direction.name} flags set: {len(np.where(dflags != '')[0])}")
 
     return # logical_checks
 

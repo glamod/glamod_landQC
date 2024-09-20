@@ -155,10 +155,6 @@ def repeating_value(obs_var, times, config_dict, plots=False, diagnostics=False)
 
     logger.info(f"Repeated Strings {this_var.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
-    if diagnostics:
-
-        print(f"Repeated Strings {this_var.name}")
-        print(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # repeating_value
 

@@ -98,7 +98,7 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.arra
                 break
 
             if diagnostics:
-                print("{}/{} {}".format(bid, len(initial_neighbours[:, 0]), buddy_id))
+                print(f"Buddy number {bid}/{len(initial_neighbours[:, 0])} {buddy_id}")
 
             # set up station object to hold information
             buddy_idx, = np.where(station_list.id == buddy_id)
@@ -227,9 +227,6 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.arra
 
         logger.info(f"Neighbour Outlier {obs_var.name}")
         logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
-        if diagnostics:
-            print(f"Neighbour Outlier {obs_var.name}")
-            print(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # neighbour_outlier
 

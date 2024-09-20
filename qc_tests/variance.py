@@ -277,9 +277,6 @@ def variance_check(obs_var: utils.Meteorological_Variable, station: utils.Statio
 
     logger.info(f"Variance {obs_var.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
-    if diagnostics:
-        print(f"Variance {obs_var.name}")
-        print(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # variance_check
 

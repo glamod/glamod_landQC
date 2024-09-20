@@ -26,7 +26,6 @@ DEFAULT_SPHERICAL_EARTH_RADIUS=6367470
 import numpy as np
 import pandas as pd
 
-
 from geometry import polar2d_to_cartesian, cross_distance
 
 import qc_utils as utils
@@ -172,7 +171,7 @@ def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False, plot
     # process sub-arrays down
     for sa1, sub_arr1 in enumerate(sub_arrays):
         if diagnostics:
-            print("{}/{}".format(sa1+1, len(sub_arrays)))
+            print(f"{sa1+1}/{len(sub_arrays)}")
         # extract neighbour array to work on
         these_station_neighbours = neighbours[sub_arr1.index.start : sub_arr1.index.stop]
 

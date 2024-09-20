@@ -99,16 +99,10 @@ def calculate_critical_values(obs_var: utils.Meteorological_Variable, times: np.
 
             logger.info(f"   Time Difference: {t_diff} minutes")
             logger.info(f"      Number of obs: {len(first_differences.compressed())}, threshold: {c_value}")
-            if diagnostics:
-                print(f"   Time Difference: {t_diff} minutes")
-                print(f"      Number of obs: {len(first_differences.compressed())}, threshold: {c_value}")
 
         else:
             logger.info(f"   Time Difference: {t_diff} minutes")
             logger.info(f"      Number of obs insufficient: {len(first_differences.compressed())} < {utils.DATA_COUNT_THRESHOLD}")
-            if diagnostics:
-                print(f"   Time Difference: {t_diff} minutes")
-                print(f"      Number of obs insufficient: {len(first_differences.compressed())} < {utils.DATA_COUNT_THRESHOLD}")
 
 
 #************************************************************************
@@ -383,11 +377,6 @@ def identify_spikes(obs_var: utils.Meteorological_Variable, times: np.array, con
         logger.info(f"Spike {obs_var.name}")
         logger.info(f"   Time Difference: {t_diff} minutes")
         logger.info(f"      Cumulative number of flags set: {len(np.where(flags != '')[0])}")
-
-        if diagnostics:
-            print(f"Spike {obs_var.name}")
-            print(f"   Time Difference: {t_diff} minutes")
-            print(f"      Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # identify_spikes
 

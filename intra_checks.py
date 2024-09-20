@@ -82,7 +82,7 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
                 # files don't exists, pass
                 pass
         else:
-            print("Overwriting output for {}".format(station_id))
+            if diagnostics: print(f"Overwriting output for {station_id}")
         startT = dt.datetime.now()
         
         #*************************                    
@@ -177,8 +177,8 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
         #*************************
         if test in ["all", "logic"]:
             # incl lat, lon and elev checks
-#
-            print("L", dt.datetime.now()-startT)
+
+            if diagnostics: print("L", dt.datetime.now()-startT)
             good_metadata = qc_tests.logic_checks.lc(station, ["temperature",
                                                                "dew_point_temperature",
                                                                "station_level_pressure", 
@@ -188,74 +188,74 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
                                                      full=full, plots=plots, diagnostics=diagnostics)
 
             if good_metadata != 0:
-                print("Issue with station metadata")
+                logging.warm("Issue with station metadata")
                 # skip on to next one
                 continue
 
         if test in ["all", "odd_cluster"]:
-            print("O", dt.datetime.now()-startT)
+            if diagnostics: print("O", dt.datetime.now()-startT)
             # TODO - use suite config file to store all settings for tests
             qc_tests.odd_cluster.occ(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed"], config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "frequent"]:
-            print("F", dt.datetime.now()-startT)
+            if diagnostics: print("F", dt.datetime.now()-startT)
             qc_tests.frequent.fvc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         # HadISD only runs on stations where latitude lower than 60(N/S)
         # Takes a long time, this one
         if test in ["all", "diurnal"]:
-            print("U", dt.datetime.now()-startT)
+            if diagnostics: print("U", dt.datetime.now()-startT)
             if np.abs(station.lat < 60):
                 qc_tests.diurnal.dcc(station, config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "distribution"]:
-            print("D", dt.datetime.now()-startT)
+            if diagnostics: print("D", dt.datetime.now()-startT)
             qc_tests.distribution.dgc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "world_records"]:
-            print("W", dt.datetime.now()-startT)
+            if diagnostics: print("W", dt.datetime.now()-startT)
             qc_tests.world_records.wrc(station, ["temperature", "dew_point_temperature", "sea_level_pressure", "wind_speed"], full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "streaks"]:
-            print("K", dt.datetime.now()-startT)
+            if diagnostics: print("K", dt.datetime.now()-startT)
             qc_tests.streaks.rsc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed", "wind_direction"], config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         # not run on pressure data in HadISD.
         if test in ["all", "climatological"]:
-            print("C", dt.datetime.now()-startT)
+            if diagnostics: print("C", dt.datetime.now()-startT)
             qc_tests.climatological.coc(station, ["temperature", "dew_point_temperature"], config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "timestamp"]:
-            print("T", dt.datetime.now()-startT)
+            if diagnostics: print("T", dt.datetime.now()-startT)
             qc_tests.timestamp.tsc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed"], config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "precision"]:
-            print("T", dt.datetime.now()-startT)
+            if diagnostics: print("n", dt.datetime.now()-startT)
             qc_tests.precision.pcc(station, config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "spike"]:
-            print("S", dt.datetime.now()-startT)
+            if diagnostics: print("S", dt.datetime.now()-startT)
             qc_tests.spike.sc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed"], config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "humidity"]:
-            print("h", dt.datetime.now()-startT)
+            if diagnostics: print("h", dt.datetime.now()-startT)
             qc_tests.humidity.hcc(station, config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "variance"]:
-            print("V", dt.datetime.now()-startT)
+            if diagnostics: print("V", dt.datetime.now()-startT)
             qc_tests.variance.evc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed"], config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "pressure"]:
-            print("P", dt.datetime.now()-startT)
+            if diagnostics: print("P", dt.datetime.now()-startT)
             qc_tests.pressure.pcc(station, config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "winds"]:
-            print("w", dt.datetime.now()-startT)
+            if diagnostics: print("w", dt.datetime.now()-startT)
             qc_tests.winds.wcc(station, config_dict, fix=False, full=full, plots=plots, diagnostics=diagnostics)
             # NOTE: fix only applies to obs_var within station, not to dataframe. Need to copy over if used.
 
         if test in ["all", "high_flag"]:
-            print("H", dt.datetime.now()-startT)
+            if diagnostics: print("H", dt.datetime.now()-startT)
             hfr_vars_set = qc_tests.high_flag.hfr(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed", "wind_direction"], full=full, plots=plots, diagnostics=diagnostics)
         else:
             hfr_vars_set = 0
@@ -313,7 +313,7 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
         # write out the dataframe to output format
         if hfr_vars_set > 1:
             # high flagging rates in more than one variable.  Withholding station completely
-            print("{} withheld as too high flagging".format(station.id))
+            logging.info(f"{station.id} withheld as too high flagging")
             io.write(os.path.join(setup.SUBDAILY_BAD_DIR, "{:11s}.qff{}".format(station_id, setup.OUT_COMPRESSION)), station_df)
         else:
             io.write(os.path.join(setup.SUBDAILY_PROC_DIR, "{:11s}.qff{}".format(station_id, setup.OUT_COMPRESSION)), station_df)
@@ -322,12 +322,10 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
         # Output flagging summary file
         io.flag_write(os.path.join(setup.SUBDAILY_FLAG_DIR, "{:11s}.flg".format(station_id)), station_df, diagnostics=diagnostics)
 
-
-        print(dt.datetime.now()-startT)
-
-#        if diagnostics or plots:
-#            input("end")
-#            break
+        if diagnostics or plots:
+            print(dt.datetime.now()-startT)
+            input("Stop")
+            return
 
     return # run_checks
 

@@ -103,7 +103,7 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
                 # files don't exists, pass
                 pass
         else:
-            print("Overwriting output for {}".format(target_station_id))
+            if diagnostics: print(f"Overwriting output for {target_station_id}")
         startT = dt.datetime.now()
 
         #*************************
@@ -150,20 +150,18 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
         # TODO: refine neighbours [quadrants, correlation?]
         
         if test in ["all", "outlier"]:
-            print("N", dt.datetime.now()-startT)
+            if diagnostics: print("N", dt.datetime.now()-startT)
             qc_tests.neighbour_outlier.noc(target_station, initial_neighbours, \
                                                ["temperature", "dew_point_temperature", "wind_speed", "station_level_pressure", "sea_level_pressure"], full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "clean_up"]:
-            print("U", dt.datetime.now()-startT)
+            if diagnostics: print("U", dt.datetime.now()-startT)
             qc_tests.clean_up.mcu(target_station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed", "wind_direction"], full=full, plots=plots, diagnostics=diagnostics)
 
 
         if test in ["all", "high_flag"]:
-            print("H", dt.datetime.now()-startT)
+            if diagnostics: print("H", dt.datetime.now()-startT)
             hfr_vars_set = qc_tests.high_flag.hfr(target_station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed", "wind_direction"], full=full, plots=plots, diagnostics=diagnostics)
-
-        print(dt.datetime.now()-startT)
 
         # write in the flag information
         for var in setup.obs_var_list:
@@ -175,7 +173,7 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
         # write out the dataframe to output format
         if hfr_vars_set > 1:
             # high flagging rates in more than one variable.  Withholding station completely
-            print(f"{target_station.id} withheld as too high flagging")
+            if diagnostics: print(f"{target_station.id} withheld as too high flagging")
             logging.info(f"{target_station.id} withheld as too high flagging")
             io.write(os.path.join(setup.SUBDAILY_BAD_DIR, "{:11s}.qff{}".format(target_station_id, setup.OUT_COMPRESSION)),
                      target_station_df, formatters={"Latitude" : "{:7.4f}", "Longitude" : "{:7.4f}", "Month": "{:02d}", "Day": "{:02d}", "Hour" : "{:02d}", "Minute" : "{:02d}"})
@@ -189,10 +187,10 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
         # Output flagging summary file
         io.flag_write(os.path.join(setup.SUBDAILY_FLAG_DIR, "{:11s}.flg".format(target_station_id)), target_station_df, diagnostics=diagnostics)
 
-
-        print(dt.datetime.now()-startT)
-
-#        input("stop")
+        if diagnostics or plots:
+            print(dt.datetime.now()-startT)
+            input("Stop")
+            return        print(dt.datetime.now()-startT)
 
     return # run_checks
 

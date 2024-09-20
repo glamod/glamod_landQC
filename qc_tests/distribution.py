@@ -203,10 +203,6 @@ def monthly_gap(obs_var: utils.Meteorological_Variable, station: utils.Station, 
 
     logger.info(f"Distribution (monthly) {obs_var.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
-    if diagnostics:
-
-        print(f"Distribution (monthly) {obs_var.name}")
-        print(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # monthly_gap
 
@@ -553,9 +549,6 @@ def all_obs_gap(obs_var: utils.Meteorological_Variable, station: utils.Station,
 
     logger.info(f"Distribution (all) {obs_var.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
-    if diagnostics:
-        print(f"Distribution (all) {obs_var.name}")
-        print(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # all_obs_gap
 
