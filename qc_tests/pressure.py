@@ -154,9 +154,9 @@ def pressure_offset(sealp: utils.Meteorological_Variable,
             
 
         if np.abs(np.ma.mean(difference) - np.ma.median(difference)) > THRESHOLD*spread:
-            logger.warn("Large difference between mean and median")
-            logger.warn("Likely to have two populations of roughly equal size")
-            logger.warn("Test won't work")
+            logger.warning("Large difference between mean and median")
+            logger.warning("Likely to have two populations of roughly equal size")
+            logger.warning("Test won't work")
             if diagnostics:
                 print("Large difference between mean and median")
                 print("Likely to have two populations of roughly equal size")
@@ -326,8 +326,8 @@ def pcc(station: utils.Station, config_dict: dict, full: bool = False,
     temperature = getattr(station, "temperature")
     if str(station.elev)[:4] in ["-999", "9999"]:
         # missing elevation, so can't run this check
-        logger.warn(f"Station Elevation missing ({station.elev}m)")
-        logger.warn("   Theoretical SLP/StnLP cross check not run.")
+        logger.warning(f"Station Elevation missing ({station.elev}m)")
+        logger.warning("   Theoretical SLP/StnLP cross check not run.")
         print(f"Station Elevation missing ({station.elev}m)")
         print("   Theoretical SLP/StnLP cross check not run.")
     else:

@@ -12,7 +12,6 @@ Repeated Streaks Check
 """
 #************************************************************************
 import copy
-import itertools
 import numpy as np
 import logging
 logger = logging.getLogger(__name__)

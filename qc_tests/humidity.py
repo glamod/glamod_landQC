@@ -6,7 +6,6 @@ Humidity Cross Checks
 2. Check and flag instances of dew point depression
 """
 #************************************************************************
-import itertools
 import numpy as np
 import logging
 logger = logging.getLogger(__name__)

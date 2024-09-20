@@ -329,7 +329,7 @@ def gcv_calculate_binmax(indata: np.array, binmin: float, binwidth: float) -> fl
     :returns: binmax (float)       
     """
     logger = logging.getLogger(__name__)
-    
+
     MAX_N_BINS = 20000
     # so that have sufficient x-bins to fit to
     binmax = np.max([2 * max(np.ceil(np.abs(indata))), 10])
@@ -337,9 +337,9 @@ def gcv_calculate_binmax(indata: np.array, binmin: float, binwidth: float) -> fl
     # if too big, then adjust
     if (binmax - binmin)/binwidth > MAX_N_BINS:
         # too many bins, will run out of memory
-        logger.warn(f" Too many bins requested: {binmin} to {binmax} in steps of {binwidth}")
+        logger.warning(f" Too many bins requested: {binmin} to {binmax} in steps of {binwidth}")
         binmax = binmin + (MAX_N_BINS * binwidth)
-        logger.warn(f" Setting binmax to {binmax}")
+        logger.warning(f" Setting binmax to {binmax}")
 
     return binmax  #gcv_calculate_binmax
     
