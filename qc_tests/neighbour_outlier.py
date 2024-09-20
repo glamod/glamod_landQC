@@ -135,11 +135,8 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.arra
                 # skip if no overlapping times at all!
                 all_buddy_data[bid, match] = buddy_var.data[match_back]
 
-
         logger.info("All buddies read in")
-        if diagnostics:
-            print("All buddies read in")
-                    
+
         #*************************
         # find differences
         differences = all_buddy_data - obs_var.data
@@ -204,10 +201,8 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.arra
             dubious_locs = np.ma.where(np.ma.abs(differences) > spreads*SPREAD_LIMIT)
             dubious[dubious_locs] = 1
 
-
         logger.info("cross checks complete - assessing all outcomes")
-        if diagnostics:
-            print("cross checks complete - assessing all outcomes")
+
         #*************************
         # sum across neighbours
         neighbour_count = np.ma.count(differences, axis=0)

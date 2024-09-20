@@ -109,13 +109,9 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
         #*************************
         # set up logging
         logfile = os.path.join(setup.SUBDAILY_LOG_DIR, f"{target_station_id}_internal_checks.log")
-        logger = logging.getLogger(__name__)
-        logging.basicConfig(
-            filename=logfile,
-            format='%(asctime)s %(module)s %(levelname)-8s %(message)s',
-            level=logging.DEBUG,
-            datefmt='%Y-%m-%d %H:%M:%S',
-            filemode='w')
+        if os.path.exists(logfile):
+            os.remove(logfile)
+        logger = utils.custom_logger(logfile)
         logger.info(f"External (Buddy) Checks on {target_station_id}")
         logger.info("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
 
@@ -131,12 +127,12 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
                                                                 target_station, read_flags=True)
         except OSError:
             # file missing, move on to next in sequence
-            logging.warn(f"File for {target_station.id} missing")
+            logging.warning(f"File for {target_station.id} missing")
             continue
 
         # some may have no data (for whatever reason)
         if target_station.times.shape[0] == 0:
-            logging.warn(f"No data in station {target_station.id}")
+            logging.warning(f"No data in station {target_station.id}")
             if diagnostics:
                 print("No data in station {target_station.id}")
             # scoot onto next station

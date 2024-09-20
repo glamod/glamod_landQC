@@ -35,7 +35,6 @@ import qc_utils as utils
 import io_utils as io
 import qc_tests
 import setup
-#************************************************************************
 
 #************************************************************************
 def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False, plots: bool = False,
@@ -88,15 +87,11 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
         #*************************                    
         # set up logging
         logfile = os.path.join(setup.SUBDAILY_LOG_DIR, f"{station_id}_internal_checks.log")
-        logger = logging.getLogger(__name__)
-        logging.basicConfig(
-            filename=logfile,
-            format='%(asctime)s %(module)s %(levelname)-8s %(message)s',
-            level=logging.DEBUG,
-            datefmt='%Y-%m-%d %H:%M:%S',
-            filemode='w')
+        if os.path.exists(logfile):
+            os.remove(logfile)
+        logger = utils.custom_logger(logfile)
         logger.info(f"Internal Checks on {station_id}")
-        logger.info("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
+        logger.info("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
 
         #*************************
         # set up & store config file to hold thresholds etc
@@ -133,18 +128,16 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
         except OSError: # as e:
             # file missing, move on to next in sequence
             io.write_error(station, "File Missing")
-            logging.warn(f"File for {station.id} missing")
             continue
         except ValueError as e:
             # some issue in the raw file
             io.write_error(station, "Error in input file", error=str(e))
-            logging.warn(f"Error in input file for {station.id}")
             continue
 
         # some may have no data (for whatever reason)
         if station.times.shape[0] == 0:
             io.write_error(station, "No data in input file")
-            logging.warn(f"No data in input file for {station.id}")
+            logging.warning(f"No data in input file for {station.id}")
             # and scoot onto next station
             continue
 

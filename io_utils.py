@@ -73,12 +73,10 @@ def read_station(stationfile: str, station: Station, read_flags: bool = False) -
     try:
         station_df = read(stationfile)
     except OSError:
-        print(f"Missing station file {stationfile}")
-        logger.warn(f"Missing station file {stationfile}")
+        logger.warning(f"Missing station file {stationfile}\n")
         raise OSError
     except ValueError as e:
-        print(f"Issue in station file {stationfile}")
-        logger.warn(f"Missing station file {stationfile}")
+        logger.warning(f"Missing station file {stationfile}\n")
         raise ValueError(str(e))
 
 
@@ -95,9 +93,7 @@ def read_station(stationfile: str, station: Station, read_flags: bool = False) -
                     # if Datatime doesn't throw an error here, then it's valid
                     _ = dt.datetime(yy, month[y], day[y])
                 except ValueError:
-                    print(yy, month[y], day[y])
-                    print("Bad Date")
-                    logger.warn(f"Bad date: {yy}-{month[y]}-{day[y]}")
+                    logger.warning(f"Bad date: {yy}-{month[y]}-{day[y]}\n")
                     raise ValueError(f"Bad date - {yy}-{month[y]}-{day[y]}")
 
     # explicitly remove any missing data indicators - wind direction only

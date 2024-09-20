@@ -97,12 +97,12 @@ def calculate_critical_values(obs_var: utils.Meteorological_Variable, times: np.
                 CD_diff = {t_diff : float(c_value)}
                 config_dict["SPIKE-{}".format(obs_var.name)] = CD_diff
 
-            logger.info(f"   Time Difference: {t_diff} minutes")
-            logger.info(f"      Number of obs: {len(first_differences.compressed())}, threshold: {c_value}")
+            logger.debug(f"   Time Difference: {t_diff} minutes")
+            logger.debug(f"      Number of obs: {len(first_differences.compressed())}, threshold: {c_value}")
 
         else:
-            logger.info(f"   Time Difference: {t_diff} minutes")
-            logger.info(f"      Number of obs insufficient: {len(first_differences.compressed())} < {utils.DATA_COUNT_THRESHOLD}")
+            logger.debug(f"   Time Difference: {t_diff} minutes")
+            logger.debug(f"      Number of obs insufficient: {len(first_differences.compressed())} < {utils.DATA_COUNT_THRESHOLD}")
 
 
 #************************************************************************

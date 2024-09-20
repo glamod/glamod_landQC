@@ -91,7 +91,7 @@ def precision_cross_check(station: utils.Station, primary: utils.Meteorological_
                 if plots:
                     plot_flags(primary, secondary, station.times, month_locs)
                 if diagnostics:
-                    print(f"{year} {month} : {primary_precision} {secondary_precision} : {len(locs)}")
+                    print(f" Precision stats for {year}/{month} : {primary_precision} vs {secondary_precision} : {len(locs)}")
 
 
     # only flag the secondary

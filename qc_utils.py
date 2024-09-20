@@ -973,3 +973,36 @@ def prepare_data_repeating_string(data, diff=0, plots=False, diagnostics=False):
     return repeated_string_lengths, grouped_diffs, strings # prepare_data_repeating_string
 
 
+#************************************************************************
+def custom_logger(logfile):
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+    # Remove any current handlers; the handlers persist within the same
+    # Python session, so ensure the root logger is 'clean' every time
+    # this function is called. Note that using logger.removeHandler()
+    # doesn't work reliably
+    logger.handlers = []
+
+    # create console handler with a higher log level
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.WARNING)
+
+    # create file handler to capture all output
+    fh = logging.FileHandler(logfile, "w")
+    fh.setLevel(logging.INFO)
+
+    # create formatter and add it to the handlers
+    logconsole_format = logging.Formatter('%(levelname)-8s %(message)s',
+                                          datefmt='%Y-%m-%d %H:%M:%S')
+    ch.setFormatter(logconsole_format)
+
+    logfile_format = logging.Formatter('%(asctime)s %(module)s %(levelname)-8s %(message)s',
+                                    datefmt='%Y-%m-%d %H:%M:%S')
+    fh.setFormatter(logfile_format)
+
+    # add the handlers to logger
+    logger.addHandler(ch)
+    logger.addHandler(fh)    
+
+    return logger
