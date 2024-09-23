@@ -19,7 +19,10 @@ def _make_station(temps: np.array, dewps: np.array) -> qc_utils.Station:
     """
     Create a station with two paired variables
 
-    :returns: tuple(station)
+    :param array temps: data array (presumed temperatures)
+    :param array dewps: data array (presumed dewpoints)
+
+    :returns: Station
     
     """
     primary = common.example_test_variable("temperature", temps)
@@ -29,9 +32,8 @@ def _make_station(temps: np.array, dewps: np.array) -> qc_utils.Station:
                      (i * dt.timedelta(seconds=60*60))
                      for i in range(len(dewps))])
     
-    station = common.example_test_station(primary)
+    station = common.example_test_station(primary, times)
     station.dew_point_temperature = secondary
-    common.add_times_to_example_station(station, times)
 
     return station
 
@@ -74,7 +76,6 @@ def test_precision_cross_check_short_record():
     np.testing.assert_array_equal(station.dew_point_temperature.flags, expected)
 
 
-# def test_pcc():
 @patch("precision.precision_cross_check")
 def test_pcc(cross_check_mock: Mock) -> None:
 

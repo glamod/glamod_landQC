@@ -3,6 +3,7 @@ Contains common code for testing the QC tests
 """
 import numpy as np
 import datetime as dt
+import pandas as pd
 
 import qc_utils as utils
 
@@ -35,18 +36,14 @@ def example_test_station(variable: utils.Meteorological_Variable,
     setattr(station, variable.name, variable)
 
     start_dt = dt.datetime(2000, 1, 1, 0, 0)
-    station.times = np.array([start_dt + dt.timedelta(hours=i)\
-                              for i in range(len(variable.data))])
-
-    return station
-
-
-def add_times_to_example_station(station: utils.Station,
-                                 times: np.array) -> None:
+    times = pd.to_datetime(pd.DataFrame([start_dt + dt.timedelta(hours=i)\
+                              for i in range(len(variable.data))])[0])
     
-    station.years = np.array([d.year for d in times])
-    station.months = np.array([d.month for d in times])
-    station.days = np.array([d.day for d in times])
-    station.hours = np.array([d.hour for d in times])
     station.times = times
+    station.years = np.array(times.dt.year)
+    station.months = np.array(times.dt.month)
+    station.days = np.array(times.dt.day)
+    station.hours = np.array(times.dt.hour)
+    
+    return station
 
