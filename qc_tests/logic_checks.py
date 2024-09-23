@@ -125,13 +125,15 @@ def lc(station: utils.Station, var_list: list, full: bool = False, plots: bool =
             if diagnostics:
                 print("Missing elevation, but not flagged: {}".format(station.elev))
 
-    if station.times.iloc[0] < dt.datetime(1650, 1, 1):
+    if station.times.iloc[0] < dt.datetime(1700, 1, 1):
+        # Pandas datetime limited to pd.Timestamp.min = Timestamp('1677-09-22 00:12:43.145225')
         write_logic_error(station, "Bad start time: {}".format(station.times[0]), diagnostics=diagnostics)
         if diagnostics:
             print("Bad start time: {}".format(station.times[0]))
         return_code = -1
 
     elif station.times.iloc[-1] > dt.datetime.now():
+        # Pandas datetime limited to pd.Timestamp.max = Timestamp('2262-04-11 23:47:16.854775807')
         write_logic_error(station, "Bad end time: {}".format(station.times[-1]), diagnostics=diagnostics)
         if diagnostics:
             print("Bad end time: {}".format(station.times[-1]))
