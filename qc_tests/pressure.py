@@ -329,8 +329,6 @@ def pcc(station: utils.Station, config_dict: dict, full: bool = False,
         # missing elevation, so can't run this check
         logger.warning(f"Station Elevation missing ({station.elev}m)")
         logger.warning("   Theoretical SLP/StnLP cross check not run.")
-        print(f"Station Elevation missing ({station.elev}m)")
-        print("   Theoretical SLP/StnLP cross check not run.")
     else:
         pressure_theory(sealp, stnlp, temperature, station.times, station.elev, plots=plots, diagnostics=diagnostics)
 

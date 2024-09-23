@@ -26,7 +26,7 @@ def read_psv(infile: str, separator: str) -> pd.DataFrame:
     try:
         df = pd.read_csv(infile, sep=separator, compression="infer", dtype=setup.DTYPE_DICT, na_values="Null", quoting=3)
     except ValueError as e:
-        logger.warn(f"Error reading psv: {str(e)}")
+        logger.warning(f"Error reading psv: {str(e)}")
         print(str(e))
         raise ValueError(str(e))
 

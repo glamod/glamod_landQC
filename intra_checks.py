@@ -181,7 +181,7 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
                                                      full=full, plots=plots, diagnostics=diagnostics)
 
             if good_metadata != 0:
-                logging.warm("Issue with station metadata")
+                logging.warning("Issue with station metadata")
                 # skip on to next one
                 continue
 

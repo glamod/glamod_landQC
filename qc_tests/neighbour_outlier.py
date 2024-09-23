@@ -75,7 +75,7 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.arra
     # if sufficient
     n_neighbours = len(np.where(initial_neighbours[:, 0] != "-")[0])-1
     if n_neighbours < utils.MIN_NEIGHBOURS:
-        logger.warn(f"{target_station.id} has insufficient neighbours ({n_neighbours}<{utils.MIN_NEIGHBOURS})")
+        logger.warning(f"{target_station.id} has insufficient neighbours ({n_neighbours}<{utils.MIN_NEIGHBOURS})")
         print(f"{target_station.id} has insufficient neighbours ({n_neighbours}<{utils.MIN_NEIGHBOURS})")
 
     else:

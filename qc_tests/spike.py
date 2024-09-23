@@ -74,7 +74,7 @@ def calculate_critical_values(obs_var: utils.Meteorological_Variable, times: np.
             # not a spike or jump, but 2 values at the same time.
             #  should be zero value difference, so fitting histogram not going to work
             #  handled in separate test
-            logger.warn("Spike Check - zero time difference between two timestamps. Check")
+            logger.warning("Spike Check - zero time difference between two timestamps. Check")
             continue
 
         locs, = np.where(time_diffs == t_diff)
