@@ -31,7 +31,6 @@ def _make_station(temps: np.array, dewps: np.array) -> qc_utils.Station:
     
     station = common.example_test_station(primary)
     station.dew_point_temperature = secondary
-    common.add_times_to_example_station(station, times)
 
     return station
 
