@@ -11,6 +11,7 @@ import numpy as np
 import scipy.special
 import pathlib
 import itertools
+import logging
 
 from scipy.optimize import least_squares
 
@@ -327,6 +328,7 @@ def gcv_calculate_binmax(indata: np.array, binmin: float, binwidth: float) -> fl
 
     :returns: binmax (float)       
     """
+    logger = logging.getLogger(__name__)
 
     MAX_N_BINS = 20000
     # so that have sufficient x-bins to fit to
@@ -335,9 +337,9 @@ def gcv_calculate_binmax(indata: np.array, binmin: float, binwidth: float) -> fl
     # if too big, then adjust
     if (binmax - binmin)/binwidth > MAX_N_BINS:
         # too many bins, will run out of memory
-        print("Too many bins requested: {} to {} in steps of {}".format(binmin, binmax, binwidth))
+        logger.warning(f" Too many bins requested: {binmin} to {binmax} in steps of {binwidth}")
         binmax = binmin + (MAX_N_BINS * binwidth)
-        print("Setting binmax to {}".format(binmax))
+        logger.warning(f" Setting binmax to {binmax}")
 
     return binmax  #gcv_calculate_binmax
     
@@ -810,7 +812,6 @@ def reporting_accuracy(indata: np.array, winddir: bool = False, plots: bool = Fa
 
             if plots:
                 import matplotlib.pyplot as plt
-                print(hist)
                 plt.clf()
                 plt.hist(remainders, bins=np.arange(-0.05, 1.05, 0.1), density=True)
                 plt.show()
@@ -972,3 +973,36 @@ def prepare_data_repeating_string(data, diff=0, plots=False, diagnostics=False):
     return repeated_string_lengths, grouped_diffs, strings # prepare_data_repeating_string
 
 
+#************************************************************************
+def custom_logger(logfile):
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+    # Remove any current handlers; the handlers persist within the same
+    # Python session, so ensure the root logger is 'clean' every time
+    # this function is called. Note that using logger.removeHandler()
+    # doesn't work reliably
+    logger.handlers = []
+
+    # create console handler with a higher log level
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.WARNING)
+
+    # create file handler to capture all output
+    fh = logging.FileHandler(logfile, "w")
+    fh.setLevel(logging.INFO)
+
+    # create formatter and add it to the handlers
+    logconsole_format = logging.Formatter('%(levelname)-8s %(message)s',
+                                          datefmt='%Y-%m-%d %H:%M:%S')
+    ch.setFormatter(logconsole_format)
+
+    logfile_format = logging.Formatter('%(asctime)s %(module)s %(levelname)-8s %(message)s',
+                                    datefmt='%Y-%m-%d %H:%M:%S')
+    fh.setFormatter(logfile_format)
+
+    # add the handlers to logger
+    logger.addHandler(ch)
+    logger.addHandler(fh)    
+
+    return logger

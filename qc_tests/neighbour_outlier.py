@@ -8,6 +8,8 @@ sufficiently high
 #************************************************************************
 import os
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 # internal utils
 import qc_utils as utils
@@ -73,9 +75,12 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.arra
     # if sufficient
     n_neighbours = len(np.where(initial_neighbours[:, 0] != "-")[0])-1
     if n_neighbours < utils.MIN_NEIGHBOURS:
-        print("{} has insufficient neighbours ({}<{})".format(target_station.id, n_neighbours, utils.MIN_NEIGHBOURS))
+        logger.warning(f"{target_station.id} has insufficient neighbours ({n_neighbours}<{utils.MIN_NEIGHBOURS})")
+        print(f"{target_station.id} has insufficient neighbours ({n_neighbours}<{utils.MIN_NEIGHBOURS})")
 
     else:
+        logger.info(f"{target_station.id} has {n_neighbours} neighbours")
+
         #*************************
         # extract target observations
         obs_var = getattr(target_station, variable)
@@ -86,6 +91,7 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.arra
         all_buddy_data = np.ma.zeros([len(initial_neighbours[:, 0]), len(target_station.times)])
         all_buddy_data.mask = np.ones(all_buddy_data.shape)
 
+#        buddy_count = 0
         for bid, buddy_id in enumerate(initial_neighbours[:, 0]):
             if buddy_id == target_station.id:
                 # first entry is self
@@ -95,7 +101,7 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.arra
                 break
 
             if diagnostics:
-                print("{}/{} {}".format(bid, len(initial_neighbours[:, 0]), buddy_id))
+                print(f"Buddy number {bid}/{len(initial_neighbours[:, 0])} {buddy_id}")
 
             # set up station object to hold information
             buddy_idx, = np.where(station_list.id == buddy_id)
@@ -131,11 +137,15 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.arra
             if True in match and True in match_back:
                 # skip if no overlapping times at all!
                 all_buddy_data[bid, match] = buddy_var.data[match_back]
+#                buddy_count += 1
 
+        logger.info("All buddies read in")
+        # TODO: implement in appropriate branch
+#        if buddy_count < utils.MIN_NEIGHBOURS:
+#            logger.warning(f"Insufficient number of neighbours with data ({buddy_count} < {utils.MIN_NEIGHBOURS})")
+#        else:
+#            logger.info(f"Number of neighbours with data: {buddy_count}")
 
-        if diagnostics:
-            print("All buddies read in")
-                    
         #*************************
         # find differences
         differences = all_buddy_data - obs_var.data
@@ -200,9 +210,8 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.arra
             dubious_locs = np.ma.where(np.ma.abs(differences) > spreads*SPREAD_LIMIT)
             dubious[dubious_locs] = 1
 
+        logger.info("cross checks complete - assessing all outcomes")
 
-        if diagnostics:
-            print("cross checks complete - assessing all outcomes")
         #*************************
         # sum across neighbours
         neighbour_count = np.ma.count(differences, axis=0)
@@ -220,10 +229,8 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.arra
         # append flags to object
         obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
-        if diagnostics:
-
-            print("Neighbour Outlier {}".format(obs_var.name))
-            print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
+        logger.info(f"Neighbour Outlier {obs_var.name}")
+        logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # neighbour_outlier
 
@@ -242,7 +249,7 @@ def noc(target_station: utils.Station, initial_neighbours: np.array, var_list: l
     """
 
     for var in var_list:
-
+        # TODO: remove duplicated read step (reading neighbours for each variable!)
         neighbour_outlier(target_station, initial_neighbours, var,
                           diagnostics=diagnostics, plots=plots, full=full)
 

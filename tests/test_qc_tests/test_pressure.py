@@ -174,7 +174,7 @@ def test_calc_slp_1566m():
     np.testing.assert_array_almost_equal(expected_sealp, sealp)
 
 
-def adjust_existing_flag_locs():
+def test_adjust_existing_flag_locs():
 
     test_data = np.arange(10)
     test_data[:2] = -99

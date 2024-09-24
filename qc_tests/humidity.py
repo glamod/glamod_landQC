@@ -6,8 +6,9 @@ Humidity Cross Checks
 2. Check and flag instances of dew point depression
 """
 #************************************************************************
-import itertools
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 import qc_utils as utils
 
@@ -178,9 +179,8 @@ def super_saturation_check(station: utils.Station,
         for bad in sss:
             plot_humidities(temperatures, dewpoints, station.times, bad)
 
-    if diagnostics:
-        print("Supersaturation {}".format(dewpoints.name))
-        print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
+    logger.info(f"Supersaturation {dewpoints.name}")
+    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # super_saturation_check
 
@@ -210,7 +210,6 @@ def dew_point_depression_streak(times: np.array,
         threshold = float(th)
     except KeyError:
         # no threshold set
-        print("Threshold missing in config dictionary")
         get_repeating_dpd_threshold(temperatures, dewpoints, config_dict, plots=plots, diagnostics=diagnostics)
         th = config_dict["HUMIDITY"]["DPD"]
         threshold = float(th)
@@ -240,9 +239,8 @@ def dew_point_depression_streak(times: np.array,
         # only flag the dewpoints
         dewpoints.flags = utils.insert_flags(dewpoints.flags, flags)
 
-    if diagnostics:
-        print("Dewpoint Depression {}".format(dewpoints.name))
-        print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
+    logger.info(f"Dewpoint Depression {dewpoints.name}")
+    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # dew_point_depression_streak
 
