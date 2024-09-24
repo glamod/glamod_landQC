@@ -128,6 +128,7 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
         except OSError:
             # file missing, move on to next in sequence
             logging.warning(f"File for {target_station.id} missing")
+            print("") # for on screen spacing of text
             continue
 
         # some may have no data (for whatever reason)
@@ -136,6 +137,7 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
             if diagnostics:
                 print("No data in station {target_station.id}")
             # scoot onto next station
+            print("")
             continue
 
         # extract neighbours for this station
