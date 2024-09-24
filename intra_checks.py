@@ -128,10 +128,12 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
         except OSError: # as e:
             # file missing, move on to next in sequence
             io.write_error(station, "File Missing")
+            print("") # for on screen spacing of text
             continue
         except ValueError as e:
             # some issue in the raw file
             io.write_error(station, "Error in input file", error=str(e))
+            print("")
             continue
 
         # some may have no data (for whatever reason)
@@ -139,6 +141,7 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
             io.write_error(station, "No data in input file")
             logging.warning(f"No data in input file for {station.id}")
             # and scoot onto next station
+            print("")
             continue
 
         #*************************
