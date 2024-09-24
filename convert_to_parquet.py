@@ -20,10 +20,8 @@ from collections import defaultdict
 import setup
 import qc_utils as utils
 
-# TODO: revert
-setup.SUBDAILY_OUT_DIR = setup.SUBDAILY_PROC_DIR
 
-def get_files(diagnostics=False):
+def get_files(diagnostics:bool = False) -> list:
     """
     List all the files in the output directory which match the output format
 
@@ -40,14 +38,14 @@ def get_files(diagnostics=False):
     return qff_files  # get_files
 
 
-def process_files(qff_files, diagnostics=False):
+def process_files(qff_files: list, diagnostics: bool = False) -> dict:
     """
     Process each file in supplied list and build into a single dictionary
     
     :params list qff_files: input list of files to process
     :param bool diagnostics: extra verbose output
     
-    :returns: dict    
+    :returns: dict(list)
     """
     # Initialize a dictionary to accumulate data frames for each year
     yearly_data = defaultdict(list)
@@ -64,9 +62,7 @@ def process_files(qff_files, diagnostics=False):
 
         # Ensure the 'Year' column exists
         if 'Year' not in df.columns:
-            print(f"'Year' column not found in {qfile}")
-            #  TODO: need to write an error
-            continue
+            raise RuntimeError(f"Column 'Year' not found in {qfile}")
         
         # Convert 'Year' column back to numeric
         df['Year'] = pd.to_numeric(df['Year'], errors='coerce')
@@ -85,11 +81,11 @@ def process_files(qff_files, diagnostics=False):
     return yearly_data  # process_files
 
 
-def write_pqt(yearly_data, diagnostics=False):
+def write_pqt(yearly_data: dict, diagnostics: bool = False) -> None:
     """
     Write each year to separate .parquet.gz files
     
-    :param dict yearly_data: data in yearly form
+    :param dict yearly_data: data in yearly form (dictionary of lists)
     :param bool diagnostics: extra verbose output
   
     """
@@ -112,7 +108,8 @@ def write_pqt(yearly_data, diagnostics=False):
             
             # Save to Parquet format
             if setup.OUT_COMPRESSION == ".gz":
-                combined_df.to_parquet(output_path, compression='gzip', index=False, engine='pyarrow')
+                combined_df.to_parquet(output_path, compression='gzip',
+                                       index=False, engine='pyarrow')
             else:
                 combined_df.to_parquet(output_path, index=False, engine='pyarrow')
             
@@ -120,7 +117,7 @@ def write_pqt(yearly_data, diagnostics=False):
                 print(f"Written data for year {year} to {output_file}")
 
 
-def main(diagnostics=False, clobber=False):
+def main(diagnostics:bool = False, clobber: bool = False) -> None:
     """
     Main script.
     """
