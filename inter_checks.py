@@ -186,9 +186,8 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
         io.flag_write(os.path.join(setup.SUBDAILY_FLAG_DIR, "{:11s}.flg".format(target_station_id)), target_station_df, diagnostics=diagnostics)
 
         if diagnostics or plots:
-            print(dt.datetime.now()-startT)
-            input("Stop")
-            return        print(dt.datetime.now()-startT)
+            input(f"Stop after {dt.datetime.now()-startT} of processing")
+            return
 
     return # run_checks
 
