@@ -401,9 +401,8 @@ def test_sc(critical_values_mock: Mock,
             identify_spikes_mock: Mock, 
             full: bool):
     
-    var = common.example_test_variable("dummy", np.array([]))
+    var = common.example_test_variable("dummy", np.ones(10))
     station = common.example_test_station(var)
-    station.times = []
 
     spike.sc(station, ["dummy"], {}, full=full)
 
