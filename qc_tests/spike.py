@@ -5,6 +5,8 @@ Spike Check
 Checks for short (<=3) observations which are far above/below their immediate neighbours.
 """
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 import qc_utils as utils
 #************************************************************************
@@ -72,7 +74,7 @@ def calculate_critical_values(obs_var: utils.Meteorological_Variable, times: np.
             # not a spike or jump, but 2 values at the same time.
             #  should be zero value difference, so fitting histogram not going to work
             #  handled in separate test
-            print("test")
+            logger.warning("Spike Check - zero time difference between two timestamps. Check")
             continue
 
         locs, = np.where(time_diffs == t_diff)
@@ -95,14 +97,12 @@ def calculate_critical_values(obs_var: utils.Meteorological_Variable, times: np.
                 CD_diff = {t_diff : float(c_value)}
                 config_dict["SPIKE-{}".format(obs_var.name)] = CD_diff
 
-            if diagnostics:
-                print("   Time Difference: {} minutes".format(t_diff))
-                print("      Number of obs: {}, threshold: {}".format(len(first_differences.compressed()), c_value))
+            logger.debug(f"   Time Difference: {t_diff} minutes")
+            logger.debug(f"      Number of obs: {len(first_differences.compressed())}, threshold: {c_value}")
 
         else:
-            if diagnostics:
-                print("   Time Difference: {} minutes".format(t_diff))
-                print("      Number of obs insufficient: {} < {}".format(len(first_differences.compressed()), utils.DATA_COUNT_THRESHOLD))
+            logger.debug(f"   Time Difference: {t_diff} minutes")
+            logger.debug(f"      Number of obs insufficient: {len(first_differences.compressed())} < {utils.DATA_COUNT_THRESHOLD}")
 
 
 #************************************************************************
@@ -374,11 +374,9 @@ def identify_spikes(obs_var: utils.Meteorological_Variable, times: np.array, con
         flags[locs[1:]] = compressed_flags
         obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
-
-        if diagnostics:
-            print("Spike {}".format(obs_var.name))
-            print("   Time Difference: {} minutes".format(t_diff))
-            print("      Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
+        logger.info(f"Spike {obs_var.name}")
+        logger.info(f"   Time Difference: {t_diff} minutes")
+        logger.info(f"      Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # identify_spikes
 

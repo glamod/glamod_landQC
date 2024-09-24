@@ -45,13 +45,11 @@ def example_test_station(variable: utils.Meteorological_Variable,
     start_dt = dt.datetime(2000, 1, 1, 0, 0)
     times = pd.to_datetime(pd.DataFrame([start_dt + dt.timedelta(hours=i)\
                               for i in range(len(variable.data))])[0])
-
+    
     station.times = times
     station.years = np.array(times.dt.year)
     station.months = np.array(times.dt.month)
     station.days = np.array(times.dt.day)
     station.hours = np.array(times.dt.hour)
-
+    
     return station
-
-

@@ -26,6 +26,7 @@ Input arguments:
 import os
 import datetime as dt
 import numpy as np
+import logging
 
 # internal utils
 import qc_utils as utils
@@ -102,9 +103,18 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
                 # files don't exists, pass
                 pass
         else:
-            print("Overwriting output for {}".format(target_station_id))
-
+            if diagnostics: print(f"Overwriting output for {target_station_id}")
         startT = dt.datetime.now()
+
+        #*************************
+        # set up logging
+        logfile = os.path.join(setup.SUBDAILY_LOG_DIR, f"{target_station_id}_external_checks.log")
+        if os.path.exists(logfile):
+            os.remove(logfile)
+        logger = utils.custom_logger(logfile)
+        logger.info(f"External (Buddy) Checks on {target_station_id}")
+        logger.info("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
+
         #*************************
         # set up the stations
         target_station = utils.Station(target_station_id, station_list.latitude[st], station_list.longitude[st], station_list.elevation[st])
@@ -117,13 +127,17 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
                                                                 target_station, read_flags=True)
         except OSError:
             # file missing, move on to next in sequence
+            logging.warning(f"File for {target_station.id} missing")
+            print("") # for on screen spacing of text
             continue
 
         # some may have no data (for whatever reason)
         if target_station.times.shape[0] == 0:
+            logging.warning(f"No data in station {target_station.id}")
             if diagnostics:
-                print("No data in station {}".format(target_station.id))
+                print("No data in station {target_station.id}")
             # scoot onto next station
+            print("")
             continue
 
         # extract neighbours for this station
@@ -134,20 +148,18 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
         # TODO: refine neighbours [quadrants, correlation?]
         
         if test in ["all", "outlier"]:
-            print("N", dt.datetime.now()-startT)
+            if diagnostics: print("N", dt.datetime.now()-startT)
             qc_tests.neighbour_outlier.noc(target_station, initial_neighbours, \
                                                ["temperature", "dew_point_temperature", "wind_speed", "station_level_pressure", "sea_level_pressure"], full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "clean_up"]:
-            print("U", dt.datetime.now()-startT)
+            if diagnostics: print("U", dt.datetime.now()-startT)
             qc_tests.clean_up.mcu(target_station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed", "wind_direction"], full=full, plots=plots, diagnostics=diagnostics)
 
 
         if test in ["all", "high_flag"]:
-            print("H", dt.datetime.now()-startT)
+            if diagnostics: print("H", dt.datetime.now()-startT)
             hfr_vars_set = qc_tests.high_flag.hfr(target_station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed", "wind_direction"], full=full, plots=plots, diagnostics=diagnostics)
-
-        print(dt.datetime.now()-startT)
 
         # write in the flag information
         for var in setup.obs_var_list:
@@ -159,7 +171,8 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
         # write out the dataframe to output format
         if hfr_vars_set > 1:
             # high flagging rates in more than one variable.  Withholding station completely
-            print("{} withheld as too high flagging".format(target_station.id))
+            if diagnostics: print(f"{target_station.id} withheld as too high flagging")
+            logging.info(f"{target_station.id} withheld as too high flagging")
             io.write(os.path.join(setup.SUBDAILY_BAD_DIR, "{:11s}.qff{}".format(target_station_id, setup.OUT_COMPRESSION)),
                      target_station_df, formatters={"Latitude" : "{:7.4f}", "Longitude" : "{:7.4f}", "Month": "{:02d}", "Day": "{:02d}", "Hour" : "{:02d}", "Minute" : "{:02d}"})
                                                             
@@ -172,10 +185,9 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
         # Output flagging summary file
         io.flag_write(os.path.join(setup.SUBDAILY_FLAG_DIR, "{:11s}.flg".format(target_station_id)), target_station_df, diagnostics=diagnostics)
 
-
-        print(dt.datetime.now()-startT)
-
-#        input("stop")
+        if diagnostics or plots:
+            input(f"Stop after {dt.datetime.now()-startT} of processing")
+            return
 
     return # run_checks
 

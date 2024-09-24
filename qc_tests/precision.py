@@ -11,6 +11,8 @@ Paired metrics (Primary/Secondary):
 
 """
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 import qc_utils as utils
 #************************************************************************
@@ -89,15 +91,14 @@ def precision_cross_check(station: utils.Station, primary: utils.Meteorological_
                 if plots:
                     plot_flags(primary, secondary, station.times, month_locs)
                 if diagnostics:
-                    print(f"{year} {month} : {primary_precision} {secondary_precision} : {len(locs)}")
+                    print(f" Precision stats for {year}/{month} : {primary_precision} vs {secondary_precision} : {len(locs)}")
 
 
     # only flag the secondary
     secondary.flags = utils.insert_flags(secondary.flags, flags)
 
-    if diagnostics:
-        print("Precision {}".format(secondary.name))
-        print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
+    logger.info(f"Precision {secondary.name}")
+    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # precision_cross_check
 

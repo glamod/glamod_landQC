@@ -7,6 +7,8 @@ or if only a few observations left [not active].
 """
 #************************************************************************
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 import qc_utils as utils
 
@@ -44,8 +46,7 @@ def clean_up(obs_var: utils.Meteorological_Variable, station: utils.Station,
             if unflagged.shape[0] < LOW_COUNT_THRESHOLD:
                 # insufficient unflagged observations left
                 new_flags[month_locs[obs_locs][unflagged]] = "E"
-                if diagnostics:
-                    print("Low count {} - {} : {}".format(year, month, len(obs_locs)))
+                logger.info(f"Low count {year} - {month} : {len(obs_locs)}")
 
             else:
                 if flagged.shape[0] == 0:
@@ -55,12 +56,11 @@ def clean_up(obs_var: utils.Meteorological_Variable, station: utils.Station,
                     # flag remainder
                     new_flags[month_locs[obs_locs]] = "E"
                     if diagnostics:
-                        print("High flag {} - {} : {} ({}%)".format(year, month, len(obs_locs), (100*flagged.shape[0] / n_obs)))
-                        print(np.unique(old_flags[month_locs][obs_locs][flagged]))
+                        print(f"High flag {year} - {month} : {len(obs_locs)} ({(100*flagged.shape[0] / n_obs)}%)")
 
-    if diagnostics:
-        print("Clean Up {}".format(obs_var.name))
-        print("   Cumulative number of flags set: {}".format(len(np.where(new_flags != "")[0])))
+
+    logger.info(f"Clean Up {obs_var.name}")
+    logger.info(f"   Cumulative number of flags set: {len(np.where(new_flags != '')[0])}")
 
     return new_flags # clean_up
 

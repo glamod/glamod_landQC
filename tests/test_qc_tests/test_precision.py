@@ -19,7 +19,10 @@ def _make_station(temps: np.array, dewps: np.array) -> qc_utils.Station:
     """
     Create a station with two paired variables
 
-    :returns: tuple(station)
+    :param array temps: data array (presumed temperatures)
+    :param array dewps: data array (presumed dewpoints)
+
+    :returns: Station
     
     """
     primary = common.example_test_variable("temperature", temps)
@@ -29,7 +32,7 @@ def _make_station(temps: np.array, dewps: np.array) -> qc_utils.Station:
                      (i * dt.timedelta(seconds=60*60))
                      for i in range(len(dewps))])
     
-    station = common.example_test_station(primary)
+    station = common.example_test_station(primary, times)
     station.dew_point_temperature = secondary
 
     return station

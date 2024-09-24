@@ -71,6 +71,10 @@ SUBDAILY_FLAG_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "flags"), DATESTA
 if not os.path.exists(SUBDAILY_FLAG_DIR):
     os.makedirs(SUBDAILY_FLAG_DIR)
 
+SUBDAILY_LOG_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "logs"), DATESTAMP)
+if not os.path.exists(SUBDAILY_LOG_DIR):
+    os.makedirs(SUBDAILY_LOG_DIR)
+
 SUBDAILY_ERROR_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "errors"), DATESTAMP)
 if not os.path.exists(SUBDAILY_ERROR_DIR):
     os.makedirs(SUBDAILY_ERROR_DIR)

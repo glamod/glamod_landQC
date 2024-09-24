@@ -5,6 +5,8 @@ Timestamp Check
 Checks for instances of more than one reading at the same time, with different values
 """
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 import qc_utils as utils
 from spike import generate_differences
@@ -62,8 +64,8 @@ def identify_multiple_values(obs_var: utils.Meteorological_Variable, times: np.a
     compressed_flags = np.array(["" for i in range(value_diffs.shape[0])])
 
     multiple_obs_at_time, = np.where(time_diffs == 0)
-#    if diagnostics:
-#        print("number of identical timestamps {}".format(multiple_obs_at_time.shape[0]))
+    if diagnostics:
+        print(f" Number of identical timestamps in {obs_var.name}: {multiple_obs_at_time.shape[0]}")
 
     suspect_locs, = np.ma.where(value_diffs[multiple_obs_at_time] != 0)
 
@@ -80,10 +82,8 @@ def identify_multiple_values(obs_var: utils.Meteorological_Variable, times: np.a
     flags[locs[:-1]] = compressed_flags
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
-    if diagnostics:
-
-        print("Timestamp {}".format(obs_var.name))
-        print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
+    logger.info(f"Timestamp {obs_var.name}")
+    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # identify_multiple_values
 

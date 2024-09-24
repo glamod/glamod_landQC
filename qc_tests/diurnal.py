@@ -7,6 +7,8 @@ Check whether diurnal cycle is consistent across the record
 #************************************************************************
 import datetime as dt
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 import qc_utils as utils
 
@@ -279,8 +281,7 @@ def find_offset(obs_var: utils.Meteorological_Variable, station: utils.Station, 
             diurnal_peak = all_match[0]
         else:
             diurnal_peak = MISSING
-            if diagnostics:
-                print("Good fit to diurnal cycle not found")
+            logger.warning("Good fit to diurnal cycle not found")
 
     '''Now have value for best fit diurnal offset'''
     CD_peak = {"peak" : int(diurnal_peak)}
@@ -408,14 +409,11 @@ def diurnal_cycle_check(obs_var: utils.Meteorological_Variable, station: utils.S
         # append flags to object
         obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
-        if diagnostics:
-
-            print("Diurnal Check {}".format(obs_var.name))
-            print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
+        logger.info(f"Diurnal Check {obs_var.name}")
+        logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     else:
-        if diagnostics:
-            print("Diurnal fit not found")
+        logger.info("Diurnal fit not found")
 
     return # diurnal_cycle_check
 
