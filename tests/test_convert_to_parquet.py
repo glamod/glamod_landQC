@@ -2,14 +2,11 @@
 Contains tests for convert_to_parquet.py
 """
 import os
-import numpy as np
 import pandas as pd
 from unittest.mock import patch, Mock
 import pytest
 
 import convert_to_parquet
-
-import common
 
 EXAMPLE_FILES = os.listdir(os.path.join(os.path.dirname(__file__),
                            "example_data"))
@@ -30,7 +27,6 @@ def test_get_files(os_mock: Mock,
                                     "test6.qff.zip"]
     setup_mock.OUT_COMPRESSION = compression
     setup_mock.SUBDAILY_OUT_DIR = "testdir/"
-    expected_qff = []
 
     qff_files = convert_to_parquet.get_files()
 
@@ -82,7 +78,7 @@ def test_process_files_error(setup_mock: Mock,
     pd_mock.read_csv.return_value = erroneous_df
 
     with pytest.raises(RuntimeError) as emsg:
-        yearly_data = convert_to_parquet.process_files(EXAMPLE_FILES)
+        _ = convert_to_parquet.process_files(EXAMPLE_FILES)
 
     assert "Column 'Year' not found in" in str(emsg)
 
