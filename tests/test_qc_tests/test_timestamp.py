@@ -13,7 +13,77 @@ import common
 
 # not testing plotting
 
-# def test_identify_multiple_values()
+def test_identify_multiple_values_simple():
+
+    # Set up data, variable & station
+    obs_var = common.example_test_variable("temperature", np.arange(10))
+    station = common.example_test_station(obs_var)
+
+    station.times[3] = station.times[2]
+    expected = np.array(["" for _ in range(10)])
+
+    # Two time stamps the same, and values different, so flags set
+    expected[2:4] = "T"
+
+    timestamp.identify_multiple_values(obs_var, station. times, {})
+
+    np.testing.assert_array_equal(obs_var.flags, expected)
+
+
+def test_identify_multiple_values_masked_simple():
+
+    # Set up data, variable & station
+    obs_var = common.example_test_variable("temperature", np.arange(10))
+    station = common.example_test_station(obs_var)
+
+    station.times[4] = station.times[3] = station.times[2]
+    obs_var.data.mask[4] = True
+    expected = np.array(["" for _ in range(10)])
+
+    # Three time stamps the same, and values different, so flags set
+    #   But final one has data masked, so no flag included for that one.
+    expected[2:4] = "T"
+
+    timestamp.identify_multiple_values(obs_var, station. times, {})
+
+    np.testing.assert_array_equal(obs_var.flags, expected)
+
+
+def test_identify_multiple_values_masked():
+
+    # Set up data, variable & station
+    obs_var = common.example_test_variable("temperature", np.arange(10))
+    station = common.example_test_station(obs_var)
+
+    station.times[4] = station.times[3] = station.times[2]
+    obs_var.data.mask[3] = True
+    expected = np.array(["" for _ in range(10)])
+
+    # Three time stamps the same, and values different, so flags set
+    #   But middle one has data masked, so no flag included for that one.
+    expected[2] = "T"
+    expected[4] = "T"
+
+    timestamp.identify_multiple_values(obs_var, station. times, {})
+
+    np.testing.assert_array_equal(obs_var.flags, expected)
+    
+    
+def test_identify_multiple_values_same():
+
+    # Set up data, variable & station
+    obs_var = common.example_test_variable("temperature", np.ones(10))
+    station = common.example_test_station(obs_var)
+
+    station.times[3] = station.times[2]
+
+    # Even though two time stamps are the same, the values are identical
+    #   (np.ones) so no flag set
+    expected = np.array(["" for _ in range(10)])
+
+    timestamp.identify_multiple_values(obs_var, station. times, {})
+
+    np.testing.assert_array_equal(obs_var.flags, expected)
 
 
 @patch("timestamp.identify_multiple_values")

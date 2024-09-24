@@ -74,7 +74,6 @@ def test_precision_cross_check_short_record():
     np.testing.assert_array_equal(station.dew_point_temperature.flags, expected)
 
 
-# def test_pcc():
 @patch("precision.precision_cross_check")
 def test_pcc(cross_check_mock: Mock) -> None:
 

@@ -94,8 +94,7 @@ def test_retreive_critical_values(name: str, expected: dict) -> None:
     config_dict = {"SPIKE-temps" : {60. : 1.0, 120. : 2.0}}
 
     values = spike.retreive_critical_values(diffs, config_dict, name)
-    print(values)
-    print(expected)
+
     assert values == expected
 
 
@@ -401,9 +400,8 @@ def test_sc(critical_values_mock: Mock,
             identify_spikes_mock: Mock, 
             full: bool):
     
-    var = common.example_test_variable("dummy", np.array([]))
+    var = common.example_test_variable("dummy", np.ones(10))
     station = common.example_test_station(var)
-    station.times = []
 
     spike.sc(station, ["dummy"], {}, full=full)
 
