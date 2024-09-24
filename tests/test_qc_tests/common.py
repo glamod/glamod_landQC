@@ -19,6 +19,13 @@ def example_test_variable(name: str,
     variable = utils.Meteorological_Variable(name, mdi, units, dtype)
 
     variable.data = np.ma.masked_where(vardata == mdi, vardata)
+    if len(variable.data.mask.shape) == 0:
+        # single mask value, replace with array of True/False's
+        if variable.data.mask:
+            variable.data.mask = np.ones(variable.data.shape)
+        else:
+            variable.data.mask = np.zeros(variable.data.shape)
+
     variable.flags = np.array(["" for _ in vardata])
 
     variable.flags = np.array(["" for i in range(len(vardata))])
@@ -46,4 +53,3 @@ def example_test_station(variable: utils.Meteorological_Variable,
     station.hours = np.array(times.dt.hour)
     
     return station
-
