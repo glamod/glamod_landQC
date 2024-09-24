@@ -2,12 +2,9 @@
 Contains tests for timestamp.py
 """
 import numpy as np
-import datetime as dt
-import pytest
 from unittest.mock import patch, Mock
 
 import timestamp
-import qc_utils
 
 import common
 
