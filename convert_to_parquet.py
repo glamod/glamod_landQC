@@ -21,7 +21,7 @@ import setup
 import qc_utils as utils
 
 
-def get_files(diagnostics:bool = False) -> list:
+def get_files(diagnostics: bool = False) -> list:
     """
     List all the files in the output directory which match the output format
 
@@ -102,7 +102,7 @@ def write_pqt(yearly_data: dict, diagnostics: bool = False) -> None:
             # Concatenate all data frames for the year
             combined_df = pd.concat(data_frames)
             
-            # Save to .parquet.gz
+            # Allows save to .parquet.gz
             output_file = f"qff_{year}.parquet{setup.OUT_COMPRESSION}"
             output_path = os.path.join(output_dir, output_file)
             
