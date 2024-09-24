@@ -73,10 +73,10 @@ def read_station(stationfile: str, station: Station, read_flags: bool = False) -
     try:
         station_df = read(stationfile)
     except OSError:
-        logger.warning(f"Missing station file {stationfile}\n")
+        logger.warning(f"Missing station file {stationfile}")
         raise OSError
     except ValueError as e:
-        logger.warning(f"Missing station file {stationfile}\n")
+        logger.warning(f"Missing station file {stationfile}")
         raise ValueError(str(e))
 
 

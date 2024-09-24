@@ -108,7 +108,7 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
 
         #*************************
         # set up logging
-        logfile = os.path.join(setup.SUBDAILY_LOG_DIR, f"{target_station_id}_internal_checks.log")
+        logfile = os.path.join(setup.SUBDAILY_LOG_DIR, f"{target_station_id}_external_checks.log")
         if os.path.exists(logfile):
             os.remove(logfile)
         logger = utils.custom_logger(logfile)

@@ -157,10 +157,7 @@ def pressure_offset(sealp: utils.Meteorological_Variable,
             logger.warning("Large difference between mean and median")
             logger.warning("Likely to have two populations of roughly equal size")
             logger.warning("Test won't work")
-            if diagnostics:
-                print("Large difference between mean and median")
-                print("Likely to have two populations of roughly equal size")
-                print("Test won't work")
+
             pass
         else:
             high, = np.ma.where(difference > (average + (THRESHOLD*spread)))
@@ -173,13 +170,10 @@ def pressure_offset(sealp: utils.Meteorological_Variable,
 
             if len(high) != 0 or len(low) != 0:
                 logger.info(f"Pressure {stnlp.name}")
-                if diagnostics:
-                    print(f"Pressure {stnlp.name}")
+
             if len(high) != 0:
                 flags[high] = "p"
                 logger.info(f"   Number of high differences {len(high)}")
-                if diagnostics:
-                    print(f"   Number of high differences {len(high)}")
                 if plots:
                     for bad in high:
                         plot_pressure_timeseries(sealp, stnlp, times, bad)
@@ -187,8 +181,6 @@ def pressure_offset(sealp: utils.Meteorological_Variable,
             if len(low) != 0:
                 flags[low] = "p"
                 logger.info(f"   Number of low differences {len(low)}")
-                if diagnostics:
-                    print(f"   Number of low differences {len(low)}")
                 if plots:
                     for bad in low:
                         plot_pressure_timeseries(sealp, stnlp, times, bad)

@@ -79,6 +79,8 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.arra
         print(f"{target_station.id} has insufficient neighbours ({n_neighbours}<{utils.MIN_NEIGHBOURS})")
 
     else:
+        logger.info(f"{target_station.id} has {n_neighbours} neighbours")
+
         #*************************
         # extract target observations
         obs_var = getattr(target_station, variable)
@@ -89,6 +91,7 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.arra
         all_buddy_data = np.ma.zeros([len(initial_neighbours[:, 0]), len(target_station.times)])
         all_buddy_data.mask = np.ones(all_buddy_data.shape)
 
+#        buddy_count = 0
         for bid, buddy_id in enumerate(initial_neighbours[:, 0]):
             if buddy_id == target_station.id:
                 # first entry is self
@@ -134,8 +137,14 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.arra
             if True in match and True in match_back:
                 # skip if no overlapping times at all!
                 all_buddy_data[bid, match] = buddy_var.data[match_back]
+#                buddy_count += 1
 
         logger.info("All buddies read in")
+        # TODO: implement in appropriate branch
+#        if buddy_count < utils.MIN_NEIGHBOURS:
+#            logger.warning(f"Insufficient number of neighbours with data ({buddy_count} < {utils.MIN_NEIGHBOURS})")
+#        else:
+#            logger.info(f"Number of neighbours with data: {buddy_count}")
 
         #*************************
         # find differences
@@ -240,7 +249,7 @@ def noc(target_station: utils.Station, initial_neighbours: np.array, var_list: l
     """
 
     for var in var_list:
-
+        # TODO: remove duplicated read step (reading neighbours for each variable!)
         neighbour_outlier(target_station, initial_neighbours, var,
                           diagnostics=diagnostics, plots=plots, full=full)
 
