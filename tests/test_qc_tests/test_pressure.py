@@ -197,6 +197,38 @@ def test_adjust_existing_flag_locs():
     np.testing.assert_array_equal(new_flags, expected_flags)
 
 
+def test_pressure_theory_nodata():
+
+    # Set up data, variables & station
+    test_data = np.arange(6)
+
+    sealp = common.example_test_variable("sea_level_pressure",
+                                         test_data)
+    sealp.flags = np.array(["" for i in test_data])
+
+    masked_test_data = np.ma.ones(6)
+    masked_test_data.mask = np.ones(6)
+    stnlp = common.example_test_variable("station_level_pressure",
+                                         test_data)
+    stnlp.flags = np.array(["" for i in test_data])
+
+
+    temperature = common.example_test_variable("temperature",
+                                               test_data, mdi=-99)
+    temperature.flags = np.array(["" for i in test_data])
+
+    start_dt = dt.datetime(2000, 1, 1, 0, 0)
+    times = np.array([start_dt + dt.timedelta(hours=i)\
+                      for i in range(len(sealp.data))])
+
+    pressure.pressure_theory(sealp, stnlp, temperature, times, 0)
+
+    expected_flags = np.array(["" for i in test_data])
+
+    np.testing.assert_array_equal(stnlp.flags, expected_flags)
+    np.testing.assert_array_equal(sealp.flags, expected_flags)
+
+
 def test_pressure_theory_0m():
 
     # Set up data, variables & station

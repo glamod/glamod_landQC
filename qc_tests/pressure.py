@@ -165,7 +165,7 @@ def pressure_offset(sealp: utils.Meteorological_Variable,
 
             # diagnostic plots
             if plots:
-                plot_pressure_distribution(difference, vmin=(average + (THRESHOLD*spread)),
+                plot_pressure_distribution(difference.compressed(), vmin=(average + (THRESHOLD*spread)),
                                            vmax=(average - (THRESHOLD*spread)))
 
             if len(high) != 0 or len(low) != 0:
@@ -271,24 +271,25 @@ def pressure_theory(sealp: utils.Meteorological_Variable,
 
     difference = sealp.data - theoretical_value
 
-    bad_locs, = np.ma.where(np.ma.abs(difference) > THEORY_THRESHOLD)
+    if len(difference.compressed()) > 0:
+        bad_locs, = np.ma.where(np.ma.abs(difference) > THEORY_THRESHOLD)
 
-    # diagnostic plots
-    if plots:
-        plot_pressure_distribution(difference, vmin=-THEORY_THRESHOLD,
-                                   vmax=THEORY_THRESHOLD)
-
-    if len(bad_locs) != 0:
-        flags[bad_locs] = "p"
-        logger.info(f"Pressure {stnlp.name}")
-        logger.info(f"   Number of mismatches between recorded and theoretical SLPs {len(bad_locs)}")
+        # diagnostic plots
         if plots:
-            for bad in bad_locs:
-                plot_pressure_timeseries(sealp, stnlp, times, bad)
+            plot_pressure_distribution(difference.compressed(), vmin=-THEORY_THRESHOLD,
+                                       vmax=THEORY_THRESHOLD)
+
+        if len(bad_locs) != 0:
+            flags[bad_locs] = "p"
+            logger.info(f"Pressure {stnlp.name}")
+            logger.info(f"   Number of mismatches between recorded and theoretical SLPs {len(bad_locs)}")
+            if plots:
+                for bad in bad_locs:
+                    plot_pressure_timeseries(sealp, stnlp, times, bad)
                 
-    # flag both as not sure immediately where the issue lies
-    stnlp.flags = utils.insert_flags(stnlp.flags, adjust_existing_flag_locs(stnlp, flags))
-    sealp.flags = utils.insert_flags(sealp.flags, adjust_existing_flag_locs(sealp, flags))
+        # flag both as not sure immediately where the issue lies
+        stnlp.flags = utils.insert_flags(stnlp.flags, adjust_existing_flag_locs(stnlp, flags))
+        sealp.flags = utils.insert_flags(sealp.flags, adjust_existing_flag_locs(sealp, flags))
 
     logger.info(f"Pressure {stnlp.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")

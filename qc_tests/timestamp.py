@@ -9,7 +9,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 import qc_utils as utils
-from spike import generate_differences
+
+from qc_tests.spike import generate_differences
 #************************************************************************
 #*********************************************
 def plot_multiple(times: np.array, obs_var: utils.Meteorological_Variable, start: int) -> None:
@@ -67,20 +68,23 @@ def identify_multiple_values(obs_var: utils.Meteorological_Variable, times: np.a
     if diagnostics:
         print(f" Number of identical timestamps in {obs_var.name}: {multiple_obs_at_time.shape[0]}")
 
-    suspect_locs, = np.ma.where(value_diffs[multiple_obs_at_time] != 0)
+    if len(multiple_obs_at_time) != 0:
+        suspect_locs, = np.ma.where(value_diffs[multiple_obs_at_time] != 0)
 
-    # set the first of the obs, then the second which make the diff
-    compressed_flags[multiple_obs_at_time[suspect_locs]] = "T"
-    compressed_flags[multiple_obs_at_time[suspect_locs]+1] = "T"
+        # set the first of the obs, then the second which make the diff
+        compressed_flags[multiple_obs_at_time[suspect_locs]] = "T"
+        compressed_flags[multiple_obs_at_time[suspect_locs]+1] = "T"
 
-    # Uncompress the flags & insert
-    flags = np.array(["" for i in range(obs_var.data.shape[0])])
-    # Offset of 1 from use of the difference arrays
-    #   Different to spike offset.  Here want to flag value and following
-    #   Spike only want to flag following (for single point spike with large value_diff)
-    locs, = np.nonzero(obs_var.data.mask == False)
-    flags[locs[:-1]] = compressed_flags
-    obs_var.flags = utils.insert_flags(obs_var.flags, flags)
+        # Uncompress the flags & insert
+        flags = np.array(["" for i in range(obs_var.data.shape[0])])
+        # Offset of 1 from use of the difference arrays
+        #   Different to spike offset.  Here want to flag value and following
+        #   Spike only want to flag following (for single point spike with large value_diff)
+        locs, = np.nonzero(obs_var.data.mask == False)
+        flags[locs[:-1]] = compressed_flags
+        obs_var.flags = utils.insert_flags(obs_var.flags, flags)
+    else:
+        flags = np.array(["" for i in range(obs_var.data.shape[0])])
 
     logger.info(f"Timestamp {obs_var.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")

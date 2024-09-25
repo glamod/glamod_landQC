@@ -27,6 +27,19 @@ def test_identify_multiple_values_simple():
     np.testing.assert_array_equal(obs_var.flags, expected)
 
 
+def test_identify_no_multiple_values():
+
+    # Set up data, variable & station
+    obs_var = common.example_test_variable("temperature", np.arange(10))
+    station = common.example_test_station(obs_var)
+
+    expected = np.array(["" for _ in range(10)])
+
+    timestamp.identify_multiple_values(obs_var, station. times, {})
+
+    np.testing.assert_array_equal(obs_var.flags, expected)
+
+
 def test_identify_multiple_values_masked_simple():
 
     # Set up data, variable & station
