@@ -112,12 +112,12 @@ def find_thresholds(obs_var: utils.Meteorological_Variable, station: utils.Stati
             variance_spread = utils.MDI
 
         try:
-            config_dict["VARIANCE-{}".format(obs_var.name)]["{}-average".format(month)] =  average_variance
+            config_dict[f"VARIANCE-{obs_var.name}"][f"{month}-average"] =  average_variance
         except KeyError:
-            CD_average = {"{}-average".format(month) : average_variance}
-            config_dict["VARIANCE-{}".format(obs_var.name)] = CD_average
+            CD_average = {f"{month}-average" : average_variance}
+            config_dict[f"VARIANCE-{obs_var.name}"] = CD_average
             
-        config_dict["VARIANCE-{}".format(obs_var.name)]["{}-spread".format(month)] = variance_spread
+        config_dict[f"VARIANCE-{obs_var.name}"][f"{month}-spread"] = variance_spread
 
     return # find_thresholds
 
@@ -143,12 +143,12 @@ def variance_check(obs_var: utils.Meteorological_Variable, station: utils.Statio
         variances = prepare_data(obs_var, station, month, diagnostics=diagnostics, winsorize=winsorize)
 
         try:
-            average_variance = float(config_dict["VARIANCE-{}".format(obs_var.name)]["{}-average".format(month)])
-            variance_spread = float(config_dict["VARIANCE-{}".format(obs_var.name)]["{}-spread".format(month)])
+            average_variance = float(config_dict[f"VARIANCE-{obs_var.name}"][f"{month}-average"])
+            variance_spread = float(config_dict[f"VARIANCE-{obs_var.name}"][f"{month}-spread"])
         except KeyError:
             find_thresholds(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
-            average_variance = float(config_dict["VARIANCE-{}".format(obs_var.name)]["{}-average".format(month)])
-            variance_spread = float(config_dict["VARIANCE-{}".format(obs_var.name)]["{}-spread".format(month)])
+            average_variance = float(config_dict[f"VARIANCE-{obs_var.name}"][f"{month}-average"])
+            variance_spread = float(config_dict[f"VARIANCE-{obs_var.name}"][f"{month}-spread"])
 
         if average_variance == utils.MDI and variance_spread == utils.MDI:
             # couldn't be calculated, move on
@@ -260,8 +260,8 @@ def variance_check(obs_var: utils.Meteorological_Variable, station: utils.Statio
             plt.yscale("log")
 
             plt.ylabel("Number of Months")
-            plt.xlabel("Scaled {} Variances".format(obs_var.name.capitalize()))
-            plt.title("{} - month {}".format(station.id, month))
+            plt.xlabel(f"Scaled {obs_var.name.capitalize()} Variances")
+            plt.title(f"{station.id} - month {month}")
 
             plt.ylim([0.1, max(hist)*2])
             plt.axvline(SPREAD_THRESHOLD, c="r")

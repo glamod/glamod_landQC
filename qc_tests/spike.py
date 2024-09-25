@@ -88,14 +88,14 @@ def calculate_critical_values(obs_var: utils.Meteorological_Variable, times: np.
             c_value = utils.get_critical_values(first_differences.compressed(), binmin=0, binwidth=0.5,
                                                 plots=plots, diagnostics=diagnostics,
                                                 xlabel="First differences",
-                                                title="Spike - {} - {}m".format(obs_var.name.capitalize(), t_diff))
+                                                title=f"Spike - {obs_var.name.capitalize()} - {t_diff}m")
 
             # write out the thresholds...
             try:
-                config_dict["SPIKE-{}".format(obs_var.name)][t_diff] = float(c_value)
+                config_dict[f"SPIKE-{obs_var.name}"][t_diff] = float(c_value)
             except KeyError:
                 CD_diff = {t_diff : float(c_value)}
-                config_dict["SPIKE-{}".format(obs_var.name)] = CD_diff
+                config_dict[f"SPIKE-{obs_var.name}"] = CD_diff
 
             logger.debug(f"   Time Difference: {t_diff} minutes")
             logger.debug(f"      Number of obs: {len(first_differences.compressed())}, threshold: {c_value}")
@@ -121,7 +121,7 @@ def retreive_critical_values(unique_diffs: np.array, config_dict: dict, name: st
 
     for t_diff in unique_diffs:
         try:
-            c_value = config_dict["SPIKE-{}".format(name)][t_diff]
+            c_value = config_dict[f"SPIKE-{name}"][t_diff]
             critical_values[t_diff] = float(c_value)
         except KeyError:
             # no critical value for this time difference

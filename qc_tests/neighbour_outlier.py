@@ -111,8 +111,7 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.arra
 
             try:
                 buddy, buddy_df = io.read_station(os.path.join(setup.SUBDAILY_PROC_DIR,
-                                                               "{:11s}.qff{}".format(buddy_id,
-                                                                                     setup.OUT_COMPRESSION)),
+                                                               f"{buddy_id:11s}.qff{setup.OUT_COMPRESSION}"),
                                                   buddy, read_flags=True) 
 
                 buddy_var = getattr(buddy, variable)
@@ -123,11 +122,11 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.arra
 
             except OSError: # as e:
                 # file missing, move on to next in sequence
-                io.write_error(target_station, "File Missing (Buddy, {}) - {}".format(variable, buddy_id))
+                io.write_error(target_station, f"File Missing (Buddy, {variable}) - {buddy_id}")
                 continue
             except ValueError as e:
                 # some issue in the raw file
-                io.write_error(target_station, "Error in input file (Buddy, {}) - {}".format(variable, buddy_id), error=str(e))
+                io.write_error(target_station, f"Error in input file (Buddy, {variable}) - {buddy_id}", error=str(e))
                 continue
 
             # match the timestamps of target_station and copy over
