@@ -62,7 +62,7 @@ WIND_MEASUREMENT_CODES = ["", "N-Normal", "C-Calm", "V-Variable", "9-Missing"]
 CONFIG_FILE = "./configuration.txt"
 
 if not os.path.exists(os.path.join(os.path.dirname(__file__), CONFIG_FILE)):
-    print("Configuration file missing - {}".format(os.path.join(os.path.dirname(__file__), CONFIG_FILE)))
+    print(f"Configuration file missing - {os.path.join(os.path.dirname(__file__), CONFIG_FILE)}")
     sys.exit()
 else:
     CONFIG_FILE = os.path.join(os.path.dirname(__file__), CONFIG_FILE)
@@ -121,7 +121,7 @@ class Meteorological_Variable(object):
         
 
     def __str__(self):     
-        return "variable: {}".format(self.name)
+        return f"variable: {self.name}"
 
     __repr__ = __str__
    
@@ -140,7 +140,7 @@ class Station(object):
         self.elev = elev
         
     def __str__(self):
-        return "station {}, lat {}, lon {}, elevation {}".format(self.id, self.lat, self.lon, self.elev)
+        return f"station {self.id}, lat {self.lat}, lon {self.lon}, elevation {self.elev}"
     
     __repr__ = __str__
 
@@ -261,7 +261,7 @@ def populate_station(station: Station, df: pd.DataFrame, obs_var_list: list, rea
 
         if read_flags:
             # change all empty values (else NaN) to blank
-            this_var.flags = df["{}_QC_flag".format(variable)].fillna("").to_numpy()
+            this_var.flags = df[f"{variable}_QC_flag"].fillna("").to_numpy()
         else:
             # empty flag array
             this_var.flags = np.array(["" for i in range(len(this_var.data))])
@@ -504,7 +504,7 @@ def plot_log_distribution(edges: np.array, hist: np.array, fit: np.array, thresh
     plt.ylim([-0.3, max(plot_hist)+0.5])
     plt.xlim([0, max(edges)])
     
-    plt.axvline(threshold, c='r', label="threshold = {}".format(threshold))
+    plt.axvline(threshold, c='r', label=f"threshold = {threshold}")
     
     plt.legend(loc="upper right")
     plt.title(title)
@@ -786,7 +786,7 @@ def reporting_accuracy(indata: np.array, winddir: bool = False, plots: bool = Fa
             else:
                 resolution = 1
 
-            print("Wind dir resolution = {} degrees".format(resolution))
+            print(f"Wind dir resolution = {resolution} degrees")
             if plots:
                 import matplotlib.pyplot as plt
                 plt.clf()
@@ -901,8 +901,7 @@ def high_flagging(station: Station) -> bool:
 
             if flagged.shape[0] / obs_locs.shape[0] > HIGH_FLAGGING:
                 bad = True
-                print("{} flagging rate of {:5.1f}%".format(obs_var.name, \
-                                                                100*(flagged.shape[0] / obs_locs.shape[0])))
+                print(f"{obs_var.name} flagging rate of {100*(flagged.shape[0] / obs_locs.shape[0]):5.1f}%")
                 break
 
     return bad # high_flagging
@@ -938,7 +937,7 @@ def find_continent(country_code: str) -> str:
     # as maybe run from another directory, get the right path
     cwd = pathlib.Path(__file__).parent.absolute()
     # prepare look up
-    with open('{}/iso_country_codes.json'.format(cwd), 'r') as infile:
+    with open(f'{cwd}/iso_country_codes.json', 'r') as infile:
         iso_codes = json.load(infile)
 
     concord = {}

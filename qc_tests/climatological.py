@@ -210,8 +210,8 @@ def find_month_thresholds(obs_var: utils.Meteorological_Variable, station: utils
                 plt.yscale("log")
 
                 plt.ylabel("Number of Observations")
-                plt.xlabel("Scaled {}".format(obs_var.name.capitalize()))
-                plt.title("{} - month {}".format(station.id, month))
+                plt.xlabel(f"Scaled {obs_var.name.capitalize()}")
+                plt.title(f"{station.id} - month {month}")
 
                 plt.plot(bincentres, fitted_curve)
                 plt.ylim([0.1, max(hist)*2])
@@ -233,13 +233,14 @@ def find_month_thresholds(obs_var: utils.Meteorological_Variable, station: utils
                 plt.show()
 
             # Store values
+            # add uthresh first, then lthresh
             try:
-                config_dict["CLIMATOLOGICAL-{}".format(obs_var.name)]["{}-uthresh".format(month)] = upper_threshold
+                config_dict[f"CLIMATOLOGICAL-{obs_var.name}"][f"{month}-uthresh"] = upper_threshold
             except KeyError:
-                CD_uthresh = {"{}-uthresh".format(month) : upper_threshold}
-                config_dict["CLIMATOLOGICAL-{}".format(obs_var.name)] = CD_uthresh
+                CD_uthresh = {f"{month}-uthresh" : upper_threshold}
+                config_dict[f"CLIMATOLOGICAL-{obs_var.name}"] = CD_uthresh
     
-            config_dict["CLIMATOLOGICAL-{}".format(obs_var.name)]["{}-lthresh".format(month)] = lower_threshold
+            config_dict[f"CLIMATOLOGICAL-{obs_var.name}"][f"{month}-lthresh"] = lower_threshold
 
     return # find_month_thresholds
 
@@ -272,13 +273,13 @@ def monthly_clim(obs_var: utils.Meteorological_Variable, station: utils.Station,
             hist, bin_edges = np.histogram(normalised_anomalies.compressed(), bins)
 
             try:
-                upper_threshold = float(config_dict["CLIMATOLOGICAL-{}".format(obs_var.name)]["{}-uthresh".format(month)])
-                lower_threshold = float(config_dict["CLIMATOLOGICAL-{}".format(obs_var.name)]["{}-lthresh".format(month)])
+                upper_threshold = float(config_dict[f"CLIMATOLOGICAL-{obs_var.name}"][f"{month}-uthresh"])
+                lower_threshold = float(config_dict[f"CLIMATOLOGICAL-{obs_var.name}"][f"{month}-lthresh"])
             except KeyError:
                 print("Information missing in config file")
                 find_month_thresholds(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
-                upper_threshold = float(config_dict["CLIMATOLOGICAL-{}".format(obs_var.name)]["{}-uthresh".format(month)])
-                lower_threshold = float(config_dict["CLIMATOLOGICAL-{}".format(obs_var.name)]["{}-lthresh".format(month)])
+                upper_threshold = float(config_dict[f"CLIMATOLOGICAL-{obs_var.name}"][f"{month}-uthresh"])
+                lower_threshold = float(config_dict[f"CLIMATOLOGICAL-{obs_var.name}"][f"{month}-lthresh"])
 
             # now to find the gaps
             uppercount = len(np.where(normalised_anomalies > upper_threshold)[0])
@@ -309,8 +310,8 @@ def monthly_clim(obs_var: utils.Meteorological_Variable, station: utils.Station,
                 plt.yscale("log")
 
                 plt.ylabel("Number of Observations")
-                plt.xlabel("Scaled {}".format(obs_var.name.capitalize()))
-                plt.title("{} - month {}".format(station.id, month))
+                plt.xlabel(f"Scaled {obs_var.name.capitalize()}")
+                plt.title(f"{station.id} - month {month}")
 
                 plt.ylim([0.1, max(hist)*2])
                 plt.axvline(upper_threshold, c="r")

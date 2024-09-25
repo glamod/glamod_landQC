@@ -33,8 +33,8 @@ def identify_values(obs_var: utils.Meteorological_Variable, station: utils.Stati
     #           to vary over the p-o-r?  I.e. 1C in early, to 0.5C to 0.1C in different decades?
 
     # store bin width
-    CD_width = {"width" : "{}".format(BIN_WIDTH)}
-    config_dict["FREQUENT-{}".format(obs_var.name)] = CD_width
+    CD_width = {"width" : f"{BIN_WIDTH}"}
+    config_dict[f"FREQUENT-{obs_var.name}"] = CD_width
 
     for month in range(1, 13):
 
@@ -44,7 +44,7 @@ def identify_values(obs_var: utils.Meteorological_Variable, station: utils.Stati
 
         if len(month_data.compressed()) < utils.DATA_COUNT_THRESHOLD:
             # insufficient data, so write out empty config and move on
-            config_dict["FREQUENT-{}".format(obs_var.name)]["{}".format(month)] = []
+            config_dict[f"FREQUENT-{obs_var.name}"][f"{month}"] = []
             continue
 
         # adjust bin widths according to reporting accuracy
@@ -66,7 +66,7 @@ def identify_values(obs_var: utils.Meteorological_Variable, station: utils.Stati
 
             plt.ylabel("Number of Observations")
             plt.xlabel(obs_var.name.capitalize())
-            plt.title("{} - month {}".format(station.id, month))
+            plt.title(f"{station.id} - month {month}")
 
         # Scan through the histogram
         #   check if a bin is the maximum of a local area ("ROLLING")
@@ -94,7 +94,7 @@ def identify_values(obs_var: utils.Meteorological_Variable, station: utils.Stati
 
 
         # write out the thresholds...
-        config_dict["FREQUENT-{}".format(obs_var.name)]["{}".format(month)] = suspect
+        config_dict[f"FREQUENT-{obs_var.name}"][f"{month}"] = suspect
 
     return # identify_values
 
@@ -121,12 +121,12 @@ def frequent_values(obs_var: utils.Meteorological_Variable, station: utils.Stati
 
         # read in bin-width and suspect bins for this month
         try:
-            width = float(config_dict["FREQUENT-{}".format(obs_var.name)]["width"])
-            suspect_bins = config_dict["FREQUENT-{}".format(obs_var.name)]["{}".format(month)]
+            width = float(config_dict[f"FREQUENT-{obs_var.name}"]["width"])
+            suspect_bins = config_dict[f"FREQUENT-{obs_var.name}"][f"{month}"]
         except KeyError:
             identify_values(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
-            width = float(config_dict["FREQUENT-{}".format(obs_var.name)]["width"])
-            suspect_bins = config_dict["FREQUENT-{}".format(obs_var.name)]["{}".format(month)]
+            width = float(config_dict[f"FREQUENT-{obs_var.name}"]["width"])
+            suspect_bins = config_dict[f"FREQUENT-{obs_var.name}"][f"{month}"]
  
         # skip on if nothing to find
         if len(suspect_bins) == 0:
@@ -182,7 +182,7 @@ def frequent_values(obs_var: utils.Meteorological_Variable, station: utils.Stati
 
             plt.ylabel("Number of Observations")
             plt.xlabel(obs_var.name.capitalize())
-            plt.title("{} - month {}".format(station.id, month))
+            plt.title(f"{station.id} - month {month}")
 
             bad_hist = np.copy(hist)
             for b, bar in enumerate(bad_hist):

@@ -165,19 +165,19 @@ def flag_write(outfilename: str, df: pd.DataFrame, diagnostics: bool = False) ->
 
         for var in setup.obs_var_list:
 
-            flags = df["{}_QC_flag".format(var)].fillna("")
+            flags = df[f"{var}_QC_flag"].fillna("")
 
             for test in QC_TESTS.keys():
                 locs = flags[flags.str.contains(test)]
 
-                outfile.write("{} : {} : {}\n".format(var, test, locs.shape[0]/flags.shape[0]))
-                outfile.write("{} : {} : {}\n".format(var, "{}_counts".format(test), locs.shape[0]))
+                outfile.write(f"{var} : {test} : {locs.shape[0]/flags.shape[0]}\n")
+                outfile.write(f"{var} : {test}_counts : {locs.shape[0]}\n")
 
 
             # for total, get number of nonclean obs
             flagged, = np.where(flags != "")
-            outfile.write("{} : {} : {}\n".format(var, "All", flagged.shape[0]/flags.shape[0]))
-            outfile.write("{} : {} : {}\n".format(var, "{}_counts".format("All"), flagged.shape[0]))
+            outfile.write(f"{var} : All : {flagged.shape[0]/flags.shape[0]}\n")
+            outfile.write(f"{var} : All_counts : {flagged.shape[0]}\n")
 
             logging.info(f"{var} - {flagged.shape[0]}")
             if diagnostics:
@@ -195,7 +195,7 @@ def write_error(station: Station, message: str, error: str = "", diagnostics:boo
     :param str error: error output from stacktrace
     :param bool diagnostics: turn on diagnostic output
     """
-    outfilename = os.path.join(setup.SUBDAILY_ERROR_DIR, "{:11s}.err".format(station.id))
+    outfilename = os.path.join(setup.SUBDAILY_ERROR_DIR, f"{station.id:11s}.err")
 
     # in case this file already exists, then append
     if os.path.exists(outfilename):

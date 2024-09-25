@@ -285,7 +285,7 @@ def find_offset(obs_var: utils.Meteorological_Variable, station: utils.Station, 
 
     '''Now have value for best fit diurnal offset'''
     CD_peak = {"peak" : int(diurnal_peak)}
-    config_dict["DIURNAL-{}".format(obs_var.name)] = CD_peak
+    config_dict[f"DIURNAL-{obs_var.name}"] = CD_peak
 
     return best_fit_diurnal, best_fit_uncertainty # find_offset
 
@@ -305,11 +305,11 @@ def diurnal_cycle_check(obs_var: utils.Meteorological_Variable, station: utils.S
     flags = np.array(["" for i in range(obs_var.data.shape[0])])
 
     try:
-        diurnal_offset = int(config_dict["DIURNAL-{}".format(obs_var.name)]["peak"])
+        diurnal_offset = int(config_dict[f"DIURNAL-{obs_var.name}"]["peak"])
     except KeyError:
         print("Information missing in config dictionary")
         best_fit_diurnal, best_fit_uncertainty = find_offset(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
-        diurnal_offset = int(config_dict["DIURNAL-{}".format(obs_var.name)]["peak"])
+        diurnal_offset = int(config_dict[f"DIURNAL-{obs_var.name}"]["peak"])
 
 
     hours = np.arange(24)

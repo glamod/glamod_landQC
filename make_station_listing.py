@@ -33,13 +33,13 @@ def main() -> None:
     
     # now spin through each ID in the curtailed list
     for st, station_id in enumerate(station_IDs):
-        print("{} {:11s} ({}/{})".format(dt.datetime.now(), station_id, st+1, station_IDs.shape[0]))
+        print(f"{dt.datetime.now()} {station_id:11s} ({st+1}/{station_IDs.shape[0]})")
 
         station = utils.Station(station_id, station_list.latitude[st],
                                 station_list.longitude[st], station_list.elevation[st])
 
         try:
-            station, station_df = ioutils.read_station(os.path.join(setup.SUBDAILY_OUT_DIR, "{:11s}.{}{}".format(station_id, "qff", setup.OUT_COMPRESSION)), station)
+            station, station_df = ioutils.read_station(os.path.join(setup.SUBDAILY_OUT_DIR, f"{station_id:11s}.qff{setup.OUT_COMPRESSION}"), station)
         except OSError as e:
             # file missing, move on to next in sequence
             print(f"{station}, File Missing, {str(e)}")

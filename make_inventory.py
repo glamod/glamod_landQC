@@ -44,7 +44,7 @@ def main(restart_id: str = "", end_id: str = "", clobber: bool = False) -> None:
         outfile.write("UPDATED ON A REGULAR BASIS. QUALITY CONTROL FLAGS HAVE NOT BEEN INCLUDED IN THESE COUNTS, ALL OBSERVATIONS.\n")
         outfile.write("\n")
         month_string = " ".join([f"{c:<6s}" for c in month_names])
-        outfile.write("{:11s} {:4s} {:84s}\n".format("STATION", "YEAR", month_string))
+        outfile.write(f"{'STATION':11s} {'YEAR':4s} {month_string:84s}\n")
         outfile.write("\n")
  
 
@@ -56,12 +56,12 @@ def main(restart_id: str = "", end_id: str = "", clobber: bool = False) -> None:
 
         # now spin through each ID in the curtailed list
         for st, station_id in enumerate(station_IDs):
-            print("{} {:11s} ({}/{})".format(dt.datetime.now(), station_id, st+1, station_IDs.shape[0]))
+            print(f"{dt.datetime.now()} {station_id:11s} ({st+1}/{station_IDs.shape[0]})")
 
             station = utils.Station(station_id, station_list.latitude[st], station_list.longitude[st], station_list.elevation[st])
 
             try:
-                station, station_df = ioutils.read_station(os.path.join(setup.SUBDAILY_OUT_DIR, "{:11s}.{}{}".format(station_id, "qff", setup.OUT_COMPRESSION)), station)
+                station, station_df = ioutils.read_station(os.path.join(setup.SUBDAILY_OUT_DIR, f"{station_id:11s}.qff{setup.OUT_COMPRESSION}"), station)
             except OSError as e:
                 # file missing, move on to next in sequence
                 print(f"{station}, File Missing, {str(e)}")

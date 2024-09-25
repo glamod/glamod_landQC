@@ -29,7 +29,7 @@ def copy_tree(source: str, destination: str, diagnostics: bool = False) -> None:
             pass
         # don't need to make as copytree will do
         if diagnostics:
-            print("{} removed".format(destination))
+            print(f"{destination} removed")
         
 
     # copy entire tree
@@ -40,7 +40,7 @@ def copy_tree(source: str, destination: str, diagnostics: bool = False) -> None:
             os.utime(os.path.join(root, fname), None)
 
     if diagnostics:
-        print("copied {} to {}".format(source, destination))
+        print(f"copied {source} to {destination}")
     
     return # copy_tree
 
@@ -67,7 +67,7 @@ def copy_files(source: str, destination: str, extension:str = "",
             os.mkdir(destination)
         
     # for each file at a time
-    for filename in glob.glob(r'{}*{}'.format(os.path.expanduser(source), extension)):
+    for filename in glob.glob(fr'{os.path.expanduser(source)}*{extension}'):
 
         if not os.path.exists(os.path.join(destination, filename.split("/")[-1])):
             # file doesn't exist, so copy
@@ -86,7 +86,7 @@ def copy_files(source: str, destination: str, extension:str = "",
                 
             else:
                 if diagnostics:
-                    print("{} exists".format(filename))
+                    print(f"{filename} exists")
     
         # force update of timestamps
         os.utime(os.path.join(destination, filename.split("/")[-1]), None)

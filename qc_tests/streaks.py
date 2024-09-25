@@ -80,18 +80,18 @@ def get_repeating_string_threshold(obs_var, config_dict, plots=False, diagnostic
 
         # write out the thresholds...
         try:
-            config_dict["STREAK-{}".format(this_var.name)]["Straight"] = int(threshold)
+            config_dict[f"STREAK-{this_var.name}"]["Straight"] = int(threshold)
         except KeyError:
             CD_straight = {"Straight" : int(threshold)}
-            config_dict["STREAK-{}".format(this_var.name)] = CD_straight
+            config_dict[f"STREAK-{this_var.name}"] = CD_straight
 
     else:
         # store high value so threshold never reached
         try:
-            config_dict["STREAK-{}".format(this_var.name)]["Straight"] = utils.MDI
+            config_dict[f"STREAK-{this_var.name}"]["Straight"] = utils.MDI
         except KeyError:
             CD_straight = {"Straight" : utils.MDI}
-            config_dict["STREAK-{}".format(this_var.name)] = CD_straight
+            config_dict[f"STREAK-{this_var.name}"] = CD_straight
 
     return # get_repeating_string_threshold
 
@@ -123,12 +123,12 @@ def repeating_value(obs_var, times, config_dict, plots=False, diagnostics=False)
     # retrieve the threshold and store in another dictionary
     threshold = {}
     try:
-        th = config_dict["STREAK-{}".format(this_var.name)]["Straight"]
+        th = config_dict[f"STREAK-{this_var.name}"]["Straight"]
         threshold["Straight"] = th
     except KeyError:
         # no threshold set
         get_repeating_string_threshold(this_var, config_dict, plots=plots, diagnostics=diagnostics)
-        th = config_dict["STREAK-{}".format(this_var.name)]["Straight"]
+        th = config_dict[f"STREAK-{this_var.name}"]["Straight"]
         threshold["Straight"] = th
 
     # only process further if there is enough data

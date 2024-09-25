@@ -67,7 +67,7 @@ def write_logic_error(station: utils.Station, message: str, diagnostics: bool = 
     :param bool diagnostics: turn on diagnostic output
     """
 
-    outfilename = os.path.join(setup.SUBDAILY_ERROR_DIR, "{}.err".format(station.id))
+    outfilename = os.path.join(setup.SUBDAILY_ERROR_DIR, f"{station.id}.err")
 
     with open(outfilename, "a") as outfile:
         outfile.write(dt.datetime.strftime(dt.datetime.now(), "%Y-%m-%d %H:%M") + "\n")
@@ -95,17 +95,19 @@ def lc(station: utils.Station, var_list: list, full: bool = False,
     # station level (from inventory listing, not for each timestamp)
     return_code = 0
     if station.lat < -90 or station.lat > 90:
-        write_logic_error(station, "Bad latitude: {}".format(station.lat), diagnostics=diagnostics)
+        write_logic_error(station, f"Bad latitude: {station.lat}", diagnostics=diagnostics)
         logger.info(f"Bad latitude: {station.lat}")
         return_code = -1
 
     if station.lon < -180 or station.lon > 180:
-        write_logic_error(station, "Bad longtitude: {}".format(station.lon), diagnostics=diagnostics)
+        write_logic_error(station, f"Bad longtitude: {station.lon}", diagnostics=diagnostics)
         logger.info(f"Bad longitude: {station.lon}")
         return_code = -1
 
     if station.lon == 0 and station.lat == 0:
-        write_logic_error(station, "Bad longtitude & latitude combination: lon={}, lat={}".format(station.lon, station.lat), diagnostics=diagnostics)
+        write_logic_error(station,
+                          f"Bad longtitude & latitude combination: lon={station.lon}, lat={station.lat}",
+                          diagnostics=diagnostics)
         logger.info(f"Bad longitude/latitude combination: {station.lon} & {station.lat}")
         return_code = -1
 
@@ -113,7 +115,7 @@ def lc(station: utils.Station, var_list: list, full: bool = False,
     #       missing could be -999, -999.9, -999.999 or even 9999.0 etc hence using string comparison
     if (station.elev < -432.65 or station.elev > 8850.):
         if str(station.elev)[:4] not in ["-999", "9999"]:
-            write_logic_error(station, "Bad elevation: {}".format(station.elev), diagnostics=diagnostics)
+            write_logic_error(station, f"Bad elevation: {station.elev}", diagnostics=diagnostics)
             logger.info(f"Bad elevation: {station.elev}")
             return_code = -1
         else:
@@ -121,14 +123,14 @@ def lc(station: utils.Station, var_list: list, full: bool = False,
 
     if station.times.iloc[0] < dt.datetime(1700, 1, 1):
         # Pandas datetime limited to pd.Timestamp.min = Timestamp('1677-09-22 00:12:43.145225')
-        write_logic_error(station, "Bad start time: {}".format(station.times[0]), diagnostics=diagnostics)
+        write_logic_error(station, f"Bad start time: {station.times[0]}", diagnostics=diagnostics)
         logger.info(f"Bad start time: {station.times[0]}")
         return_code = -1
 
     elif station.times.iloc[-1] > dt.datetime.now():
         # Pandas datetime limited to pd.Timestamp.max = Timestamp('2262-04-11 23:47:16.854775807')
-        write_logic_error(station, "Bad end time: {}".format(station.times[-1]), diagnostics=diagnostics)
-        logger.info(f"Bad start time: {station.times[-1]}")
+        write_logic_error(station, f"Bad end time: {station.times[-1]}", diagnostics=diagnostics)
+        logger.info(f"Bad end time: {station.times[-1]}")
         return_code = -1
     
 
