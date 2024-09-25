@@ -234,7 +234,7 @@ def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False, plot
                 if neighb[0] != -1:
                     outstring = f"{outstring:s} {station_list.id[neighb[0]]:<11s} {neighb[1]:8d}"
                 else:
-                    outstring = f"{outstring:s} {"-":>11s} {neighb[1]:8d}"
+                    outstring = f"{outstring:s} {'-':>11s} {neighb[1]:8d}"
                     
 #            input("stop")
 

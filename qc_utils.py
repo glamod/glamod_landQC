@@ -261,7 +261,7 @@ def populate_station(station: Station, df: pd.DataFrame, obs_var_list: list, rea
 
         if read_flags:
             # change all empty values (else NaN) to blank
-            this_var.flags = df[f"{variable}_QC_flag"].fillna('""').to_numpy()
+            this_var.flags = df[f"{variable}_QC_flag"].fillna("").to_numpy()
         else:
             # empty flag array
             this_var.flags = np.array(["" for i in range(len(this_var.data))])
@@ -786,7 +786,7 @@ def reporting_accuracy(indata: np.array, winddir: bool = False, plots: bool = Fa
             else:
                 resolution = 1
 
-            print("Wind dir resolution = f{resolution} degrees")
+            print(f"Wind dir resolution = {resolution} degrees")
             if plots:
                 import matplotlib.pyplot as plt
                 plt.clf()

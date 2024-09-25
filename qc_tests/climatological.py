@@ -233,6 +233,7 @@ def find_month_thresholds(obs_var: utils.Meteorological_Variable, station: utils
                 plt.show()
 
             # Store values
+            # add uthresh first, then lthresh
             try:
                 config_dict[f"CLIMATOLOGICAL-{obs_var.name}"][f"{month}-uthresh"] = upper_threshold
             except KeyError:

@@ -33,7 +33,7 @@ def identify_values(obs_var: utils.Meteorological_Variable, station: utils.Stati
     #           to vary over the p-o-r?  I.e. 1C in early, to 0.5C to 0.1C in different decades?
 
     # store bin width
-    CD_width = {f"width" : "{BIN_WIDTH}"}
+    CD_width = {"width" : f"{BIN_WIDTH}"}
     config_dict[f"FREQUENT-{obs_var.name}"] = CD_width
 
     for month in range(1, 13):

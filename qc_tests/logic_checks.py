@@ -130,7 +130,7 @@ def lc(station: utils.Station, var_list: list, full: bool = False,
     elif station.times.iloc[-1] > dt.datetime.now():
         # Pandas datetime limited to pd.Timestamp.max = Timestamp('2262-04-11 23:47:16.854775807')
         write_logic_error(station, f"Bad end time: {station.times[-1]}", diagnostics=diagnostics)
-        logger.info(f"Bad start time: {station.times[-1]}")
+        logger.info(f"Bad end time: {station.times[-1]}")
         return_code = -1
     
 

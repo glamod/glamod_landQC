@@ -293,6 +293,7 @@ def find_thresholds(obs_var: utils.Meteorological_Variable, station: utils.Stati
 
         if len(normalised_anomalies.compressed()) == 1 and normalised_anomalies[0] == utils.MDI:
             # scaling not possible for this month
+            # add uthresh first, then lthresh
             try:
                 config_dict[f"ADISTRIBUTION-{obs_var.name}"][f"{month}-uthresh"] = utils.MDI
             except KeyError:
@@ -302,6 +303,7 @@ def find_thresholds(obs_var: utils.Meteorological_Variable, station: utils.Stati
             continue
         elif len(np.unique(normalised_anomalies)) == 1:
             # all the same value, so won't be able to fit a histogram
+            # add uthresh first, then lthresh
             try:
                 config_dict[f"ADISTRIBUTION-{obs_var.name}"][f"{month}-uthresh"] = utils.MDI
             except KeyError:
@@ -354,6 +356,7 @@ def find_thresholds(obs_var: utils.Meteorological_Variable, station: utils.Stati
             plt.axvline(lower_threshold, c="r")
             plt.show()
 
+        # add uthresh first, then lthresh
         try:
             config_dict[f"ADISTRIBUTION-{obs_var.name}"][f"{month}-uthresh"] = upper_threshold
         except KeyError:
