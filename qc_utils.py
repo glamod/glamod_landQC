@@ -10,6 +10,8 @@ import pandas as pd
 import numpy as np
 import scipy.special
 import pathlib
+import itertools
+import logging
 
 from scipy.optimize import least_squares
 
@@ -24,11 +26,26 @@ UNIT_DICT = {"temperature" : "degrees C", \
              "station_level_pressure" : "hPa hectopascals"}
 
 
-QC_TESTS = {"o" : "Odd Cluster", "F" : "Frequent Value", "D" : "Distribution - Monthly", \
-            "d" : "Distribution - all", "W" : "World Records", "K" : "Streaks", \
-            "C" : "Climatological", "T" : "Timestamp", "S" : "Spike", "h" : "Humidity", \
-            "V" : "Variance", "p" : "Pressure", "w" : "Winds", "L" : "Logic", "U" : "Diurnal", \
-            "E" : "Clean Up", "N" : "Neighbour", "H" : "High Flag Rate"}
+QC_TESTS = {"C" : "Climatological",
+            "D" : "Distribution - Monthly",
+            "E" : "Clean Up",
+            "F" : "Frequent Value",
+            "H" : "High Flag Rate",
+            "K" : "Streaks",
+            "L" : "Logic",
+            "N" : "Neighbour",
+            "S" : "Spike",
+            "T" : "Timestamp",
+            "U" : "Diurnal",
+            "V" : "Variance",
+            "W" : "World Records",
+            "d" : "Distribution - all",
+            "h" : "Humidity",
+            "n" : "Precision",
+            "o" : "Odd Cluster",
+            "p" : "Pressure",
+            "w" : "Winds",
+            }
 
 
 MDI = -1.e30
@@ -131,7 +148,7 @@ class Station(object):
 #************************************************************************
 # Subroutines
 #************************************************************************
-def get_station_list(restart_id="", end_id=""):
+def get_station_list(restart_id: str = "", end_id: str = "") -> pd.DataFrame:
     """
     Read in station list file(s) and return dataframe
 
@@ -145,6 +162,9 @@ def get_station_list(restart_id="", end_id=""):
     station_list = pd.read_fwf(setup.STATION_LIST, widths=(11, 9, 10, 7, 3, 40, 5), 
                                header=None, names=("id", "latitude", "longitude", "elevation", "state",
                                                    "name", "wmo"))
+
+    # fill empty entries (default NaN) with blank strings
+    station_list = station_list.fillna("")
 
     # no longer necessary in November 2019 run, kept just in case
 #    station_list2 = pd.read_fwf(os.path.join(setup.SUBDAILY_ROOT_DIR, "ghcnh-stations-2add.txt"), widths=(11, 9, 10, 7, 35), header=None)
@@ -166,7 +186,7 @@ def get_station_list(restart_id="", end_id=""):
 
 
 #************************************************************************
-def insert_flags(qc_flags, flags):
+def insert_flags(qc_flags: np.array, flags: np.array) -> np.array:
     """
     Update QC flags with the new flags
 
@@ -180,10 +200,13 @@ def insert_flags(qc_flags, flags):
 
 
 #************************************************************************
-def populate_station(station, df, obs_var_list, read_flags=False):
+def populate_station(station: Station, df: pd.DataFrame, obs_var_list: list, read_flags: bool = False) -> None:
     """
     Convert Data Frame into internal station and obs_variable objects
 
+    :param Station station: station object to hold information
+    :param DataFrame df: dataframe of input data
+    :param list obs_var_list: list of observed variables
     :param bool read_flags: read in already pre-existing flags
     """
 
@@ -249,7 +272,7 @@ def populate_station(station, df, obs_var_list, read_flags=False):
     return # populate_station
 
 #*********************************************
-def calculate_IQR(data, percentile=0.25):
+def calculate_IQR(data: np.array, percentile: float = 0.25) -> float:
     ''' Calculate the IQR of the data '''
 
     try:
@@ -265,7 +288,7 @@ def calculate_IQR(data, percentile=0.25):
     return sorted_data[n_data - quartile] - sorted_data[quartile] # calculate_IQR
     
 #*********************************************
-def mean_absolute_deviation(data, median=False):    
+def mean_absolute_deviation(data: np.array, median: bool = False) -> float:    
     ''' Calculate the MAD of the data '''
     
     if median:
@@ -277,7 +300,7 @@ def mean_absolute_deviation(data, median=False):
     return mad # mean_absolute_deviation
 
 #*********************************************
-def linear(X, p):
+def linear(X: np.array, p: np.array) -> np.array:
     '''
     decay function for line fitting
     p[0]=intercept
@@ -286,7 +309,7 @@ def linear(X, p):
     return p[1]*X + p[0] # linear
 
 #*********************************************
-def residuals_linear(p, Y, X):
+def residuals_linear(p: np.array, Y: np.array, X: np.array) -> np.array:
     '''
     Least squared residuals from linear trend
     '''
@@ -294,15 +317,79 @@ def residuals_linear(p, Y, X):
 
     return err # residuals_linear
 
+
 #*********************************************
-def get_critical_values(indata, binmin=0, binwidth=1, plots=False, diagnostics=False, \
-                        line_label="", xlabel="", title="", old_threshold=0):
+def gcv_calculate_binmax(indata: np.array, binmin: float, binwidth: float) -> float:
+    """
+    Determine the appropriate largest bin to use.
+
+    :param array indata: input data to bin up
+    :param float binmin: minimum bin value
+    :param float binwidth: bin width
+
+    :returns: binmax (float)       
+    """
+    logger = logging.getLogger(__name__)
+
+    MAX_N_BINS = 20000
+    # so that have sufficient x-bins to fit to
+    binmax = np.max([2 * max(np.ceil(np.abs(indata))), 10])
+
+    # if too big, then adjust
+    if (binmax - binmin)/binwidth > MAX_N_BINS:
+        # too many bins, will run out of memory
+        logger.warning(f" Too many bins requested: {binmin} to {binmax} in steps of {binwidth}")
+        binmax = binmin + (MAX_N_BINS * binwidth)
+        logger.warning(f" Setting binmax to {binmax}")
+
+    return binmax  #gcv_calculate_binmax
+    
+
+
+def gcv_central_section(full_hist: np.array) -> tuple[int, int]:
+    """
+    A routine to determine if, for a distribution with multiple peaks, the central
+    section is sufficiently big.
+    
+    """
+
+
+    # use only the central section (as long as it's 5(10) or more bins)
+    for limit_threshold in [5, 10]:
+        i = 0
+        n_zeros = 0
+        limit = 0
+        while limit < limit_threshold:
+            # count outwards until there is a zero-valued bin
+            try:
+                limit = np.argwhere(full_hist == 0)[i][0]
+                n_zeros += 1
+                i += 1
+            except IndexError:
+                # no zero bins in this histogram
+                limit = len(full_hist)
+                break
+
+        if n_zeros >= 3 and limit == 5:
+            # check the next limit
+            pass
+        else:
+            # got a decent enough central region
+            #   or extended limit isn't enough either, caught later
+            break
+
+    return limit, n_zeros  # gcv_central_section
+
+
+#*********************************************
+def get_critical_values(indata: np.array, binmin: float = 0, binwidth: float = 1, plots: bool = False, diagnostics: bool = False, \
+                        line_label: str = "", xlabel: str = "", title: str = "", old_threshold: float = 0) -> float:
     """
     Plot histogram on log-y scale and fit 1/x decay curve to set threshold
 
     :param array indata: input data to bin up
-    :param int binmin: minimum bin value
-    :param int binwidth: bin width
+    :param float binmin: minimum bin value
+    :param float binwidth: bin width
     :param bool plots: do the plots
     :param bool diagnostics : do diagnostic outputs
     :param str line_label: label for plotted histogram
@@ -312,39 +399,18 @@ def get_critical_values(indata, binmin=0, binwidth=1, plots=False, diagnostics=F
     :returns:
        critical value
 
-    """    
+    """
+
     if len(set(indata)) > 1:
 
         # set up the bins and make a histogram.  Use Absolute values
-        max_bin = np.max([2 * max(np.ceil(np.abs(indata))), 10]) # so that have sufficient to fit to
-        bins = np.arange(binmin, max_bin, binwidth)
+        binmax = gcv_calculate_binmax(indata, binmin, binwidth)
+        bins = np.arange(binmin, binmax, binwidth)
         full_hist, full_edges = np.histogram(np.abs(indata), bins=bins)
 
         if len(full_hist) > 1:
 
-            # use only the central section (as long as it's 5(10) or more bins)
-            for limit_threshold in [5, 10]:
-                i = 0
-                n_zeros = 0
-                limit = 0
-                while limit < limit_threshold:
-                    # count outwards until there is a zero-valued bin
-                    try:
-                        limit = np.argwhere(full_hist == 0)[i][0]
-                        n_zeros += 1
-                        i += 1
-                    except IndexError:
-                        # no zero bins in this histogram
-                        limit = len(full_hist)
-                        break
-
-                if n_zeros >= 3 and limit == 5:
-                    # check the next limit
-                    pass
-                else:
-                    # got a decent enough central region
-                    #   or extended limit isn't enough either, caught later
-                    break
+            limit, n_zeros = gcv_central_section(full_hist)
 
             if limit == 10 and n_zeros >= 7:
                 # extended central bit is mainly zeros
@@ -418,7 +484,7 @@ def get_critical_values(indata, binmin=0, binwidth=1, plots=False, diagnostics=F
     return threshold # get_critical_values
 
 #*********************************************
-def plot_log_distribution(edges, hist, fit, threshold, line_label, xlabel, title):
+def plot_log_distribution(edges: np.array, hist: np.array, fit: np.array, threshold: float, line_label: str, xlabel: str, title: str) -> None:
     """
     Plot distribution on a log scale and show the fit
 
@@ -449,7 +515,7 @@ def plot_log_distribution(edges, hist, fit, threshold, line_label, xlabel, title
 
 
 #*********************************************
-def average(data):
+def average(data: np.array) -> float:
     """
     Routine to wrap mean or median functions so can easily switch
     """
@@ -462,7 +528,7 @@ def average(data):
     # average
 
 #*********************************************
-def spread(data):
+def spread(data: np.array) -> float:
     """
     Routine to wrap st-dev, IQR or MAD functions so can easily switch
     """
@@ -484,7 +550,7 @@ def spread(data):
     # spread
 
 #*********************************************
-def winsorize(data, percent):
+def winsorize(data: np.array, percent: float) -> np.array:
     """
     Replace data greater/less than upper/lower percentile with percentile value
     """
@@ -503,7 +569,7 @@ def winsorize(data, percent):
     return data # winsorize
 
 #************************************************************************
-def create_bins(data, width, obs_var_name, anomalies=False):
+def create_bins(data: np.array, width: float, obs_var_name: str, anomalies: bool = False):
 
     bmin = np.floor(np.ma.min(data))
     bmax = np.ceil(np.ma.max(data))
@@ -542,7 +608,7 @@ def create_bins(data, width, obs_var_name, anomalies=False):
         return bins # create_bins
 
 #*********************************************
-def gaussian(X, p):
+def gaussian(X: np.array, p: np.array) -> np.array:
     '''
     Gaussian function for line fitting
     p[0]=norm
@@ -553,7 +619,7 @@ def gaussian(X, p):
     return (norm*(np.exp(-((X-mu)*(X-mu))/(2.0*sig*sig)))) # gaussian
 
 #*********************************************
-def skew_gaussian(X, p):
+def skew_gaussian(X: np.array, p: np.array) -> np.array:
     '''
     Gaussian function for line fitting
     p[0]=norm
@@ -566,7 +632,7 @@ def skew_gaussian(X, p):
         (1 + scipy.special.erf(skew*(X-mu)/(sig*np.sqrt(2)))) # skew_gaussian
 
 #*********************************************
-def residuals_skew_gaussian(p, Y, X):
+def residuals_skew_gaussian(p: np.array, Y: np.array, X: np.array) -> np.array:
     '''
     Least squared residuals from linear trend
     '''
@@ -575,7 +641,7 @@ def residuals_skew_gaussian(p, Y, X):
     return err # residuals_skew_gaussian
 
 #*********************************************
-def invert_gaussian(Y, p):
+def invert_gaussian(Y: float, p: float) -> float:
     '''
     X value of Gaussian at given Y
     p[0]=norm
@@ -586,7 +652,7 @@ def invert_gaussian(Y, p):
     return mu + (sig*np.sqrt(-2*np.log(Y/norm))) # invert_gaussian
 
 #*********************************************
-def residuals_gaussian(p, Y, X):
+def residuals_gaussian(p: np.array, Y: np.array, X: np.array) -> np.array:
     '''
     Least squared residuals from linear trend
     '''
@@ -595,7 +661,7 @@ def residuals_gaussian(p, Y, X):
     return err # residuals_gaussian
 
 #*********************************************
-def fit_gaussian(x, y, norm, mu=MDI, sig=MDI, skew=MDI):
+def fit_gaussian(x: np.array, y: np.array, norm: float, mu: float = MDI, sig: float = MDI, skew: float = MDI) -> np.array:
     '''
     Fit a gaussian to the data provided
     Inputs:
@@ -614,6 +680,11 @@ def fit_gaussian(x, y, norm, mu=MDI, sig=MDI, skew=MDI):
         # calculation of spread hasn't worked for some reason
         sig = 3.*np.unique(np.diff(x))[0]
 
+    if np.isnan(skew):
+        # calculation of skew hasn't worked for some reason (e.g. no variation in values, all==0)
+        skew = 0
+
+    # call the appropriate fitting function and routine
     if skew == MDI:
         p0 = np.array([norm, mu, sig])
         result = least_squares(residuals_gaussian, p0, args=(y, x), max_nfev=10000, verbose=0, method="lm")
@@ -623,7 +694,7 @@ def fit_gaussian(x, y, norm, mu=MDI, sig=MDI, skew=MDI):
     return result.x # fit_gaussian
 
 #************************************************************************
-def find_gap(hist, bins, threshold, gap_size, upwards=True):
+def find_gap(hist: np.array, bins: np.array, threshold: float, gap_size: int, upwards: bool = True) -> float:
     '''
     Walk the bins of the distribution to find a gap and return where it starts
    
@@ -678,7 +749,7 @@ def find_gap(hist, bins, threshold, gap_size, upwards=True):
     return gap_start # find_gap
 
 #*********************************************
-def reporting_accuracy(indata, winddir=False, plots=False):
+def reporting_accuracy(indata: np.array, winddir: bool = False, plots: bool = False) -> float:
     '''
     Uses histogram of remainders to look for special values
 
@@ -740,10 +811,16 @@ def reporting_accuracy(indata, winddir=False, plots=False):
             else:
                 resolution = 0.1
 
+            if plots:
+                import matplotlib.pyplot as plt
+                plt.clf()
+                plt.hist(remainders, bins=np.arange(-0.05, 1.05, 0.1), density=True)
+                plt.show()
+
     return resolution # reporting_accuracy
 
 #*********************************************
-def reporting_frequency(intimes, inobs):
+def reporting_frequency(intimes: np.array, inobs: np.array) -> float:
     '''
     Uses histogram of remainders to look for special values
 
@@ -798,7 +875,7 @@ def reporting_frequency(intimes, inobs):
 
 #*********************************************
 #DEPRECATED - now in a test
-def high_flagging(station):
+def high_flagging(station: Station) -> bool:
     """
     Check flags for each observational variable, and return True if any 
     has too large a proportion flagged
@@ -832,7 +909,7 @@ def high_flagging(station):
 
 
 #************************************************************************
-def find_country_code(lat, lon):
+def find_country_code(lat: float, lon: float) -> str:
     """
     Use reverse Geocoder to find closest city to each station, and hence
     find the country code.
@@ -849,7 +926,7 @@ def find_country_code(lat, lon):
     return country # find_country_code
 
 #************************************************************************
-def find_continent(country_code):
+def find_continent(country_code: str) -> str:
     """
     Use ISO country list to find continent from country_code.
 
@@ -869,3 +946,64 @@ def find_continent(country_code):
         concord[entry["Code"]] = entry["continent"]
 
     return concord[country_code]
+
+#************************************************************************
+def prepare_data_repeating_string(data, diff=0, plots=False, diagnostics=False):
+    """
+    Prepare the data for repeating strings
+
+    :param np.array data: data to assess
+    :param int diff: difference to look for (0 in strings of data, 1 in strings of indices)
+    :param bool plots: turn on plots
+    :param bool diagnostics: turn on diagnostic output
+    """
+
+    # want locations where first differences are zero
+    #   does not change if time or instrumental resolution changes.
+    #   if there is zero difference between one obs or index and the next, that's the main thing
+    value_diffs = np.ma.diff(data)
+
+    # group the differences
+    #     array of (value_diff, count) pairs
+    grouped_diffs = np.array([[g[0], len(list(g[1]))] for g in itertools.groupby(value_diffs)])
+
+    # all string lengths
+    strings, = np.where(grouped_diffs[:, 0] == diff)
+    repeated_string_lengths = grouped_diffs[strings, 1] + 1
+ 
+    return repeated_string_lengths, grouped_diffs, strings # prepare_data_repeating_string
+
+
+#************************************************************************
+def custom_logger(logfile):
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+    # Remove any current handlers; the handlers persist within the same
+    # Python session, so ensure the root logger is 'clean' every time
+    # this function is called. Note that using logger.removeHandler()
+    # doesn't work reliably
+    logger.handlers = []
+
+    # create console handler with a higher log level
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.WARNING)
+
+    # create file handler to capture all output
+    fh = logging.FileHandler(logfile, "w")
+    fh.setLevel(logging.INFO)
+
+    # create formatter and add it to the handlers
+    logconsole_format = logging.Formatter('%(levelname)-8s %(message)s',
+                                          datefmt='%Y-%m-%d %H:%M:%S')
+    ch.setFormatter(logconsole_format)
+
+    logfile_format = logging.Formatter('%(asctime)s %(module)s %(levelname)-8s %(message)s',
+                                    datefmt='%Y-%m-%d %H:%M:%S')
+    fh.setFormatter(logfile_format)
+
+    # add the handlers to logger
+    logger.addHandler(ch)
+    logger.addHandler(fh)    
+
+    return logger

@@ -24,7 +24,7 @@ TODAY_MONTH = dt.datetime.strftime(TODAY, "%B").upper()
 
 # ------------------------------------------------------------------------
 # process the station list
-def main(restart_id="", end_id="", clobber=False):
+def main(restart_id: str = "", end_id: str = "", clobber: bool = False) -> None:
     """
     Main script.  Makes inventory and other metadata files
 

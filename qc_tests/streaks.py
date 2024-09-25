@@ -12,9 +12,9 @@ Repeated Streaks Check
 """
 #************************************************************************
 import copy
-import itertools
 import numpy as np
-
+import logging
+logger = logging.getLogger(__name__)
 
 import qc_utils as utils
 
@@ -50,30 +50,6 @@ def plot_streak(times, obs_var, streak_start, streak_end):
 
     return # plot_streak
 
-#************************************************************************
-def prepare_data_repeating_string(obs_var, plots=False, diagnostics=False):
-    """
-    Prepare the data for repeating strings
-
-    :param MetVar obs_var: meteorological variable object
-    :param bool plots: turn on plots
-    :param bool diagnostics: turn on diagnostic output
-    """
-
-    # want locations where first differences are zero
-    #   does not change if time or instrumental resolution changes.
-    #   if there is zero difference between one obs and the next, that's the main thing
-    value_diffs = np.ma.diff(obs_var.data.compressed())
-
-    # group the differences
-    #     array of (value_diff, count) pairs
-    grouped_diffs = np.array([[g[0], len(list(g[1]))] for g in itertools.groupby(value_diffs)])
-
-    # all string lengths
-    strings, = np.where(grouped_diffs[:, 0] == 0)
-    repeated_string_lengths = grouped_diffs[strings, 1] + 1
- 
-    return repeated_string_lengths, grouped_diffs, strings # prepare_data_repeating_string
 
 #************************************************************************
 def get_repeating_string_threshold(obs_var, config_dict, plots=False, diagnostics=False):
@@ -96,7 +72,7 @@ def get_repeating_string_threshold(obs_var, config_dict, plots=False, diagnostic
     # only process further if there is enough data
     if len(this_var.data.compressed()) > 1:
 
-        repeated_string_lengths, grouped_diffs, strings = prepare_data_repeating_string(this_var, plots=plots, diagnostics=diagnostics)
+        repeated_string_lengths, _, _ = utils.prepare_data_repeating_string(this_var.data.compressed(), diff=0, plots=plots, diagnostics=diagnostics)
 
         # bin width is 1 as dealing in time index.
         # minimum bin value is 2 as this is the shortest string possible
@@ -151,14 +127,13 @@ def repeating_value(obs_var, times, config_dict, plots=False, diagnostics=False)
         threshold["Straight"] = th
     except KeyError:
         # no threshold set
-        print("Threshold missing in config file")
         get_repeating_string_threshold(this_var, config_dict, plots=plots, diagnostics=diagnostics)
         th = config_dict["STREAK-{}".format(this_var.name)]["Straight"]
         threshold["Straight"] = th
 
     # only process further if there is enough data
     if len(this_var.data.compressed()) > 1:
-        repeated_string_lengths, grouped_diffs, strings = prepare_data_repeating_string(this_var, plots=plots, diagnostics=diagnostics)
+        repeated_string_lengths, grouped_diffs, strings = utils.prepare_data_repeating_string(this_var.data.compressed(), diff=0, plots=plots, diagnostics=diagnostics)
 
         # above threshold
         bad, = np.where(repeated_string_lengths >= threshold["Straight"])
@@ -177,10 +152,8 @@ def repeating_value(obs_var, times, config_dict, plots=False, diagnostics=False)
         flags[this_var.data.mask == False] = compressed_flags
         obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
-    if diagnostics:
-
-        print("Repeated Strings {}".format(this_var.name))
-        print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
+    logger.info(f"Repeated Strings {this_var.name}")
+    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # repeating_value
 

@@ -9,6 +9,8 @@ Distributional Gap Checks
 import copy
 import numpy as np
 from scipy.stats import skew
+import logging
+logger = logging.getLogger(__name__)
 
 import qc_utils as utils
 #************************************************************************
@@ -22,7 +24,8 @@ LARGE_LIMIT = 5
 GAP_SIZE = 2
 FREQUENCY_THRESHOLD = 0.1
 #************************************************************************
-def prepare_monthly_data(obs_var, station, month, diagnostics=False):
+def prepare_monthly_data(obs_var: utils.Meteorological_Variable, station: utils.Station,
+                         month: int, diagnostics: bool = False) -> None:
     """
     Extract monthly data and make average.
 
@@ -51,7 +54,8 @@ def prepare_monthly_data(obs_var, station, month, diagnostics=False):
 
 
 #************************************************************************
-def find_monthly_scaling(obs_var, station, config_dict, diagnostics=False):
+def find_monthly_scaling(obs_var: utils.Meteorological_Variable, station: utils.Station,
+                         config_dict: dict, diagnostics: bool = False) -> None:
     """
     Find scaling parameters for monthly values and store in config file
 
@@ -61,7 +65,7 @@ def find_monthly_scaling(obs_var, station, config_dict, diagnostics=False):
     :param bool diagnostics: turn on diagnostic output
     """
 
-    all_years = np.unique(station.years)
+    # all_years = np.unique(station.years)
 
     for month in range(1, 13):
 
@@ -95,7 +99,8 @@ def find_monthly_scaling(obs_var, station, config_dict, diagnostics=False):
     return # find_monthly_scaling
 
 #************************************************************************
-def monthly_gap(obs_var, station, config_dict, plots=False, diagnostics=False):
+def monthly_gap(obs_var: utils.Meteorological_Variable, station: utils.Station, config_dict: dict,
+                plots: bool = False, diagnostics: bool = False) -> None:
     """
     Use distribution to identify assymetries.
 
@@ -196,15 +201,14 @@ def monthly_gap(obs_var, station, config_dict, plots=False, diagnostics=False):
     # append flags to object
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
-    if diagnostics:
-
-        print("Distribution (monthly) {}".format(obs_var.name))
-        print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
+    logger.info(f"Distribution (monthly) {obs_var.name}")
+    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # monthly_gap
 
 #************************************************************************
-def prepare_all_data(obs_var, station, month, config_dict, full=False, diagnostics=False):
+def prepare_all_data(obs_var: utils.Meteorological_Variable, station: utils.Station, month: int,
+                     config_dict: dict, full: bool = False, diagnostics: bool = False) -> np.array:
     """
     Extract data for the month, make & store or read average and spread.
     Use to calculate normalised anomalies.
@@ -232,7 +236,7 @@ def prepare_all_data(obs_var, station, month, config_dict, full=False, diagnosti
 
         # write out the scaling...
         try:
-            config_dict["ADISTRIBUTION-{}".format(obs_var.name)]["{}-clim".format(month)] : climatology
+            config_dict["ADISTRIBUTION-{}".format(obs_var.name)]["{}-clim".format(month)] = climatology
         except KeyError:
             CD_clim = {"{}-clim".format(month) : climatology}
             config_dict["ADISTRIBUTION-{}".format(obs_var.name)] = CD_clim
@@ -271,7 +275,8 @@ def prepare_all_data(obs_var, station, month, config_dict, full=False, diagnosti
         return (all_month_data - climatology)/spread  # prepare_all_data
 
 #************************************************************************
-def find_thresholds(obs_var, station, config_dict, plots=False, diagnostics=False):
+def find_thresholds(obs_var: utils.Meteorological_Variable, station: utils.Station,
+                    config_dict: dict, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Extract data for month and find thresholds in distribution and store.
 
@@ -281,7 +286,6 @@ def find_thresholds(obs_var, station, config_dict, plots=False, diagnostics=Fals
     :param str config_dict: configuration file to store critical values
     :param bool diagnostics: turn on diagnostic output
     """
-
 
     for month in range(1, 13):
 
@@ -360,7 +364,7 @@ def find_thresholds(obs_var, station, config_dict, plots=False, diagnostics=Fals
     return # find_thresholds
 
 #************************************************************************
-def expand_around_storms(storms, maximum, pad=6):
+def expand_around_storms(storms: np.array, maximum: int, pad: int = 6) -> np.array:
     """
     Pad storm signal by N=6 hours
 
@@ -375,7 +379,8 @@ def expand_around_storms(storms, maximum, pad=6):
     return np.unique(storms) # expand_around_storms
 
 #************************************************************************
-def all_obs_gap(obs_var, station, config_dict, plots=False, diagnostics=False):
+def all_obs_gap(obs_var: utils.Meteorological_Variable, station: utils.Station,
+                config_dict: dict, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Extract data for month and find secondary populations in distribution.
 
@@ -403,7 +408,6 @@ def all_obs_gap(obs_var, station, config_dict, plots=False, diagnostics=False):
             upper_threshold = float(config_dict["ADISTRIBUTION-{}".format(obs_var.name)]["{}-uthresh".format(month)])
             lower_threshold = float(config_dict["ADISTRIBUTION-{}".format(obs_var.name)]["{}-lthresh".format(month)])
         except KeyError:
-            print("Information missing in config dictionary")
             find_thresholds(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
             upper_threshold = float(config_dict["ADISTRIBUTION-{}".format(obs_var.name)]["{}-uthresh".format(month)])
             lower_threshold = float(config_dict["ADISTRIBUTION-{}".format(obs_var.name)]["{}-lthresh".format(month)])
@@ -542,15 +546,14 @@ def all_obs_gap(obs_var, station, config_dict, plots=False, diagnostics=False):
     # append flags to object
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
-    if diagnostics:
 
-        print("Distribution (all) {}".format(obs_var.name))
-        print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
+    logger.info(f"Distribution (all) {obs_var.name}")
+    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # all_obs_gap
 
 #************************************************************************
-def dgc(station, var_list, config_dict, full=False, plots=False, diagnostics=False):
+def dgc(station: utils.Station, var_list: list, config_dict: dict, full: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Run through the variables and pass to the Distributional Gap Checks
 

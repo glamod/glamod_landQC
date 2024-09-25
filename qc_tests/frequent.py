@@ -6,6 +6,8 @@ Check for observation values which occur much more frequently than expected.
 """
 #************************************************************************
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 import qc_utils as utils
 #************************************************************************
@@ -15,7 +17,8 @@ BIN_WIDTH = 1.0
 RATIO = 0.5
 
 #************************************************************************
-def identify_values(obs_var, station, config_dict, plots=False, diagnostics=False):
+def identify_values(obs_var: utils.Meteorological_Variable, station: utils.Station, config_dict: dict,
+                    plots: bool = False, diagnostics: bool = False) -> None:
     """
     Use distribution to identify frequent values.  Then also store in config file.
 
@@ -97,7 +100,8 @@ def identify_values(obs_var, station, config_dict, plots=False, diagnostics=Fals
 
 
 #************************************************************************
-def frequent_values(obs_var, station, config_dict, plots=False, diagnostics=False):
+def frequent_values(obs_var: utils.Meteorological_Variable, station: utils.Station,
+                    config_dict: dict, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Use config file to read frequent values.  Check each month to see if appear.
 
@@ -120,7 +124,6 @@ def frequent_values(obs_var, station, config_dict, plots=False, diagnostics=Fals
             width = float(config_dict["FREQUENT-{}".format(obs_var.name)]["width"])
             suspect_bins = config_dict["FREQUENT-{}".format(obs_var.name)]["{}".format(month)]
         except KeyError:
-            print("Information missing in config dictionary")
             identify_values(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
             width = float(config_dict["FREQUENT-{}".format(obs_var.name)]["width"])
             suspect_bins = config_dict["FREQUENT-{}".format(obs_var.name)]["{}".format(month)]
@@ -192,15 +195,13 @@ def frequent_values(obs_var, station, config_dict, plots=False, diagnostics=Fals
     # append flags to object
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
-    if diagnostics:
-
-        print("Frequent Values {}".format(obs_var.name))
-        print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
+    logger.info(f"Frequent Values {obs_var.name}")
+    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # frequent_values
 
 #************************************************************************
-def fvc(station, var_list, config_dict, full=False, plots=False, diagnostics=False):
+def fvc(station: utils.Station, var_list: list, config_dict: dict, full: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Run through the variables and pass to the Frequent Value Check
 

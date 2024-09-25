@@ -92,11 +92,11 @@ function write_and_submit_kay_script {
 	kay_script="${SCRIPT_DIR}/kay_external_${batch}.bash"
     fi
     
-    if [ ! -e "${kay_script}" ]; then
+    if [ -e "${kay_script}" ]; then
 	rm "${kay_script}"
     fi
     write_kay_script "${kay_script}" "${taskfarm_script}" "${batch}" "${email}"
-
+    
     sbatch < "${kay_script}"
 
 } # write_and_submit_kay_script
@@ -179,7 +179,9 @@ stn_ids=$(awk -F" " '{print $1}' "${station_list_file}")
 #**************************************
 echo "Check all upstream stations present"
 missing_file=missing.txt
-rm ${missing_file}
+if [ -e ${missing_file} ]; then
+    rm ${missing_file}
+fi
 touch ${missing_file}
 for stn in ${stn_ids}
 do
@@ -250,38 +252,38 @@ do
     do
     # check if upstream data files are present
 	if [ "${STAGE}" == "I" ]; then
-            if [ -f "${MFF_DIR}${MFF_VER}${stn}.mff" ]; then
-		submit=true
-            fi
+        if [ -f "${MFF_DIR}${MFF_VER}${stn}.mff" ]; then
+		    submit=true
+        fi
 	elif [ "${STAGE}" == "N" ]; then
-            if [ -f "${ROOTDIR}${PROC_DIR}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
-		submit=true
-            elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
-		# if station not processed, then no point submitting
-		submit=false
-            elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}.err" ]; then
-		# if station has had an error, then no point in submitting
-		submit=false
+        if [ -f "${ROOTDIR}${PROC_DIR}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
+		    submit=true
+        elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
+		    # if station not processed, then no point submitting
+		    submit=false
+        elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}.err" ]; then
+		    # if station has had an error, then no point in submitting
+		    submit=false
 #            else
 #                # file may well have been withheld, so skip for the moment
 #                # 2020-06-01 - needs to be sorted better (checking the bad_stations folder)
 #                submit=true
-            fi
+        fi
 	fi
         
 	# option to skip over if upstream missing through unexpected way
 	if [ "${WAIT}" == "T" ]; then	    
-            if [ ${submit} == false ]; then
-		echo "upstream file ${stn} missing, sleeping 1m"
-		sleep 1m
-            fi
+        if [ ${submit} == false ]; then
+		    echo "upstream file ${stn} missing, sleeping 1m"
+		    sleep 1m
+        fi
 	    
 	elif [ "${WAIT}" == "F" ]; then	    
-            if [ ${submit} == false ]; then
-		echo "upstream file ${stn} missing, skipping"
-		break
+        if [ ${submit} == false ]; then
+		    echo "upstream file ${stn} missing, skipping"
+		    break
 	        # to escape the loop as we will skip this file
-            fi
+        fi
 	fi
     done
     
@@ -290,26 +292,27 @@ do
     if [ ${submit} == true ]; then
 
         if [ "${STAGE}" == "I" ]; then
-	    if [ ! -e "${ROOTDIR}${PROC_DIR}${VERSION}" ]; then
-		mkdir "${ROOTDIR}${PROC_DIR}${VERSION}"
-	    fi
-	elif [ "${STAGE}" == "N" ]; then
-	    if [ ! -e "${ROOTDIR}${QFF_DIR}${VERSION}" ]; then
-		mkdir "${ROOTDIR}${QFF_DIR}${VERSION}"
-	    fi
-	fi
+	        if [ ! -e "${ROOTDIR}${PROC_DIR}${VERSION}" ]; then
+		        mkdir "${ROOTDIR}${PROC_DIR}${VERSION}"
+	        fi
+	    elif [ "${STAGE}" == "N" ]; then
+	        if [ ! -e "${ROOTDIR}${QFF_DIR}${VERSION}" ]; then
+		        mkdir "${ROOTDIR}${QFF_DIR}${VERSION}"
+	        fi
+    	fi
 
         # if overwrite
         if [ "${CLOBBER}" == "C" ]; then
 
-	    if [ "${STAGE}" == "I" ]; then
-		echo "python3 ${cwd}/intra_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics --clobber" >> "${taskfarm_script}"
-	    elif  [ "${STAGE}" == "N" ]; then
-		echo "python3 ${cwd}/inter_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics --clobber" >> "${taskfarm_script}"
-	    fi
+	        if [ "${STAGE}" == "I" ]; then
+		        echo "python3 ${cwd}/intra_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics --clobber" >> "${taskfarm_script}"
+	        elif  [ "${STAGE}" == "N" ]; then
+		        echo "python3 ${cwd}/inter_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics --clobber" >> "${taskfarm_script}"
+	        fi
 
-	# if not overwrite
-	else
+	    # if not overwrite
+	    else
+
             # check if already processed before setting going
             if [ "${STAGE}" == "I" ]; then
 
@@ -326,8 +329,10 @@ do
                     echo "${stn} already processed - managed error"
 
                 else
-		    # no output, include
-		    echo "python3 ${cwd}/intra_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics" >> "${taskfarm_script}"
+
+		            # no output, include
+		            echo "python3 ${cwd}/intra_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics" >> "${taskfarm_script}"
+
                 fi
  
             elif [ "${STAGE}" == "N" ]; then
@@ -345,19 +350,19 @@ do
                     echo "${stn} already processed - managed error"
 
                 else
-		    # no output, include
+		            # no output, include
                     echo "python3 ${cwd}/inter_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics" >> "${taskfarm_script}"
-                fi
 
-	    fi # stage
-	fi # clobber
+                    # increment station counter (don't for other elifs to reduce jobs)
+                    let scnt=scnt+1
+
+                fi
+	        fi # stage
+	    fi # clobber
 
     else
-	echo "${stn} not submitted, upstream file not available"
+	    echo "${stn} not submitted, upstream file not available"
     fi # submit
-
-    # increment station counter
-    let scnt=scnt+1
     
     # and write script to run this batch
     if [ ${scnt} -eq ${STATIONS_PER_BATCH} ]; then

@@ -7,6 +7,8 @@ Checks for months with higher/lower variance than expected
 """
 #************************************************************************
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 import qc_utils as utils
 #************************************************************************
@@ -16,7 +18,7 @@ SPREAD_THRESHOLD = 8.
 MIN_VALUES = 30
 
 #************************************************************************
-def prepare_data(obs_var, station, month, diagnostics=False, winsorize=True):
+def prepare_data(obs_var: utils.Meteorological_Variable, station: utils.Station, month:int, diagnostics: bool = False, winsorize: bool = True) -> np.array:
     """
     Calculate the monthly variances
 
@@ -84,7 +86,8 @@ def prepare_data(obs_var, station, month, diagnostics=False, winsorize=True):
     return variances # prepare_data
 
 #************************************************************************
-def find_thresholds(obs_var, station, config_dict, plots=False, diagnostics=False, winsorize=True):
+def find_thresholds(obs_var: utils.Meteorological_Variable, station: utils.Station, config_dict: dict,
+                    plots: bool = False, diagnostics: bool = False, winsorize: bool = True) -> None:
     """
     Use distribution to identify threshold values.  Then also store in config dictionary.
 
@@ -119,7 +122,7 @@ def find_thresholds(obs_var, station, config_dict, plots=False, diagnostics=Fals
     return # find_thresholds
 
 #************************************************************************
-def variance_check(obs_var, station, config_dict, plots=False, diagnostics=False, winsorize=True):
+def variance_check(obs_var: utils.Meteorological_Variable, station: utils.Station, config_dict: dict, plots: bool = False, diagnostics: bool = False, winsorize: bool = True) -> None:
     """
     Use distribution to identify threshold values.  Then also store in config file.
 
@@ -143,11 +146,9 @@ def variance_check(obs_var, station, config_dict, plots=False, diagnostics=False
             average_variance = float(config_dict["VARIANCE-{}".format(obs_var.name)]["{}-average".format(month)])
             variance_spread = float(config_dict["VARIANCE-{}".format(obs_var.name)]["{}-spread".format(month)])
         except KeyError:
-            print("Information missing in config dictionary")
             find_thresholds(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
             average_variance = float(config_dict["VARIANCE-{}".format(obs_var.name)]["{}-average".format(month)])
             variance_spread = float(config_dict["VARIANCE-{}".format(obs_var.name)]["{}-spread".format(month)])
-
 
         if average_variance == utils.MDI and variance_spread == utils.MDI:
             # couldn't be calculated, move on
@@ -274,15 +275,13 @@ def variance_check(obs_var, station, config_dict, plots=False, diagnostics=False
     # append flags to object
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
-    if diagnostics:
-
-        print("Variance {}".format(obs_var.name))
-        print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
+    logger.info(f"Variance {obs_var.name}")
+    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # variance_check
 
 #************************************************************************
-def evc(station, var_list, config_dict, full=False, plots=False, diagnostics=False):
+def evc(station: utils.Station, var_list: list, config_dict: dict, full: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Run through the variables and pass to the Excess Variance Check
 

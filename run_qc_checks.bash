@@ -31,6 +31,8 @@ shift
 shift
 shift
 
+#**************************************
+# other settings
 if [ "${STAGE}" == "I" ]; then
     MAX_N_JOBS=150
 elif [ "${STAGE}" == "N" ]; then
@@ -49,26 +51,30 @@ if [ ! -d ${LOG_DIR} ]; then
     mkdir ${LOG_DIR}
 fi
 
+#**************************************
 # use configuration file to pull out paths &c
 CONFIG_FILE="${cwd}/configuration.txt"
 
-VENVDIR=$(grep "venvdir " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
+# VENVDIR="$(grep "venvdir " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 # using spaces after setting ID to ensure pull out correct line
 # these are fixed references
-ROOTDIR=$(grep "root " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
+ROOTDIR="$(grep "root " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 
 # extract remaining locations
-MFF=$(grep "mff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
-MFF_VER=$(grep "mff_version " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
-PROC=$(grep "proc " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
-QFF=$(grep "qff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
-VERSION=$(grep "version " "${CONFIG_FILE}" | grep -v "${MFF_VER}" | awk -F'= ' '{print $2}')
-ERR=${QFF%/}_errors/
+MFF_DIR="$(grep "mff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
+MFF_VER="$(grep "mff_version " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
+MFF_ZIP="$(grep "in_compression " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
+PROC_DIR="$(grep "proc " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
+QFF_DIR="$(grep "qff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
+QFF_ZIP="$(grep "out_compression " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
+VERSION="$(grep "version " "${CONFIG_FILE}" | grep -v "${MFF_VER}" | awk -F'= ' '{print $2}')"
+ERR_DIR="$(grep "errors " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"  # ${QFF_DIR%/}_errors/
 
+#**************************************
 # if neighbour checks make sure all files in place
 if [ "${STAGE}" == "N" ]; then
-    echo "${ROOTDIR}${QFF%/}_configs/${VERSION}neighbours.txt"
-    if [ ! -f "${ROOTDIR}${QFF%/}_configs/${VERSION}neighbours.txt" ]; then
+    echo "${ROOTDIR}${QFF_DIR%/}_configs/${VERSION}neighbours.txt"
+    if [ ! -f "${ROOTDIR}${QFF_DIR%/}_configs/${VERSION}neighbours.txt" ]; then
         read -p "Neighbour file missing - do you want to run Y/N" run_neighbours
 
 	    if [ "${run_neighbours}" == "Y" ]; then
@@ -93,22 +99,24 @@ stn_ids=`awk -F" " '{print $1}' ${station_list_file}`
 #**************************************
 echo "Check all upstream stations present"
 missing_file=missing.txt
-rm ${missing_file}
+if [ -e ${missing_file} ]; then
+    rm ${missing_file}
+fi
 touch ${missing_file}
 for stn in ${stn_ids}
 do
     processed=false
     if [ "${STAGE}" == "I" ]; then
-        if [ -f "${MFF}${MFF_VER}${stn}.mff" ]; then
+        if [ -f "${MFF_DIR}${MFF_VER}${stn}.mff${MFF_ZIP}" ]; then
             processed=true
         fi
     elif [ "${STAGE}" == "N" ]; then
-        if [ -f "${ROOTDIR}${PROC}${VERSION}${stn}.qff" ]; then
+        if [ -f "${ROOTDIR}${PROC_DIR}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
             processed=true
-        elif [ -f "${ROOTDIR}${QFF}${VERSION}bad_stations/${stn}.qff" ]; then
+        elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
             # if station not processed, then has been processed, and won't appear
             processed=true
-        elif [ -f "${ROOTDIR}${ERR}${VERSION}${stn}.err" ]; then
+        elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}.err" ]; then
             # if station has had an error, then has been processed, and won't appear
             processed=true
         fi
@@ -119,6 +127,16 @@ do
     fi
 
 done
+
+if [ "${STAGE}" == "N" ]; then
+    echo "${ROOTDIR}${PROC_DIR}${VERSION}*.qff${QFF_ZIP}"
+    n_processed_successfully=$(eval ls "${ROOTDIR}${PROC_DIR}${VERSION}" | wc -l)
+    echo "Internal checks successful on ${n_processed_successfully} stations"
+    n_processed_bad=$(eval ls "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/*.qff${QFF_ZIP}" | wc -l)
+    echo "Internal checks withheld ${n_processed_bad} stations"
+    n_processed_err=$(eval ls "${ROOTDIR}${ERR_DIR}${VERSION}/*err" | wc -l)
+    echo "Internal checks had errors on ${n_processed_err} stations"
+fi
 
 echo "Checked for all input files - see missing.txt"
 n_missing=`wc ${missing_file} | awk -F' ' '{print $1}'`
@@ -144,9 +162,12 @@ do
  	    lotus_script="${SCRIPT_DIR}/lotus_external_${stn}.bash"
     fi
     echo "#!/bin/bash -l" > ${lotus_script}
-#    echo "#SBATCH --partition=short-serial" >> ${lotus_script}
-    echo "#SBATCH --partition=short-serial-4hr" >> ${lotus_script}
-    echo "#SBATCH --account=short4hr" >> ${lotus_script}
+    # ICHEC settings
+    # echo "#SBATCH --partition=short-serial-4hr" >> ${lotus_script}
+    # echo "#SBATCH --account=short4hr" >> ${lotus_script}
+    # SPICE settings
+    echo "#SBATCH --qos=normal" >> ${lotus_script}
+
     echo "#SBATCH --job-name=QC_${stn}" >> ${lotus_script}
     echo "#SBATCH --output=${LOG_DIR}/${stn}.out" >> ${lotus_script}
     echo "#SBATCH --error=${LOG_DIR}/${stn}.err " >> ${lotus_script}
@@ -163,8 +184,8 @@ do
     fi
     echo "#SBATCH --mem=6000" >> ${lotus_script}
     echo "" >> ${lotus_script}
-    echo "source ${VENVDIR}/bin/activate" >> ${lotus_script}
-#    echo "source /gws/smf/j04/c3s311a_lot2/rjhd2/test_env/bin/activate" >> ${lotus_script}
+    # echo "source ${VENVDIR}/bin/activate" >> ${lotus_script}
+    echo "conda activate glamod_QC" >> ${lotus_script}
     echo "" >> ${lotus_script}
 
     if [ "${STAGE}" == "I" ]; then
@@ -175,20 +196,20 @@ do
 
     # now check if we should submit it.
     # ensure don't overload the queue, max of e.g. 50
-    n_jobs=`squeue --user=rjhd2 | wc -l`
+    n_jobs=`squeue --user="${USER}" | wc -l`
     while [ ${n_jobs} -gt ${MAX_N_JOBS} ];
     do        
         echo "sleeping for ${WAIT_N_MINS}min to clear queue"
         sleep ${WAIT_N_MINS}m
-        n_jobs=`squeue --user=rjhd2 | wc -l`
+        n_jobs=`squeue --user="${USER}" | wc -l`
     done
 
+    let scnt=scnt+1
 # SUBSETTING FOR DIAGNOSTICS
-#    let scnt=scnt+1
-#    if [ ${stn} == "BHM00078584" ]; then
-#        # test first 1000 (20190913)
-#        exit
-#    fi
+#   if [ ${stn} == "AYW00057801" ]; then
+#       # test first 1000 (20240704)
+#       exit
+#   fi
 #    if [ ${scnt} -le 2000 ]; then
 #        # test first 1000 (20190913)
 #        continue
@@ -198,20 +219,19 @@ do
 
     # check target file exists (in case waiting on upstream process)
     submit=false
-
     while [ ${submit} == false ];
     do
         if [ "${STAGE}" == "I" ]; then
-            if [ -f "${MFF}${MFF_VER}${stn}.mff" ]; then
+            if [ -f "${MFF_DIR}${MFF_VER}${stn}.mff${MFF_ZIP}" ]; then
                 submit=true
             fi
         elif [ "${STAGE}" == "N" ]; then
-            if [ -f "${ROOTDIR}${PROC}${VERSION}${stn}.qff" ]; then
+            if [ -f "${ROOTDIR}${PROC_DIR}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
                 submit=true
-            elif [ -f "${ROOTDIR}${QFF}${VERSION}bad_stations/${stn}.qff" ]; then
+            elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
                 # if station not processed, then no point submitting
                 submit=skip
-            elif [ -f "${ROOTDIR}${ERR}${VERSION}${stn}.err" ]; then
+            elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}.err" ]; then
                 # if station has had an error, then no point in submitting
                 submit=skip
                 #            else
@@ -239,34 +259,44 @@ do
         
     done
 
-
-
     # if clear to submit
     if [ $submit == true ]; then
+
+        # make directories if they don't exist
+        if [ "${STAGE}" == "I" ]; then
+	        if [ ! -e "${ROOTDIR}${PROC_DIR}${VERSION}" ]; then
+		        mkdir "${ROOTDIR}${PROC_DIR}${VERSION}"
+	        fi
+	    elif [ "${STAGE}" == "N" ]; then
+	        if [ ! -e "${ROOTDIR}${QFF_DIR}${VERSION}" ]; then
+		        mkdir "${ROOTDIR}${QFF_DIR}${VERSION}"
+	        fi
+    	fi
 
         # if overwrite
         if [ "${CLOBBER}" == "C" ]; then
             sbatch ${lotus_script}
             sleep 1s # allow submission to occur before moving on
 
+	    # if not overwrite
         else
-
             # check if already processed before setting going
             if [ "${STAGE}" == "I" ]; then
 
-                if [ -f "${ROOTDIR}${PROC}${VERSION}${stn}.qff" ]; then
+                if [ -f "${ROOTDIR}${PROC_DIR}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
                     # output exists
                     echo "${stn} already processed"
 
-                elif [ -f "${ROOTDIR}${QFF}${VERSION}bad_stations/${stn}.qff" ]; then
+                elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
                     # output exists
                     echo "${stn} already processed - bad station"
 
-                elif [ -f "${ROOTDIR}${ERR}${VERSION}${stn}.err" ]; then
+                elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}.err" ]; then
                     # output exists
                     echo "${stn} already processed - managed error"
 
                 else
+		            # no output, submit
                     sbatch ${lotus_script}
                     sleep 1s # allow submission to occur before 
 #                    exit
@@ -275,19 +305,20 @@ do
                 
             elif [ "${STAGE}" == "N" ]; then
 
-                if [ -f "${ROOTDIR}${QFF}${VERSION}${stn}.qff" ]; then
+                if [ -f "${ROOTDIR}${QFF_DIR}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
                     # output exists
                     echo "${stn} already processed"
 
-                elif [ -f "${ROOTDIR}${QFF}${VERSION}bad_stations/${stn}.qff" ]; then
+                elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
                     # output exists
                     echo "${stn} already processed - bad station"
 
-                elif [ -f "${ROOTDIR}${ERR}${VERSION}${stn}.err" ]; then
+                elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}.err" ]; then
                     # output exists
                     echo "${stn} already processed - managed error"
 
                 else
+		            # no output, submit
                     sbatch ${lotus_script}
                     sleep 1s # allow submission to occur before 
 #                    exit
@@ -304,15 +335,16 @@ do
 done
 
 
+#**************************************
 # and print summary
-n_jobs=`squeue --user=rjhd2 | wc -l`
+n_jobs=`squeue --user="${USER}" | wc -l`
 # deal with Slurm header in output
 let n_jobs=n_jobs-1
 while [ ${n_jobs} -ne 0 ];
 do        
     echo "All submitted, waiting 5min for queue to clear"
     sleep 5m
-    n_jobs=`squeue --user=rjhd2 | wc -l`
+    n_jobs=`squeue --user="${USER}" | wc -l`
     let n_jobs=n_jobs-1
 done
 
