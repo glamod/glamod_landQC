@@ -53,7 +53,7 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
     """
 
     if test not in ["all", "logic", "climatological", "distribution", "diurnal", "frequent",
-                    "humidity", "odd_cluster", "pressure", "spike", "streaks",
+                    "humidity", "odd_cluster", "pressure", "spike", "streaks", "high_flag",
                     "timestamp", "variance", "winds" ,"world_records", "precision"]:
         print("Invalid test selected")
         return
