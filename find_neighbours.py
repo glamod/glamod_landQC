@@ -226,19 +226,19 @@ def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False, plot
                 if len(match) == 1:
                     station[[0, match[0]]]=station[[match[0], 0]]
                 else:
-                    input("{} issue".format(station))
+                    input(f"{station} has issue")
 
             outstring = ""
             # each neighbour
             for neighb in station:
                 if neighb[0] != -1:
-                    outstring = "{:s} {:<11s} {:8d}".format(outstring, station_list.id[neighb[0]], neighb[1])
+                    outstring = f"{outstring:s} {station_list.id[neighb[0]]:<11s} {neighb[1]:8d}"
                 else:
-                    outstring = "{:s} {:>11s} {:8d}".format(outstring, "-", neighb[1])
+                    outstring = f"{outstring:s} {"-":>11s} {neighb[1]:8d}"
                     
 #            input("stop")
 
-            outfile.write("{}\n".format(outstring))
+            outfile.write(f"{outstring}\n")
 
     return # main
 

@@ -45,7 +45,7 @@ def get_summary(stage: str = "N", restart_id: str = "", end_id: str = "", diagno
 
     # now spin through each ID in the curtailed list
     for st, station_id in enumerate(station_IDs):
-        print("{} {:11s} ({}/{})".format(dt.datetime.now(), station_id, st+1, station_IDs.shape[0]))
+        print(f"{dt.datetime.now()} {station_id:11s} ({st+1}/{station_IDs.shape[0]})")
 
 
         #*************************
@@ -56,9 +56,9 @@ def get_summary(stage: str = "N", restart_id: str = "", end_id: str = "", diagno
 
         try:
             if stage == "I":
-                station, station_df = io.read_station(os.path.join(setup.SUBDAILY_PROC_DIR, "{:11s}.qff".format(station_id)), station)
+                station, station_df = io.read_station(os.path.join(setup.SUBDAILY_PROC_DIR, f"{station_id:11s}.qff"), station)
             elif stage == "N":
-                station, station_df = io.read_station(os.path.join(setup.SUBDAILY_OUT_DIR, "{:11s}.qff".format(station_id)), station)
+                station, station_df = io.read_station(os.path.join(setup.SUBDAILY_OUT_DIR, f"{station_id:11s}.qff"), station)
 
         except OSError: # as e:
             # file missing, move on to next in sequence
@@ -72,7 +72,7 @@ def get_summary(stage: str = "N", restart_id: str = "", end_id: str = "", diagno
         # some may have no data (for whatever reason)
         if station.times.shape[0] == 0:
             if diagnostics:
-                print("No data in station {}".format(station.id))
+                print(f"No data in station {station.id}")
             # scoot onto next station
             # io.write_error(station, "No data in input file")
             continue
@@ -101,7 +101,7 @@ def get_summary(stage: str = "N", restart_id: str = "", end_id: str = "", diagno
     # now print
     with open("summary_counts.txt", "w") as outfile:
         for key, value in sorted(yearly_counts.items(), key=lambda x: x[0]): 
-            outfile.write("{} : {}\n".format(key, value))
+            outfile.write(f"{key} : {value}\n")
 
     return # get_summary
 
