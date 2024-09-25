@@ -106,7 +106,7 @@ def lc(station: utils.Station, var_list: list, full: bool = False,
 
     if station.lon == 0 and station.lat == 0:
         write_logic_error(station,
-                          f"Bad longtitude & latitude combination: lon={station.lon,}, lat={station.lat}",
+                          f"Bad longtitude & latitude combination: lon={station.lon}, lat={station.lat}",
                           diagnostics=diagnostics)
         logger.info(f"Bad longitude/latitude combination: {station.lon} & {station.lat}")
         return_code = -1
