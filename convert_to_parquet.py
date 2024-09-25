@@ -102,16 +102,18 @@ def write_pqt(yearly_data: dict, diagnostics: bool = False) -> None:
             # Concatenate all data frames for the year
             combined_df = pd.concat(data_frames)
             
-            # Allows save to .parquet.gz
-            output_file = f"qff_{year}.parquet{setup.OUT_COMPRESSION}"
+            # Save to Parquet format
+            # Using default compression ("snappy"), rather than None or "gzip".
+            #   This gives (~40%) bigger files than gzip, but gzip not fully supported
+            #   https://parquet.apache.org/docs/file-format/data-pages/compression/
+
+            # Compression internaly compresses the files, so can't e.g. gunzip a compression=gzip parquet file
+            #   https://stackoverflow.com/questions/72264991/pandas-to-parquet-fails-with-gzip
+            #   So might as well use default rather than specifying.
+            output_file = f"qff_{year}.parquet"
             output_path = os.path.join(output_dir, output_file)
             
-            # Save to Parquet format
-            if setup.OUT_COMPRESSION == ".gz":
-                combined_df.to_parquet(output_path, compression='gzip',
-                                       index=False, engine='pyarrow')
-            else:
-                combined_df.to_parquet(output_path, index=False, engine='pyarrow')
+            combined_df.to_parquet(output_path, index=False, engine='pyarrow')
             
             if diagnostics:
                 print(f"Written data for year {year} to {output_file}")

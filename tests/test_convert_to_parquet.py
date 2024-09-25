@@ -65,7 +65,6 @@ def test_process_files_error(setup_mock: Mock,
                              pd_mock: Mock) -> None:
 
     # Only testing unzipped files, so that these are more easily checked
-    setup_mock.OUT_COMPRESSION = ""
     setup_mock.SUBDAILY_OUT_DIR = os.path.join(os.path.dirname(__file__),
                                                "example_data")
     
@@ -74,7 +73,7 @@ def test_process_files_error(setup_mock: Mock,
                                         "example_data", EXAMPLE_FILES[0]),
                                         dtype=str, sep="|")
     del erroneous_df["Year"]
-    
+
     pd_mock.read_csv.return_value = erroneous_df
 
     with pytest.raises(RuntimeError) as emsg:
@@ -90,7 +89,6 @@ def test_write_pqt(setup_mock: Mock,
                    tmp_path) -> None:
 
     # Only testing unzipped files, so that these are more easily checked
-    setup_mock.OUT_COMPRESSION = ""
     setup_mock.DATESTAMP = "DUMMYDATE"
     setup_mock.SUBDAILY_OUT_DIR = os.path.join(os.path.dirname(__file__),
                                                "example_data")
