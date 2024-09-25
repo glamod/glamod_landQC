@@ -383,7 +383,7 @@ def test_identify_spikes(spike_points: np.array) -> None:
 
     # create the config dictionary
     config_dict = {}
-    config_dict["SPIKE-{}".format(obs_var.name)]  = critical_values
+    config_dict[f"SPIKE-{obs_var.name}"]  = critical_values
 
     # run the routine
     spike.identify_spikes(obs_var, times, config_dict)
