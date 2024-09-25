@@ -49,6 +49,7 @@ QC_TESTS = {"C" : "Climatological",
 
 
 MDI = -1.e30
+FIRST_YEAR = 1700
 
 # These data are retained and processed by the QC tests.  All others are not.
 WIND_MEASUREMENT_CODES = ["", "N-Normal", "C-Calm", "V-Variable", "9-Missing"]

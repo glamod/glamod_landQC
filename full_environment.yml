@@ -145,6 +145,7 @@ dependencies:
     - pip==23.1.2
     - pluggy==1.0.0
     - prompt-toolkit==3.0.36
+    - pyarrow==17.0.0
     - pyflakes==3.0.1
     - pygments==2.15.1
     - pyopenssl==23.2.0
