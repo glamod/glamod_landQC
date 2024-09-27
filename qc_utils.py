@@ -463,29 +463,26 @@ def get_critical_values(indata: np.array, binmin: float = 0, binwidth: float = 1
     edges = full_edges[:10]
     central_hist = full_hist[:10]
 
-    # remove zeros (turn into infs in log-space)
+    # Remove zeros (turn into infs in log-space)
     goods, = np.where(central_hist != 0)
     hist = central_hist[goods]
     edges = edges[goods]
-    print(hist)
-    print(edges)
-    fit = gcv_linear_fit_to_log_histogram(hist, edges)
 
+    # Get the curve, and the best fit points
+    fit = gcv_linear_fit_to_log_histogram(hist, edges)
     fit_curve = linear(full_edges, fit)
 
-    print(fit_curve)
+
     if fit[1] < 0:
         # negative slope as expected
 
         # where does *fit* fall below log10(0.1) = -1, then..
         try:
             fit_below_point1, = np.argwhere(fit_curve < -1)[0]
-            print(fit_below_point1)
             # find first empty bin after that
             first_zero_bin, = np.argwhere(full_hist[fit_below_point1:] == 0)[0]
             threshold = binwidth * (binmin + fit_below_point1 + first_zero_bin)
-            print(first_zero_bin)
-            print(threshold)
+
         except IndexError:
             # too shallow a decay - use default maximum.  Retains all data
             threshold = len(full_hist)*binwidth
@@ -498,8 +495,6 @@ def get_critical_values(indata: np.array, binmin: float = 0, binwidth: float = 1
         print(full_edges)
         print(full_hist)
         plot_log_distribution(full_edges, full_hist, fit_curve, threshold, line_label, xlabel, title)
-
-
 
     return threshold # get_critical_values
 
