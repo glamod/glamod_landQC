@@ -51,8 +51,24 @@ def plot_streak(times, obs_var, streak_start, streak_end):
     return # plot_streak
 
 
+def mask_calms(this_var: utils.Meteorological_Variable) -> None:
+    """
+    Mask calm periods (wind speed == 0) as these can be a legitimate streak
+    of repeating values.
+
+    :param MetVar this_var: variable to process (wind speeds)
+    """
+
+    calms, = np.ma.where(this_var.data == 0)
+    this_var.data[calms] = utils.MDI
+    this_var.data.mask[calms] = True
+
+    return
+
 #************************************************************************
-def get_repeating_string_threshold(obs_var, config_dict, plots=False, diagnostics=False):
+def get_repeating_string_threshold(obs_var: utils.Meteorological_Variable,
+                                   config_dict: dict, plots: bool = False,
+                                   diagnostics: bool = False) -> None:
     """
     Use distribution to determine threshold values.  Then also store in config file.
 
@@ -63,20 +79,37 @@ def get_repeating_string_threshold(obs_var, config_dict, plots=False, diagnostic
     """
 
     # mask calm periods (as these could be a reasonable string)
+    # Copy the variable so can mask without impacting other tests
     this_var = copy.deepcopy(obs_var)
     if obs_var.name == "wind_speed":
-        calms, = np.ma.where(this_var.data == 0)
-        this_var.data[calms] = utils.MDI
-        this_var.data.mask[calms] = True
+        mask_calms(this_var)
 
     # only process further if there is enough data
     if len(this_var.data.compressed()) > 1:
 
-        repeated_string_lengths, _, _ = utils.prepare_data_repeating_string(this_var.data.compressed(), diff=0, plots=plots, diagnostics=diagnostics)
+        repeated_string_lengths, _, _ = utils.prepare_data_repeating_string(this_var.data.compressed(),
+                                                                            diff=0, plots=plots,
+                                                                            diagnostics=diagnostics)
+        """
+        Approach here is to look for streaks where values are the same in value space (diff=0).
+        In Humidity, looking only for streaks (in DPD) are == 0, so have filtered into a
+           set of locations where this criterion is met.
+        So for this test, could search in location space _or_ in value space.
+           The latter means that in the utils.prepare_data_repeating_string() 
+           routine the differences are 0, the former pre-identifies locations where a difference
+           is a value (either specified as per humidity, or using first differences == 0)
+           and hence the locational difference is 1, i.e. adjacent locations identified.
+        However, use of first differences mucks up indexing, so keeping a diff=0 approach
+        Sept 2024
+        """
 
         # bin width is 1 as dealing in time index.
         # minimum bin value is 2 as this is the shortest string possible
-        threshold = utils.get_critical_values(repeated_string_lengths, binmin=2, binwidth=1.0, plots=plots, diagnostics=diagnostics, title=this_var.name.capitalize(), xlabel="Repeating string length")
+        threshold = utils.get_critical_values(repeated_string_lengths, binmin=2,
+                                              binwidth=1.0, plots=plots,
+                                              diagnostics=diagnostics,
+                                              title=this_var.name.capitalize(),
+                                              xlabel="Repeating string length")
 
         # write out the thresholds...
         try:
@@ -96,7 +129,9 @@ def get_repeating_string_threshold(obs_var, config_dict, plots=False, diagnostic
     return # get_repeating_string_threshold
 
 #************************************************************************
-def repeating_value(obs_var, times, config_dict, plots=False, diagnostics=False):
+def repeating_value(obs_var: utils.Meteorological_Variable, times: np.array,
+                    config_dict: dict, plots: bool = False,
+                    diagnostics: bool = False) -> None:
     """
     AKA straight string
 
@@ -112,10 +147,7 @@ def repeating_value(obs_var, times, config_dict, plots=False, diagnostics=False)
     # remove calm periods for wind speeds when (a) calculating thresholds and (b) identifying streaks
     this_var = copy.deepcopy(obs_var)
     if obs_var.name == "wind_speed":
-        calms, = np.ma.where(this_var.data == 0)
-        this_var.data[calms] = utils.MDI
-        this_var.data.mask[calms] = True
-
+        mask_calms(this_var)
 
     flags = np.array(["" for i in range(this_var.data.shape[0])])
     compressed_flags = np.array(["" for i in range(this_var.data.compressed().shape[0])])
@@ -188,7 +220,8 @@ def hourly_repeat():
 
 
 #************************************************************************
-def rsc(station, var_list, config_dict, full=False, plots=False, diagnostics=False):
+def rsc(station: utils.Station, var_list: list, config_dict: {},
+        full: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Run through the variables and pass to the Repeating Streak Checks
 
