@@ -2,11 +2,119 @@
 Contains tests for qc_utils.py
 """
 import numpy as np
+import pytest
+from unittest.mock import patch, Mock
 
 import qc_utils
 
+def test_gcv_zeros_in_central_section_nozeros() -> None:
 
-def test_prepare_data_repeating_string_indices():
+    histogram = np.arange(1, 15, 1)
+    n_zeros = qc_utils.gcv_zeros_in_central_section(histogram, 10)
+
+    assert n_zeros == 0
+    
+
+@pytest.mark.parametrize("length, inner_n", [(5, 5), (10, 10)])
+def test_gcv_zeros_in_central_section(length: int,
+                                      inner_n: int) -> None:
+
+    histogram = np.arange(0, length, 1)
+    histogram[:4] = 0
+
+    n_zeros = qc_utils.gcv_zeros_in_central_section(histogram, inner_n)
+
+    assert n_zeros == 4
+
+
+def test_gcv_linear_fit_to_log_histogram() -> None:
+
+    histogram = np.array([1000, 333, 100, 33, 10, 3.3, 1])
+    bins = np.arange(histogram.shape[0])
+
+    result = qc_utils.gcv_linear_fit_to_log_histogram(histogram, bins)
+
+    np.testing.assert_array_almost_equal(np.array([3, -0.5]), result, decimal=2)
+
+
+def test_get_critical_values_identical() -> None:
+
+    indata = np.ones(100)
+    threshold = qc_utils.get_critical_values(indata)
+
+    assert threshold == 2
+
+
+def test_get_critical_values_none() -> None:
+
+    indata = np.array([])
+    binwidth = 10
+
+    threshold = qc_utils.get_critical_values(indata, binwidth=binwidth)
+
+    assert threshold == binwidth
+
+
+@pytest.mark.parametrize("length, n_zeros", [(5, 3), (10, 7)])
+def test_get_critical_values_many_zeros(length: int,
+                                        n_zeros: int) -> None:
+    # testing both short (5) and longer (10) arrays with 
+    #   sufficient zeros to trigger an exit
+    indata = np.arange(length)
+    indata[:n_zeros] = 0
+    binwidth = 10
+
+    threshold = qc_utils.get_critical_values(indata, binwidth=binwidth)
+
+    assert threshold == binwidth + indata[-1]
+
+
+@patch("qc_utils.np.histogram")
+def test_get_critical_values_positive_slope(histogram_mock: Mock) -> None:
+    # Mocking histogram values for use in log_space
+    #   Can't have streaks of length 0 or 1, so these set to 0
+    hist = np.array([0, 0, 100, 100, 200, 200, 300, 300, 300, 350, 50, 0, 0, 1])
+    bins = np.arange(len(hist) + 1)
+    histogram_mock.return_value = (hist, bins)
+
+    threshold = qc_utils.get_critical_values(np.arange(10))
+    # if positive slope, then threshold is len(hist)*binwidth
+    assert threshold == len(hist)
+
+
+@patch("qc_utils.np.histogram")
+def test_get_critical_values_no_non_zero(histogram_mock: Mock) -> None:
+    # Mocking histogram values for use in log_space
+    #   Can't have streaks of length 0 or 1, so these set to 0
+    hist = np.array([0, 0, 1000, 333, 100, 33, 10, 3.3, 1, 1, 1, 1, 1, 1])
+    bins = np.arange(len(hist) + 1)
+    histogram_mock.return_value = (hist, bins)
+
+    threshold = qc_utils.get_critical_values(np.arange(10))
+    # if no zero bins after fit crosses 0.1, then threshold is len(hist)*binwidth
+    assert threshold == len(hist)
+
+
+@patch("qc_utils.np.histogram")
+def test_get_critical_values_normal(histogram_mock: Mock) -> None:
+
+    # Create values for all space
+    fit = np.array([10000, 3333, 1000, 333, 100, 33, 10, 3.3, 1, 0.33, 0.1, 0.033, 0.01, 0.003])
+    hist = np.copy(fit)
+    # Can't have streaks of length 0 or 1, so these set to 0
+    hist[:2] = 0
+    # And remove high values where instances < 1
+    hist[hist<1] = 0
+
+    bins = np.arange(len(hist) + 1)
+    histogram_mock.return_value = (hist, bins)
+
+    threshold = qc_utils.get_critical_values(np.arange(10))#, plots=True)
+    # checked via plots
+    assert threshold == np.nonzero(fit < 0.1)[0][0]
+
+
+def test_prepare_data_repeating_string_indices() -> None:
 
     # locations in an array where DPD = 0
     locs = np.array([0,
@@ -18,6 +126,7 @@ def test_prepare_data_repeating_string_indices():
                      60, 61, 62,
                      70])
 
+    # diff=1 to test that locations of DPD=0 are neighbouring
     lengths, grouped_diffs, strings = qc_utils.prepare_data_repeating_string(locs, diff=1)
 
     # lengths which are passed into the fitting to 
@@ -41,11 +150,52 @@ def test_prepare_data_repeating_string_indices():
 
     assert len(lengths) == len(strings)
 
-#def test_prepare_data_repeating_string_values():
 
-    # as above but with diff=0
+def test_prepare_data_repeating_string_values() -> None:
 
-def test_gcv_calculate_binmax():
+    # array containing streaks
+    inarray = np.ma.arange(0, 200, 1)
+    inarray.mask = np.zeros(inarray.shape[0])
+
+    # make some streaks (set start index and length)
+    streak_starts_lengths = {10: 3,
+                             20: 3,
+                             30: 3,
+                             40: 3,
+                             50: 3,
+                             60: 3,
+                             70: 4,
+                             80: 4,
+                             90: 4,
+                             100: 4,
+                             110: 4,
+                             120: 5,
+                             130: 5,
+                             140: 5,
+                             150: 6,
+                             160: 6,
+                             170: 7,
+                             }
+    
+    for start, length in streak_starts_lengths.items():
+        inarray[start: start+length] = inarray[start]   
+
+
+    # diff=0 for neighbouring values being identical
+    lengths, _, strings = qc_utils.prepare_data_repeating_string(inarray, diff=0)
+
+    # lengths which are passed into the fitting to 
+    np.testing.assert_array_equal(lengths, np.fromiter(streak_starts_lengths.values(),
+                                                       dtype=int))
+
+    # locations in the grouped differences which are repeated strings
+    np.testing.assert_array_equal(strings,
+                                  np.array([ 1,  4,  7, 10, 13, 16, 19, 22, 25, 28, 31, 34, 37, 40, 43, 46, 49]))
+
+    assert len(lengths) == len(strings)
+
+
+def test_gcv_calculate_binmax() -> None:
 
     indata = np.arange(10)
     binmin = 0
@@ -55,7 +205,7 @@ def test_gcv_calculate_binmax():
 
     assert binmax == 18
 
-def test_gcv_calculate_binmax_large():
+def test_gcv_calculate_binmax_large() -> None:
 
     indata = np.arange(10)
     indata[-1] = 2001
@@ -66,5 +216,3 @@ def test_gcv_calculate_binmax_large():
 
     assert binmax == 2000
 
-# def test_gcv_central_section():
-    

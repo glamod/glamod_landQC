@@ -346,44 +346,64 @@ def gcv_calculate_binmax(indata: np.array, binmin: float, binwidth: float) -> fl
     
 
 
-def gcv_central_section(full_hist: np.array) -> tuple[int, int]:
+def gcv_zeros_in_central_section(histogram: np.array, inner_n: int) -> tuple[int, int]:
     """
     A routine to determine if, for a distribution with multiple peaks, the central
     section is sufficiently big.
-    
+
+    :param array histogram: histogram of values to assess
+    :param int inner_n: how many of the inner bins to assess
+
+    :returns: (limit, n_zeros) how many n_zeros within limit bins of the centre
     """
 
+    if len(np.nonzero(histogram == 0)[0]) == 0:
+        # No zero bins, so central section is the whole histogram
+        return 0
 
-    # use only the central section (as long as it's 5(10) or more bins)
-    for limit_threshold in [5, 10]:
-        i = 0
-        n_zeros = 0
-        limit = 0
-        while limit < limit_threshold:
-            # count outwards until there is a zero-valued bin
-            try:
-                limit = np.argwhere(full_hist == 0)[i][0]
-                n_zeros += 1
-                i += 1
-            except IndexError:
-                # no zero bins in this histogram
-                limit = len(full_hist)
-                break
-
-        if n_zeros >= 3 and limit == 5:
-            # check the next limit
-            pass
-        else:
-            # got a decent enough central region
-            #   or extended limit isn't enough either, caught later
+    # Use only the central section (as long as it's 5(10) or more bins)
+    n_zeros = 0
+    index = 0
+    while index < inner_n:
+        # if not gone beyond the end of the histogram
+        if index >= len(histogram):
             break
+        # Count outwards until there is a zero-valued bin
+        if histogram[index] == 0:
+            n_zeros += 1
+        index += 1
 
-    return limit, n_zeros  # gcv_central_section
+    return n_zeros  # gcv_zeros_in_central_section
+
+
+def gcv_linear_fit_to_log_histogram(histogram: np.array, bins: np.array) -> np.array:
+    """
+    Take the log10 of the histogram values, and fit a linear x^-1 line
+
+    :param array histogram: the histogram values to fit
+    :param array bins: the histogram bins
+
+    :returns: array of fit parameters of (norm, slope)   
+    """
+
+    # and take log10
+    histogram = np.log10(histogram)
+
+    # Working in log-yscale
+    # a 10^bx, expecting b to be negative
+    a = histogram[np.argmax(histogram)]
+    b = 1
+
+    p0 = np.array([a, b])
+    result = least_squares(residuals_linear, p0, args=(histogram, bins), max_nfev=10000, verbose=0, method="lm")
+
+    return result.x
 
 
 #*********************************************
-def get_critical_values(indata: np.array, binmin: float = 0, binwidth: float = 1, plots: bool = False, diagnostics: bool = False, \
-                        line_label: str = "", xlabel: str = "", title: str = "", old_threshold: float = 0) -> float:
+def get_critical_values(indata: np.array, binmin: float = 0, binwidth: float = 1,
+                        plots: bool = False, diagnostics: bool = False,
+                        line_label: str = "", xlabel: str = "", title: str = "") -> float:
     """
     Plot histogram on log-y scale and fit 1/x decay curve to set threshold
 
@@ -392,96 +412,97 @@ def get_critical_values(indata: np.array, binmin: float = 0, binwidth: float = 1
     :param float binwidth: bin width
     :param bool plots: do the plots
     :param bool diagnostics : do diagnostic outputs
-    :param str line_label: label for plotted histogram
+    :param str line_label: label for ploted histogram
     :param str xlabel: label for x axis
     :param str title: plot title
  
     :returns:
-       critical value
-
+       float critical value
     """
 
-    if len(set(indata)) > 1:
-
-        # set up the bins and make a histogram.  Use Absolute values
-        binmax = gcv_calculate_binmax(indata, binmin, binwidth)
-        bins = np.arange(binmin, binmax, binwidth)
-        full_hist, full_edges = np.histogram(np.abs(indata), bins=bins)
-
-        if len(full_hist) > 1:
-
-            limit, n_zeros = gcv_central_section(full_hist)
-
-            if limit == 10 and n_zeros >= 7:
-                # extended central bit is mainly zeros
-                # can't continue
-                threshold = max(indata) + binwidth
-
-            else:
-
-                # use this central section for fitting
-                edges = full_edges[:limit]
-                central_hist = full_hist[:limit]
-
-                # remove inf's
-                goods, = np.where(central_hist != 0)
-
-                # if insufficient short streaks/small differences for centre of distribution
-                if len(goods) < 2:
-                    threshold = max(indata) + binwidth
-
-                else:
-                    hist = central_hist[goods]
-                    edges = edges[goods]
-
-                    # and take log10
-                    hist = np.log10(hist)
-
-                    # Working in log-yscale from hereon
-                    # a 10^-bx
-                    a = hist[np.argmax(hist)]
-                    b = 1
-
-                    p0 = np.array([a, b])
-                    result = least_squares(residuals_linear, p0, args=(hist, edges), max_nfev=10000, verbose=0, method="lm")
-
-                    fit = result.x
-
-                    fit_curve = linear(full_edges, fit)
-
-                    if fit[1] < 0:
-                        # negative slope as expected
-
-                        # where does *fit* fall below log10(0.1) = -1, then..
-                        try:
-                            fit_below_point1, = np.argwhere(fit_curve < -1)[0]
-
-                            # find first empty bin after that
-                            first_zero_bin, = np.argwhere(full_hist[fit_below_point1:] == 0)[0]
-                            threshold = binwidth * (binmin + fit_below_point1 + first_zero_bin)
-
-                        except IndexError:
-                            # too shallow a decay - use default maximum.  Retains all data
-                            threshold = len(full_hist)*binwidth
-
-                    else:
-                        # positive slope - likely malformed distribution.  Retains all data
-                        threshold = len(full_hist)*binwidth
-
-                    if plots:
-                        plot_log_distribution(full_edges, full_hist, fit_curve, threshold, line_label, xlabel, title)
-
-        else:
-            threshold = max(indata) + binwidth
-
-    elif len(set(indata)) == 1:
+    if len(set(indata)) == 1:
+        # All data at a single value, so set threshold above this
         threshold = max(indata) + binwidth
+        return threshold
+    
+    elif len(indata) == 0:
+        # If no data, return 0+binwidth as the threshold to ensure a positive value
+        threshold = np.copy(binwidth)
+        return threshold
+
+    # Or there is data to process, let's go
+    # set up the bins and make a histogram.  Use Absolute values
+    binmax = gcv_calculate_binmax(indata, binmin, binwidth)
+    bins = np.arange(binmin, binmax, binwidth)
+    full_hist, full_edges = np.histogram(np.abs(indata), bins=bins)
+
+    if len(full_hist) <= 1:
+        threshold = max(indata) + binwidth
+        return threshold
+    
+    # Check if the first 5(10) bins have sufficient data
+    n_zeros = gcv_zeros_in_central_section(full_hist, 5)
+    if n_zeros >= 3:
+        # 3/5 inner bin values are zero
+        # Note: inner two always zero as can't have streaks of 0 and 1 point
+        if len(full_hist) > 5:
+            n_zeros = gcv_zeros_in_central_section(full_hist, 10)   
+            if n_zeros >= 6:
+                # Extended central bit is mainly zeros
+                # can't continue, set threshold to exceed data
+                threshold = max(indata) + binwidth
+                return threshold
+        else:
+            # Extended central bit is mainly zeros
+            # can't continue, set threshold to exceed data
+            threshold = max(indata) + binwidth
+            return threshold
+
+    # Use this central section for fitting
+    #  Avoids risk of secondary populations in the distribution affecting the fit
+    edges = full_edges[:10]
+    central_hist = full_hist[:10]
+
+    # remove zeros (turn into infs in log-space)
+    goods, = np.where(central_hist != 0)
+    hist = central_hist[goods]
+    edges = edges[goods]
+    print(hist)
+    print(edges)
+    fit = gcv_linear_fit_to_log_histogram(hist, edges)
+
+    fit_curve = linear(full_edges, fit)
+
+    print(fit_curve)
+    if fit[1] < 0:
+        # negative slope as expected
+
+        # where does *fit* fall below log10(0.1) = -1, then..
+        try:
+            fit_below_point1, = np.argwhere(fit_curve < -1)[0]
+            print(fit_below_point1)
+            # find first empty bin after that
+            first_zero_bin, = np.argwhere(full_hist[fit_below_point1:] == 0)[0]
+            threshold = binwidth * (binmin + fit_below_point1 + first_zero_bin)
+            print(first_zero_bin)
+            print(threshold)
+        except IndexError:
+            # too shallow a decay - use default maximum.  Retains all data
+            threshold = len(full_hist)*binwidth
 
     else:
-        # if no data, return 0+binwidth as the threshold to ensure a positive value
-        threshold = np.copy(binwidth)
- 
+        # positive slope - likely malformed distribution.  Retains all data
+        threshold = len(full_hist)*binwidth
+
+    if plots:
+        print(full_edges)
+        print(full_hist)
+        plot_log_distribution(full_edges, full_hist, fit_curve, threshold, line_label, xlabel, title)
+
+
+
     return threshold # get_critical_values
+
 
 #*********************************************
 def plot_log_distribution(edges: np.array, hist: np.array, fit: np.array, threshold: float, line_label: str, xlabel: str, title: str) -> None:
@@ -490,25 +511,38 @@ def plot_log_distribution(edges: np.array, hist: np.array, fit: np.array, thresh
 
     """
     import matplotlib.pyplot as plt
+    import matplotlib.ticker as mticker
+    _, ax = plt.subplots()
     
-    plt.clf()
     # stretch bars, so can run off below 0
-    plot_hist = np.array([np.log10(x) if x != 0 else -1 for x in hist])
-    plt.step(edges[1:], plot_hist, color='k', label=line_label, where="pre")
+#    plot_hist = np.array([np.log10(x) if x != 0 else -1 for x in hist])
+#    plt.step(edges[1:], plot_hist, color='k', label=line_label, where="pre")
+    
+    # set values == 0 to be 0.01, so can plot on a log plot
+    plot_hist = np.array([x if x != 0 else 0.01 for x in hist])
+    plt.step(edges[:-1], plot_hist, color='k', label=line_label, where="mid")
+
+    # convert the fit in log space to actuals
+    fit = [10**i for i in fit]
     plt.plot(edges, fit, 'b-', label="best fit")          
     
     plt.xlabel(xlabel)
-    plt.ylabel("log10(Frequency)")
+    plt.ylabel("Frequency (logscale))")
     
-    # set y-lim to something sensible
-    plt.ylim([-0.3, max(plot_hist)+0.5])
+    # set y-lim to something sensible in actual space
+    plt.ylim([-1.3, max(plot_hist)+0.5])
+    plt.ylim([0.01, max(plot_hist)*3])
     plt.xlim([0, max(edges)])
     
     plt.axvline(threshold, c='r', label=f"threshold = {threshold}")
     
     plt.legend(loc="upper right")
     plt.title(title)
-       
+    plt.yscale("log")
+
+    # sort axes formats
+    ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda y, _: '{:g}'.format(y)))
+    ax.xaxis.set_major_locator(mticker.MultipleLocator(2))
     plt.show()
 
     return # plot_log_distribution
