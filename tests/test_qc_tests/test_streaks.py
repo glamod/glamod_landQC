@@ -84,9 +84,9 @@ def test_get_repeating_string_threshold():
 
     config_dict = {}
 
-    streaks.get_repeating_string_threshold(this_var, config_dict)#, plots=True)
+    streaks.get_repeating_string_threshold(this_var, config_dict)
 
-    assert config_dict["STREAK-temperature"]["Straight"] == 13
+    assert config_dict["STREAK-temperature"]["Straight"] == 8
 
 
 def test_repeating_value_nonwind():

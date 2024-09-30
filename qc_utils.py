@@ -345,7 +345,7 @@ def gcv_calculate_binmax(indata: np.array, binmin: float, binwidth: float) -> fl
     return binmax  #gcv_calculate_binmax
     
 
-
+#*********************************************
 def gcv_zeros_in_central_section(histogram: np.array, inner_n: int) -> tuple[int, int]:
     """
     A routine to determine if, for a distribution with multiple peaks, the central
@@ -376,6 +376,7 @@ def gcv_zeros_in_central_section(histogram: np.array, inner_n: int) -> tuple[int
     return n_zeros  # gcv_zeros_in_central_section
 
 
+#*********************************************
 def gcv_linear_fit_to_log_histogram(histogram: np.array, bins: np.array) -> np.array:
     """
     Take the log10 of the histogram values, and fit a linear x^-1 line
@@ -443,8 +444,8 @@ def get_critical_values(indata: np.array, binmin: float = 0, binwidth: float = 1
     # Check if the first 5(10) bins have sufficient data
     n_zeros = gcv_zeros_in_central_section(full_hist, 5)
     if n_zeros >= 3:
-        # 3/5 inner bin values are zero
-        # Note: inner two always zero as can't have streaks of 0 and 1 point
+        # Note: although cannot have streaks length < 2, this is handled
+        #       via the binmin argument (set to 2 in humidity DPD and streaks)
         if len(full_hist) > 5:
             n_zeros = gcv_zeros_in_central_section(full_hist, 10)   
             if n_zeros >= 6:
@@ -484,16 +485,17 @@ def get_critical_values(indata: np.array, binmin: float = 0, binwidth: float = 1
             threshold = binwidth * (binmin + fit_below_point1 + first_zero_bin)
 
         except IndexError:
-            # too shallow a decay - use default maximum.  Retains all data
-            threshold = len(full_hist)*binwidth
+            # Too shallow a decay - use default maximum.  Retains all data
+            #   If there were a value much higher, then because a negative
+            #   slope the above snippet should run, rather than this one.
+            threshold = max(indata) + binwidth
 
     else:
-        # positive slope - likely malformed distribution.  Retains all data
-        threshold = len(full_hist)*binwidth
+        # Positive slope - likely malformed distribution.  Retains all data
+        #    The test won't work well given the fit, so just take the data max.
+        threshold = max(indata) + binwidth
 
     if plots:
-        print(full_edges)
-        print(full_hist)
         plot_log_distribution(full_edges, full_hist, fit_curve, threshold, line_label, xlabel, title)
 
     return threshold # get_critical_values
