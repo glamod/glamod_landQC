@@ -50,7 +50,7 @@ def test_mask_calms():
     assert this_var.data.mask[1] == False
 
 
-def test_get_repeating_string_threshold():
+def test_get_repeating_streak_threshold():
 
     # set up data
     data = np.ma.arange(0, 200, 0.1).astype(float)
@@ -84,7 +84,7 @@ def test_get_repeating_string_threshold():
 
     config_dict = {}
 
-    streaks.get_repeating_string_threshold(this_var, config_dict)
+    streaks.get_repeating_streak_threshold(this_var, config_dict)
 
     assert config_dict["STREAK-temperature"]["Straight"] == 8
 
@@ -104,7 +104,7 @@ def test_repeating_value_nonwind():
 
     # set up dictionary
     config_dict = {}
-    CD_straight = {"Straight" : 10}  # strings of 10 or more identical values
+    CD_straight = {"Straight" : 10}  # streaks of 10 or more identical values
     config_dict["STREAK-temperature"] = CD_straight
 
     streaks.repeating_value(this_var, station.times, config_dict)
@@ -128,7 +128,7 @@ def test_repeating_value_wind():
 
     # set up dictionary
     config_dict = {}
-    CD_straight = {"Straight" : 10}  # strings of 10 or more identical values
+    CD_straight = {"Straight" : 10}  # streaks of 10 or more identical values
     config_dict["STREAK-wind_speed"] = CD_straight
 
     streaks.repeating_value(this_var, station.times, config_dict)
@@ -143,7 +143,7 @@ def test_repeating_value_wind():
 # def test_hourly_repeat():
 
 
-@patch("streaks.get_repeating_string_threshold")
+@patch("streaks.get_repeating_streak_threshold")
 @patch("streaks.repeating_value")
 def test_pcc(repeating_value_mock: Mock,
              get_threshold_mock: Mock) -> None:

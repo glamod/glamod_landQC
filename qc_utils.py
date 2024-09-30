@@ -45,6 +45,7 @@ QC_TESTS = {"C" : "Climatological",
             "o" : "Odd Cluster",
             "p" : "Pressure",
             "w" : "Winds",
+            "x" : "Excess streak proportion"
             }
 
 
@@ -333,7 +334,10 @@ def gcv_calculate_binmax(indata: np.array, binmin: float, binwidth: float) -> fl
 
     MAX_N_BINS = 20000
     # so that have sufficient x-bins to fit to
-    binmax = np.max([2 * max(np.ceil(np.abs(indata))), 10])
+    if binwidth < 0.1:
+        binmax = np.max([2 * max(np.ceil(np.abs(indata))), 1])
+    else:    
+        binmax = np.max([2 * max(np.ceil(np.abs(indata))), 10])
 
     # if too big, then adjust
     if (binmax - binmin)/binwidth > MAX_N_BINS:
@@ -539,7 +543,10 @@ def plot_log_distribution(edges: np.array, hist: np.array, fit: np.array, thresh
 
     # sort axes formats
     ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda y, _: '{:g}'.format(y)))
-    ax.xaxis.set_major_locator(mticker.MultipleLocator(2))
+    if max(edges) > 2:
+        ax.xaxis.set_major_locator(mticker.MultipleLocator(2))
+    else:
+        ax.xaxis.set_major_locator(mticker.MultipleLocator(0.1))
     plt.show()
 
     return # plot_log_distribution
@@ -978,14 +985,23 @@ def find_continent(country_code: str) -> str:
     return concord[country_code]
 
 #************************************************************************
-def prepare_data_repeating_string(data, diff=0, plots=False, diagnostics=False):
+def prepare_data_repeating_streak(data: np.array, diff:int = 0,
+                                  plots:bool = False, diagnostics:bool = False) -> tuple[np.array,
+                                                                                         np.array,
+                                                                                         np.array]:
     """
-    Prepare the data for repeating strings
+    Prepare the data for repeating streaks
 
     :param np.array data: data to assess
-    :param int diff: difference to look for (0 in strings of data, 1 in strings of indices)
+    :param int diff: difference to look for (0 in streaks of data, 1 in streaks of indices)
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
+
+    :returns: tuple(array, array, array)
+
+    array of the streak lengths in temporal order
+    array of the grouped differences (difference, count)
+    array of the streak locations [in grouped differences, so need double expansion]
     """
 
     # want locations where first differences are zero
@@ -997,11 +1013,11 @@ def prepare_data_repeating_string(data, diff=0, plots=False, diagnostics=False):
     #     array of (value_diff, count) pairs
     grouped_diffs = np.array([[g[0], len(list(g[1]))] for g in itertools.groupby(value_diffs)])
 
-    # all string lengths
-    strings, = np.where(grouped_diffs[:, 0] == diff)
-    repeated_string_lengths = grouped_diffs[strings, 1] + 1
+    # all streak lengths
+    streaks, = np.where(grouped_diffs[:, 0] == diff)
+    repeated_streak_lengths = grouped_diffs[streaks, 1] + 1
  
-    return repeated_string_lengths, grouped_diffs, strings # prepare_data_repeating_string
+    return repeated_streak_lengths, grouped_diffs, streaks # prepare_data_repeating_streak
 
 
 #************************************************************************
