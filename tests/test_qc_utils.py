@@ -77,9 +77,11 @@ def test_get_critical_values_positive_slope(histogram_mock: Mock) -> None:
     bins = np.arange(len(hist) + 1)
     histogram_mock.return_value = (hist, bins)
 
-    threshold = qc_utils.get_critical_values(np.arange(10))
-    # if positive slope, then threshold is len(hist)*binwidth
-    assert threshold == len(hist)
+    threshold = qc_utils.get_critical_values(bins)
+    # if positive slope, then threshold is max(indata) + binwidth
+    #    As histogram mocked, indata only used for this default calculation
+    #    Passing in "bins", so tested result as indicated.
+    assert threshold == max(bins) + 1
 
 
 @patch("qc_utils.np.histogram")
@@ -90,9 +92,11 @@ def test_get_critical_values_no_non_zero(histogram_mock: Mock) -> None:
     bins = np.arange(len(hist) + 1)
     histogram_mock.return_value = (hist, bins)
 
-    threshold = qc_utils.get_critical_values(np.arange(10))
-    # if no zero bins after fit crosses 0.1, then threshold is len(hist)*binwidth
-    assert threshold == len(hist)
+    threshold = qc_utils.get_critical_values(bins)
+    # if no zero bins after fit crosses 0.1, then threshold is max(indata) + binwidth
+    #    As histogram mocked, indata only used for this default calculation
+    #    Passing in "bins", so tested result as indicated.
+    assert threshold == max(bins) + 1
 
 
 @patch("qc_utils.np.histogram")
