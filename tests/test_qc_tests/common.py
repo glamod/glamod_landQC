@@ -11,6 +11,25 @@ import qc_utils as utils
 # Tests are called with a station, and some variables.
 #   Need to build a station and empty variables to use
 
+REPEATED_STREAK_STARTS_LENGTHS = {10: 3,
+                                20: 3,
+                                30: 3,
+                                40: 3,
+                                50: 3,
+                                60: 3,
+                                70: 4,
+                                80: 4,
+                                90: 4,
+                                100: 4,
+                                110: 4,
+                                120: 5,
+                                130: 5,
+                                140: 5,
+                                150: 6,
+                                160: 6,
+                                170: 7,
+                                }
+
 def example_test_variable(name: str,
                           vardata: np.array,
                           mdi: float = -1.e30,
@@ -58,3 +77,14 @@ def example_test_station(variable: utils.Meteorological_Variable,
     station.hours = np.array(times.dt.hour)
     
     return station
+
+
+def generate_streaky_data(data: np.array, starts_lengths: dict) -> np.array:
+    """
+    Using a dictionary of {start:length} pairs, make streaky data
+    """
+
+    for start, length in starts_lengths.items():
+        data[start: start+length] = data[start]
+
+    return data

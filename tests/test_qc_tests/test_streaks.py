@@ -12,6 +12,29 @@ import qc_utils
 
 import common
 
+EXCESS_STREAK_STARTS_LENGTHS = {10: 3,
+                                20: 3,
+                                30: 3,
+                                40: 3,
+                                50: 3,
+                                60: 3,
+                                70: 3,
+                                80: 3,
+                                90: 3,
+                                100: 3,
+                                110: 3,
+                                120: 3,
+                                130: 3,
+                                140: 3,
+                                150: 3,
+                                160: 3,
+                                170: 3,
+                                180: 3,
+                                190: 3,
+                                }
+
+
+
 def _make_station(data: np.array, name: str, times: Optional[np.array] = None) -> qc_utils.Station:
     """
     Create an example station 
@@ -23,13 +46,6 @@ def _make_station(data: np.array, name: str, times: Optional[np.array] = None) -
     
     """
     obs_var = common.example_test_variable(name, data)
-
-    if times is not None:
-        pass
-    else:
-        start_dt = dt.datetime(2000, 1, 1, 0, 0)
-        times = pd.to_datetime(pd.DataFrame([start_dt + dt.timedelta(hours=i)\
-                              for i in range(len(data))])[0])
 
     station = common.example_test_station(obs_var, times)
 
@@ -61,27 +77,7 @@ def test_get_repeating_streak_threshold() -> None:
     data.mask = np.zeros(data.shape[0])
 
     # make some streaks (set start index and length)
-    streak_starts_lengths = {10: 3,
-                             20: 3,
-                             30: 3,
-                             40: 3,
-                             50: 3,
-                             60: 3,
-                             70: 4,
-                             80: 4,
-                             90: 4,
-                             100: 4,
-                             110: 4,
-                             120: 5,
-                             130: 5,
-                             140: 5,
-                             150: 6,
-                             160: 6,
-                             170: 7,
-                             }
-    
-    for start, length in streak_starts_lengths.items():
-        data[start: start+length] = data[start]
+    data = common.generate_streaky_data(data, common.REPEATED_STREAK_STARTS_LENGTHS)
 
     station = _make_station(data, "temperature")
     this_var = getattr(station, "temperature")
@@ -106,30 +102,7 @@ def test_get_excess_streak_threshold() -> None:
         all_data = np.append(all_data, data)
         years = np.append(years, (2000*np.ones(data.shape[0]))+y)
 
-    # make some streaks (set start index and length)
-    streak_starts_lengths = {10: 3,
-                             20: 3,
-                             30: 3,
-                             40: 3,
-                             50: 3,
-                             60: 3,
-                             70: 3,
-                             80: 3,
-                             90: 3,
-                             100: 3,
-                             110: 3,
-                             120: 3,
-                             130: 3,
-                             140: 3,
-                             150: 3,
-                             160: 3,
-                             170: 3,
-                             180: 3,
-                             190: 3,
-                             }
-    
-    for start, length in streak_starts_lengths.items():
-        data[start: start+length] = data[start]
+    data = common.generate_streaky_data(data, EXCESS_STREAK_STARTS_LENGTHS)
 
     # Add some years with streaks
     for y in range(10, 15):
@@ -210,30 +183,8 @@ def test_excess_repeating_value():
     expected_flags = np.append(expected_flags, flags)
     years = np.append(years, 2000*np.ones(data.shape[0]))
 
-    # make some streaks (set start index and length)
-    streak_starts_lengths = {10: 3,
-                             20: 3,
-                             30: 3,
-                             40: 3,
-                             50: 3,
-                             60: 3,
-                             70: 3,
-                             80: 3,
-                             90: 3,
-                             100: 3,
-                             110: 3,
-                             120: 3,
-                             130: 3,
-                             140: 3,
-                             150: 3,
-                             160: 3,
-                             170: 3,
-                             180: 3,
-                             190: 3,
-                             }
-    
-    for start, length in streak_starts_lengths.items():
-        data[start: start+length] = data[start]
+    data = common.generate_streaky_data(data, EXCESS_STREAK_STARTS_LENGTHS)
+    for start, length in EXCESS_STREAK_STARTS_LENGTHS.items():
         if not data.mask[start]:
             # only mark expected flag if data not masked
             flags[start: start+length] = "x"

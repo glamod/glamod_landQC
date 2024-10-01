@@ -94,18 +94,19 @@ def get_repeating_streak_threshold(obs_var: utils.Meteorological_Variable,
         repeated_streak_lengths, _, _ = utils.prepare_data_repeating_streak(this_var.data.compressed(),
                                                                             diff=0, plots=plots,
                                                                             diagnostics=diagnostics)
-        """
-        Approach here is to look for streaks where values are the same in value space (diff=0).
-        In Humidity, looking only for streaks (in DPD) are == 0, so have filtered into a
-           set of locations where this criterion is met.
-        So for this test, could search in location space _or_ in value space.
-           The latter means that in the utils.prepare_data_repeating_streak() 
-           routine the differences are 0, the former pre-identifies locations where a difference
-           is a value (either specified as per humidity, or using first differences == 0)
-           and hence the locational difference is 1, i.e. adjacent locations identified.
-        However, use of first differences mucks up indexing, so keeping a diff=0 approach
-        Sept 2024
-        """
+
+        ###########
+        # Approach here is to look for streaks where values are the same in value space (diff=0).
+        # In Humidity, looking only for streaks (in DPD) are == 0, so have filtered into a
+        #    set of locations where this criterion is met.
+        # So for this test, could search in location space _or_ in value space.
+        #    The latter means that in the utils.prepare_data_repeating_streak() 
+        #    routine the differences are 0, the former pre-identifies locations where a difference
+        #    is a value (either specified as per humidity, or using first differences == 0)
+        #    and hence the locational difference is 1, i.e. adjacent locations identified.
+        # However, use of first differences mucks up indexing, so keeping a diff=0 approach
+        # Sept 2024
+        ###########
 
         # bin width is 1 as dealing in time index.
         # minimum bin value is 2 as this is the shortest streak possible
@@ -315,7 +316,7 @@ def excess_repeating_value(obs_var: utils.Meteorological_Variable, times: np.arr
         return
 
     # Spin through each year, calculate proportion, flag comprising streaks if too high
-    for y, year in enumerate(np.unique(years)):
+    for year in np.unique(years):
         # set up indices for year, and flags array for year
         locs, = np.nonzero(years == year)
         year_flags = flags[locs]

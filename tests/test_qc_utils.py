@@ -6,6 +6,7 @@ import pytest
 from unittest.mock import patch, Mock
 
 import qc_utils
+import common
 
 def test_gcv_zeros_in_central_section_nozeros() -> None:
 
@@ -162,34 +163,13 @@ def test_prepare_data_repeating_streak_values() -> None:
     inarray.mask = np.zeros(inarray.shape[0])
 
     # make some streaks (set start index and length)
-    streak_starts_lengths = {10: 3,
-                             20: 3,
-                             30: 3,
-                             40: 3,
-                             50: 3,
-                             60: 3,
-                             70: 4,
-                             80: 4,
-                             90: 4,
-                             100: 4,
-                             110: 4,
-                             120: 5,
-                             130: 5,
-                             140: 5,
-                             150: 6,
-                             160: 6,
-                             170: 7,
-                             }
-    
-    for start, length in streak_starts_lengths.items():
-        inarray[start: start+length] = inarray[start]   
-
+    common.generate_streaky_data(inarray, common.REPEATED_STREAK_STARTS_LENGTHS)
 
     # diff=0 for neighbouring values being identical
     lengths, _, streaks = qc_utils.prepare_data_repeating_streak(inarray, diff=0)
 
     # lengths which are passed into the fitting to 
-    np.testing.assert_array_equal(lengths, np.fromiter(streak_starts_lengths.values(),
+    np.testing.assert_array_equal(lengths, np.fromiter(common.REPEATED_STREAK_STARTS_LENGTHS.values(),
                                                        dtype=int))
 
     # locations in the grouped differences which are repeated streaks

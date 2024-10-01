@@ -25,3 +25,15 @@ def test_example_test_station() -> None:
     assert isinstance(result, utils.Station)
     assert hasattr(result, "test")
     assert result.lat == 45
+
+
+def test_generate_streaky_data() -> None:
+
+    testdata = np.arange(10)
+    testdict = {5: 3}
+    expected = np.arange(10)
+    expected[5:8] = expected[5]
+
+    streaky_data = common.generate_streaky_data(testdata, testdict)
+
+    np.testing.assert_array_equal(testdata, expected)
