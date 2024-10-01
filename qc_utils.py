@@ -31,7 +31,7 @@ QC_TESTS = {"C" : "Climatological",
             "E" : "Clean Up",
             "F" : "Frequent Value",
             "H" : "High Flag Rate",
-            "K" : "Streaks",
+            "K" : "Repeating Streaks",
             "L" : "Logic",
             "N" : "Neighbour",
             "S" : "Spike",
@@ -45,7 +45,8 @@ QC_TESTS = {"C" : "Climatological",
             "o" : "Odd Cluster",
             "p" : "Pressure",
             "w" : "Winds",
-            "x" : "Excess streak proportion"
+            "x" : "Excess streak proportion",
+            "y" : "Repeated Days"
             }
 
 
@@ -432,7 +433,7 @@ def get_critical_values(indata: np.array, binmin: float = 0, binwidth: float = 1
     
     elif len(indata) == 0:
         # If no data, return 0+binwidth as the threshold to ensure a positive value
-        threshold = np.copy(binwidth)
+        threshold = 0+binwidth
         return threshold
 
     # Or there is data to process, let's go
@@ -444,7 +445,7 @@ def get_critical_values(indata: np.array, binmin: float = 0, binwidth: float = 1
     if len(full_hist) <= 1:
         threshold = max(indata) + binwidth
         return threshold
-    
+
     # Check if the first 5(10) bins have sufficient data
     n_zeros = gcv_zeros_in_central_section(full_hist, 5)
     if n_zeros >= 3:

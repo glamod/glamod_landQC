@@ -13,6 +13,7 @@ Repeated Streaks Check
 #************************************************************************
 import copy
 import numpy as np
+import datetime as dt
 import logging
 logger = logging.getLogger(__name__)
 
@@ -88,8 +89,8 @@ def get_repeating_streak_threshold(obs_var: utils.Meteorological_Variable,
     if obs_var.name == "wind_speed":
         mask_calms(this_var)
 
-    # only process further if there is enough data
-    if len(this_var.data.compressed()) > 1:
+    # only process further if there is enough data (need at least 2 for a streak!)
+    if len(this_var.data.compressed()) > 2:
 
         repeated_streak_lengths, _, _ = utils.prepare_data_repeating_streak(this_var.data.compressed(),
                                                                             diff=0, plots=plots,
@@ -162,7 +163,7 @@ def get_excess_streak_threshold(obs_var: utils.Meteorological_Variable,
 
         locs, = np.nonzero(years == year)
 
-        if len(this_var.data[locs].compressed()) > 1:
+        if len(this_var.data[locs].compressed()) > 2:
             # Not looking for distribution of streak lengths,
             #  but proportion of obs identified as in a streak in each calendar year.
 
@@ -241,8 +242,8 @@ def repeating_value(obs_var: utils.Meteorological_Variable, times: np.array,
         return
     
     # only process further if there is enough data
-    if len(this_var.data.compressed()) == 0:
-        # Escape if no data
+    if len(this_var.data.compressed()) < 2:
+        # Escape if insufficient data
         return
 
     repeated_streak_lengths, grouped_diffs, streaks = utils.prepare_data_repeating_streak(this_var.data.compressed(), diff=0, plots=plots, diagnostics=diagnostics)
@@ -301,7 +302,7 @@ def excess_repeating_value(obs_var: utils.Meteorological_Variable, times: np.arr
     flags = np.ma.array(["" for i in range(this_var.data.shape[0])],
                         mask=this_var.data.mask)
 
-    # retrieve the threshold and store in another dictionary
+    # retrieve the threshold and store
     try:
         threshold = config_dict[f"STREAK-{this_var.name}"]["Excess"]
     except KeyError:
@@ -322,8 +323,8 @@ def excess_repeating_value(obs_var: utils.Meteorological_Variable, times: np.arr
         year_flags = flags[locs]
         unmasked, = np.nonzero(year_flags.mask == False)
 
-        if len(this_var.data[locs].compressed()) == 0:
-            # Escape if no data
+        if len(this_var.data[locs].compressed()) < 2:
+            # Escape if insufficient data
             continue
 
         # Not looking for distribution of streak lengths,
@@ -363,14 +364,99 @@ def excess_repeating_value(obs_var: utils.Meteorological_Variable, times: np.arr
 
 
 #************************************************************************
-def day_repeat():
+def repeating_day(obs_var:utils.Meteorological_Variable, station: utils.Station,
+                  config_dict: dict, determine_threshold=False,
+                  plots: bool = False, diagnostics: bool = False) -> None:
 
     # any complete repeat of 24hs (as long as not "straight streak")
 
+    set_flags = not determine_threshold    
+
+    if set_flags:
+        flags = np.array(["" for _ in obs_var.data])
+        # retrieve the threshold and store
+        try:
+            threshold = config_dict[f"STREAK-{obs_var.name}"]["DayRepeat"]
+        except KeyError:
+            # no threshold set
+            return
+
+
     # sort into array of days
     # check each day and compare to previous. HadISD used fixed threshold, but could do one pass to get, second to apply/?
+    all_lengths = []
+    streak_length = 0
+    previous_day_data = np.array([])
+    for year in np.unique(station.years):
+        for month in np.unique(station.months):
+            for day in np.unique(station.days):
+                try:
+                    # if Datetime doesn't throw an error, then valid date
+                    _ = dt.datetime(year, month, day)
+                except ValueError:
+                    # not a valid day (e.g. Leap years, short months etc)
+                    continue
 
-    return # day_repeat
+                this_day_locs, = np.where(np.logical_and.reduce((station.years == year,
+                                                        station.months == month,
+                                                        station.days == day)))
+
+                if len(this_day_locs) == 0:
+                    # skip if no data
+                    continue
+
+                this_day_data = obs_var.data[this_day_locs]
+
+                if len(this_day_data.compressed()) == 0:
+                    # skip if no unmasked data
+                    continue
+
+                if np.array_equal(this_day_data, previous_day_data):
+                    # if day equals previous, part of a streak
+                    if streak_length == 0:
+                        # if beginning of a new streak, count previous day as well
+                        streak_length = 2
+                    else:
+                        # else just add one day
+                        streak_length += 1
+
+                    if set_flags:
+                        # Apply the flags
+                        flags[this_day_locs] = "y"
+                        if streak_length == 2:
+                            # already incremented
+                            flags[previous_day_locs] = "y"
+
+                else:
+                    # if different, then if end of a streak, save and reset
+                    if streak_length != 0:
+                        all_lengths += [streak_length]
+                        streak_length = 0
+
+                # make copies for next loop
+                previous_day_data = np.ma.copy(this_day_data)
+                previous_day_locs = np.ma.copy(this_day_locs)
+                
+    # Calculate and save the threshold.
+    if determine_threshold:
+        threshold = utils.get_critical_values(all_lengths, binwidth=1, 
+                                plots=True,title=obs_var.name.capitalize(),
+                                xlabel="Streaks of repeating days")
+        print(type(threshold))
+        try:
+            config_dict[f"STREAK-{obs_var.name}"]["DayRepeat"] = threshold
+        except KeyError:
+            CD_straight = {"DayRepeat" : threshold}
+            config_dict[f"STREAK-{obs_var.name}"] = CD_straight
+
+    if set_flags:
+        # Write into original object (the one with calm periods)
+        obs_var.flags = utils.insert_flags(obs_var.flags, flags)
+
+        logger.info(f"Repeated Day streaks {obs_var.name}")
+        logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")        
+
+    return # repeating_day
 
 
 #************************************************************************
@@ -414,18 +500,19 @@ def rsc(station: utils.Station, var_list: list, config_dict: {},
             if full:
                 get_repeating_streak_threshold(obs_var, config_dict, plots=plots, diagnostics=diagnostics)
                 get_excess_streak_threshold(obs_var, station.years, config_dict, plots=plots, diagnostics=diagnostics)
+                repeating_day(obs_var, station, config_dict, determine_threshold=True, plots=plots, diagnostics=diagnostics)
 
+            # Simple streaks of repeated values
             repeating_value(obs_var, station.times, config_dict, plots=plots, diagnostics=diagnostics)
+            
+            # more short streaks than reasonable            
             excess_repeating_value(obs_var, station.times, config_dict, plots=plots, diagnostics=diagnostics)
-
-            # more short streaks than reasonable
-            # excess_repeating_value()
 
             # repeats at same hour of day
             # hourly_repeat()
 
             # repeats of whole day
-            # day_repeat()
+            repeating_day(obs_var, station, config_dict, determine_threshold=False, plots=plots, diagnostics=diagnostics)
 
     return # rsc
 

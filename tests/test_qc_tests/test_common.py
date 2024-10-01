@@ -36,4 +36,4 @@ def test_generate_streaky_data() -> None:
 
     streaky_data = common.generate_streaky_data(testdata, testdict)
 
-    np.testing.assert_array_equal(testdata, expected)
+    np.testing.assert_array_equal(streaky_data, expected)
