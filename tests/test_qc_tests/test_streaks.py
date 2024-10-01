@@ -3,15 +3,16 @@ Contains tests for streaks.py
 """
 import numpy as np
 import datetime as dt
-import pytest
+import pandas as pd
 from unittest.mock import patch, Mock
+from typing import Optional
 
 import streaks
 import qc_utils
 
 import common
 
-def _make_station(data: np.array, name: str) -> qc_utils.Station:
+def _make_station(data: np.array, name: str, times: Optional[np.array] = None) -> qc_utils.Station:
     """
     Create an example station 
 
@@ -23,10 +24,13 @@ def _make_station(data: np.array, name: str) -> qc_utils.Station:
     """
     obs_var = common.example_test_variable(name, data)
 
-    times = np.array([dt.datetime(2024, 1, 1, 12, 0) +
-                     (i * dt.timedelta(seconds=60*60))
-                     for i in range(len(data))])
-    
+    if times is not None:
+        pass
+    else:
+        start_dt = dt.datetime(2000, 1, 1, 0, 0)
+        times = pd.to_datetime(pd.DataFrame([start_dt + dt.timedelta(hours=i)\
+                              for i in range(len(data))])[0])
+
     station = common.example_test_station(obs_var, times)
 
     return station
@@ -35,7 +39,7 @@ def _make_station(data: np.array, name: str) -> qc_utils.Station:
 # not testing plotting
 
 
-def test_mask_calms():
+def test_mask_calms() -> None:
 
     # set up data
     data = np.ma.arange(2).astype(float)
@@ -50,7 +54,7 @@ def test_mask_calms():
     assert this_var.data.mask[1] == False
 
 
-def test_get_repeating_streak_threshold():
+def test_get_repeating_streak_threshold() -> None:
 
     # set up data
     data = np.ma.arange(0, 200, 0.1).astype(float)
@@ -89,7 +93,60 @@ def test_get_repeating_streak_threshold():
     assert config_dict["STREAK-temperature"]["Straight"] == 8
 
 
-def test_repeating_value_nonwind():
+def test_get_excess_streak_threshold() -> None:
+
+    all_data = np.array([])
+    years = np.array([])
+    # set up data
+    data = np.ma.arange(0, 200, 0.1).astype(float)
+    data.mask = np.zeros(data.shape[0])
+
+    # add a some years with no streaks
+    for y in range(10):
+        all_data = np.append(all_data, data)
+        years = np.append(years, (2000*np.ones(data.shape[0]))+y)
+
+    # make some streaks (set start index and length)
+    streak_starts_lengths = {10: 3,
+                             20: 3,
+                             30: 3,
+                             40: 3,
+                             50: 3,
+                             60: 3,
+                             70: 3,
+                             80: 3,
+                             90: 3,
+                             100: 3,
+                             110: 3,
+                             120: 3,
+                             130: 3,
+                             140: 3,
+                             150: 3,
+                             160: 3,
+                             170: 3,
+                             180: 3,
+                             190: 3,
+                             }
+    
+    for start, length in streak_starts_lengths.items():
+        data[start: start+length] = data[start]
+
+    # Add some years with streaks
+    for y in range(10, 15):
+        all_data = np.append(all_data, data)
+        years = np.append(years, (2000*np.ones(data.shape[0]))+y)
+
+    station = _make_station(all_data, "temperature")
+    this_var = getattr(station, "temperature")
+
+    config_dict = {}
+
+    streaks.get_excess_streak_threshold(this_var, years, config_dict)
+
+    assert config_dict["STREAK-temperature"]["Excess"] == 0.0335
+
+
+def test_repeating_value_nonwind() -> None:
 
     # set up data
     data = np.ma.arange(0, 200, 0.1).astype(float)
@@ -112,7 +169,7 @@ def test_repeating_value_nonwind():
     np.testing.assert_array_equal(this_var.flags, expected_flags)
 
 
-def test_repeating_value_wind():
+def test_repeating_value_wind() -> None:
 
     # set up data
     data = np.ma.arange(0, 200, 0.1).astype(float)
@@ -121,7 +178,7 @@ def test_repeating_value_wind():
     station = _make_station(data, "wind_speed")
     this_var = getattr(station, "wind_speed")
 
-    # make the streak (should ignore the length-20 one at the end)
+    # make the streak (should ignore the length-20 one of zeros [calms] at the end)
     this_var.data[50:70] = -5
     expected_flags = np.array(["" for _ in data])
     expected_flags[50:70] = "K"
@@ -136,9 +193,74 @@ def test_repeating_value_wind():
     np.testing.assert_array_equal(this_var.flags, expected_flags)
 
 
+def test_excess_repeating_value():
+    # initialise arrays
+    expected_flags = np.array([])
+    all_data = np.ma.array([])
+    years = np.array([])
+
+    # set up data, including some masked data
+    data = np.ma.arange(0, 200, 0.1).astype(float)
+    data.mask = np.zeros(data.shape[0])
+    data.mask[10] = True
+    flags = np.array(["" for _ in data])
+
+    # add a year with no streaks
+    all_data = np.ma.append(all_data, data)
+    expected_flags = np.append(expected_flags, flags)
+    years = np.append(years, 2000*np.ones(data.shape[0]))
+
+    # make some streaks (set start index and length)
+    streak_starts_lengths = {10: 3,
+                             20: 3,
+                             30: 3,
+                             40: 3,
+                             50: 3,
+                             60: 3,
+                             70: 3,
+                             80: 3,
+                             90: 3,
+                             100: 3,
+                             110: 3,
+                             120: 3,
+                             130: 3,
+                             140: 3,
+                             150: 3,
+                             160: 3,
+                             170: 3,
+                             180: 3,
+                             190: 3,
+                             }
+    
+    for start, length in streak_starts_lengths.items():
+        data[start: start+length] = data[start]
+        if not data.mask[start]:
+            # only mark expected flag if data not masked
+            flags[start: start+length] = "x"
+
+    # Add a year with streaks
+    all_data = np.ma.append(all_data, data)
+    years = np.append(years, 2001*np.ones(data.shape[0]))
+    expected_flags = np.append(expected_flags, flags)
+
+    # create the station and ObsVar
+    times = pd.to_datetime(pd.DataFrame([dt.datetime(yr, 1, 1, 12, 0) + dt.timedelta(hours=y)\
+                              for y, yr in enumerate(years.astype(int))])[0])
+
+    station = _make_station(all_data, "temperature", times=times)
+    this_var = getattr(station, "temperature")
+
+    # set up dictionary, with a threshold to trigger the test
+    config_dict = {}
+    CD_excess = {"Excess" : 0.02}  
+    config_dict["STREAK-temperature"] = CD_excess
+
+    streaks.excess_repeating_value(this_var, station.times, config_dict)
+
+    # assert flags are as expected
+    np.testing.assert_array_equal(this_var.flags, expected_flags)
 
 
-# def test_excess_repeating_value():
 # def test_day_repeat():
 # def test_hourly_repeat():
 

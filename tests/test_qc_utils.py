@@ -118,7 +118,7 @@ def test_get_critical_values_normal(histogram_mock: Mock) -> None:
     assert threshold == np.nonzero(fit < 0.1)[0][0]
 
 
-def test_prepare_data_repeating_string_indices() -> None:
+def test_prepare_data_repeating_streak_indices() -> None:
 
     # locations in an array where DPD = 0
     locs = np.array([0,
@@ -131,7 +131,7 @@ def test_prepare_data_repeating_string_indices() -> None:
                      70])
 
     # diff=1 to test that locations of DPD=0 are neighbouring
-    lengths, grouped_diffs, strings = qc_utils.prepare_data_repeating_string(locs, diff=1)
+    lengths, grouped_diffs, streaks = qc_utils.prepare_data_repeating_streak(locs, diff=1)
 
     # lengths which are passed into the fitting to 
     np.testing.assert_array_equal(lengths, np.array([6, 4, 4, 3, 3, 3]))
@@ -149,13 +149,13 @@ def test_prepare_data_repeating_string_indices() -> None:
                                                            [ 8,  1],
                                                            [ 1,  2],
                                                            [ 8,  1]]))
-    # locations in the grouped differences which are repeated strings
-    np.testing.assert_array_equal(strings, np.array([1, 3, 5, 7, 9, 11]))
+    # locations in the grouped differences which are repeated streaks
+    np.testing.assert_array_equal(streaks, np.array([1, 3, 5, 7, 9, 11]))
 
-    assert len(lengths) == len(strings)
+    assert len(lengths) == len(streaks)
 
 
-def test_prepare_data_repeating_string_values() -> None:
+def test_prepare_data_repeating_streak_values() -> None:
 
     # array containing streaks
     inarray = np.ma.arange(0, 200, 1)
@@ -186,17 +186,17 @@ def test_prepare_data_repeating_string_values() -> None:
 
 
     # diff=0 for neighbouring values being identical
-    lengths, _, strings = qc_utils.prepare_data_repeating_string(inarray, diff=0)
+    lengths, _, streaks = qc_utils.prepare_data_repeating_streak(inarray, diff=0)
 
     # lengths which are passed into the fitting to 
     np.testing.assert_array_equal(lengths, np.fromiter(streak_starts_lengths.values(),
                                                        dtype=int))
 
-    # locations in the grouped differences which are repeated strings
-    np.testing.assert_array_equal(strings,
+    # locations in the grouped differences which are repeated streaks
+    np.testing.assert_array_equal(streaks,
                                   np.array([ 1,  4,  7, 10, 13, 16, 19, 22, 25, 28, 31, 34, 37, 40, 43, 46, 49]))
 
-    assert len(lengths) == len(strings)
+    assert len(lengths) == len(streaks)
 
 
 def test_gcv_calculate_binmax() -> None:

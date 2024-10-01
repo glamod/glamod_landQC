@@ -155,7 +155,7 @@ def get_excess_streak_threshold(obs_var: utils.Meteorological_Variable,
         mask_calms(this_var)
 
     # only process further if there is enough data
-    
+
     proportions = np.zeros(np.unique(years).shape[0])
     for y, year in enumerate(np.unique(years)):
 
@@ -173,7 +173,7 @@ def get_excess_streak_threshold(obs_var: utils.Meteorological_Variable,
 
 
 
-    if len(np.nonzero(proportions != 0)[0]) > 5:
+    if len(np.nonzero(proportions != 0)[0]) >= 5:
         # If at least 5 years have sufficient data that can calculate a fraction
 
         # bin width is 0.005 (0.5%) as dealing in fractions
@@ -227,18 +227,15 @@ def repeating_value(obs_var: utils.Meteorological_Variable, times: np.array,
     compressed_flags = np.array(["" for i in range(this_var.data.compressed().shape[0])])
     masked_times = np.ma.array(times, mask=obs_var.data.mask)
 
-    # retrieve the threshold and store in another dictionary
-    threshold = {}
+    # retrieve the threshold
     try:
-        th = config_dict[f"STREAK-{this_var.name}"]["Straight"]
-        threshold["Straight"] = th
+        threshold = config_dict[f"STREAK-{this_var.name}"]["Straight"]
     except KeyError:
         # no threshold set
         get_repeating_streak_threshold(this_var, config_dict, plots=plots, diagnostics=diagnostics)
-        th = config_dict[f"STREAK-{this_var.name}"]["Straight"]
-        threshold["Straight"] = th
+        threshold = config_dict[f"STREAK-{this_var.name}"]["Straight"]
 
-    if threshold["Excess"] == utils.MDI:
+    if threshold == utils.MDI:
         # No threshold obtainable, no need to continue the test
         return
     
@@ -250,7 +247,7 @@ def repeating_value(obs_var: utils.Meteorological_Variable, times: np.array,
     repeated_streak_lengths, grouped_diffs, streaks = utils.prepare_data_repeating_streak(this_var.data.compressed(), diff=0, plots=plots, diagnostics=diagnostics)
 
     # above threshold
-    bad, = np.where(repeated_streak_lengths >= threshold["Straight"])
+    bad, = np.where(repeated_streak_lengths >= threshold)
 
     # flag identified streaks
     for streak in bad:
@@ -290,37 +287,39 @@ def excess_repeating_value(obs_var: utils.Meteorological_Variable, times: np.arr
     
     """
     years = np.array([t.year for t in times])
-
+    if plots:
+        # for plotting only
+        masked_times = np.ma.array(times, mask=obs_var.data.mask)
+    
     # remove calm periods for wind speeds when (a) calculating thresholds and (b) identifying streaks
     this_var = copy.deepcopy(obs_var)
     if obs_var.name == "wind_speed":
         mask_calms(this_var)
 
-    flags = np.array(["" for i in range(this_var.data.shape[0])])
-    compressed_flags = np.array(["" for i in range(this_var.data.compressed().shape[0])])
-    masked_times = np.ma.array(times, mask=obs_var.data.mask)
+    # use mask rather than compress immediately, to ensure indexing works
+    flags = np.ma.array(["" for i in range(this_var.data.shape[0])],
+                        mask=this_var.data.mask)
 
     # retrieve the threshold and store in another dictionary
-    threshold = {}
     try:
-        th = config_dict[f"STREAK-{this_var.name}"]["Excess"]
-        threshold["Excess"] = th
-
+        threshold = config_dict[f"STREAK-{this_var.name}"]["Excess"]
     except KeyError:
         # no threshold set
         get_excess_streak_threshold(this_var, years, config_dict,
                                     plots=plots, diagnostics=diagnostics)
-        th = config_dict[f"STREAK-{this_var.name}"]["Excess"]
-        threshold["Excess"] = th
+        threshold = config_dict[f"STREAK-{this_var.name}"]["Excess"]
 
-    if threshold["Excess"] == utils.MDI:
+
+    if threshold == utils.MDI:
         # No threshold obtainable, no need to continue the test
         return
 
     # Spin through each year, calculate proportion, flag comprising streaks if too high
     for y, year in enumerate(np.unique(years)):
-
+        # set up indices for year, and flags array for year
         locs, = np.nonzero(years == year)
+        year_flags = flags[locs]
+        unmasked, = np.nonzero(year_flags.mask == False)
 
         if len(this_var.data[locs].compressed()) == 0:
             # Escape if no data
@@ -328,17 +327,15 @@ def excess_repeating_value(obs_var: utils.Meteorological_Variable, times: np.arr
 
         # Not looking for distribution of streak lengths,
         #  but proportion of obs identified as in a streak in each calendar year.
-
         (year_repeated_streak_lengths,
         grouped_diffs,
         streaks) = utils.prepare_data_repeating_streak(this_var.data[locs].compressed(),
                                                         diff=0, plots=plots,
                                                         diagnostics=diagnostics)
-
         proportion = np.sum(year_repeated_streak_lengths)/len(this_var.data[locs].compressed())
 
-        if proportion <= threshold["Excess"]:
-            # Escape if no trigger
+        if proportion <= threshold:
+            # Move on to next year
             continue
 
         all_streaks, = np.where(year_repeated_streak_lengths >= 2)
@@ -348,18 +345,18 @@ def excess_repeating_value(obs_var: utils.Meteorological_Variable, times: np.arr
             start = int(np.sum(grouped_diffs[:streaks[streak], 1]))
             end = start + int(grouped_diffs[streaks[streak], 1]) + 1
 
-            compressed_flags[start : end] = "x"
+            year_flags[unmasked[start : end]] = "x"
+
+            flags[locs] = year_flags
 
             if plots:
                 plot_streak(masked_times, this_var.data[locs], obs_var.units, start, end)
 
-    # undo compression and write into original object (the one with calm periods)
-    flags[this_var.data.mask == False] = compressed_flags
+    # Write into original object (the one with calm periods)
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
     logger.info(f"Excess Repeated streaks {this_var.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
-
 
     return # excess_repeating_value
 
@@ -414,10 +411,10 @@ def rsc(station: utils.Station, var_list: list, config_dict: {},
 
             # repeating (straight) streaks
             if full:
-    #            get_repeating_streak_threshold(obs_var, config_dict, plots=plots, diagnostics=diagnostics)
+                get_repeating_streak_threshold(obs_var, config_dict, plots=plots, diagnostics=diagnostics)
                 get_excess_streak_threshold(obs_var, station.years, config_dict, plots=plots, diagnostics=diagnostics)
 
-    #        repeating_value(obs_var, station.times, config_dict, plots=plots, diagnostics=diagnostics)
+            repeating_value(obs_var, station.times, config_dict, plots=plots, diagnostics=diagnostics)
             excess_repeating_value(obs_var, station.times, config_dict, plots=plots, diagnostics=diagnostics)
 
             # more short streaks than reasonable
