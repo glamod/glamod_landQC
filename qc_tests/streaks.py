@@ -4,9 +4,9 @@ Repeated Streaks Check
 
    Checks for replication of 
      1. checks for consecutive repeating values
-     2. checks if one year has more repeating streaks than expected [Not yet implemented]
+     2. checks if one year has more repeating streaks than expected
      3. checks for repeats at a given hour across a number of days [Not yet implemented]
-     4. checks for repeats for whole days - all 24 hourly values [Not yet implemented]
+     4. checks for repeats for whole days - all 24 hourly values
 
    Thresholds now determined dynamically
 """
