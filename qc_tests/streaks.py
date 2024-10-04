@@ -208,10 +208,9 @@ def get_excess_streak_threshold(obs_var: utils.Meteorological_Variable,
             # Don't want all streaks (min of 2 consecutive values), need some form
             #  of higher threshold there.
 
-            long_enough_locs, = np.where(year_repeated_streak_lengths > MIN_STREAK_LENGTH_FOR_EXCESS_FREQUENCY)
+            long_enough_locs, = np.where(year_repeated_streak_lengths >= MIN_STREAK_LENGTH_FOR_EXCESS_FREQUENCY)
 
             proportions[y] = np.sum(year_repeated_streak_lengths[long_enough_locs])/len(this_var.data[locs].compressed())
-
 
     if len(np.nonzero(proportions != 0)[0]) >= 5:
         # If at least 5 years have sufficient data that can calculate a fraction
@@ -219,7 +218,7 @@ def get_excess_streak_threshold(obs_var: utils.Meteorological_Variable,
         # bin width is 0.005 (0.5%) as dealing in fractions
         # minimum bin value is 0 as this is the lowest proportion possible
         threshold = utils.get_critical_values(proportions, binmin=0,
-                                              binwidth=0.005, plots=False,
+                                              binwidth=0.005, plots=plots,
                                               diagnostics=diagnostics,
                                               title=this_var.name.capitalize(),
                                               xlabel="Excess streak proportion")
@@ -375,16 +374,17 @@ def excess_repeating_value(obs_var: utils.Meteorological_Variable, times: np.arr
         streaks) = utils.prepare_data_repeating_streak(this_var.data[locs].compressed(),
                                                         diff=0, plots=plots,
                                                         diagnostics=diagnostics)
-        proportion = np.sum(year_repeated_streak_lengths)/len(this_var.data[locs].compressed())
+
+        long_enough_streaks, = np.where(year_repeated_streak_lengths >= MIN_STREAK_LENGTH_FOR_EXCESS_FREQUENCY)
+
+        proportion = np.sum(year_repeated_streak_lengths[long_enough_streaks])/len(this_var.data[locs].compressed())
 
         if proportion <= threshold:
             # Move on to next year
             continue
 
-        all_streaks, = np.where(year_repeated_streak_lengths >= MIN_STREAK_LENGTH_FOR_EXCESS_FREQUENCY)
-
-        # all identified streaks (>= 2 identical values in a row)
-        for streak in all_streaks:
+        # all identified streaks (>= MIN_STREAK_LENGTH_FOR_EXCESS_FREQUENCY in a row)
+        for streak in long_enough_streaks:
             start = int(np.sum(grouped_diffs[:streaks[streak], 1]))
             end = start + int(grouped_diffs[streaks[streak], 1]) + 1
 
@@ -539,12 +539,15 @@ def rsc(station: utils.Station, var_list: list, config_dict: dict,
 
         # need to have at least two observations to get a streak
         if len(obs_var.data.compressed()) >= 2:
+            startT = dt.datetime.now()
             if full:
                 # recalculating all thresholds
                 get_repeating_streak_threshold(obs_var, config_dict, wind_speed=wind_speed,
                                                plots=plots, diagnostics=diagnostics)
                 get_excess_streak_threshold(obs_var, station.years, config_dict, wind_speed=wind_speed,
                                             plots=plots, diagnostics=diagnostics)
+
+                # This is slow - as spinning through each day and then selecting
                 repeating_day(obs_var, station, config_dict, determine_threshold=True,
                               plots=plots, diagnostics=diagnostics)
 
@@ -560,6 +563,7 @@ def rsc(station: utils.Station, var_list: list, config_dict: dict,
             # hourly_repeat()
 
             # repeats of whole day
+            #   (slow)
             try:
                 # If there is a threshold set, then can use
                 _ = config_dict[f"STREAK-{obs_var.name}"]["DayRepeat"]
