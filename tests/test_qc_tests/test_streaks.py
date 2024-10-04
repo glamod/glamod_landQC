@@ -4,6 +4,7 @@ Contains tests for streaks.py
 import numpy as np
 import datetime as dt
 import pandas as pd
+import pytest
 from unittest.mock import patch, Mock
 from typing import Optional
 
@@ -89,6 +90,22 @@ def test_get_repeating_streak_threshold() -> None:
     assert config_dict["STREAK-temperature"]["Straight"] == 8
 
 
+def test_get_repeating_streak_threshold_no_data() -> None:
+
+    # set up data
+    data = np.ma.arange(0, 1, 1).astype(float)
+    data.mask = np.zeros(data.shape[0])
+
+    station = _make_station(data, "temperature")
+    this_var = getattr(station, "temperature")
+
+    config_dict = {}
+
+    streaks.get_repeating_streak_threshold(this_var, config_dict)
+
+    assert config_dict["STREAK-temperature"]["Straight"] == qc_utils.MDI
+
+
 def test_get_excess_streak_threshold() -> None:
 
     all_data = np.array([])
@@ -140,6 +157,46 @@ def test_repeating_value_nonwind() -> None:
     streaks.repeating_value(this_var, station.times, config_dict)
 
     np.testing.assert_array_equal(this_var.flags, expected_flags)
+
+
+def test_repeating_value_threshold_is_mdi() -> None:
+
+    # set up data
+    data = np.ma.arange(0, 200, 0.1).astype(float)
+    data.mask = np.zeros(data.shape[0])
+    station = _make_station(data, "temperature")
+    this_var = getattr(station, "temperature")
+
+    # make the streak, but no flags
+    this_var.data[50:70] = -5
+    expected_flags = np.array(["" for _ in data])
+
+    # set up dictionary
+    config_dict = {}
+    CD_straight = {"Straight" : qc_utils.MDI}  # streaks of 10 or more identical values
+    config_dict["STREAK-temperature"] = CD_straight
+
+    streaks.repeating_value(this_var, station.times, config_dict)
+
+    np.testing.assert_array_equal(this_var.flags, expected_flags)
+
+
+def test_repeating_value_short() -> None:
+
+    # set up data
+    data = np.ma.arange(0, 1, 1).astype(float)
+    data.mask = np.zeros(data.shape[0])
+    station = _make_station(data, "temperature")
+    this_var = getattr(station, "temperature")
+
+    # set up dictionary
+    config_dict = {}
+    CD_straight = {"Straight" : 10}  # streaks of 10 or more identical values
+    config_dict["STREAK-temperature"] = CD_straight
+
+    streaks.repeating_value(this_var, station.times, config_dict)
+
+    np.testing.assert_array_equal(this_var.flags, np.array([""]))
 
 
 def test_repeating_value_wind() -> None:
@@ -212,7 +269,29 @@ def test_excess_repeating_value():
     np.testing.assert_array_equal(this_var.flags, expected_flags)
 
 
-# def test_day_repeat():
+def test_repeating_day() -> None:
+
+
+    indata = np.arange(24*8) # 8 days
+    expected_flags = np.array(["" for _ in indata])
+    # add a streak of 3 repeated days (days 2-5)
+    indata[72:96] = indata[48:72]
+    indata[96:120] = indata[48:72]
+    expected_flags[48:120] = "y"
+
+    obs_var = common.example_test_variable("temperature", indata)
+    station = common.example_test_station(obs_var)
+
+    # set up config_dict
+    config_dict = {}
+    CD_dayrepeat = {"DayRepeat" : 2}
+    config_dict[f"STREAK-{obs_var.name}"] = CD_dayrepeat    
+    
+    streaks.repeating_day(obs_var, station, config_dict, determine_threshold=False)
+
+    np.testing.assert_array_equal(expected_flags, obs_var.flags)
+
+
 # def test_hourly_repeat():
 
 

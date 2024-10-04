@@ -46,7 +46,7 @@ QC_TESTS = {"C" : "Climatological",
             "p" : "Pressure",
             "w" : "Winds",
             "x" : "Excess streak proportion",
-            "y" : "Repeated Days"
+            "y" : "Repeated Day streaks"
             }
 
 
