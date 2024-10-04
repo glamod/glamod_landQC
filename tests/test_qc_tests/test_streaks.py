@@ -14,25 +14,25 @@ import qc_utils
 
 import common
 
-EXCESS_STREAK_STARTS_LENGTHS = {10: 3,
-                                20: 3,
-                                30: 3,
-                                40: 3,
-                                50: 3,
-                                60: 3,
-                                70: 3,
-                                80: 3,
-                                90: 3,
-                                100: 3,
-                                110: 3,
-                                120: 3,
-                                130: 3,
-                                140: 3,
-                                150: 3,
-                                160: 3,
-                                170: 3,
-                                180: 3,
-                                190: 3,
+EXCESS_STREAK_STARTS_LENGTHS = {100: 15,
+                                200: 15,
+                                300: 15,
+                                400: 15,
+                                500: 15,
+                                600: 15,
+                                700: 15,
+                                800: 15,
+                                900: 15,
+                                1000: 15,
+                                1100: 15,
+                                1200: 15,
+                                1300: 15,
+                                1400: 15,
+                                1500: 15,
+                                1600: 15,
+                                1700: 15,
+                                1800: 15,
+                                1900: 15,
                                 }
 
 
@@ -70,7 +70,7 @@ def _make_repeating_value_station(name: str) -> qc_utils.Station:
     obs_var = getattr(station, name)
 
     # make the streak, but no flags
-    obs_var.data[50:70] = -5
+    obs_var.data[50:70] = 5
 
     return station
 
@@ -82,8 +82,11 @@ def station_for_rsc_logic() -> qc_utils.Station:
 
 # not testing plotting
 
+@patch("qc_utils.reporting_accuracy")
+def test_mask_calms(reporting_mock: Mock) -> None:
 
-def test_mask_calms() -> None:
+    # 0.1 m/s resolution
+    reporting_mock.return_value = 0.1
 
     # set up data
     data = np.ma.arange(2).astype(float)
@@ -127,8 +130,10 @@ def test_get_repeating_streak_threshold_no_data() -> None:
     assert config_dict["STREAK-temperature"]["Straight"] == qc_utils.MDI
 
 
-def test_get_excess_streak_threshold() -> None:
+@patch("streaks.utils.get_critical_values")
+def test_get_excess_streak_threshold(critical_values_mock: Mock) -> None:
 
+    expected_proportions = []
     all_data = np.array([])
     years = np.array([])
     # set up data
@@ -139,6 +144,7 @@ def test_get_excess_streak_threshold() -> None:
     for y in range(10):
         all_data = np.append(all_data, data)
         years = np.append(years, (2000*np.ones(data.shape[0]))+y)
+        expected_proportions += [0]
 
     data = common.generate_streaky_data(data, EXCESS_STREAK_STARTS_LENGTHS)
 
@@ -146,15 +152,19 @@ def test_get_excess_streak_threshold() -> None:
     for y in range(10, 15):
         all_data = np.append(all_data, data)
         years = np.append(years, (2000*np.ones(data.shape[0]))+y)
+        expected_proportions += [np.sum([v for _, v in EXCESS_STREAK_STARTS_LENGTHS.items()])/data.shape[0]]
 
     station = _make_station(all_data, "temperature")
     this_var = getattr(station, "temperature")
 
     config_dict = {}
+    critical_values_mock.return_value = 0.3
 
-    streaks.get_excess_streak_threshold(this_var, years, config_dict)
+    streaks.get_excess_streak_threshold(this_var, years, config_dict, plots=True)
 
-    assert config_dict["STREAK-temperature"]["Excess"] == 0.0335
+    # Test that propotions were calculated as expected
+    np.testing.assert_array_equal(np.array(expected_proportions),
+                                  critical_values_mock.call_args.args[0])
 
 
 def test_repeating_value_nonwind() -> None:
@@ -237,7 +247,7 @@ def test_excess_repeating_value():
     years = np.array([])
 
     # set up data, including some masked data
-    data = np.ma.arange(0, 200, 0.1).astype(float)
+    data = np.ma.arange(0, 2000, 0.1).astype(float)
     data.mask = np.zeros(data.shape[0])
     data.mask[10] = True
     flags = np.array(["" for _ in data])
@@ -247,6 +257,9 @@ def test_excess_repeating_value():
     expected_flags = np.append(expected_flags, flags)
     years = np.append(years, 2000*np.ones(data.shape[0]))
 
+    # will only find streaks over a particular length
+    #  i.e. not long enough to be flagged themselves, but too many if all together 
+    #       in a single year
     data = common.generate_streaky_data(data, EXCESS_STREAK_STARTS_LENGTHS)
     for start, length in EXCESS_STREAK_STARTS_LENGTHS.items():
         if not data.mask[start]:

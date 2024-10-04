@@ -16,9 +16,11 @@ import numpy as np
 import datetime as dt
 import logging
 logger = logging.getLogger(__name__)
+from typing import Optional
 
 import qc_utils as utils
 
+MIN_STREAK_LENGTH_FOR_EXCESS_FREQUENCY = 10
 
 #*********************************************
 def plot_streak(times: np.array, data: np.array, units: str,
@@ -63,31 +65,67 @@ def mask_calms(this_var: utils.Meteorological_Variable) -> None:
 
     :param MetVar this_var: variable to process (wind speeds)
     """
+    reporting_resolution = utils.reporting_accuracy(this_var.data)
 
-    calms, = np.ma.where(this_var.data == 0)
+    # Don't take an identically equal to 0m/s given reporting
+    #   resolution (even if good) may get the odd 0.5m/s as part of a long
+    #   calm spell
+    if reporting_resolution > 0.5: # nearest 1/2 or whole value
+        calms, = np.ma.where(this_var.data <= 1.0)
+    else: # nearest 1/10
+        calms, = np.ma.where(this_var.data <= 0.5)
+
     this_var.data[calms] = utils.MDI
     this_var.data.mask[calms] = True
 
     return
 
+
+def prepare_obs_var(obs_var: utils.Meteorological_Variable,
+                    wind_speed: Optional[utils.Meteorological_Variable] = None)\
+                    -> utils.Meteorological_Variable:
+    """
+    For all these checks make a copy of the observational variable so 
+    masks can be applied without impacting other tests
+
+    And optionally for wind speed and direction, mask out calm periods
+    as these could be a true streak
+
+    :param MetVar obs_var: meteorological variable object
+    :param MetVar wind_speeds: meteorological variable object
+
+    :returns: MetVar
+    """
+    this_var = copy.deepcopy(obs_var)
+
+    if obs_var.name == "wind_speed":
+        mask_calms(this_var)
+    elif obs_var.name == "wind_direction":
+        mask_calms(wind_speed)
+        # combine the masks
+        this_var.data.mask = np.ma.mask_or(wind_speed.data.mask,
+                                           this_var.data.mask)
+
+    return this_var
+
+
 #************************************************************************
 def get_repeating_streak_threshold(obs_var: utils.Meteorological_Variable,
-                                   config_dict: dict, plots: bool = False,
+                                   config_dict: dict,
+                                   wind_speed: Optional[utils.Meteorological_Variable] = None,
+                                   plots: bool = False,
                                    diagnostics: bool = False) -> None:
     """
     Use distribution to determine threshold values.  Then also store in config file.
 
     :param MetVar obs_var: meteorological variable object
     :param str config_dict: configuration dictionary to store critical values
+    :param MetVar wind_speed: need speeds to mask calm periods in wind_directions
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
 
-    # mask calm periods (as these could be a reasonable streak)
-    # Copy the variable so can mask without impacting other tests
-    this_var = copy.deepcopy(obs_var)
-    if obs_var.name == "wind_speed":
-        mask_calms(this_var)
+    this_var = prepare_obs_var(obs_var, wind_speed=wind_speed)
 
     # only process further if there is enough data (need at least 2 for a streak!)
     if len(this_var.data.compressed()) >= 2:
@@ -137,8 +175,9 @@ def get_repeating_streak_threshold(obs_var: utils.Meteorological_Variable,
 
 #************************************************************************
 def get_excess_streak_threshold(obs_var: utils.Meteorological_Variable,
-                                years: np.array,
-                                config_dict: dict, plots: bool = False,
+                                years: np.array, config_dict: dict,
+                                wind_speed: Optional[utils.Meteorological_Variable] = None,
+                                plots: bool = False,
                                 diagnostics: bool = False) -> None:
     """
     Use distribution to determine threshold values.  Then also store in config file.
@@ -146,17 +185,12 @@ def get_excess_streak_threshold(obs_var: utils.Meteorological_Variable,
     :param MetVar obs_var: meteorological variable object
     :param array years: year for each timestamp in data
     :param str config_dict: configuration dictionary to store critical values
+    :param MetVar wind_speed: need speeds to mask calm periods in wind_directions
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
 
-    # mask calm periods (as these could be a reasonable streak)
-    # Copy the variable so can mask without impacting other tests
-    this_var = copy.deepcopy(obs_var)
-    if obs_var.name == "wind_speed":
-        mask_calms(this_var)
-
-    # only process further if there is enough data
+    this_var = prepare_obs_var(obs_var, wind_speed=wind_speed)
 
     proportions = np.zeros(np.unique(years).shape[0])
     for y, year in enumerate(np.unique(years)):
@@ -171,8 +205,12 @@ def get_excess_streak_threshold(obs_var: utils.Meteorological_Variable,
                                                                             diff=0, plots=plots,
                                                                             diagnostics=diagnostics)
 
-            proportions[y] = np.sum(year_repeated_streak_lengths)/len(this_var.data[locs].compressed())
+            # Don't want all streaks (min of 2 consecutive values), need some form
+            #  of higher threshold there.
 
+            long_enough_locs, = np.where(year_repeated_streak_lengths > MIN_STREAK_LENGTH_FOR_EXCESS_FREQUENCY)
+
+            proportions[y] = np.sum(year_repeated_streak_lengths[long_enough_locs])/len(this_var.data[locs].compressed())
 
 
     if len(np.nonzero(proportions != 0)[0]) >= 5:
@@ -181,10 +219,14 @@ def get_excess_streak_threshold(obs_var: utils.Meteorological_Variable,
         # bin width is 0.005 (0.5%) as dealing in fractions
         # minimum bin value is 0 as this is the lowest proportion possible
         threshold = utils.get_critical_values(proportions, binmin=0,
-                                              binwidth=0.005, plots=plots,
+                                              binwidth=0.005, plots=False,
                                               diagnostics=diagnostics,
                                               title=this_var.name.capitalize(),
                                               xlabel="Excess streak proportion")
+
+        if threshold > 1:
+            # cannot have a proportion higher than 1, so setting a value isn't sensible
+            threshold = utils.MDI
 
         # write out the thresholds...
         try:
@@ -206,8 +248,9 @@ def get_excess_streak_threshold(obs_var: utils.Meteorological_Variable,
 
 #************************************************************************
 def repeating_value(obs_var: utils.Meteorological_Variable, times: np.array,
-                    config_dict: dict, plots: bool = False,
-                    diagnostics: bool = False) -> None:
+                    config_dict: dict,
+                    wind_speed: Optional[utils.Meteorological_Variable] = None,
+                    plots: bool = False, diagnostics: bool = False) -> None:
     """
     AKA straight streak
 
@@ -216,15 +259,13 @@ def repeating_value(obs_var: utils.Meteorological_Variable, times: np.array,
     :param MetVar obs_var: meteorological variable object
     :param array times: array of times (usually in minutes)
     :param str config_dict: configuration file to store critical values
+    :param MetVar wind_speed: need speeds to mask calm periods in wind_directions
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
  
-    # remove calm periods for wind speeds when (a) calculating thresholds and (b) identifying streaks
-    this_var = copy.deepcopy(obs_var)
-    if obs_var.name == "wind_speed":
-        mask_calms(this_var)
-
+    this_var = prepare_obs_var(obs_var, wind_speed=wind_speed)
+ 
     flags = np.array(["" for i in range(this_var.data.shape[0])])
     compressed_flags = np.array(["" for i in range(this_var.data.compressed().shape[0])])
     masked_times = np.ma.array(times, mask=obs_var.data.mask)
@@ -273,17 +314,20 @@ def repeating_value(obs_var: utils.Meteorological_Variable, times: np.array,
 
 #************************************************************************
 def excess_repeating_value(obs_var: utils.Meteorological_Variable, times: np.array,
-                    config_dict: dict, plots: bool = False,
-                    diagnostics: bool = False) -> None:
+                    config_dict: dict, 
+                    wind_speed: Optional[utils.Meteorological_Variable] = None,
+                    plots: bool = False, diagnostics: bool = False) -> None:
     """
     Flag years where more than expected fraction of data occurs in streaks,
       but none/not many are long enough in themselves to trigger the repeating_value check
+      Themselves need to be a reasonable length (10) else this overflags
 
     Use config file to read threshold values.  Then find streaks which exceed threshold.
 
     :param MetVar obs_var: meteorological variable object
     :param array times: array of times (usually in minutes)
     :param str config_dict: configuration file to store critical values
+    :param MetVar wind_speed: need speeds to mask calm periods in wind_directions
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     
@@ -293,10 +337,7 @@ def excess_repeating_value(obs_var: utils.Meteorological_Variable, times: np.arr
         # Needed for plotting only
         masked_times = np.ma.array(times, mask=obs_var.data.mask)
     
-    # remove calm periods for wind speeds when (a) calculating thresholds and (b) identifying streaks
-    this_var = copy.deepcopy(obs_var)
-    if obs_var.name == "wind_speed":
-        mask_calms(this_var)
+    this_var = prepare_obs_var(obs_var, wind_speed=wind_speed)
 
     # use mask rather than compress immediately, to ensure indexing works
     flags = np.ma.array(["" for i in range(this_var.data.shape[0])],
@@ -340,7 +381,7 @@ def excess_repeating_value(obs_var: utils.Meteorological_Variable, times: np.arr
             # Move on to next year
             continue
 
-        all_streaks, = np.where(year_repeated_streak_lengths >= 2)
+        all_streaks, = np.where(year_repeated_streak_lengths >= MIN_STREAK_LENGTH_FOR_EXCESS_FREQUENCY)
 
         # all identified streaks (>= 2 identical values in a row)
         for streak in all_streaks:
@@ -349,16 +390,16 @@ def excess_repeating_value(obs_var: utils.Meteorological_Variable, times: np.arr
 
             year_flags[unmasked[start : end]] = "x"
 
-            flags[locs] = year_flags
-
             if plots:
                 plot_streak(masked_times, this_var.data[locs], obs_var.units, start, end)
+
+        flags[locs] = year_flags
 
     # Write into original object (the one with calm periods)
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
     logger.info(f"Excess Repeated streaks {this_var.name}")
-    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
+    logger.info(f"   Cumulative number of flags set: {len(np.ma.nonzero(flags != '')[0])}")
 
     return # excess_repeating_value
 
@@ -475,7 +516,7 @@ def repeating_day(obs_var:utils.Meteorological_Variable, station: utils.Station,
 
 
 #************************************************************************
-def rsc(station: utils.Station, var_list: list, config_dict: {},
+def rsc(station: utils.Station, var_list: list, config_dict: dict,
         full: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Run through the variables and pass to the Repeating Streak Checks
@@ -491,20 +532,29 @@ def rsc(station: utils.Station, var_list: list, config_dict: {},
     for var in var_list:
 
         obs_var = getattr(station, var)
+        if obs_var.name == "wind_direction":
+            wind_speed = copy.deepcopy(getattr(station, "wind_speed"))
+        else:
+            wind_speed = None
 
         # need to have at least two observations to get a streak
         if len(obs_var.data.compressed()) >= 2:
             if full:
                 # recalculating all thresholds
-                get_repeating_streak_threshold(obs_var, config_dict, plots=plots, diagnostics=diagnostics)
-                get_excess_streak_threshold(obs_var, station.years, config_dict, plots=plots, diagnostics=diagnostics)
-                repeating_day(obs_var, station, config_dict, determine_threshold=True, plots=plots, diagnostics=diagnostics)
+                get_repeating_streak_threshold(obs_var, config_dict, wind_speed=wind_speed,
+                                               plots=plots, diagnostics=diagnostics)
+                get_excess_streak_threshold(obs_var, station.years, config_dict, wind_speed=wind_speed,
+                                            plots=plots, diagnostics=diagnostics)
+                repeating_day(obs_var, station, config_dict, determine_threshold=True,
+                              plots=plots, diagnostics=diagnostics)
 
             # Simple streaks of repeated values
-            repeating_value(obs_var, station.times, config_dict, plots=plots, diagnostics=diagnostics)
+            repeating_value(obs_var, station.times, config_dict, wind_speed=wind_speed,
+                            plots=plots, diagnostics=diagnostics)
             
             # more short streaks than reasonable            
-            excess_repeating_value(obs_var, station.times, config_dict, plots=plots, diagnostics=diagnostics)
+            excess_repeating_value(obs_var, station.times, config_dict, wind_speed=wind_speed,
+                                   plots=plots, diagnostics=diagnostics)
 
             # repeats at same hour of day
             # hourly_repeat()
