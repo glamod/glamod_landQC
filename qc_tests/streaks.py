@@ -539,7 +539,6 @@ def rsc(station: utils.Station, var_list: list, config_dict: dict,
 
         # need to have at least two observations to get a streak
         if len(obs_var.data.compressed()) >= 2:
-            startT = dt.datetime.now()
             if full:
                 # recalculating all thresholds
                 get_repeating_streak_threshold(obs_var, config_dict, wind_speed=wind_speed,
