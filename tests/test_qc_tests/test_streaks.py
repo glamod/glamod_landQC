@@ -49,7 +49,6 @@ def _make_station(data: np.array, name: str,
     
     """
     obs_var = common.example_test_variable(name, data)
-
     station = common.example_test_station(obs_var, times)
 
     return station
@@ -68,12 +67,18 @@ def _make_repeating_value_station(name: str) -> qc_utils.Station:
     # set up data
     data = _make_simple_masked_data(200, 0.1)
     station = _make_station(data, name)
-    this_var = getattr(station, name)
+    obs_var = getattr(station, name)
 
     # make the streak, but no flags
-    this_var.data[50:70] = -5
+    obs_var.data[50:70] = -5
 
     return station
+
+@pytest.fixture()
+def station_for_rsc_logic() -> qc_utils.Station:
+    def _make_rsc_station() -> qc_utils.Station:
+        return _make_station(_make_simple_masked_data(100, 1), "temperature")
+    return _make_rsc_station()
 
 # not testing plotting
 
@@ -302,16 +307,13 @@ def test_repeating_day() -> None:
 @pytest.mark.parametrize("full", [True, False])
 @patch("streaks.get_repeating_streak_threshold")
 @patch("streaks.repeating_value")
-def test_pcc_repeating(repeating_value_mock: Mock,
+def test_rsc_repeating(repeating_value_mock: Mock,
                        get_threshold_mock: Mock,
-                       full: bool) -> None:
-
-    # Set up data, variable & station
-    temps = np.ma.arange(0, 100, 0.1)
-    station = _make_station(temps, "temperature")
+                       full: bool,
+                       station_for_rsc_logic: qc_utils.Station) -> None:
 
     # Do the call
-    streaks.rsc(station, ["temperature"], {}, full=full)
+    streaks.rsc(station_for_rsc_logic, ["temperature"], {}, full=full)
 
     # Mock to check call occurs as expected with right return
     repeating_value_mock.assert_called_once()
@@ -324,16 +326,13 @@ def test_pcc_repeating(repeating_value_mock: Mock,
 @pytest.mark.parametrize("full", [True, False])
 @patch("streaks.get_excess_streak_threshold")
 @patch("streaks.excess_repeating_value")
-def test_pcc_excess(excess_repeating_value_mock: Mock,
+def test_rsc_excess(excess_repeating_value_mock: Mock,
                     get_threshold_mock: Mock,
-                    full: bool) -> None:
-
-    # Set up data, variable & station
-    temps = np.ma.arange(0, 100, 0.1)
-    station = _make_station(temps, "temperature")
+                    full: bool,
+                    station_for_rsc_logic: qc_utils.Station) -> None:
 
     # Do the call
-    streaks.rsc(station, ["temperature"], {}, full=full)
+    streaks.rsc(station_for_rsc_logic, ["temperature"], {}, full=full)
 
     # Mock to check call occurs as expected with right return
     excess_repeating_value_mock.assert_called_once()
@@ -345,15 +344,11 @@ def test_pcc_excess(excess_repeating_value_mock: Mock,
 
 @pytest.mark.parametrize("full", [True, False])
 @patch("streaks.repeating_day")
-def test_pcc_day(repeating_day: Mock,
-                 full: bool) -> None:
+def test_rsc_day(repeating_day: Mock,
+                 full: bool,
+                 station_for_rsc_logic: qc_utils.Station) -> None:
 
-    # Set up data, variable & station
-    temps = np.ma.arange(0, 100, 0.1)
-    station = _make_station(temps, "temperature")
-
-    # Do the call
-    streaks.rsc(station, ["temperature"], {}, full=full)
+    streaks.rsc(station_for_rsc_logic, ["temperature"], {}, full=full)
 
     # Mock to check call occurs as expected with right return
     if full:
