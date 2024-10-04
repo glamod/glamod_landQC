@@ -424,7 +424,6 @@ def repeating_day(obs_var:utils.Meteorological_Variable, station: utils.Station,
 
                 else:
                     # if different, then if end of a streak, save, set flags, and reset
-                    print(streak_locs)
                     if streak_length != 0:
                         if set_flags and streak_length > threshold:
                             # Apply the flags
@@ -492,13 +491,11 @@ def rsc(station: utils.Station, var_list: list, config_dict: {},
     for var in var_list:
 
         obs_var = getattr(station, var)
-        print(var)
 
         # need to have at least two observations to get a streak
         if len(obs_var.data.compressed()) >= 2:
-
-            # repeating (straight) streaks
             if full:
+                # recalculating all thresholds
                 get_repeating_streak_threshold(obs_var, config_dict, plots=plots, diagnostics=diagnostics)
                 get_excess_streak_threshold(obs_var, station.years, config_dict, plots=plots, diagnostics=diagnostics)
                 repeating_day(obs_var, station, config_dict, determine_threshold=True, plots=plots, diagnostics=diagnostics)

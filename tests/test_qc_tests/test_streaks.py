@@ -4,7 +4,7 @@ Contains tests for streaks.py
 import numpy as np
 import datetime as dt
 import pandas as pd
-import pytest
+
 from unittest.mock import patch, Mock
 from typing import Optional
 
@@ -271,8 +271,10 @@ def test_excess_repeating_value():
 
 def test_repeating_day() -> None:
 
-
-    indata = np.arange(24*8) # 8 days
+    # set up the data (mask one day too)
+    indata = np.ma.arange(24*8) # 8 days
+    indata.mask = np.zeros(indata.shape[0])
+    indata.mask [-23:] = True
     expected_flags = np.array(["" for _ in indata])
     # add a streak of 3 repeated days (days 2-5)
     indata[72:96] = indata[48:72]
