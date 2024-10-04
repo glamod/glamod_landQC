@@ -460,7 +460,7 @@ def repeating_day(obs_var:utils.Meteorological_Variable, station: utils.Station,
 
 
 #************************************************************************
-def hourly_repeat():
+#def hourly_repeat():
 
     # repeat of given value at same hour of day for > N days
     # HadISD used fixed threshold.  Perhaps can dynamically calculate?
@@ -470,7 +470,7 @@ def hourly_repeat():
     # check each day, HadISD used fixed threshold, but could do one pass to get, second to apply/?
 
 
-    return # hourly_repeat
+#    return # hourly_repeat
 
 
 

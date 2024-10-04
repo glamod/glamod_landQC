@@ -4,6 +4,7 @@ Contains tests for streaks.py
 import numpy as np
 import datetime as dt
 import pandas as pd
+import pytest
 
 from unittest.mock import patch, Mock
 from typing import Optional
@@ -36,7 +37,8 @@ EXCESS_STREAK_STARTS_LENGTHS = {10: 3,
 
 
 
-def _make_station(data: np.array, name: str, times: Optional[np.array] = None) -> qc_utils.Station:
+def _make_station(data: np.array, name: str,
+                  times: Optional[np.array] = None) -> qc_utils.Station:
     """
     Create an example station 
 
@@ -52,6 +54,26 @@ def _make_station(data: np.array, name: str, times: Optional[np.array] = None) -
 
     return station
 
+
+def _make_simple_masked_data(stop: int, step: float) -> np.array:
+
+    data = np.ma.arange(0, stop, step).astype(float)
+    data.mask = np.zeros(data.shape[0])
+
+    return data
+
+
+def _make_repeating_value_station(name: str) -> qc_utils.Station:
+
+    # set up data
+    data = _make_simple_masked_data(200, 0.1)
+    station = _make_station(data, name)
+    this_var = getattr(station, name)
+
+    # make the streak, but no flags
+    this_var.data[50:70] = -5
+
+    return station
 
 # not testing plotting
 
@@ -73,12 +95,9 @@ def test_mask_calms() -> None:
 
 def test_get_repeating_streak_threshold() -> None:
 
-    # set up data
-    data = np.ma.arange(0, 200, 0.1).astype(float)
-    data.mask = np.zeros(data.shape[0])
-
     # make some streaks (set start index and length)
-    data = common.generate_streaky_data(data, common.REPEATED_STREAK_STARTS_LENGTHS)
+    data = common.generate_streaky_data(_make_simple_masked_data(200, 0.1),
+                                        common.REPEATED_STREAK_STARTS_LENGTHS)
 
     station = _make_station(data, "temperature")
     this_var = getattr(station, "temperature")
@@ -93,10 +112,7 @@ def test_get_repeating_streak_threshold() -> None:
 def test_get_repeating_streak_threshold_no_data() -> None:
 
     # set up data
-    data = np.ma.arange(0, 1, 1).astype(float)
-    data.mask = np.zeros(data.shape[0])
-
-    station = _make_station(data, "temperature")
+    station = _make_station(_make_simple_masked_data(1, 1), "temperature")
     this_var = getattr(station, "temperature")
 
     config_dict = {}
@@ -139,14 +155,10 @@ def test_get_excess_streak_threshold() -> None:
 def test_repeating_value_nonwind() -> None:
 
     # set up data
-    data = np.ma.arange(0, 200, 0.1).astype(float)
-    data.mask = np.zeros(data.shape[0])
-    station = _make_station(data, "temperature")
+    station = _make_repeating_value_station("temperature")
     this_var = getattr(station, "temperature")
 
-    # make the streak
-    this_var.data[50:70] = -5
-    expected_flags = np.array(["" for _ in data])
+    expected_flags = np.array(["" for _ in this_var.data])
     expected_flags[50:70] = "K"
 
     # set up dictionary
@@ -161,19 +173,14 @@ def test_repeating_value_nonwind() -> None:
 
 def test_repeating_value_threshold_is_mdi() -> None:
 
-    # set up data
-    data = np.ma.arange(0, 200, 0.1).astype(float)
-    data.mask = np.zeros(data.shape[0])
-    station = _make_station(data, "temperature")
+    station = _make_repeating_value_station("temperature")
     this_var = getattr(station, "temperature")
 
-    # make the streak, but no flags
-    this_var.data[50:70] = -5
-    expected_flags = np.array(["" for _ in data])
+    expected_flags = np.array(["" for _ in this_var.data])
 
     # set up dictionary
     config_dict = {}
-    CD_straight = {"Straight" : qc_utils.MDI}  # streaks of 10 or more identical values
+    CD_straight = {"Straight" : qc_utils.MDI}
     config_dict["STREAK-temperature"] = CD_straight
 
     streaks.repeating_value(this_var, station.times, config_dict)
@@ -184,9 +191,7 @@ def test_repeating_value_threshold_is_mdi() -> None:
 def test_repeating_value_short() -> None:
 
     # set up data
-    data = np.ma.arange(0, 1, 1).astype(float)
-    data.mask = np.zeros(data.shape[0])
-    station = _make_station(data, "temperature")
+    station = _make_station(_make_simple_masked_data(1, 1), "temperature")
     this_var = getattr(station, "temperature")
 
     # set up dictionary
@@ -202,15 +207,12 @@ def test_repeating_value_short() -> None:
 def test_repeating_value_wind() -> None:
 
     # set up data
-    data = np.ma.arange(0, 200, 0.1).astype(float)
-    data[180:] = 0
-    data.mask = np.zeros(data.shape[0])
-    station = _make_station(data, "wind_speed")
+    station = _make_repeating_value_station("wind_speed")
     this_var = getattr(station, "wind_speed")
 
-    # make the streak (should ignore the length-20 one of zeros [calms] at the end)
-    this_var.data[50:70] = -5
-    expected_flags = np.array(["" for _ in data])
+    # streak of zeros [calms] at the end, which should be ignored
+    this_var.data[160:180] = 0
+    expected_flags = np.array(["" for _ in this_var.data])
     expected_flags[50:70] = "K"
 
     # set up dictionary
@@ -276,6 +278,7 @@ def test_repeating_day() -> None:
     indata.mask = np.zeros(indata.shape[0])
     indata.mask [-23:] = True
     expected_flags = np.array(["" for _ in indata])
+
     # add a streak of 3 repeated days (days 2-5)
     indata[72:96] = indata[48:72]
     indata[96:120] = indata[48:72]
@@ -296,21 +299,66 @@ def test_repeating_day() -> None:
 
 # def test_hourly_repeat():
 
-
+@pytest.mark.parametrize("full", [True, False])
 @patch("streaks.get_repeating_streak_threshold")
 @patch("streaks.repeating_value")
-def test_pcc(repeating_value_mock: Mock,
-             get_threshold_mock: Mock) -> None:
+def test_pcc_repeating(repeating_value_mock: Mock,
+                       get_threshold_mock: Mock,
+                       full: bool) -> None:
 
     # Set up data, variable & station
     temps = np.ma.arange(0, 100, 0.1)
     station = _make_station(temps, "temperature")
 
-
     # Do the call
-    streaks.rsc(station, ["temperature"], {}, full=True)
+    streaks.rsc(station, ["temperature"], {}, full=full)
 
     # Mock to check call occurs as expected with right return
     repeating_value_mock.assert_called_once()
-    get_threshold_mock.assert_called_once()
+    if full:
+        get_threshold_mock.assert_called_once()
+    else:
+        get_threshold_mock.assert_not_called()
+
+
+@pytest.mark.parametrize("full", [True, False])
+@patch("streaks.get_excess_streak_threshold")
+@patch("streaks.excess_repeating_value")
+def test_pcc_excess(excess_repeating_value_mock: Mock,
+                    get_threshold_mock: Mock,
+                    full: bool) -> None:
+
+    # Set up data, variable & station
+    temps = np.ma.arange(0, 100, 0.1)
+    station = _make_station(temps, "temperature")
+
+    # Do the call
+    streaks.rsc(station, ["temperature"], {}, full=full)
+
+    # Mock to check call occurs as expected with right return
+    excess_repeating_value_mock.assert_called_once()
+    if full:
+        get_threshold_mock.assert_called_once()
+    else:
+        get_threshold_mock.assert_not_called()
     
+
+@pytest.mark.parametrize("full", [True, False])
+@patch("streaks.repeating_day")
+def test_pcc_day(repeating_day: Mock,
+                 full: bool) -> None:
+
+    # Set up data, variable & station
+    temps = np.ma.arange(0, 100, 0.1)
+    station = _make_station(temps, "temperature")
+
+    # Do the call
+    streaks.rsc(station, ["temperature"], {}, full=full)
+
+    # Mock to check call occurs as expected with right return
+    if full:
+        # 1 - to calculate, 2 - on try/except for config_dict, 3 - on flagging
+        assert repeating_day.call_count == 3
+    else:
+        # 1 - on try/except for config_dict, 2 - on flagging
+        assert repeating_day.call_count == 2    
