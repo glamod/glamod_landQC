@@ -150,13 +150,12 @@ def test_logical_checks_all() -> None:
     direction_data.mask[-1] = True
     
     expected_speed_flags = np.array(["" for _ in speed_data])
-    expected_speed_flags[5] = "w"
-    expected_speed_flags[9] = "w"
-
     expected_direction_flags = np.array(["" for _ in speed_data])
+    expected_speed_flags[5] = "w"
     expected_direction_flags[6] = "w"
     expected_direction_flags[7] = "w"
     expected_direction_flags[8] = "w"
+    expected_speed_flags[9] = "w"
     expected_direction_flags[10] = "w"
 
     speeds = common.example_test_variable("wind_speed", speed_data)
@@ -181,6 +180,5 @@ def test_wcc(logical_checks_mock: Mock) -> None:
     winds.wcc(station, {})
 
     logical_checks_mock.assert_called_once()
-
 
     return
