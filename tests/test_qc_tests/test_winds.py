@@ -8,6 +8,10 @@ import winds
 
 import common
 
+# Could have parameterizes the inputs, but want to make the tests clearer
+#   to read for the coder.
+
+# Usually second element (index=1) is the one to trigger flagging
 
 def test_logical_checks_zero_direction() -> None:
     
