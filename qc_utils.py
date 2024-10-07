@@ -488,6 +488,9 @@ def get_critical_values(indata: np.array, binmin: float = 0, binwidth: float = 1
             # find first empty bin after that
             first_zero_bin, = np.argwhere(full_hist[fit_below_point1:] == 0)[0]
             threshold = binwidth * (binmin + fit_below_point1 + first_zero_bin)
+            if isinstance(threshold, np.integer):
+                # JSON encoder can't cope with np.int64 objects
+                threshold = int(threshold)
 
         except IndexError:
             # Too shallow a decay - use default maximum.  Retains all data

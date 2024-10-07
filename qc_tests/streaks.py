@@ -481,7 +481,7 @@ def repeating_day(obs_var:utils.Meteorological_Variable, station: utils.Station,
     # Calculate and save the threshold.
     if determine_threshold:
         threshold = utils.get_critical_values(all_lengths, binwidth=1, 
-                                plots=True,title=obs_var.name.capitalize(),
+                                plots=plots,title=obs_var.name.capitalize(),
                                 xlabel="Streaks of repeating days")
 
         try:
