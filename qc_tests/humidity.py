@@ -40,11 +40,11 @@ def get_repeating_dpd_threshold(temperatures: utils.Meteorological_Variable,
 
     # only process further if there are enough locations
     if len(locs) > 1:
-        repeated_string_lengths, _, _ = utils.prepare_data_repeating_string(locs, diff=1, plots=plots, diagnostics=diagnostics)
+        repeated_streak_lengths, _, _ = utils.prepare_data_repeating_streak(locs, diff=1, plots=plots, diagnostics=diagnostics)
 
         # bin width is 1 as dealing with the index.
-        # minimum bin value is 2 as this is the shortest string possible
-        threshold = utils.get_critical_values(repeated_string_lengths, binmin=2,
+        # minimum bin value is 2 as this is the shortest streak possible
+        threshold = utils.get_critical_values(repeated_streak_lengths, binmin=2,
                                               binwidth=1.0, plots=plots,
                                               diagnostics=diagnostics,
                                               title="DPD streak length",
@@ -222,15 +222,15 @@ def dew_point_depression_streak(times: np.array,
 
     # only process further if there are enough locations
     if len(locs) > 1:
-        repeated_string_lengths, grouped_diffs, strings = utils.prepare_data_repeating_string(locs, diff=1, plots=plots, diagnostics=diagnostics)
+        repeated_streak_lengths, grouped_diffs, streaks = utils.prepare_data_repeating_streak(locs, diff=1, plots=plots, diagnostics=diagnostics)
 
         # above threshold
-        bad, = np.where(repeated_string_lengths >= threshold)
+        bad, = np.where(repeated_streak_lengths >= threshold)
 
-        # flag identified strings
-        for string in bad:
-            start = int(np.sum(grouped_diffs[:strings[string], 1]))
-            end = start + int(grouped_diffs[strings[string], 1]) + 1
+        # flag identified streaks
+        for streak in bad:
+            start = int(np.sum(grouped_diffs[:streaks[streak], 1]))
+            end = start + int(grouped_diffs[streaks[streak], 1]) + 1
             flags[locs[start : end]] = "h"
 
             if plots:
