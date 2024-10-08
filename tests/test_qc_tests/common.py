@@ -4,6 +4,7 @@ Contains common code for testing the QC tests
 import numpy as np
 import datetime as dt
 import pandas as pd
+from typing import Optional
 
 import qc_utils as utils
 
@@ -34,6 +35,7 @@ def example_test_variable(name: str,
 
 
 def example_test_station(variable: utils.Meteorological_Variable,
+                         times: Optional[np.array] = None,
                          latitude: int = 45,
                          longitude: int = 100,
                          elevation: int = 10) -> utils.Station:
@@ -42,9 +44,13 @@ def example_test_station(variable: utils.Meteorological_Variable,
 
     setattr(station, variable.name, variable)
 
-    start_dt = dt.datetime(2000, 1, 1, 0, 0)
-    times = pd.to_datetime(pd.DataFrame([start_dt + dt.timedelta(hours=i)\
-                              for i in range(len(variable.data))])[0])
+    if times is not None:
+        # i.e. an array of times information has bee supplied
+        pass
+    else:
+        start_dt = dt.datetime(2000, 1, 1, 0, 0)
+        times = pd.to_datetime(pd.DataFrame([start_dt + dt.timedelta(hours=i)\
+                               for i in range(len(variable.data))])[0])
     
     station.times = times
     station.years = np.array(times.dt.year)
