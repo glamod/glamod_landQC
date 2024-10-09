@@ -12,7 +12,41 @@ import qc_utils
 import common
 
 
-# def test_set_synergistic_flags() -> None:
+def test_set_synergistic_flags_short_record() -> None:
+
+    slp = common.example_test_variable("sea_level_pressure",
+                                       np.arange(10))
+    slp.flags[:] = "H"
+
+    stnlp = common.example_test_variable("station_level_pressure",
+                                         np.arange(10))
+    
+    station = common.example_test_station(slp)
+    station.station_level_pressure = stnlp
+
+    high_flag.set_synergistic_flags(station, "station_level_pressure")
+    expected_flags = np.array(["" for _ in range(stnlp.data.shape[0])])
+
+    np.testing.assert_array_equal(station.station_level_pressure.flags, expected_flags)
+
+
+def test_set_synergistic_flags() -> None:
+
+    slp = common.example_test_variable("sea_level_pressure",
+                                       np.arange(11*qc_utils.DATA_COUNT_THRESHOLD))
+    slp.flags[:] = "H"
+
+    stnlp = common.example_test_variable("station_level_pressure",
+                                         np.arange(11*qc_utils.DATA_COUNT_THRESHOLD))
+    
+    station = common.example_test_station(slp)
+    station.station_level_pressure = stnlp
+
+    high_flag.set_synergistic_flags(station, "station_level_pressure")
+    expected_flags = np.array(["H" for _ in range(stnlp.data.shape[0])])
+
+    np.testing.assert_array_equal(station.station_level_pressure.flags, expected_flags)
+
 
 
 def test_high_flag_rate_noflags() -> None:
