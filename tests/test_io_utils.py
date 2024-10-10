@@ -69,6 +69,41 @@ def test_read_oserror() -> None:
 #def test_read_station() -> None:
 
 
+def test_calculate_datetimes() -> None:
+
+    data = {"Year" : [2020, 2024],
+            "Month" : [1, 2],
+            "Day" : [3, 4],
+            "Hour" : [5, 6],
+            "Minute" : [7, 8]}
+    
+    df = pd.DataFrame(data)
+
+    datetimes = io_utils.calculate_datetimes(df)
+
+    assert datetimes[0] == dt.datetime(2020, 1, 3, 5, 7)
+    assert datetimes[1] == dt.datetime(2024, 2, 4, 6, 8)
+
+
+def test_calculate_datetimes_error() -> None:
+
+    data = {"Year" : [2020, 2024],
+            "Month" : [1, 2],
+            "Day" : [3, 30],
+            "Hour" : [5, 6],
+            "Minute" : [7, 8]}
+    
+    df = pd.DataFrame(data)
+
+    with pytest.raises(ValueError) as emsg:
+        _ = io_utils.calculate_datetimes(df)
+
+    assert "Bad date - 2024-2-30" in str(emsg)
+
+
+#def test_convert_wind_flags() -> None:
+
+
 #def test_write_psv() -> None:
 
 def test_write(tmp_path) -> None:
@@ -112,6 +147,7 @@ def test_write_formatters(tmp_path) -> None:
 
 
 # def test_flag_write() -> None:
+    
         
 @patch("io_utils.setup")
 def test_write_error(setup_mock: Mock,

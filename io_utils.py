@@ -63,8 +63,43 @@ def read(infile:str) -> pd.DataFrame:
 
     return df # read
 
+
+def calculate_datetimes(station_df: pd.DataFrame) -> pd.Series:
+    """
+    
+    
+    """
+
+    try:
+        datetimes = pd.to_datetime(station_df[["Year", "Month", "Day", "Hour", "Minute"]])
+    except ValueError as e:
+        if str(e) == "cannot assemble the datetimes: day is out of range for month":
+            year = station_df["Year"]
+            month = station_df["Month"]
+            day = station_df["Day"]
+            for y, yy in enumerate(year):
+                try:
+                    # if Datatime doesn't throw an error here, then it's valid
+                    _ = dt.datetime(yy, month[y], day[y])
+                except ValueError:
+                    logger.warning(f"Bad date: {yy}-{month[y]}-{day[y]}\n")
+                    raise ValueError(f"Bad date - {yy}-{month[y]}-{day[y]}")
+
+    return datetimes
+
+
+def convert_wind_flags(station_df: pd.DataFrame) -> None:
+
+    # explicitly remove any missing data indicators - wind direction only
+    for wind_flag in ["C-Calm", "V-Variable"]:
+        combined_mask = (station_df["wind_direction_Measurement_Code"] == wind_flag) &\
+                        (station_df["wind_direction"] == 999)
+        station_df.loc[combined_mask, "wind_direction"] = np.nan
+
+
 #************************************************************************
-def read_station(stationfile: str, station: Station, read_flags: bool = False) -> tuple[Station, pd.DataFrame]:
+def read_station(stationfile: str, station: Station,
+                 read_flags: bool = False) -> tuple[Station, pd.DataFrame]:
     """
     Read station info, and populate with data.
 
@@ -83,27 +118,11 @@ def read_station(stationfile: str, station: Station, read_flags: bool = False) -
         logger.warning(f"Missing station file {stationfile}")
         raise FileNotFoundError
 
-    # convert to datetimes
-    try:
-        datetimes = pd.to_datetime(station_df[["Year", "Month", "Day", "Hour", "Minute"]])
-    except ValueError as e:
-        if str(e) == "cannot assemble the datetimes: day is out of range for month":
-            year = station_df["Year"]
-            month = station_df["Month"]
-            day = station_df["Day"]
-            for y, yy in enumerate(year):
-                try:
-                    # if Datatime doesn't throw an error here, then it's valid
-                    _ = dt.datetime(yy, month[y], day[y])
-                except ValueError:
-                    logger.warning(f"Bad date: {yy}-{month[y]}-{day[y]}\n")
-                    raise ValueError(f"Bad date - {yy}-{month[y]}-{day[y]}")
+    # calculate datetime series
+    datetimes = calculate_datetimes(station_df)
 
-    # explicitly remove any missing data indicators - wind direction only
-    for wind_flag in ["C-Calm", "V-Variable"]:
-        combined_mask = (station_df["wind_direction_Measurement_Code"] == wind_flag) &\
-                        (station_df["wind_direction"] == 999)
-        station_df.loc[combined_mask, "wind_direction"] = np.nan
+    # convert any remaining wind flags
+    convert_wind_flags(station_df)
 
     # convert dataframe to station and MetVar objects for internal processing
     populate_station(station, station_df, setup.obs_var_list, read_flags=read_flags)
@@ -144,12 +163,8 @@ def write(outfile: str, df: pd.DataFrame, formatters: dict = {}) -> None:
     for column, fmt in formatters.items():
         df[column] = pd.Series([fmt.format(val) for val in df[column]], index = df.index)
 
-#    df['Latitude'] = pd.Series(["{:7.4f}".format(val) for val in df['Latitude']], index = df.index)
-#    df['Longitude'] = pd.Series(["{:7.4f}".format(val) for val in df['Longitude']], index = df.index)
-#    df['Month'] = pd.Series(["{:02d}".format(val) for val in df['Month']], index = df.index)
-#    df['Day'] = pd.Series(["{:02d}".format(val) for val in df['Day']], index = df.index)
-#    df['Hour'] = pd.Series(["{:02d}".format(val) for val in df['Hour']], index = df.index)
-#    df['Minute'] = pd.Series(["{:02d}".format(val) for val in df['Minute']], index = df.index)
+        # Latitude & Longitude = {:7.4f}
+        # Monthy, Day, Hour, & Minute = {:0.2d}
 
     # for .psv
     write_psv(outfile, df, "|")
