@@ -18,6 +18,8 @@ def read_psv(infile: str, separator: str) -> pd.DataFrame:
     '''
     http://pandas.pydata.org/pandas-docs/stable/user_guide/io.html#io-read-csv-table
 
+    https://stackoverflow.com/questions/64302419/what-are-all-of-the-exceptions-that-pandas-read-csv-throw
+
     :param str infile: location and name of infile (without extension)
     :param str separator: separating character (e.g. ",", "|")
  
@@ -26,14 +28,14 @@ def read_psv(infile: str, separator: str) -> pd.DataFrame:
 
     try:
         df = pd.read_csv(infile, sep=separator, compression="infer", dtype=setup.DTYPE_DICT, na_values="Null", quoting=3)
-    except ValueError as e:
-        logger.warning(f"Error reading psv: {str(e)}")
-        print(str(e))
-        raise ValueError(str(e))
     except FileNotFoundError as e:
         logger.warning(f"psv file not found: {str(e)}")
         print(str(e))
         raise FileNotFoundError(str(e))
+    except pd.errors.ParserError as e:
+        logger.warning(f"Parser Error: {str(e)}")
+        print(str(e))
+        raise pd.errors.ParserError(str(e))
 
     # Number of columns at August 2023, or after adding flag columns
     assert len(df.columns) in [238, 238+len(setup.obs_var_list)]
@@ -54,8 +56,8 @@ def read(infile:str) -> pd.DataFrame:
     if os.path.exists(infile):
         try:
             df = read_psv(infile, "|")
-        except ValueError as e:
-            raise ValueError(str(e))
+        except pd.errors.ParserError:
+            raise pd.errors.ParserError
     else:
         raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), infile)
 
@@ -80,10 +82,6 @@ def read_station(stationfile: str, station: Station, read_flags: bool = False) -
     except FileNotFoundError:
         logger.warning(f"Missing station file {stationfile}")
         raise FileNotFoundError
-    except ValueError as e:
-        logger.warning(f"Missing station file {stationfile}")
-        raise ValueError(str(e))
-
 
     # convert to datetimes
     try:
