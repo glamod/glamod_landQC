@@ -11,6 +11,20 @@ import qc_utils
 
 import common
 
+# not testing plotting
+
+#def test_read_in_buddies() -> None:
+
+
+#def test_calculate_data_spread() -> None:
+
+
+#def test_adjust_pressure_for_tropical_storms() -> None:
+
+
+#def test_neighbour_outlier() -> None:
+
+
 
 @patch("neighbour_outlier.neighbour_outlier")
 def test_noc(neighbour_outlier_mock: Mock) -> None:

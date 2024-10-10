@@ -20,6 +20,8 @@ import setup
 
 MIN_SPREAD = 2 # TODO should this be different for each variable?
 SPREAD_LIMIT = 5 # matches HadISD which used 5*IQR
+DUBIOUS_FRACTION = 0.66 # more than 2/3 of neighbours suggest differences dubious
+STORM_FRACTION = 0.667 # fraction of negative differences to target (likely at centre of low pressure system)
 
 
 #************************************************************************
@@ -193,8 +195,8 @@ def adjust_pressure_for_tropical_storms(dubious: np.ma.array, initial_neighbours
             neg, = np.where(negative[0] == dn)
 
             if len(neg) > 0:
-                ratio = len(neg)/(len(pos) + len(neg))
-                if ratio > 0.667:
+                fraction = len(neg)/(len(pos) + len(neg))
+                if fraction > STORM_FRACTION:
                     # majority negative, only flag the positives [definitely not storms]
                     dubious[dist_neigh, positive[1][pos]] = 1
 
@@ -280,13 +282,12 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.arra
     dubious_count = np.ma.sum(dubious, axis=0)
 
     # flag if large enough fraction (>0.66)
-    sufficient, = np.ma.where(dubious_count > 0.66*neighbour_count)
+    sufficient, = np.ma.where(dubious_count > DUBIOUS_FRACTION*neighbour_count)
     flags[sufficient] = "N"
 
     if plots:
         for flag in sufficient:
             plot_neighbour_flags(target_station.times, flag, obs_var, all_buddy_data)
-
 
     # append flags to object
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
