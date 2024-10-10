@@ -2,7 +2,6 @@
 Contains tests for high_flag.py
 """
 import numpy as np
-import datetime as dt
 import pytest
 from unittest.mock import patch, Mock
 
@@ -25,6 +24,7 @@ def test_set_synergistic_flags_short_record() -> None:
     station.station_level_pressure = stnlp
 
     high_flag.set_synergistic_flags(station, "station_level_pressure")
+    # no flags set as short record
     expected_flags = np.array(["" for _ in range(stnlp.data.shape[0])])
 
     np.testing.assert_array_equal(station.station_level_pressure.flags, expected_flags)
@@ -43,10 +43,11 @@ def test_set_synergistic_flags() -> None:
     station.station_level_pressure = stnlp
 
     high_flag.set_synergistic_flags(station, "station_level_pressure")
+
+    # flag all values in the record for this part of this test
     expected_flags = np.array(["H" for _ in range(stnlp.data.shape[0])])
 
     np.testing.assert_array_equal(station.station_level_pressure.flags, expected_flags)
-
 
 
 def test_high_flag_rate_noflags() -> None:
@@ -55,9 +56,10 @@ def test_high_flag_rate_noflags() -> None:
                                                 np.arange(11*qc_utils.DATA_COUNT_THRESHOLD))
    
     new_flags, flags_set = high_flag.high_flag_rate(temperatures)
+    expected_flags = np.array(["" for _ in range(temperatures.data.shape[0])])
 
     assert flags_set is False
-    np.testing.assert_array_equal(new_flags, np.array(["" for _ in range(temperatures.data.shape[0])]))
+    np.testing.assert_array_equal(new_flags, expected_flags)
 
 
 def test_high_flag_rate_short_record() -> None:
@@ -78,9 +80,10 @@ def test_high_flag_rate_prior_run() -> None:
     # Set a large number of other flags, so should trigger check
     temperatures.flags[2*qc_utils.DATA_COUNT_THRESHOLD:] = "L"
     new_flags, flags_set = high_flag.high_flag_rate(temperatures)
+    expected_flags = np.array(["" for _ in range(temperatures.data.shape[0])])
 
     assert flags_set is False
-    np.testing.assert_array_equal(new_flags, np.array(["" for _ in range(temperatures.data.shape[0])]))
+    np.testing.assert_array_equal(new_flags, expected_flags)
    
 
 def test_high_flag_rate_low_fraction() -> None:
@@ -91,9 +94,10 @@ def test_high_flag_rate_low_fraction() -> None:
     # set many flags but too few to trigger the test
     temperatures.flags[:int(temperatures.data.shape[0]*qc_utils.HIGH_FLAGGING) -1] = "L" 
     new_flags, flags_set = high_flag.high_flag_rate(temperatures)
+    expected_flags = np.array(["" for _ in range(temperatures.data.shape[0])])
 
     assert flags_set is False
-    np.testing.assert_array_equal(new_flags, np.array(["" for _ in range(temperatures.data.shape[0])]))
+    np.testing.assert_array_equal(new_flags, expected_flags)
    
 
 def test_high_flag_rate_high_fraction() -> None:
