@@ -3,6 +3,7 @@
 io_utils - contains scripts for read/write of main files
 '''
 import os
+import errno
 import pandas as pd
 import numpy as np
 import setup
@@ -29,6 +30,10 @@ def read_psv(infile: str, separator: str) -> pd.DataFrame:
         logger.warning(f"Error reading psv: {str(e)}")
         print(str(e))
         raise ValueError(str(e))
+    except FileNotFoundError as e:
+        logger.warning(f"psv file not found: {str(e)}")
+        print(str(e))
+        raise FileNotFoundError(str(e))
 
     # Number of columns at August 2023, or after adding flag columns
     assert len(df.columns) in [238, 238+len(setup.obs_var_list)]
@@ -52,7 +57,7 @@ def read(infile:str) -> pd.DataFrame:
         except ValueError as e:
             raise ValueError(str(e))
     else:
-        raise OSError
+        raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), infile)
 
     return df # read
 
@@ -72,9 +77,9 @@ def read_station(stationfile: str, station: Station, read_flags: bool = False) -
     # read MFF
     try:
         station_df = read(stationfile)
-    except OSError:
+    except FileNotFoundError:
         logger.warning(f"Missing station file {stationfile}")
-        raise OSError
+        raise FileNotFoundError
     except ValueError as e:
         logger.warning(f"Missing station file {stationfile}")
         raise ValueError(str(e))
