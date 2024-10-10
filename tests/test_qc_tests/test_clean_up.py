@@ -2,12 +2,10 @@
 Contains tests for clean_up.py
 """
 import numpy as np
-import datetime as dt
 import pytest
 from unittest.mock import patch, Mock
 
 import clean_up
-import qc_utils
 
 import common
 
