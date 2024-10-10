@@ -5,6 +5,8 @@ High Flag Rate Check
 Check for high flagging rates in each obs variable.  Indicate to 
 withhold station if in more than one.
 
+This is for the whole timeseries of data, whereas clean_up.py assesses monthly
+
 For the pressure and wind synergistic variables, if one has these flags set,
 then the other will be set too.
 
@@ -20,7 +22,8 @@ import qc_utils as utils
 #************************************************************************
 def set_synergistic_flags(station: utils.Station, var: str) -> None:
     """
-    Set the flags on a synergistic variable.
+    Set the flags on a synergistic variable. High flagging rate set
+    on all obs in the variable, so no need to do any extra comparison
 
     :param Station station: Station Object for the station
     :param str var: name of variable
@@ -69,7 +72,7 @@ def high_flag_rate(obs_var: utils.Meteorological_Variable,
             return new_flags, any_flags_set
 
         flagged, = np.where(old_flags[obs_locs] != "")
-
+        
         if flagged.shape[0] / obs_locs.shape[0] > utils.HIGH_FLAGGING:
             if diagnostics:
                 print(f" {obs_var.name} flagging rate of {100*(flagged.shape[0] / obs_locs.shape[0]):5.1f}%")
