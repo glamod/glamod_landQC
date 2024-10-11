@@ -27,7 +27,8 @@ def read_psv(infile: str, separator: str) -> pd.DataFrame:
     '''
 
     try:
-        df = pd.read_csv(infile, sep=separator, compression="infer", dtype=setup.DTYPE_DICT, na_values="Null", quoting=3)
+        df = pd.read_csv(infile, sep=separator, compression="infer",
+                         dtype=setup.DTYPE_DICT, na_values="Null", quoting=3)
     except FileNotFoundError as e:
         logger.warning(f"psv file not found: {str(e)}")
         print(str(e))
@@ -64,10 +65,14 @@ def read(infile:str) -> pd.DataFrame:
     return df # read
 
 
+#************************************************************************
 def calculate_datetimes(station_df: pd.DataFrame) -> pd.Series:
     """
+    Convert the separate Y-M-D H-M values into datetime objects
     
-    
+    :param pd.DataFrame station_df: dataframe for the station record
+
+    :returns: pd.Series of datetime64 values    
     """
 
     try:
@@ -88,6 +93,7 @@ def calculate_datetimes(station_df: pd.DataFrame) -> pd.Series:
     return datetimes
 
 
+#************************************************************************
 def convert_wind_flags(station_df: pd.DataFrame) -> None:
 
     # explicitly remove any missing data indicators - wind direction only
