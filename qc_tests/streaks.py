@@ -4,11 +4,14 @@ Repeated Streaks Check
 
    Checks for replication of 
      1. checks for consecutive repeating values
+              [get_repeating_streak_threshold(), repeating_value()]
      2. checks if one year has more repeating streaks than expected
+              [get_excess_streak_threshold(), excess_repeating_value()]
      3. checks for repeats at a given hour across a number of days [Not yet implemented]
-     4. checks for repeats for whole days - all 24 hourly values
+     4. checks for repeats for whole days - sequences of days where all values repeat
+              [repeating_day() - used to set thresholds and apply flagging]
 
-   Thresholds now determined dynamically
+   Thresholds now determined dynamically.
 """
 #************************************************************************
 import copy
@@ -127,7 +130,7 @@ def get_repeating_streak_threshold(obs_var: utils.Meteorological_Variable,
 
     this_var = prepare_obs_var(obs_var, wind_speed=wind_speed)
 
-    # only process further if there is enough data (need at least 2 for a streak!)
+    # only process further if there is enough data (need at least 2 for a streak of repeated values!)
     if len(this_var.data.compressed()) >= 2:
 
         repeated_streak_lengths, _, _ = utils.prepare_data_repeating_streak(this_var.data.compressed(),
@@ -208,7 +211,7 @@ def get_excess_streak_threshold(obs_var: utils.Meteorological_Variable,
             # Don't want all streaks (min of 2 consecutive values), need some form
             #  of higher threshold there.
 
-            long_enough_locs, = np.where(year_repeated_streak_lengths >= MIN_STREAK_LENGTH_FOR_EXCESS_FREQUENCY)
+            long_enough_locs, = np.nonzero(year_repeated_streak_lengths >= MIN_STREAK_LENGTH_FOR_EXCESS_FREQUENCY)
 
             proportions[y] = np.sum(year_repeated_streak_lengths[long_enough_locs])/len(this_var.data[locs].compressed())
 
@@ -281,15 +284,16 @@ def repeating_value(obs_var: utils.Meteorological_Variable, times: np.array,
         # No threshold obtainable, no need to continue the test
         return
     
-    # only process further if there is enough data
+    # Only process further if there is enough data.
+    #   Need at least 2 observations to get a streak, so return if 1 or 0.
     if len(this_var.data.compressed()) < 2:
-        # Escape if insufficient data
+        # Escape if insufficient data in this array
         return
 
     repeated_streak_lengths, grouped_diffs, streaks = utils.prepare_data_repeating_streak(this_var.data.compressed(), diff=0, plots=plots, diagnostics=diagnostics)
 
     # above threshold
-    bad, = np.where(repeated_streak_lengths >= threshold)
+    bad, = np.nonzero(repeated_streak_lengths >= threshold)
 
     # flag identified streaks
     for streak in bad:
@@ -306,7 +310,7 @@ def repeating_value(obs_var: utils.Meteorological_Variable, times: np.array,
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
     logger.info(f"Repeated streaks {this_var.name}")
-    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
+    logger.info(f"   Cumulative number of flags set: {len(np.nonzero(flags != '')[0])}")
 
     return # repeating_value
 
@@ -375,7 +379,7 @@ def excess_repeating_value(obs_var: utils.Meteorological_Variable, times: np.arr
                                                         diff=0, plots=plots,
                                                         diagnostics=diagnostics)
 
-        long_enough_streaks, = np.where(year_repeated_streak_lengths >= MIN_STREAK_LENGTH_FOR_EXCESS_FREQUENCY)
+        long_enough_streaks, = np.nonzero(year_repeated_streak_lengths >= MIN_STREAK_LENGTH_FOR_EXCESS_FREQUENCY)
 
         proportion = np.sum(year_repeated_streak_lengths[long_enough_streaks])/len(this_var.data[locs].compressed())
 
@@ -405,9 +409,22 @@ def excess_repeating_value(obs_var: utils.Meteorological_Variable, times: np.arr
 
 
 #************************************************************************
-def repeating_day(obs_var:utils.Meteorological_Variable, station: utils.Station,
-                  config_dict: dict, determine_threshold=False,
+def repeating_day(obs_var: utils.Meteorological_Variable, station: utils.Station,
+                  config_dict: dict, determine_threshold: bool = False,
                   plots: bool = False, diagnostics: bool = False) -> None:
+    """
+    Find and flag instances where there are streaks of days which repeat exactly.
+    This is possible for certain variables in certain synoptic setups, so again
+    find a threshold and flag those above.  Only looking for repeats which are  
+    adjacent, identical days separated by other data are not identified.
+
+    :param MetVar obs_var: meteorological variable object
+    :param Station station: Station object
+    :param str config_dict: configuration file to store critical values
+    :param bool determine_threshold: either calculate a threshold (True), or set flags (False)
+    :param bool plots: turn on plots
+    :param bool diagnostics: turn on diagnostic output
+    """
 
     # any complete repeat of 24hs (as long as not "straight streak")
 
@@ -430,17 +447,17 @@ def repeating_day(obs_var:utils.Meteorological_Variable, station: utils.Station,
     previous_day_data = np.array([])
     streak_locs = np.array([], dtype=(int))
 
-    for year in np.unique(station.years):
-        for month in np.unique(station.months):
-            for day in np.unique(station.days):
+    for year in np.sort(np.unique(station.years)):
+        for month in np.arange(1, 13, 1):
+            for day in np.arange(1, 32, 1):
                 try:
                     # if Datetime doesn't throw an error, then valid date
                     _ = dt.datetime(year, month, day)
                 except ValueError:
-                    # not a valid day (e.g. Leap years, short months etc)
+                    # not a valid date (e.g. Feb 30th, November 31st)
                     continue
 
-                this_day_locs, = np.where(np.logical_and.reduce((station.years == year,
+                this_day_locs, = np.nonzero(np.logical_and.reduce((station.years == year,
                                                         station.months == month,
                                                         station.days == day)))
 
@@ -495,7 +512,7 @@ def repeating_day(obs_var:utils.Meteorological_Variable, station: utils.Station,
         obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
         logger.info(f"Repeated Day streaks {obs_var.name}")
-        logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")        
+        logger.info(f"   Cumulative number of flags set: {len(np.nonzero(flags != '')[0])}")        
 
     return # repeating_day
 
@@ -540,16 +557,23 @@ def rsc(station: utils.Station, var_list: list, config_dict: dict,
         # need to have at least two observations to get a streak
         if len(obs_var.data.compressed()) >= 2:
             if full:
-                # recalculating all thresholds
+                # Recalculating all thresholds for a full run of the QC suite
+
+                # Get thresholds for simple repeating values
                 get_repeating_streak_threshold(obs_var, config_dict, wind_speed=wind_speed,
                                                plots=plots, diagnostics=diagnostics)
+
+                # Get thresholds for years with excess numbers of streaks
                 get_excess_streak_threshold(obs_var, station.years, config_dict, wind_speed=wind_speed,
                                             plots=plots, diagnostics=diagnostics)
 
+                # Complete repeat of a day's values
                 # This is slow - as spinning through each day and then selecting
                 repeating_day(obs_var, station, config_dict, determine_threshold=True,
                               plots=plots, diagnostics=diagnostics)
 
+            # Now run the routines to apply the thresholds and set flags
+                
             # Simple streaks of repeated values
             repeating_value(obs_var, station.times, config_dict, wind_speed=wind_speed,
                             plots=plots, diagnostics=diagnostics)
