@@ -176,12 +176,12 @@ def get_station_list(restart_id: str = "", end_id: str = "") -> pd.DataFrame:
 
     # work from the end to save messing up the start indexing
     if end_id != "":
-        endindex, = np.where(station_IDs == end_id)
+        endindex, = np.nonzero(station_IDs == end_id)
         station_list = station_list.iloc[: endindex[0]+1]
 
     # and do the front
     if restart_id != "":
-        startindex, = np.where(station_IDs == restart_id)
+        startindex, = np.nonzero(station_IDs == restart_id)
         station_list = station_list.iloc[startindex[0]:]
 
     return station_list.reset_index(drop=True) # get_station_list
@@ -351,15 +351,17 @@ def gcv_calculate_binmax(indata: np.array, binmin: float, binwidth: float) -> fl
     
 
 #*********************************************
-def gcv_zeros_in_central_section(histogram: np.array, inner_n: int) -> tuple[int, int]:
+def gcv_zeros_in_central_section(histogram: np.array, inner_n: int) -> int:
     """
-    A routine to determine if, for a distribution with multiple peaks, the central
-    section is sufficiently big.
+    Helper routine for get_critical_values() ["gcv"] to determine if, for a distribution
+    with multiple peaks, the central section is sufficiently big.  When fitting a x^-1 line
+    in get_critical_values(), this may not work as intended if many of the bins close to x=0 have
+    y=0.  This routine counts the number of zero-valued bins within the inner_n bins.
 
     :param array histogram: histogram of values to assess
     :param int inner_n: how many of the inner bins to assess
 
-    :returns: (limit, n_zeros) how many n_zeros within limit bins of the centre
+    :returns: n_zeros   how many n_zeros within limit bins of the centre
     """
 
     if len(np.nonzero(histogram == 0)[0]) == 0:
@@ -418,7 +420,7 @@ def get_critical_values(indata: np.array, binmin: float = 0, binwidth: float = 1
     :param float binwidth: bin width
     :param bool plots: do the plots
     :param bool diagnostics : do diagnostic outputs
-    :param str line_label: label for ploted histogram
+    :param str line_label: label for plotted histogram
     :param str xlabel: label for x axis
     :param str title: plot title
  
@@ -470,7 +472,7 @@ def get_critical_values(indata: np.array, binmin: float = 0, binwidth: float = 1
     central_hist = full_hist[:10]
 
     # Remove zeros (turn into infs in log-space)
-    goods, = np.where(central_hist != 0)
+    goods, = np.nonzero(central_hist != 0)
     hist = central_hist[goods]
     edges = edges[goods]
 
@@ -932,14 +934,14 @@ def high_flagging(station: Station) -> bool:
 
         obs_var = getattr(station, ov)
 
-        obs_locs, = np.where(obs_var.data.mask == False)
+        obs_locs, = np.nonzero(obs_var.data.mask == False)
 
         if obs_locs.shape[0] > 10 * DATA_COUNT_THRESHOLD:
             # require sufficient observations to make a flagged fraction useful.
 
             flags = obs_var.flags
 
-            flagged, = np.where(flags[obs_locs] != "")
+            flagged, = np.nonzero(flags[obs_locs] != "")
 
             if flagged.shape[0] / obs_locs.shape[0] > HIGH_FLAGGING:
                 bad = True
@@ -997,7 +999,8 @@ def prepare_data_repeating_streak(data: np.array, diff:int = 0,
     Prepare the data for repeating streaks
 
     :param np.array data: data to assess
-    :param int diff: difference to look for (0 in streaks of data, 1 in streaks of indices)
+    :param int diff: difference to look for (0 in streaks of data - i.e. same values
+                                             1 in streaks of indices - i.e. adjacent locations)
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
 
@@ -1015,10 +1018,11 @@ def prepare_data_repeating_streak(data: np.array, diff:int = 0,
 
     # group the differences
     #     array of (value_diff, count) pairs
+    #     Inspired by https://stackoverflow.com/a/58222158
     grouped_diffs = np.array([[g[0], len(list(g[1]))] for g in itertools.groupby(value_diffs)])
 
     # all streak lengths
-    streaks, = np.where(grouped_diffs[:, 0] == diff)
+    streaks, = np.nonzero(grouped_diffs[:, 0] == diff)
     repeated_streak_lengths = grouped_diffs[streaks, 1] + 1
  
     return repeated_streak_lengths, grouped_diffs, streaks # prepare_data_repeating_streak

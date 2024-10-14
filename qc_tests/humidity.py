@@ -163,11 +163,11 @@ def super_saturation_check(station: utils.Station,
     # and whole month of dewpoints if month has a high proportion (of dewpoint obs)
     for year in np.unique(station.years):
         for month in range(1, 13):
-            month_locs, = np.where(np.logical_and(station.years == year,
+            month_locs, = np.nonzero(np.logical_and(station.years == year,
                                                   station.months == month,
                                                   dewpoints.data.mask == True))
             if month_locs.shape[0] != 0:
-                flagged, = np.where(flags[month_locs] == "h")
+                flagged, = np.nonzero(flags[month_locs] == "h")
                 if (flagged.shape[0]/month_locs.shape[0]) > HIGH_FLAGGING_THRESHOLD:
                     flags[month_locs] = "h"
 
@@ -180,7 +180,7 @@ def super_saturation_check(station: utils.Station,
             plot_humidities(temperatures, dewpoints, station.times, bad)
 
     logger.info(f"Supersaturation {dewpoints.name}")
-    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
+    logger.info(f"   Cumulative number of flags set: {len(np.nonzero(flags != '')[0])}")
 
     return # super_saturation_check
 
@@ -225,7 +225,7 @@ def dew_point_depression_streak(times: np.array,
         repeated_streak_lengths, grouped_diffs, streaks = utils.prepare_data_repeating_streak(locs, diff=1, plots=plots, diagnostics=diagnostics)
 
         # above threshold
-        bad, = np.where(repeated_streak_lengths >= threshold)
+        bad, = np.nonzero(repeated_streak_lengths >= threshold)
 
         # flag identified streaks
         for streak in bad:
@@ -240,7 +240,7 @@ def dew_point_depression_streak(times: np.array,
         dewpoints.flags = utils.insert_flags(dewpoints.flags, flags)
 
     logger.info(f"Dewpoint Depression {dewpoints.name}")
-    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
+    logger.info(f"   Cumulative number of flags set: {len(np.nonzero(flags != '')[0])}")
 
     return # dew_point_depression_streak
 
