@@ -277,7 +277,8 @@ def repeating_value(obs_var: utils.Meteorological_Variable, times: np.array,
         threshold = config_dict[f"STREAK-{this_var.name}"]["Straight"]
     except KeyError:
         # no threshold set
-        get_repeating_streak_threshold(this_var, config_dict, plots=plots, diagnostics=diagnostics)
+        get_repeating_streak_threshold(this_var, config_dict, wind_speed=wind_speed,
+                                       plots=plots, diagnostics=diagnostics)
         threshold = config_dict[f"STREAK-{this_var.name}"]["Straight"]
 
     if threshold == utils.MDI:
@@ -351,7 +352,7 @@ def excess_repeating_value(obs_var: utils.Meteorological_Variable, times: np.arr
         threshold = config_dict[f"STREAK-{this_var.name}"]["Excess"]
     except KeyError:
         # no threshold set
-        get_excess_streak_threshold(this_var, years, config_dict,
+        get_excess_streak_threshold(this_var, years, config_dict, wind_speed=wind_speed,
                                     plots=plots, diagnostics=diagnostics)
         threshold = config_dict[f"STREAK-{this_var.name}"]["Excess"]
 
