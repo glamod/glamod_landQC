@@ -6,13 +6,11 @@ import numpy as np
 import datetime as dt
 import pandas as pd
 import pytest
-from unittest.mock import patch, Mock, mock_open
+from unittest.mock import patch, Mock
 
 import io_utils
 import qc_utils
 import setup
-
-import common
 
 
 EXAMPLE_FILES = os.listdir(os.path.join(os.path.dirname(__file__),
