@@ -191,16 +191,21 @@ def flag_write(outfilename: str, df: pd.DataFrame, diagnostics: bool = False) ->
 
             flags = df[f"{var}_QC_flag"].fillna("")
 
+            # Pull out the actual observations
+            this_var_data = df[var].fillna(MDI).to_numpy().astype(float)
+            this_var_data = np.ma.masked_where(this_var_data == MDI, this_var_data)
+
             for test in QC_TESTS.keys():
                 locs = flags[flags.str.contains(test)]
 
-                outfile.write(f"{var} : {test} : {locs.shape[0]/flags.shape[0]}\n")
+                # For percentage, compare against all obs, not obs for that var
+                outfile.write(f"{var} : {test} : {locs.shape[0]/np.ma.count(this_var_data)}\n")
                 outfile.write(f"{var} : {test}_counts : {locs.shape[0]}\n")
 
 
-            # for total, get number of nonclean obs
+            # for total, get number of set flags (any value)
             flagged, = np.where(flags != "")
-            outfile.write(f"{var} : All : {flagged.shape[0]/flags.shape[0]}\n")
+            outfile.write(f"{var} : All : {flagged.shape[0]/np.ma.count(this_var_data)}\n")
             outfile.write(f"{var} : All_counts : {flagged.shape[0]}\n")
 
             logging.info(f"{var} - {flagged.shape[0]}")
