@@ -7,7 +7,6 @@ import pandas as pd
 import pytest
 
 from unittest.mock import patch, Mock
-from typing import Optional
 
 import streaks
 import qc_utils
@@ -38,7 +37,7 @@ EXCESS_STREAK_STARTS_LENGTHS = {100: 15,
 
 
 def _make_station(data: np.array, name: str,
-                  times: Optional[np.array] = None) -> qc_utils.Station:
+                  times: np.array | None = None) -> qc_utils.Station:
     """
     Create an example station 
 
@@ -54,7 +53,7 @@ def _make_station(data: np.array, name: str,
     return station
 
 
-def _make_simple_masked_data(stop: int, step: float) -> np.array:
+def _make_simple_masked_data(stop: int, step: float) -> np.ma.MaskedArray:
 
     data = np.ma.arange(0, stop, step).astype(float)
     data.mask = np.zeros(data.shape[0])
@@ -76,9 +75,7 @@ def _make_repeating_value_station(name: str) -> qc_utils.Station:
 
 @pytest.fixture()
 def station_for_rsc_logic() -> qc_utils.Station:
-    def _make_rsc_station() -> qc_utils.Station:
-        return _make_station(_make_simple_masked_data(100, 1), "temperature")
-    return _make_rsc_station()
+    return _make_station(_make_simple_masked_data(100, 1), "temperature")
 
 # not testing plotting
 
@@ -162,7 +159,7 @@ def test_get_excess_streak_threshold(critical_values_mock: Mock) -> None:
 
     streaks.get_excess_streak_threshold(this_var, years, config_dict, plots=True)
 
-    # Test that propotions were calculated as expected
+    # Test that proportions were calculated as expected
     np.testing.assert_array_equal(np.array(expected_proportions),
                                   critical_values_mock.call_args.args[0])
 
