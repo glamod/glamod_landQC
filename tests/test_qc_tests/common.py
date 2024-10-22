@@ -78,7 +78,7 @@ def example_test_station(variable: utils.Meteorological_Variable,
     return station
 
 
-def generate_streaky_data(data: np.array, starts_lengths: dict) -> np.array:
+def generate_streaky_data(data: np.array, starts_lengths: dict) -> np.ma.MaskedArray:
     """
     Using a dictionary of {start:length} pairs, make streaky data
     """
