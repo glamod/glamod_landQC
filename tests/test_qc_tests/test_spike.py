@@ -64,9 +64,9 @@ def test_calculate_critical_values() -> None:
 
     # set up the data
     temps = np.ma.ones(200) * 10
-    temps[::5] = 11
+    temps[::4] = 11
     temps[::10] = 12
-    temps[::20] = 14
+    temps[::25] = 14
     temps[::50] = 16
 
     temps.mask = np.zeros(200)
@@ -79,10 +79,10 @@ def test_calculate_critical_values() -> None:
     temperature = common.example_test_variable("temperature", temps)
 
     config_dict = {}
-    spike.calculate_critical_values(temperature, times, config_dict, plots=True)
+    spike.calculate_critical_values(temperature, times, config_dict)
 
     # qc_utils routine to be tested elsewhere
-    assert config_dict["SPIKE-temperature"] == {60. : 6.5}
+    assert config_dict["SPIKE-temperature"] == {60. : 8.0}
 
 
 @pytest.mark.parametrize("name, expected",
