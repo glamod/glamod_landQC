@@ -18,7 +18,7 @@ HIGH_FLAGGING_THRESHOLD = 0.6
 #************************************************************************
 def clean_up(obs_var: utils.Meteorological_Variable, station: utils.Station,
              low_counts: int = LOW_COUNT_THRESHOLD, high_flags: float = HIGH_FLAGGING_THRESHOLD,
-             plots: bool = False, diagnostics:bool = False) -> np.array:
+             plots: bool = False, diagnostics:bool = False) -> np.ndarray:
     """
     Check for high flagging rates within a calendar month and flag remaining
 
