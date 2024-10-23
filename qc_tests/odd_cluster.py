@@ -24,7 +24,7 @@ MIN_SEPARATION = 28*24 # separated by Z days on either side from other data
 
 
 #*********************************************
-def plot_cluster(times: np.array, obs_var: utils.Meteorological_Variable,
+def plot_cluster(times: np.ndarray, obs_var: utils.Meteorological_Variable,
                  oc_start: int, oc_end: int) -> None:
     '''
     Plot each odd cluster highlighted against surrounding data
