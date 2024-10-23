@@ -120,7 +120,7 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.arra
                 flag_locs, = np.where(buddy_var.flags != "") 
                 buddy_var.data.mask[flag_locs] = True
 
-            except OSError: # as e:
+            except FileNotFoundError: # as e:
                 # file missing, move on to next in sequence
                 io.write_error(target_station, f"File Missing (Buddy, {variable}) - {buddy_id}")
                 continue
