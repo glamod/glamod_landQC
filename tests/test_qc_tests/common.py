@@ -30,7 +30,7 @@ REPEATED_STREAK_STARTS_LENGTHS = {10: 3,
                                 }
 
 def example_test_variable(name: str,
-                          vardata: np.array,
+                          vardata: np.ndarray,
                           mdi: float = -1.e30,
                           units: str = "degrees C",
                           dtype: tuple = (float)) -> utils.Meteorological_Variable:
@@ -53,7 +53,7 @@ def example_test_variable(name: str,
 
 
 def example_test_station(variable: utils.Meteorological_Variable,
-                         times: np.array | None = None,
+                         times: np.ndarray | None = None,
                          latitude: int = 45,
                          longitude: int = 100,
                          elevation: int = 10) -> utils.Station:
@@ -78,7 +78,7 @@ def example_test_station(variable: utils.Meteorological_Variable,
     return station
 
 
-def generate_streaky_data(data: np.array, starts_lengths: dict) -> np.ma.MaskedArray:
+def generate_streaky_data(data: np.ndarray, starts_lengths: dict) -> np.ma.MaskedArray:
     """
     Using a dictionary of {start:length} pairs, make streaky data
     """
