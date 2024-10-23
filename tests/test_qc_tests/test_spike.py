@@ -13,7 +13,7 @@ import common
 
 # not testing plotting
 
-def _set_up_data() -> tuple[np.array, np.array, dict]:
+def _set_up_data() -> tuple[np.ndarray, np.ndarray, dict]:
     series_length = 20
     values = np.ma.ones(series_length)
     values.mask = np.zeros(series_length)
@@ -25,7 +25,7 @@ def _set_up_data() -> tuple[np.array, np.array, dict]:
 
     return values, times, critical_values
 
-def _set_up_masked_data() -> tuple[np.array, np.array, dict]:
+def _set_up_masked_data() -> tuple[np.ndarray, np.ndarray, dict]:
     series_length = 20
     values = np.ma.ones(series_length)
     values.mask = np.zeros(series_length)
@@ -102,7 +102,7 @@ def test_retreive_critical_values(name: str, expected: dict) -> None:
                                                     (np.array([10, 11]), True),
                                                     (np.array([10, 11, 12]), True),
                                                     (np.array([10, 11, 12, 13]), False)])
-def test_assess_potential_spike_single(spike_points: np.array,
+def test_assess_potential_spike_single(spike_points: np.ndarray,
                                        expected: bool) -> None:
     
     values, times, critical_values = _set_up_data()
@@ -126,7 +126,7 @@ def test_assess_potential_spike_single(spike_points: np.array,
                                                     (np.arange(10, 14), True),
                                                     (np.arange(10, 15), False)])
 # point 12 masked, so 3[4] point spike in the penultimate[final] case
-def test_assess_potential_spike_single_masked(spike_points: np.array,
+def test_assess_potential_spike_single_masked(spike_points: np.ndarray,
                                               expected: bool) -> None:
     
     values, times, critical_values = _set_up_masked_data()
@@ -156,8 +156,8 @@ def test_assess_potential_spike_single_masked(spike_points: np.array,
                           (np.array([10, 11, 12]), np.array([10, 8, 10]), True),
                           (np.array([10, 11, 12]), np.array([10, 15, 10]), False),  # TODO: IS THIS CORRECT BEHAVIOUR
                           (np.array([10, 11, 12]), np.array([10, 8, 10]), True),])
-def test_assess_inside_spike(spike_points: np.array,
-                             spike_values: np.array,
+def test_assess_inside_spike(spike_points: np.ndarray,
+                             spike_values: np.ndarray,
                              expected_is_spike: bool) -> None:
 
     values, times, critical_values = _set_up_data()
@@ -180,8 +180,8 @@ def test_assess_inside_spike(spike_points: np.array,
                           (np.array([10, 11, 12, 13]), np.array([10, 8, 8, 8]), True),
                           (np.array([10, 11, 12, 13]), np.array([10, 8, 6, 4]), False),
                          ])
-def test_assess_inside_spike_masked(spike_points: np.array,
-                                    spike_values: np.array,
+def test_assess_inside_spike_masked(spike_points: np.ndarray,
+                                    spike_values: np.ndarray,
                                     expected_is_spike: bool) -> None:
 
     values, times, critical_values = _set_up_masked_data()
@@ -208,8 +208,8 @@ def test_assess_inside_spike_masked(spike_points: np.array,
                           (np.array([10, 11]), np.array([2, 3]), True),
                           (np.array([10]), np.array([0, 3]), False), # diff from 0 to 3 > 5/2
                          ])
-def test_assess_outside_spike_before(spike_points: np.array,
-                                     before_values: np.array,
+def test_assess_outside_spike_before(spike_points: np.ndarray,
+                                     before_values: np.ndarray,
                                      expected_is_spike: bool) -> None:
 
     values, times, critical_values = _set_up_data()
@@ -233,8 +233,8 @@ def test_assess_outside_spike_before(spike_points: np.array,
                           (np.array([10]), np.array([0, 3]), True), # diff from 0 to 3 > 5/2, but 3 masked, so not counted
                           (np.array([10, 11]), np.array([5, 2, 1]), False), # diff from 5 to 2 > 5/2, as 1 masked
                          ])
-def test_assess_outside_spike_before_masked(spike_points: np.array,
-                                            before_values: np.array,
+def test_assess_outside_spike_before_masked(spike_points: np.ndarray,
+                                            before_values: np.ndarray,
                                             expected_is_spike: bool) -> None:
 
     values, times, critical_values = _set_up_masked_data()
@@ -259,8 +259,8 @@ def test_assess_outside_spike_before_masked(spike_points: np.array,
                           (np.array([10, 11]), np.array([3, 2]), True),
                           (np.array([10]), np.array([3, 0]), False), # diff > 5/2
                          ])
-def test_assess_outside_spike_after(spike_points: np.array,
-                                    after_values: np.array,
+def test_assess_outside_spike_after(spike_points: np.ndarray,
+                                    after_values: np.ndarray,
                                     expected_is_spike: bool) -> None:
 
     values, times, critical_values = _set_up_data()
@@ -283,8 +283,8 @@ def test_assess_outside_spike_after(spike_points: np.array,
                           (np.array([10, 11]), np.array([3, 2]), True), # diff from 2 to 1 < 5/2, as 3 masked
                           (np.array([10, 11]), np.array([3, 2, 5]), False), # diff from 5 to 2 > 5/2, as 3 masked
                          ])
-def test_assess_outside_spike_after_masked(spike_points: np.array,
-                                           after_values: np.array,
+def test_assess_outside_spike_after_masked(spike_points: np.ndarray,
+                                           after_values: np.ndarray,
                                            expected_is_spike: bool) -> None:
 
     values, times, critical_values = _set_up_masked_data()
@@ -359,7 +359,7 @@ def test_generate_masked_differences() -> None:
                           (np.array([10, 11, 12, 13])),
                           (np.array([10, 11, 12, 13])),
                          ])
-def test_identify_spikes(spike_points: np.array) -> None:
+def test_identify_spikes(spike_points: np.ndarray) -> None:
 
     values, times, critical_values = _set_up_masked_data()
     # 9 & 12 masked

@@ -23,7 +23,7 @@ with open(utils.LOGICFILE, "r") as lf:
 
 #************************************************************************
 def logic_check(obs_var: utils.Meteorological_Variable, plots: bool = False,
-                diagnostics: bool = False) -> np.array:
+                diagnostics: bool = False) -> np.ndarray:
     """
     Check for exceedences of world record values
 

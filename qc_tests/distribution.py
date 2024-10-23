@@ -208,7 +208,7 @@ def monthly_gap(obs_var: utils.Meteorological_Variable, station: utils.Station, 
 
 #************************************************************************
 def prepare_all_data(obs_var: utils.Meteorological_Variable, station: utils.Station, month: int,
-                     config_dict: dict, full: bool = False, diagnostics: bool = False) -> np.array:
+                     config_dict: dict, full: bool = False, diagnostics: bool = False) -> np.ndarray:
     """
     Extract data for the month, make & store or read average and spread.
     Use to calculate normalised anomalies.
@@ -367,7 +367,7 @@ def find_thresholds(obs_var: utils.Meteorological_Variable, station: utils.Stati
     return # find_thresholds
 
 #************************************************************************
-def expand_around_storms(storms: np.array, maximum: int, pad: int = 6) -> np.array:
+def expand_around_storms(storms: np.ndarray, maximum: int, pad: int = 6) -> np.ndarray:
     """
     Pad storm signal by N=6 hours
 

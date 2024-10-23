@@ -71,7 +71,7 @@ def get_repeating_dpd_threshold(temperatures: utils.Meteorological_Variable,
 #*********************************************
 def plot_humidities(T: utils.Meteorological_Variable,
                     D: utils.Meteorological_Variable, 
-                    times: np.array,
+                    times: np.ndarray,
                     bad: int) -> None:
     '''
     Plot each observation of SSS or DPD against surrounding data
@@ -103,7 +103,7 @@ def plot_humidities(T: utils.Meteorological_Variable,
     return # plot_humidities
 
 #*********************************************
-def plot_humidity_streak(times: np.array,
+def plot_humidity_streak(times: np.ndarray,
                          T: utils.Meteorological_Variable,
                          D: utils.Meteorological_Variable,
                          streak_start: int, streak_end: int) -> None:
@@ -185,7 +185,7 @@ def super_saturation_check(station: utils.Station,
     return # super_saturation_check
 
 #************************************************************************
-def dew_point_depression_streak(times: np.array,
+def dew_point_depression_streak(times: np.ndarray,
                                 temperatures: utils.Meteorological_Variable,
                                 dewpoints: utils.Meteorological_Variable,
                                 config_dict: dict,

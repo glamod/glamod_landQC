@@ -32,7 +32,7 @@ for h in range(24):
 
 
 #************************************************************************
-def quartile_check(minutes: np.array) -> bool:
+def quartile_check(minutes: np.ndarray) -> bool:
     """
     Check if >=3 quartiles of the day have data
 
@@ -73,7 +73,7 @@ def quartile_check(minutes: np.array) -> bool:
         return False # quartile_check
 
 #************************************************************************
-def find_fit(this_day: np.array, this_day_mins: np.array) -> tuple[int, int]:
+def find_fit(this_day: np.ndarray, this_day_mins: np.ndarray) -> tuple[int, int]:
     """
     Find the best fit of a theoretical sine curve to the data
 
@@ -150,7 +150,7 @@ def find_fit(this_day: np.array, this_day_mins: np.array) -> tuple[int, int]:
     return best_fit, uncertainty
 
 #************************************************************************
-def get_daily_offset(station: utils.Station, locs: np.array, obs_var: utils.Meteorological_Variable) -> tuple[int, int]:
+def get_daily_offset(station: utils.Station, locs: np.ndarray, obs_var: utils.Meteorological_Variable) -> tuple[int, int]:
     """
     Extract data for a single 24h period, and pass to offset finder
 
@@ -178,7 +178,7 @@ def get_daily_offset(station: utils.Station, locs: np.array, obs_var: utils.Mete
     return best_fit, uncertainty # get_daily_offset
 
 #************************************************************************
-def prepare_data(station: utils.Station, obs_var: utils.Meteorological_Variable) -> tuple[np.array, np.array]:
+def prepare_data(station: utils.Station, obs_var: utils.Meteorological_Variable) -> tuple[np.ndarray, np.ndarray]:
     """
     For each 24h period, find diurnal cycle offset and uncertainty
 
@@ -215,7 +215,7 @@ def prepare_data(station: utils.Station, obs_var: utils.Meteorological_Variable)
     return best_fit_diurnal, best_fit_uncertainty # prepare_data 
 
 #************************************************************************
-def find_offset(obs_var: utils.Meteorological_Variable, station: utils.Station, config_dict: dict, plots: bool = False, diagnostics: bool = False) -> tuple[np.array, np.array]:
+def find_offset(obs_var: utils.Meteorological_Variable, station: utils.Station, config_dict: dict, plots: bool = False, diagnostics: bool = False) -> tuple[np.ndarray, np.ndarray]:
     """
     Find the best offset for a sine curve to represent the cycle
 
@@ -291,8 +291,8 @@ def find_offset(obs_var: utils.Meteorological_Variable, station: utils.Station, 
 
 #************************************************************************
 def diurnal_cycle_check(obs_var: utils.Meteorological_Variable, station: utils.Station, config_dict: dict,
-                        plots: bool = False, diagnostics: bool = False, best_fit_diurnal: np.array = None,
-                        best_fit_uncertainty: np.array = None) -> None:
+                        plots: bool = False, diagnostics: bool = False, best_fit_diurnal: np.ndarray = None,
+                        best_fit_uncertainty: np.ndarray = None) -> None:
     """
     Use offset to find days where cycle doesn't match
 

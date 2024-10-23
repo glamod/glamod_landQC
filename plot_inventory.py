@@ -72,8 +72,8 @@ def read_stations() -> None:
 
 
 #*********************************************
-def extract_inventory(station: utils.Station, inventory: np.array, data_start: int,
-                      data_end: int, do_mergers:bool = True) -> np.array:
+def extract_inventory(station: utils.Station, inventory: np.ndarray, data_start: int,
+                      data_end: int, do_mergers:bool = True) -> np.ndarray:
     """
     Extract the information from the ISD inventory file
 

@@ -21,7 +21,7 @@ MAX_SPREAD = 5.0
 #*********************************************
 def plot_pressure_timeseries(sealp: utils.Meteorological_Variable,
                              stnlp: utils.Meteorological_Variable,
-                             times: np.array, bad: int) -> None:
+                             times: np.ndarray, bad: int) -> None:
     '''
     Plot each observation of SLP or StnLP against surrounding data
 
@@ -57,7 +57,7 @@ def plot_pressure_timeseries(sealp: utils.Meteorological_Variable,
 
 
 #*********************************************
-def plot_pressure_distribution(difference: np.array, vmin: int=-1, vmax:int=1) -> None:
+def plot_pressure_distribution(difference: np.ndarray, vmin: int=-1, vmax:int=1) -> None:
     '''
     Plot distribution and include the upper and lower thresholds
 
@@ -123,7 +123,7 @@ def identify_values(sealp: utils.Meteorological_Variable,
 #************************************************************************
 def pressure_offset(sealp: utils.Meteorological_Variable,
                     stnlp: utils.Meteorological_Variable,
-                    times: np.array, config_dict: dict,
+                    times: np.ndarray, config_dict: dict,
                     plots: bool=False, diagnostics: bool=False) -> None:
 
     """
@@ -195,7 +195,7 @@ def pressure_offset(sealp: utils.Meteorological_Variable,
 
 
 #*********************************************
-def calc_slp(stnlp: np.array, elevation: float, temperature: np.array) -> np.array:
+def calc_slp(stnlp: np.ndarray, elevation: float, temperature: np.ndarray) -> np.ndarray:
     '''
     Suggestion from Scott Stevens to calculate the SLP from the StnLP
     Presumes 15C if no temperature available
@@ -206,7 +206,7 @@ def calc_slp(stnlp: np.array, elevation: float, temperature: np.array) -> np.arr
     :param float elevation: station elevation
     :param array temperature: temperature data
 
-    :returns: np.array
+    :returns: np.ndarray
     '''
 
     filled_temperature = np.ma.copy(temperature)
@@ -226,7 +226,7 @@ def calc_slp(stnlp: np.array, elevation: float, temperature: np.array) -> np.arr
 
 #************************************************************************
 def adjust_existing_flag_locs(var: utils.Meteorological_Variable,
-                            flags: np.array) -> np.array:
+                            flags: np.ndarray) -> np.ndarray:
     """
     There may be flags already set by previous part of test
     Find these locations, and adjust new flags to these aren't added again
@@ -250,7 +250,7 @@ def adjust_existing_flag_locs(var: utils.Meteorological_Variable,
 def pressure_theory(sealp: utils.Meteorological_Variable,
                     stnlp: utils.Meteorological_Variable,
                     temperature: utils.Meteorological_Variable,
-                    times: np.array, elevation: int,
+                    times: np.ndarray, elevation: int,
                     plots: bool=False, diagnostics: bool=False) -> None:
     """
     Flag locations where difference between recorded and calculated sea-level pressure 

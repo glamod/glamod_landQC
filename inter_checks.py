@@ -36,7 +36,7 @@ import setup
 #************************************************************************
 
 #************************************************************************
-def read_neighbours(restart_id: str = "", end_id: str = "") -> np.array:
+def read_neighbours(restart_id: str = "", end_id: str = "") -> np.ndarray:
     """
     Read the neighbour file to store neighbours and distances [station, neighbours, distances]
 

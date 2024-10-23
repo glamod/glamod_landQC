@@ -18,7 +18,7 @@ SPREAD_THRESHOLD = 8.
 MIN_VALUES = 30
 
 #************************************************************************
-def prepare_data(obs_var: utils.Meteorological_Variable, station: utils.Station, month:int, diagnostics: bool = False, winsorize: bool = True) -> np.array:
+def prepare_data(obs_var: utils.Meteorological_Variable, station: utils.Station, month:int, diagnostics: bool = False, winsorize: bool = True) -> np.ndarray:
     """
     Calculate the monthly variances
 

@@ -49,7 +49,7 @@ mins = {"temperature" : T_N, "dew_point_temperature" : D_N, "wind_speed" : W_N, 
 
 #************************************************************************
 def record_check(obs_var: utils.Meteorological_Variable, continent: str,
-                 plots: bool = False, diagnostics: bool = False) -> np.array:
+                 plots: bool = False, diagnostics: bool = False) -> np.ndarray:
     """
     Check for exceedences of world record values
 
