@@ -186,7 +186,7 @@ def get_station_list(restart_id: str = "", end_id: str = "") -> pd.DataFrame:
 
 
 #************************************************************************
-def insert_flags(qc_flags: np.array, flags: np.array) -> np.array:
+def insert_flags(qc_flags: np.ndarray, flags: np.ndarray) -> np.ndarray:
     """
     Update QC flags with the new flags
 
@@ -272,7 +272,7 @@ def populate_station(station: Station, df: pd.DataFrame, obs_var_list: list, rea
     return # populate_station
 
 #*********************************************
-def calculate_IQR(data: np.array, percentile: float = 0.25) -> float:
+def calculate_IQR(data: np.ndarray, percentile: float = 0.25) -> float:
     ''' Calculate the IQR of the data '''
 
     try:
@@ -288,7 +288,7 @@ def calculate_IQR(data: np.array, percentile: float = 0.25) -> float:
     return sorted_data[n_data - quartile] - sorted_data[quartile] # calculate_IQR
     
 #*********************************************
-def mean_absolute_deviation(data: np.array, median: bool = False) -> float:    
+def mean_absolute_deviation(data: np.ndarray, median: bool = False) -> float:    
     ''' Calculate the MAD of the data '''
     
     if median:
@@ -300,7 +300,7 @@ def mean_absolute_deviation(data: np.array, median: bool = False) -> float:
     return mad # mean_absolute_deviation
 
 #*********************************************
-def linear(X: np.array, p: np.array) -> np.array:
+def linear(X: np.ndarray, p: np.ndarray) -> np.ndarray:
     '''
     decay function for line fitting
     p[0]=intercept
@@ -309,7 +309,7 @@ def linear(X: np.array, p: np.array) -> np.array:
     return p[1]*X + p[0] # linear
 
 #*********************************************
-def residuals_linear(p: np.array, Y: np.array, X: np.array) -> np.array:
+def residuals_linear(p: np.ndarray, Y: np.ndarray, X: np.ndarray) -> np.ndarray:
     '''
     Least squared residuals from linear trend
     '''
@@ -319,7 +319,7 @@ def residuals_linear(p: np.array, Y: np.array, X: np.array) -> np.array:
 
 
 #*********************************************
-def gcv_calculate_binmax(indata: np.array, binmin: float, binwidth: float) -> float:
+def gcv_calculate_binmax(indata: np.ndarray, binmin: float, binwidth: float) -> float:
     """
     Determine the appropriate largest bin to use.
 
@@ -346,7 +346,7 @@ def gcv_calculate_binmax(indata: np.array, binmin: float, binwidth: float) -> fl
     
 
 
-def gcv_central_section(full_hist: np.array) -> tuple[int, int]:
+def gcv_central_section(full_hist: np.ndarray) -> tuple[int, int]:
     """
     A routine to determine if, for a distribution with multiple peaks, the central
     section is sufficiently big.
@@ -382,7 +382,7 @@ def gcv_central_section(full_hist: np.array) -> tuple[int, int]:
 
 
 #*********************************************
-def get_critical_values(indata: np.array, binmin: float = 0, binwidth: float = 1, plots: bool = False, diagnostics: bool = False, \
+def get_critical_values(indata: np.ndarray, binmin: float = 0, binwidth: float = 1, plots: bool = False, diagnostics: bool = False, \
                         line_label: str = "", xlabel: str = "", title: str = "", old_threshold: float = 0) -> float:
     """
     Plot histogram on log-y scale and fit 1/x decay curve to set threshold
@@ -484,7 +484,7 @@ def get_critical_values(indata: np.array, binmin: float = 0, binwidth: float = 1
     return threshold # get_critical_values
 
 #*********************************************
-def plot_log_distribution(edges: np.array, hist: np.array, fit: np.array, threshold: float, line_label: str, xlabel: str, title: str) -> None:
+def plot_log_distribution(edges: np.ndarray, hist: np.ndarray, fit: np.ndarray, threshold: float, line_label: str, xlabel: str, title: str) -> None:
     """
     Plot distribution on a log scale and show the fit
 
@@ -515,7 +515,7 @@ def plot_log_distribution(edges: np.array, hist: np.array, fit: np.array, thresh
 
 
 #*********************************************
-def average(data: np.array) -> float:
+def average(data: np.ndarray) -> float:
     """
     Routine to wrap mean or median functions so can easily switch
     """
@@ -528,7 +528,7 @@ def average(data: np.array) -> float:
     # average
 
 #*********************************************
-def spread(data: np.array) -> float:
+def spread(data: np.ndarray) -> float:
     """
     Routine to wrap st-dev, IQR or MAD functions so can easily switch
     """
@@ -550,7 +550,7 @@ def spread(data: np.array) -> float:
     # spread
 
 #*********************************************
-def winsorize(data: np.array, percent: float) -> np.array:
+def winsorize(data: np.ndarray, percent: float) -> np.ndarray:
     """
     Replace data greater/less than upper/lower percentile with percentile value
     """
@@ -569,7 +569,7 @@ def winsorize(data: np.array, percent: float) -> np.array:
     return data # winsorize
 
 #************************************************************************
-def create_bins(data: np.array, width: float, obs_var_name: str, anomalies: bool = False):
+def create_bins(data: np.ndarray, width: float, obs_var_name: str, anomalies: bool = False):
 
     bmin = np.floor(np.ma.min(data))
     bmax = np.ceil(np.ma.max(data))
@@ -608,7 +608,7 @@ def create_bins(data: np.array, width: float, obs_var_name: str, anomalies: bool
         return bins # create_bins
 
 #*********************************************
-def gaussian(X: np.array, p: np.array) -> np.array:
+def gaussian(X: np.ndarray, p: np.ndarray) -> np.ndarray:
     '''
     Gaussian function for line fitting
     p[0]=norm
@@ -619,7 +619,7 @@ def gaussian(X: np.array, p: np.array) -> np.array:
     return (norm*(np.exp(-((X-mu)*(X-mu))/(2.0*sig*sig)))) # gaussian
 
 #*********************************************
-def skew_gaussian(X: np.array, p: np.array) -> np.array:
+def skew_gaussian(X: np.ndarray, p: np.ndarray) -> np.ndarray:
     '''
     Gaussian function for line fitting
     p[0]=norm
@@ -632,7 +632,7 @@ def skew_gaussian(X: np.array, p: np.array) -> np.array:
         (1 + scipy.special.erf(skew*(X-mu)/(sig*np.sqrt(2)))) # skew_gaussian
 
 #*********************************************
-def residuals_skew_gaussian(p: np.array, Y: np.array, X: np.array) -> np.array:
+def residuals_skew_gaussian(p: np.ndarray, Y: np.ndarray, X: np.ndarray) -> np.ndarray:
     '''
     Least squared residuals from linear trend
     '''
@@ -652,7 +652,7 @@ def invert_gaussian(Y: float, p: float) -> float:
     return mu + (sig*np.sqrt(-2*np.log(Y/norm))) # invert_gaussian
 
 #*********************************************
-def residuals_gaussian(p: np.array, Y: np.array, X: np.array) -> np.array:
+def residuals_gaussian(p: np.ndarray, Y: np.ndarray, X: np.ndarray) -> np.ndarray:
     '''
     Least squared residuals from linear trend
     '''
@@ -661,7 +661,7 @@ def residuals_gaussian(p: np.array, Y: np.array, X: np.array) -> np.array:
     return err # residuals_gaussian
 
 #*********************************************
-def fit_gaussian(x: np.array, y: np.array, norm: float, mu: float = MDI, sig: float = MDI, skew: float = MDI) -> np.array:
+def fit_gaussian(x: np.ndarray, y: np.ndarray, norm: float, mu: float = MDI, sig: float = MDI, skew: float = MDI) -> np.ndarray:
     '''
     Fit a gaussian to the data provided
     Inputs:
@@ -694,7 +694,7 @@ def fit_gaussian(x: np.array, y: np.array, norm: float, mu: float = MDI, sig: fl
     return result.x # fit_gaussian
 
 #************************************************************************
-def find_gap(hist: np.array, bins: np.array, threshold: float, gap_size: int, upwards: bool = True) -> float:
+def find_gap(hist: np.ndarray, bins: np.ndarray, threshold: float, gap_size: int, upwards: bool = True) -> float:
     '''
     Walk the bins of the distribution to find a gap and return where it starts
    
@@ -749,7 +749,7 @@ def find_gap(hist: np.array, bins: np.array, threshold: float, gap_size: int, up
     return gap_start # find_gap
 
 #*********************************************
-def reporting_accuracy(indata: np.array, winddir: bool = False, plots: bool = False) -> float:
+def reporting_accuracy(indata: np.ndarray, winddir: bool = False, plots: bool = False) -> float:
     '''
     Uses histogram of remainders to look for special values
 
@@ -820,7 +820,7 @@ def reporting_accuracy(indata: np.array, winddir: bool = False, plots: bool = Fa
     return resolution # reporting_accuracy
 
 #*********************************************
-def reporting_frequency(intimes: np.array, inobs: np.array) -> float:
+def reporting_frequency(intimes: np.ndarray, inobs: np.ndarray) -> float:
     '''
     Uses histogram of remainders to look for special values
 
@@ -947,7 +947,8 @@ def find_continent(country_code: str) -> str:
     return concord[country_code]
 
 #************************************************************************
-def prepare_data_repeating_string(data, diff=0, plots=False, diagnostics=False):
+def prepare_data_repeating_string(data: np.ndarray, diff: int = 0,
+                                  plots: bool = False, diagnostics:bool = False):
     """
     Prepare the data for repeating strings
 
@@ -974,7 +975,7 @@ def prepare_data_repeating_string(data, diff=0, plots=False, diagnostics=False):
 
 
 #************************************************************************
-def custom_logger(logfile):
+def custom_logger(logfile: str):
 
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)

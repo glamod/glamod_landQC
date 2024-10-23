@@ -14,7 +14,7 @@ import qc_utils as utils
 MAX_SPIKE_LENGTH = 3
 
 #*********************************************
-def plot_spike(times: np.array, obs_var: utils.Meteorological_Variable,
+def plot_spike(times: np.ndarray, obs_var: utils.Meteorological_Variable,
                spike_start: int, spike_length: int) -> None:
     '''
     Plot each spike against surrounding data
@@ -53,7 +53,7 @@ def plot_spike(times: np.array, obs_var: utils.Meteorological_Variable,
     return # plot_spike
 
 #************************************************************************
-def calculate_critical_values(obs_var: utils.Meteorological_Variable, times: np.array,
+def calculate_critical_values(obs_var: utils.Meteorological_Variable, times: np.ndarray,
                               config_dict: dict, plots: bool=False, diagnostics: bool=False) -> None:
     """
     Use distribution to determine critical values.  Then also store in config dictionary.
@@ -106,7 +106,7 @@ def calculate_critical_values(obs_var: utils.Meteorological_Variable, times: np.
 
 
 #************************************************************************
-def retreive_critical_values(unique_diffs: np.array, config_dict: dict, name: str) -> dict:
+def retreive_critical_values(unique_diffs: np.ndarray, config_dict: dict, name: str) -> dict:
     """
     Read the config dictionary to pull out the critical values
 
@@ -131,7 +131,7 @@ def retreive_critical_values(unique_diffs: np.array, config_dict: dict, name: st
 
 
 #************************************************************************
-def assess_potential_spike(time_diffs: np.array, value_diffs: np.array,
+def assess_potential_spike(time_diffs: np.ndarray, value_diffs: np.ndarray,
                            possible_in_spike: int, critical_values: dict) -> tuple[bool, int]:
     """
     Check if the jump up is the beginning of a spike (so, look for a large enough jump down within 
@@ -179,7 +179,7 @@ def assess_potential_spike(time_diffs: np.array, value_diffs: np.array,
 
 
 #************************************************************************
-def assess_inside_spike(time_diffs: np.array, value_diffs: np.array,
+def assess_inside_spike(time_diffs: np.ndarray, value_diffs: np.ndarray,
                         possible_in_spike: int, critical_values: dict,
                         is_spike: bool, spike_len: int) -> bool:
     """
@@ -223,7 +223,7 @@ def assess_inside_spike(time_diffs: np.array, value_diffs: np.array,
 
 
 #************************************************************************
-def assess_outside_spike(time_diffs: np.array, value_diffs: np.array,
+def assess_outside_spike(time_diffs: np.ndarray, value_diffs: np.ndarray,
                         possible_in_spike: int, critical_values: dict,
                         is_spike: bool, spike_len: int) -> tuple[bool, int]:
     """
@@ -267,8 +267,8 @@ def assess_outside_spike(time_diffs: np.array, value_diffs: np.array,
 
 
 #************************************************************************
-def generate_differences(times: np.array,
-                         data: np.array) -> tuple[np.array, np.array, np.array]:
+def generate_differences(times: np.ndarray,
+                         data: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Generate the first differences for the times and the data values
 
@@ -299,7 +299,7 @@ def generate_differences(times: np.array,
 
 
 #************************************************************************
-def identify_spikes(obs_var: utils.Meteorological_Variable, times: np.array, config_dict: dict,
+def identify_spikes(obs_var: utils.Meteorological_Variable, times: np.ndarray, config_dict: dict,
                     plots: bool = False, diagnostics: bool = False) -> None:
     """
     Use config_dict to read in critical values, and then assess to find spikes

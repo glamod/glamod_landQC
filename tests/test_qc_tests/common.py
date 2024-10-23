@@ -11,7 +11,7 @@ import qc_utils as utils
 #   Need to build a station and empty variables to use
 
 def example_test_variable(name: str,
-                          vardata: np.array,
+                          vardata: np.ndarray,
                           mdi: float = -1.e30,
                           units: str = "degrees C",
                           dtype: tuple = (float)) -> utils.Meteorological_Variable:

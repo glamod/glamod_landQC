@@ -15,7 +15,7 @@ import common
 all_flagged = np.array(["n" for _ in range(120)])
 none_flagged = np.array(["" for _ in range(120)])
 
-def _make_station(temps: np.array, dewps: np.array) -> qc_utils.Station:
+def _make_station(temps: np.ndarray, dewps: np.ndarray) -> qc_utils.Station:
     """
     Create a station with two paired variables
 
@@ -40,7 +40,7 @@ def _make_station(temps: np.array, dewps: np.array) -> qc_utils.Station:
 
 @pytest.mark.parametrize("t_divisor, d_divisor, expected", [(10, 1, all_flagged),
                                                              (10, 10, none_flagged)])
-def test_precision_cross_check(t_divisor: int, d_divisor: int, expected: np.array):
+def test_precision_cross_check(t_divisor: int, d_divisor: int, expected: np.ndarray):
 
     length = 120
     temps = np.ma.arange(0, length/t_divisor, 1/t_divisor)
