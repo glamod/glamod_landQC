@@ -17,11 +17,15 @@ HIGH_FLAGGING_THRESHOLD = 0.6
 
 #************************************************************************
 def clean_up(obs_var: utils.Meteorological_Variable, station: utils.Station,
-             plots: bool = False, diagnostics:bool = False) -> np.array:
+             low_counts: int = LOW_COUNT_THRESHOLD, high_flags: float = HIGH_FLAGGING_THRESHOLD,
+             plots: bool = False, diagnostics:bool = False) -> np.ndarray:
     """
     Check for high flagging rates within a calendar month and flag remaining
 
     :param MetVar obs_var: meteorological variable object
+    :param Station station: Station object
+    :param int low_counts: threshold of low counts below which remaining unflagged obs are flagged
+    :param float high_flags: threshold above which flags are set on remaining unflagged obs
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
@@ -43,7 +47,7 @@ def clean_up(obs_var: utils.Meteorological_Variable, station: utils.Station,
             flagged, = np.where(old_flags[month_locs][obs_locs] != "")
             unflagged, = np.where(old_flags[month_locs][obs_locs] == "")
 
-            if unflagged.shape[0] < LOW_COUNT_THRESHOLD:
+            if unflagged.shape[0] < low_counts:
                 # insufficient unflagged observations left
                 new_flags[month_locs[obs_locs][unflagged]] = "E"
                 logger.info(f"Low count {year} - {month} : {len(obs_locs)}")
@@ -52,9 +56,10 @@ def clean_up(obs_var: utils.Meteorological_Variable, station: utils.Station,
                 if flagged.shape[0] == 0:
                     # no flags set so just skip
                     pass
-                elif flagged.shape[0] / n_obs > HIGH_FLAGGING_THRESHOLD:
+                elif flagged.shape[0] / n_obs > high_flags:
                     # flag remainder
-                    new_flags[month_locs[obs_locs]] = "E"
+                    new_flags[month_locs[obs_locs][unflagged]] = "E"
+                    print(month_locs[obs_locs][unflagged])
                     if diagnostics:
                         print(f"High flag {year} - {month} : {len(obs_locs)} ({(100*flagged.shape[0] / n_obs)}%)")
 
