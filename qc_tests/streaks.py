@@ -25,7 +25,7 @@ import qc_utils as utils
 MIN_STREAK_LENGTH_FOR_EXCESS_FREQUENCY = 10
 
 #*********************************************
-def plot_streak(times: np.array, data: np.array, units: str,
+def plot_streak(times: np.ndarray, data: np.ndarray, units: str,
                 streak_start: int, streak_end: int) -> None:
     '''
     Plot each streak against surrounding data
@@ -177,7 +177,7 @@ def get_repeating_streak_threshold(obs_var: utils.Meteorological_Variable,
 
 #************************************************************************
 def get_excess_streak_threshold(obs_var: utils.Meteorological_Variable,
-                                years: np.array, config_dict: dict,
+                                years: np.ndarray, config_dict: dict,
                                 wind_speed: utils.Meteorological_Variable | None = None,
                                 plots: bool = False,
                                 diagnostics: bool = False) -> None:
@@ -250,9 +250,9 @@ def get_excess_streak_threshold(obs_var: utils.Meteorological_Variable,
 
 
 #************************************************************************
-def repeating_value(obs_var: utils.Meteorological_Variable, times: np.array,
+def repeating_value(obs_var: utils.Meteorological_Variable, times: np.ndarray,
                     config_dict: dict,
-                    wind_speed: Optional[utils.Meteorological_Variable] = None,
+                    wind_speed: utils.Meteorological_Variable | None = None,
                     plots: bool = False, diagnostics: bool = False) -> None:
     """
     AKA straight streak
@@ -318,7 +318,7 @@ def repeating_value(obs_var: utils.Meteorological_Variable, times: np.array,
 
 
 #************************************************************************
-def excess_repeating_value(obs_var: utils.Meteorological_Variable, times: np.array,
+def excess_repeating_value(obs_var: utils.Meteorological_Variable, times: np.ndarray,
                     config_dict: dict, 
                     wind_speed: utils.Meteorological_Variable | None = None,
                     plots: bool = False, diagnostics: bool = False) -> None:

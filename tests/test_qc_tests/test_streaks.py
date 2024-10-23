@@ -36,8 +36,8 @@ EXCESS_STREAK_STARTS_LENGTHS = {100: 15,
 
 
 
-def _make_station(data: np.array, name: str,
-                  times: np.array | None = None) -> qc_utils.Station:
+def _make_station(data: np.ndarray, name: str,
+                  times: np.ndarray | None = None) -> qc_utils.Station:
     """
     Create an example station 
 
