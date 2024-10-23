@@ -161,7 +161,7 @@ def test_get_excess_streak_threshold(critical_values_mock: Mock) -> None:
     streaky_data = common.generate_streaky_data(data, EXCESS_STREAK_STARTS_LENGTHS)
     for y in range(10, 15):
         all_data = np.append(all_data, streaky_data)
-        years = np.append(years, (data_length * np.ones(streaky_ddata.shape[0]))+y)
+        years = np.append(years, (data_length * np.ones(streaky_data.shape[0]))+y)
         expected_proportions += [np.sum([v for _, v in EXCESS_STREAK_STARTS_LENGTHS.items()])/streaky_data.shape[0]]
 
     # generate a times series from the year information, starting 1/1 for each year of 2000 obs
