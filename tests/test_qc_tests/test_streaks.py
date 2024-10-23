@@ -73,6 +73,7 @@ def _make_repeating_value_station(name: str) -> qc_utils.Station:
 
     return station
 
+
 @pytest.fixture()
 def station_for_rsc_logic() -> qc_utils.Station:
     return _make_station(_make_simple_masked_data(100, 1), "temperature")
@@ -94,6 +95,7 @@ def test_mask_calms(reporting_mock: Mock) -> None:
     # call routine
     streaks.mask_calms(this_var)
 
+    # assert masking applied to zeros only
     assert this_var.data.mask[0] == True
     assert this_var.data.mask[1] == False
 
@@ -104,6 +106,7 @@ def test_get_repeating_streak_threshold() -> None:
     data = common.generate_streaky_data(_make_simple_masked_data(200, 0.1),
                                         common.REPEATED_STREAK_STARTS_LENGTHS)
 
+    # extract a MetVar with this data
     station = _make_station(data, "temperature")
     this_var = getattr(station, "temperature")
 
@@ -111,6 +114,7 @@ def test_get_repeating_streak_threshold() -> None:
 
     streaks.get_repeating_streak_threshold(this_var, config_dict)
 
+    # assert that the call has set a value in the empty dict
     assert config_dict["STREAK-temperature"]["Straight"] == 8
 
 
@@ -124,54 +128,71 @@ def test_get_repeating_streak_threshold_no_data() -> None:
 
     streaks.get_repeating_streak_threshold(this_var, config_dict)
 
+    # assert that an entry created, but no value set
     assert config_dict["STREAK-temperature"]["Straight"] == qc_utils.MDI
 
 
 @patch("streaks.utils.get_critical_values")
 def test_get_excess_streak_threshold(critical_values_mock: Mock) -> None:
+    """
+    Testing that values passed to get_critical_values() are as expected.
 
+    Generating streaky data for some of the years, and calculating the
+    proportion of obs therein without using the itertools.groupby() approach 
+    in qc_utils.prepare_data_repeating_streak.
+    """
+    # definitions
+    data_length = 2000
     expected_proportions = []
     all_data = np.array([])
     years = np.array([])
-    # set up data
-    data = np.ma.arange(0, 200, 0.1).astype(float)
+
+    # set up data - per year 2000 points, content predictable, so arange()
+    data = np.ma.arange(0, data_length/10, 1/10).astype(float)
     data.mask = np.zeros(data.shape[0])
 
-    # add a some years with no streaks
+    # add a 10 years with no streaks
     for y in range(10):
         all_data = np.append(all_data, data)
-        years = np.append(years, (2000*np.ones(data.shape[0]))+y)
+        years = np.append(years, (data_length*np.ones(data.shape[0]))+y)
         expected_proportions += [0]
 
-    data = common.generate_streaky_data(data, EXCESS_STREAK_STARTS_LENGTHS)
-
-    # Add some years with streaks
+    # Add 5 years with streaks
+    streaky_data = common.generate_streaky_data(data, EXCESS_STREAK_STARTS_LENGTHS)
     for y in range(10, 15):
-        all_data = np.append(all_data, data)
-        years = np.append(years, (2000*np.ones(data.shape[0]))+y)
-        expected_proportions += [np.sum([v for _, v in EXCESS_STREAK_STARTS_LENGTHS.items()])/data.shape[0]]
+        all_data = np.append(all_data, streaky_data)
+        years = np.append(years, (data_length * np.ones(streaky_ddata.shape[0]))+y)
+        expected_proportions += [np.sum([v for _, v in EXCESS_STREAK_STARTS_LENGTHS.items()])/streaky_data.shape[0]]
 
-    station = _make_station(all_data, "temperature")
+    # generate a times series from the year information, starting 1/1 for each year of 2000 obs
+    times = pd.to_datetime(pd.DataFrame([dt.datetime(yr, 1, 1, 1, 0) + dt.timedelta(hours=y%data_length)\
+                           for y, yr in enumerate(years.astype(int))])[0])
+
+    station = _make_station(all_data, "temperature", times=times)
     this_var = getattr(station, "temperature")
 
+    # extra assert to ensure times built as expected
+    np.testing.assert_array_equal(station.years, years)
+
+    # empty set of thresholds, but mock the return value so code completes
     config_dict = {}
     critical_values_mock.return_value = 0.3
 
-    streaks.get_excess_streak_threshold(this_var, years, config_dict, plots=True)
+    streaks.get_excess_streak_threshold(this_var, station.years, config_dict, plots=True)
 
-    # Test that proportions were calculated as expected
+    # Test that proportions were calculated as expected when passed into critical_values()
     np.testing.assert_array_equal(np.array(expected_proportions),
                                   critical_values_mock.call_args.args[0])
 
 
-def test_repeating_value_nonwind() -> None:
+def test_repeating_value() -> None:
 
     # set up data
     station = _make_repeating_value_station("temperature")
     this_var = getattr(station, "temperature")
 
     expected_flags = np.array(["" for _ in this_var.data])
-    expected_flags[50:70] = "K"
+    expected_flags[50:70] = "K" # same range as in _make_repeating_value_station
 
     # set up dictionary
     config_dict = {}
@@ -180,29 +201,31 @@ def test_repeating_value_nonwind() -> None:
 
     streaks.repeating_value(this_var, station.times, config_dict)
 
+    # assert flags are as expected
     np.testing.assert_array_equal(this_var.flags, expected_flags)
 
 
 def test_repeating_value_threshold_is_mdi() -> None:
 
+    # set up data
     station = _make_repeating_value_station("temperature")
     this_var = getattr(station, "temperature")
 
     expected_flags = np.array(["" for _ in this_var.data])
 
-    # set up dictionary
+    # set up dictionary, with value of MDI for the threshold, so no flags set
     config_dict = {}
     CD_straight = {"Straight" : qc_utils.MDI}
     config_dict["STREAK-temperature"] = CD_straight
 
     streaks.repeating_value(this_var, station.times, config_dict)
-
+    # assert flags equal
     np.testing.assert_array_equal(this_var.flags, expected_flags)
 
 
 def test_repeating_value_short() -> None:
 
-    # set up data
+    # set up data which is too short to contain a valid streak
     station = _make_station(_make_simple_masked_data(1, 1), "temperature")
     this_var = getattr(station, "temperature")
 
@@ -217,7 +240,7 @@ def test_repeating_value_short() -> None:
 
 
 def test_repeating_value_wind() -> None:
-
+    # Because calm periods in wind speed are ignored, run test for this specifically
     # set up data
     station = _make_repeating_value_station("wind_speed")
     this_var = getattr(station, "wind_speed")
@@ -225,15 +248,15 @@ def test_repeating_value_wind() -> None:
     # streak of zeros [calms] at the end, which should be ignored
     this_var.data[160:180] = 0
     expected_flags = np.array(["" for _ in this_var.data])
-    expected_flags[50:70] = "K"
+    expected_flags[50:70] = "K"  # same range as in _make_repeating_value_station
 
     # set up dictionary
     config_dict = {}
-    CD_straight = {"Straight" : 10}  # streaks of 10 or more identical values
+    CD_straight = {"Straight" : 10}  # streaks of 10 or more identical values (would pick up calm from 160:180)
     config_dict["STREAK-wind_speed"] = CD_straight
 
     streaks.repeating_value(this_var, station.times, config_dict)
-
+    # assert flags set as expected
     np.testing.assert_array_equal(this_var.flags, expected_flags)
 
 
@@ -299,6 +322,7 @@ def test_repeating_day() -> None:
     indata[96:120] = indata[48:72]
     expected_flags[48:120] = "y"
 
+    # make station and MetVar
     obs_var = common.example_test_variable("temperature", indata)
     station = common.example_test_station(obs_var)
 
@@ -307,8 +331,10 @@ def test_repeating_day() -> None:
     CD_dayrepeat = {"DayRepeat" : 2}
     config_dict[f"STREAK-{obs_var.name}"] = CD_dayrepeat    
     
+    # make the call
     streaks.repeating_day(obs_var, station, config_dict, determine_threshold=False)
 
+    # check flags as expected
     np.testing.assert_array_equal(expected_flags, obs_var.flags)
 
 
@@ -322,7 +348,7 @@ def test_rsc_repeating(repeating_value_mock: Mock,
                        full: bool,
                        station_for_rsc_logic: qc_utils.Station) -> None:
 
-    # Do the call
+    # checking logic of calling in rsc()
     streaks.rsc(station_for_rsc_logic, ["temperature"], {}, full=full)
 
     # Mock to check call occurs as expected with right return
@@ -341,7 +367,7 @@ def test_rsc_excess(excess_repeating_value_mock: Mock,
                     full: bool,
                     station_for_rsc_logic: qc_utils.Station) -> None:
 
-    # Do the call
+    # checking logic of calling in rsc()
     streaks.rsc(station_for_rsc_logic, ["temperature"], {}, full=full)
 
     # Mock to check call occurs as expected with right return
@@ -358,6 +384,7 @@ def test_rsc_day(repeating_day: Mock,
                  full: bool,
                  station_for_rsc_logic: qc_utils.Station) -> None:
 
+    # checking logic of calling in rsc()
     streaks.rsc(station_for_rsc_logic, ["temperature"], {}, full=full)
 
     # Mock to check call occurs as expected with right return
