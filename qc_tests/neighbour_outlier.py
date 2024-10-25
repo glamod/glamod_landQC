@@ -138,31 +138,32 @@ def read_in_buddies(target_station: utils.Station, station_list: pd.DataFrame,
 
 #************************************************************************
 def calculate_data_spread(target_station: utils.Station,
-                          differences: np.ndarray) -> np.ndarray:
+                          differences: np.ma.MaskedArray) -> np.ndarray:
     """
     Find spread of differences on monthly basis (with minimum value)  
 
     :param Station target_station: station to run on    
-    :param np.ndarray differences: array of differences of buddy data to target data
+    :param np.ma.MaskedArray differences: array of differences of buddy data to target data
     
     :returns: np.ndarray of the spread of the differences
     """
 
     spreads = np.ma.zeros(differences.shape)
-
+    print(differences.shape)
     for month in range(1, 13):
-
-        month_locs = np.nonzero(target_station.months == month)
-
+        # note this takes _all_ years for the target-buddy pair for this calendar month
+        month_locs, = np.nonzero(target_station.months == month)
+        print(month_locs)
         for bid, buddy in enumerate(differences):
-
+            print(len(buddy[month_locs]))
+            print(differences[bid, month_locs])
             if len(differences[bid, month_locs].compressed()) > utils.DATA_COUNT_THRESHOLD:
-
                 this_spread = utils.spread(differences[bid, month_locs])
                 if this_spread < MIN_SPREAD:
                     spreads[bid, month_locs] = MIN_SPREAD
                 else:
                     spreads[bid, month_locs] = this_spread
+                print(this_spread)
 
             else:
                 spreads[bid, month_locs] = MIN_SPREAD

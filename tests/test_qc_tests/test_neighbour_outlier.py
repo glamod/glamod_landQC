@@ -38,12 +38,13 @@ def _make_target_and_buddy(start_dt: dt.datetime | None = None) -> tuple[qc_util
 def _make_station_and_buddy_list() -> tuple[pd.DataFrame, np.ndarray]:
 
     instring = [["Target", 45, 100, 10],
+                ["NotBuddy", 45, 100, 10],
                 ["Buddy", 45, 100, 10],
                 ]
     station_list = pd.DataFrame(instring, columns=["id", "latitude",
                                                    "longitude", "elevation"])
 
-    buddy_list = np.array([["Target", 0], ["Buddy", "20"]])
+    buddy_list = np.array([["Target", 0], ["Buddy", "20"],["-", "9999"]])
 
     return station_list, buddy_list
 
@@ -90,20 +91,25 @@ def test_read_in_buddies_offset(read_station_mock: Mock) -> None:
 def test_read_in_buddies(read_station_mock: Mock) -> None:
 
     target_station, buddy_station = _make_target_and_buddy()
-    station_list, buddy_list = _make_station_and_buddy_list()
+    station_list, _ = _make_station_and_buddy_list()
 
     # add some extra ones to ensure resulting array is correct length
-    buddy_list = np.append(buddy_list, [buddy_list[-1]], axis=0)
-    buddy_list = np.append(buddy_list, [buddy_list[-1]], axis=0)
+    buddy_list = np.array([["Target", 0],
+                           ["Buddy", "20"],
+                           ["Buddy", "20"],
+                           ["Buddy", "20"],
+                           ["-", "9999"]])
 
     read_station_mock.return_value = (buddy_station , None)
 
     buddy_data = neighbour_outlier.read_in_buddies(target_station, station_list,
-                                                   buddy_list, "temperature", diagnostics=True)
+                                                   buddy_list, "temperature")
 
     # first entry is blank (for self)
     assert len(buddy_data[0].compressed()) == 0
-    assert len(buddy_data) == 4
+    assert len(buddy_data) == 5
+    # last entry wasn't filled
+    assert len(buddy_data[-1].compressed()) == 0
 
 
 @patch("neighbour_outlier.io")
@@ -115,7 +121,7 @@ def test_read_in_buddies_oserror(io_mock: Mock) -> None:
     io_mock.read_station.side_effect = OSError
 
     _ = neighbour_outlier.read_in_buddies(target_station, station_list,
-                                                   buddy_list, "temperature", diagnostics=True)
+                                          buddy_list, "temperature")
 
     # Check error handling
     io_mock.write_error.assert_called_once_with(target_station,
@@ -131,7 +137,7 @@ def test_read_in_buddies_valueerror(io_mock: Mock) -> None:
     io_mock.read_station.side_effect = ValueError("error text")
 
     _ = neighbour_outlier.read_in_buddies(target_station, station_list,
-                                                   buddy_list, "temperature", diagnostics=True)
+                                          buddy_list, "temperature")
 
     # Check error handling
     io_mock.write_error.assert_called_once_with(target_station,
@@ -139,10 +145,47 @@ def test_read_in_buddies_valueerror(io_mock: Mock) -> None:
                                                 error="error text")
 
 
-#def test_calculate_data_spread() -> None:
+def test_calculate_data_spread() -> None:
+
+     # set up variables and stations
+    temperatures = common.example_test_variable("temperature", np.arange(180))
+    start_dt = dt.datetime(2000, 1, 1, 0, 0)
+    # 4 hourly data so exceed min data count, but just for a single month and year
+    times = pd.to_datetime(pd.DataFrame([start_dt + dt.timedelta(hours=4*i)\
+                           for i in range(len(temperatures.data))])[0]) 
+    target_station = common.example_test_station(temperatures, times)
+
+    # 4 buddies, range of differences but constant offset
+    differences = np.ma.ones([4, 180])
+    differences[:, 100:] *= 4
+
+    spread = neighbour_outlier.calculate_data_spread(target_station, differences)   
+    
+    # Just assessing that this month's value is correct
+    np.testing.assert_array_equal(spread[0][0], qc_utils.spread(differences[0]))
 
 
-#def test_adjust_pressure_for_tropical_storms() -> None:
+def test_calculate_data_spread_short() -> None:
+
+     # set up variables and stations
+    temperatures = common.example_test_variable("temperature", np.arange(100))
+    start_dt = dt.datetime(2000, 1, 1, 0, 0)
+
+    # 4 hourly data so but insufficient length
+    times = pd.to_datetime(pd.DataFrame([start_dt + dt.timedelta(hours=4*i)\
+                           for i in range(len(temperatures.data))])[0]) 
+    target_station = common.example_test_station(temperatures, times)
+
+    # 4 buddies, range of differences but constant offset
+    differences = np.ma.ones([4, 180])
+    differences[:, 50:] *= 4
+
+    spread = neighbour_outlier.calculate_data_spread(target_station, differences)   
+    
+    # Just assessing that this month's value is correct
+    np.testing.assert_array_equal(spread[0][0], neighbour_outlier.MIN_SPREAD)
+    
+    #def test_adjust_pressure_for_tropical_storms() -> None:
 
 
 #def test_neighbour_outlier() -> None:
