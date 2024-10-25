@@ -34,6 +34,7 @@ def example_test_variable(name: str,
 
 
 def example_test_station(variable: utils.Meteorological_Variable,
+                         times: np.ndarray | None = None,
                          latitude: int = 45,
                          longitude: int = 100,
                          elevation: int = 10) -> utils.Station:
@@ -42,8 +43,11 @@ def example_test_station(variable: utils.Meteorological_Variable,
 
     setattr(station, variable.name, variable)
 
-    start_dt = dt.datetime(2000, 1, 1, 0, 0)
-    times = pd.to_datetime(pd.DataFrame([start_dt + dt.timedelta(hours=i)\
+    if times is not None:
+        pass
+    else:
+        start_dt = dt.datetime(2000, 1, 1, 0, 0)
+        times = pd.to_datetime(pd.DataFrame([start_dt + dt.timedelta(hours=i)\
                               for i in range(len(variable.data))])[0])
     
     station.times = times

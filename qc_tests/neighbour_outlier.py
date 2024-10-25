@@ -120,7 +120,7 @@ def read_in_buddies(target_station: utils.Station, station_list: pd.DataFrame,
 
         # match the timestamps of target_station and copy over
         match = np.in1d(target_station.times, buddy.times) 
-        match_back = np.in1d(buddy.times, target_station.times) 
+        match_back = np.in1d(buddy.times, target_station.times)
 
         if True in match and True in match_back:
             # skip if no overlapping times at all!
