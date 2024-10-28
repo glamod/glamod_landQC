@@ -20,11 +20,12 @@ HadISD uses 2 days (48h)
 Did try 7 days for initial run (October 2019) but still flagging lots of obs
 Next version using 4 weeks (~1 month) to get the really isolated ones.
 """
-MIN_SEPARATION = 28*24 # separated by Z hours on either side from other data
+MIN_SEPARATION = 28*24 # separated by Z days on either side from other data
 
 
 #*********************************************
-def plot_cluster(times: np.array, obs_var: utils.Meteorological_Variable, oc_start: int, oc_end: int) -> None:
+def plot_cluster(times: np.ndarray, obs_var: utils.Meteorological_Variable,
+                 oc_start: int, oc_end: int) -> None:
     '''
     Plot each odd cluster highlighted against surrounding data
 
@@ -73,16 +74,25 @@ def flag_clusters(obs_var: utils.Meteorological_Variable, station: utils.Station
 
     flags = np.array(["" for i in range(obs_var.data.shape[0])])
 
-    time_differences = np.diff(station.times)/np.timedelta64(1, "m")
+    these_times = np.ma.copy(station.times)
+    these_times.mask = obs_var.data.mask
+    time_differences = np.ma.diff(these_times)/np.timedelta64(1, "m")
 
-    potential_cluster_ends, = np.where(time_differences >= MIN_SEPARATION * 60)
+    potential_cluster_ends, = np.nonzero(time_differences >= MIN_SEPARATION * 60)
 
-    # TODO - need explicit checks for start and end of timeseries
+    if len(potential_cluster_ends) == 0:
+        # no odd clusters identified
+        logger.info(f"Odd Cluster {obs_var.name}")
+        logger.info("   No flags set")
+        return
+
+
+    # spin through the *end*s of potential clusters
     for ce, cluster_end in enumerate(potential_cluster_ends):
-
         if ce == 0:
             # check if cluster at start of series (long gap after a first few points)
-            cluster_length = station.times.iloc[cluster_end]-station.times.iloc[0] 
+            cluster_length = station.times.iloc[cluster_end]-station.times.iloc[0]
+            
             if cluster_length.asm8/np.timedelta64(1, "h") < MAX_LENGTH_TIME:
                 # could be a cluster
                 if len(flags[:cluster_end+1]) < MAX_LENGTH_OBS:
@@ -91,23 +101,11 @@ def flag_clusters(obs_var: utils.Meteorological_Variable, station: utils.Station
                     if plots:
                         plot_cluster(station, obs_var, 0, cluster_end+1)
 
-        elif ce == len(potential_cluster_ends) - 1:
-
-            # check if cluster at end of series (long gap before last few points)
-            cluster_length = station.times.iloc[-1] - station.times.iloc[cluster_end+1] # add one to find cluster start!
-            if cluster_length.asm8/np.timedelta64(1, "h") < MAX_LENGTH_TIME:
-                # could be a cluster
-                if len(flags[cluster_end+1:]) < MAX_LENGTH_OBS:
-                    flags[cluster_end+1:] = "o"
-
-                    if plots:
-                        plot_cluster(station, obs_var, cluster_end+1, -1)
-
-
-        if ce > 0:
+        elif ce > 0:
             # check for cluster in series.
             #  use previous gap > MIN_SEPARATION to define cluster and check length
             cluster_length = station.times.iloc[cluster_end] - station.times.iloc[potential_cluster_ends[ce-1]+1] # add one to find cluster start!
+
             if cluster_length.asm8/np.timedelta64(1, "h") < MAX_LENGTH_TIME:
                 # could be a cluster
                 if len(flags[potential_cluster_ends[ce-1]+1: cluster_end+1]) < MAX_LENGTH_OBS:
@@ -115,6 +113,20 @@ def flag_clusters(obs_var: utils.Meteorological_Variable, station: utils.Station
 
                     if plots:
                         plot_cluster(station.times, obs_var, potential_cluster_ends[ce-1]+1, cluster_end+1)
+
+        if ce == len(potential_cluster_ends) - 1:
+            # Finally, check last stretch
+            # As end of the sequence there's no end to calculate the time-diff for
+            # check if cluster at end of series (long gap before last few points)
+            cluster_length = station.times.iloc[-1] - station.times.iloc[cluster_end+1] # add one to find cluster start!
+ 
+            if cluster_length.asm8/np.timedelta64(1, "h") < MAX_LENGTH_TIME:
+                # could be a cluster
+                if len(flags[cluster_end+1:]) < MAX_LENGTH_OBS:
+                    flags[cluster_end+1:] = "o"
+
+                    if plots:
+                        plot_cluster(station, obs_var, cluster_end+1, -1)
 
     # append flags to object
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
