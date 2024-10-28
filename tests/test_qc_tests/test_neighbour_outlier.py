@@ -177,15 +177,93 @@ def test_calculate_data_spread_short() -> None:
     target_station = common.example_test_station(temperatures, times)
 
     # 4 buddies, range of differences but constant offset
-    differences = np.ma.ones([4, 180])
+    differences = np.ma.ones([4, 100])
     differences[:, 50:] *= 4
 
     spread = neighbour_outlier.calculate_data_spread(target_station, differences)   
     
-    # Just assessing that this month's value is correct
+    # Just assessing that the month's value is correct
+    #   Short record, so MIN_SPREAD
     np.testing.assert_array_equal(spread[0][0], neighbour_outlier.MIN_SPREAD)
-    
-    #def test_adjust_pressure_for_tropical_storms() -> None:
+
+
+def test_adjust_pressure_for_tropical_storms_nearby() -> None:
+    buddy_list = np.array([["Target", 0],
+                           ["Buddy1", "80"],
+                           ["Buddy2", "80"]])
+
+    differences = np.ma.ones([3, 120]) # ~30d of 4hrly obs
+    differences[0] = 0 # for self
+    differences[1, :10] = 6
+    differences[2, -10:] = 5
+    spreads = np.ma.ones([3, 120]) # min spread is 1 in this test case
+    spreads[0] = 0 #  for self
+
+    dubious = np.ma.zeros(differences.shape)    
+    dubious = neighbour_outlier.adjust_pressure_for_tropical_storms(dubious,
+                                                                    buddy_list,
+                                                                    differences,
+                                                                    spreads)
+
+    expected = np.ma.zeros(differences.shape)
+    expected[1, :10] = 1
+    # second set are equal to, not greater than
+
+    np.testing.assert_array_equal(expected, dubious)
+
+
+def test_adjust_pressure_for_tropical_storms_none() -> None:
+    buddy_list = np.array([["Target", 0],
+                           ["Buddy1", "120"],
+                           ["Buddy2", "120"],
+                           ["Buddy3", "120"],
+                           ["Buddy4", "80"]])
+
+    differences = np.ma.ones([5, 120]) # ~30d of 4hrly obs
+    differences[0] = 0 # for self
+    differences[1:, :10] = -6  # set negative flags for all buddies
+    differences[2, -10:] = 6 # set some positive flags
+    spreads = np.ma.ones([5, 120]) # min spread is 1 in this test case
+    spreads[0] = 0 #  for self
+
+    dubious = np.ma.zeros(differences.shape)    
+    dubious = neighbour_outlier.adjust_pressure_for_tropical_storms(dubious,
+                                                                    buddy_list,
+                                                                    differences,
+                                                                    spreads)
+
+    # For Buddy2, len(neg) = len(pos), so no flags
+    expected = np.ma.zeros(differences.shape)
+
+    np.testing.assert_array_equal(expected, dubious)
+
+
+def test_adjust_pressure_for_tropical_storms() -> None:
+    buddy_list = np.array([["Target", 0],
+                           ["Buddy1", "120"],
+                           ["Buddy2", "120"],
+                           ["Buddy3", "120"],
+                           ["Buddy4", "80"]])
+
+    differences = np.ma.ones([5, 120]) # ~30d of 4hrly obs
+    differences[0] = 0 # for self
+    differences[1:, :30] = -6  # set negative flags for all buddies
+    differences[2, -10:] = 6 # set some positive flags
+    spreads = np.ma.ones([5, 120]) # min spread is 1 in this test case
+    spreads[0] = 0 #  for self
+
+    dubious = np.ma.zeros(differences.shape)    
+    dubious = neighbour_outlier.adjust_pressure_for_tropical_storms(dubious,
+                                                                    buddy_list,
+                                                                    differences,
+                                                                    spreads)
+
+    # For Buddy2, 75% negative flags, so highlight positives
+    expected = np.ma.zeros(differences.shape)
+    expected[2, -10:] = 1
+
+    np.testing.assert_array_equal(expected, dubious)
+
 
 
 #def test_neighbour_outlier() -> None:

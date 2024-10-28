@@ -22,7 +22,7 @@ MIN_SPREAD = 2 # TODO should this be different for each variable?
 SPREAD_LIMIT = 5 # matches HadISD which used 5*IQR
 DUBIOUS_FRACTION = 0.667 # more than 2/3 of neighbours suggest differences dubious
 STORM_FRACTION = 0.667 # fraction of negative differences to target (likely at centre of low pressure system)
-
+DISTANT_NEIGHBOURS = 100 # km
 
 #************************************************************************
 def plot_neighbour_flags(times: np.ndarray, flagged_time: int,
@@ -72,7 +72,7 @@ def read_in_buddies(target_station: utils.Station, station_list: pd.DataFrame,
     :param bool diagnostics: print extra material to screen
     :param bool plots: create plots from each test
 
-    :returns: array of the buddy data
+    :returns: array of the buddy data [first line corresponds to target, so empty]
     
     """
     #*************************
@@ -149,21 +149,19 @@ def calculate_data_spread(target_station: utils.Station,
     """
 
     spreads = np.ma.zeros(differences.shape)
-    print(differences.shape)
+
     for month in range(1, 13):
         # note this takes _all_ years for the target-buddy pair for this calendar month
         month_locs, = np.nonzero(target_station.months == month)
-        print(month_locs)
+
         for bid, buddy in enumerate(differences):
-            print(len(buddy[month_locs]))
-            print(differences[bid, month_locs])
+
             if len(differences[bid, month_locs].compressed()) > utils.DATA_COUNT_THRESHOLD:
                 this_spread = utils.spread(differences[bid, month_locs])
                 if this_spread < MIN_SPREAD:
                     spreads[bid, month_locs] = MIN_SPREAD
                 else:
                     spreads[bid, month_locs] = this_spread
-                print(this_spread)
 
             else:
                 spreads[bid, month_locs] = MIN_SPREAD
@@ -187,22 +185,29 @@ def adjust_pressure_for_tropical_storms(dubious: np.ma.MaskedArray, initial_neig
     :returns: np.ndarray of locations where target values are dubious given the neighbours  
     """
 
-    distant, = np.where(initial_neighbours[:, 1].astype(int) > 100)
+    distant, = np.where(initial_neighbours[:, 1].astype(int) > DISTANT_NEIGHBOURS)
+    print(differences[distant])
     if len(distant) > 0:
         # find positive and negative differences across neighbours
         positive = np.ma.where(differences[distant] > spreads[distant]*SPREAD_LIMIT)
-        negative = np.ma.where(differences[distant] < spreads[distant]*SPREAD_LIMIT)
+        negative = np.ma.where(differences[distant] < -spreads[distant]*SPREAD_LIMIT)
+        # as 2-d array, positive/negative are tuples of (station, timestamp) locations
 
         # spin through each neighbour
         for dn, dist_neigh in enumerate(distant):
-
+            # pull out the large differences corresponding to each neighbour
             pos, = np.where(positive[0] == dn)
             neg, = np.where(negative[0] == dn)
 
+            print(pos)
+            print(neg)
+
             if len(neg) > 0:
                 fraction = len(neg)/(len(pos) + len(neg))
+                print(fraction)
                 if fraction > STORM_FRACTION:
-                    # majority negative, only flag the positives [definitely not storms]
+                    # majority negative across matching record
+                    #   only flag the positives [definitely not storms]
                     dubious[dist_neigh, positive[1][pos]] = 1
 
     else:
