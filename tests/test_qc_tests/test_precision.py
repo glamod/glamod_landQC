@@ -4,7 +4,6 @@ Contains tests for precision.py
 import numpy as np
 import pandas as pd
 import datetime as dt
-import pandas as pd
 import pytest
 from unittest.mock import patch, Mock
 
