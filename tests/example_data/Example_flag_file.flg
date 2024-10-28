@@ -36,5 +36,9 @@ temperature : p : 0.0
 temperature : p_counts : 0
 temperature : w : 0.4
 temperature : w_counts : 2
+temperature : x : 0.0
+temperature : x_counts : 0
+temperature : y : 0.0
+temperature : y_counts : 0
 temperature : All : 0.8
 temperature : All_counts : 4
