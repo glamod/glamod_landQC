@@ -3,6 +3,7 @@
 io_utils - contains scripts for read/write of main files
 '''
 import os
+import errno
 import pandas as pd
 import numpy as np
 import setup
@@ -17,6 +18,8 @@ def read_psv(infile: str, separator: str) -> pd.DataFrame:
     '''
     http://pandas.pydata.org/pandas-docs/stable/user_guide/io.html#io-read-csv-table
 
+    https://stackoverflow.com/questions/64302419/what-are-all-of-the-exceptions-that-pandas-read-csv-throw
+
     :param str infile: location and name of infile (without extension)
     :param str separator: separating character (e.g. ",", "|")
  
@@ -24,11 +27,16 @@ def read_psv(infile: str, separator: str) -> pd.DataFrame:
     '''
 
     try:
-        df = pd.read_csv(infile, sep=separator, compression="infer", dtype=setup.DTYPE_DICT, na_values="Null", quoting=3)
-    except ValueError as e:
-        logger.warning(f"Error reading psv: {str(e)}")
+        df = pd.read_csv(infile, sep=separator, compression="infer",
+                         dtype=setup.DTYPE_DICT, na_values="Null", quoting=3)
+    except FileNotFoundError as e:
+        logger.warning(f"psv file not found: {str(e)}")
         print(str(e))
-        raise ValueError(str(e))
+        raise FileNotFoundError(str(e))
+    except pd.errors.ParserError as e:
+        logger.warning(f"Parser Error: {str(e)}")
+        print(str(e))
+        raise pd.errors.ParserError(str(e))
 
     # Number of columns at August 2023, or after adding flag columns
     assert len(df.columns) in [238, 238+len(setup.obs_var_list)]
@@ -49,38 +57,24 @@ def read(infile:str) -> pd.DataFrame:
     if os.path.exists(infile):
         try:
             df = read_psv(infile, "|")
-        except ValueError as e:
-            raise ValueError(str(e))
+        except pd.errors.ParserError:
+            raise pd.errors.ParserError
     else:
-        raise OSError
+        raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), infile)
 
     return df # read
 
+
 #************************************************************************
-def read_station(stationfile: str, station: Station, read_flags: bool = False) -> tuple[Station, pd.DataFrame]:
+def calculate_datetimes(station_df: pd.DataFrame) -> pd.Series:
     """
-    Read station info, and populate with data.
+    Convert the separate Y-M-D H-M values into datetime objects
+    
+    :param pd.DataFrame station_df: dataframe for the station record
 
-    :param str stationfile: full path to station file
-    :param station station: station object with locational metadata only
-    :param bool read_flags: incorporate any pre-existing flags
-
-    :returns: station & station_df
+    :returns: pd.Series of datetime64 values    
     """
-   
-    #*************************
-    # read MFF
-    try:
-        station_df = read(stationfile)
-    except OSError:
-        logger.warning(f"Missing station file {stationfile}")
-        raise OSError
-    except ValueError as e:
-        logger.warning(f"Missing station file {stationfile}")
-        raise ValueError(str(e))
 
-
-    # convert to datetimes
     try:
         datetimes = pd.to_datetime(station_df[["Year", "Month", "Day", "Hour", "Minute"]])
     except ValueError as e:
@@ -96,11 +90,45 @@ def read_station(stationfile: str, station: Station, read_flags: bool = False) -
                     logger.warning(f"Bad date: {yy}-{month[y]}-{day[y]}\n")
                     raise ValueError(f"Bad date - {yy}-{month[y]}-{day[y]}")
 
+    return datetimes
+
+
+#************************************************************************
+def convert_wind_flags(station_df: pd.DataFrame) -> None:
+
     # explicitly remove any missing data indicators - wind direction only
     for wind_flag in ["C-Calm", "V-Variable"]:
         combined_mask = (station_df["wind_direction_Measurement_Code"] == wind_flag) &\
                         (station_df["wind_direction"] == 999)
         station_df.loc[combined_mask, "wind_direction"] = np.nan
+
+
+#************************************************************************
+def read_station(stationfile: str, station: Station,
+                 read_flags: bool = False) -> tuple[Station, pd.DataFrame]:
+    """
+    Read station info, and populate with data.
+
+    :param str stationfile: full path to station file
+    :param station station: station object with locational metadata only
+    :param bool read_flags: incorporate any pre-existing flags
+
+    :returns: station & station_df
+    """
+   
+    #*************************
+    # read MFF
+    try:
+        station_df = read(stationfile)
+    except FileNotFoundError:
+        logger.warning(f"Missing station file {stationfile}")
+        raise FileNotFoundError
+
+    # calculate datetime series
+    datetimes = calculate_datetimes(station_df)
+
+    # convert any remaining wind flags
+    convert_wind_flags(station_df)
 
     # convert dataframe to station and MetVar objects for internal processing
     populate_station(station, station_df, setup.obs_var_list, read_flags=read_flags)
@@ -141,12 +169,8 @@ def write(outfile: str, df: pd.DataFrame, formatters: dict = {}) -> None:
     for column, fmt in formatters.items():
         df[column] = pd.Series([fmt.format(val) for val in df[column]], index = df.index)
 
-#    df['Latitude'] = pd.Series(["{:7.4f}".format(val) for val in df['Latitude']], index = df.index)
-#    df['Longitude'] = pd.Series(["{:7.4f}".format(val) for val in df['Longitude']], index = df.index)
-#    df['Month'] = pd.Series(["{:02d}".format(val) for val in df['Month']], index = df.index)
-#    df['Day'] = pd.Series(["{:02d}".format(val) for val in df['Day']], index = df.index)
-#    df['Hour'] = pd.Series(["{:02d}".format(val) for val in df['Hour']], index = df.index)
-#    df['Minute'] = pd.Series(["{:02d}".format(val) for val in df['Minute']], index = df.index)
+        # Latitude & Longitude = {:7.4f}
+        # Monthy, Day, Hour, & Minute = {:0.2d}
 
     # for .psv
     write_psv(outfile, df, "|")
@@ -167,16 +191,21 @@ def flag_write(outfilename: str, df: pd.DataFrame, diagnostics: bool = False) ->
 
             flags = df[f"{var}_QC_flag"].fillna("")
 
+            # Pull out the actual observations
+            this_var_data = df[var].fillna(MDI).to_numpy().astype(float)
+            this_var_data = np.ma.masked_where(this_var_data == MDI, this_var_data)
+
             for test in QC_TESTS.keys():
                 locs = flags[flags.str.contains(test)]
 
-                outfile.write(f"{var} : {test} : {locs.shape[0]/flags.shape[0]}\n")
+                # For percentage, compare against all obs, not obs for that var
+                outfile.write(f"{var} : {test} : {locs.shape[0]/np.ma.count(this_var_data)}\n")
                 outfile.write(f"{var} : {test}_counts : {locs.shape[0]}\n")
 
 
-            # for total, get number of nonclean obs
+            # for total, get number of set flags (any value)
             flagged, = np.where(flags != "")
-            outfile.write(f"{var} : All : {flagged.shape[0]/flags.shape[0]}\n")
+            outfile.write(f"{var} : All : {flagged.shape[0]/np.ma.count(this_var_data)}\n")
             outfile.write(f"{var} : All_counts : {flagged.shape[0]}\n")
 
             logging.info(f"{var} - {flagged.shape[0]}")
