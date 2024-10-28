@@ -2,6 +2,7 @@
 Contains tests for precision.py
 """
 import numpy as np
+import pandas as pd
 import datetime as dt
 import pytest
 from unittest.mock import patch, Mock
@@ -28,10 +29,10 @@ def _make_station(temps: np.array, dewps: np.array) -> qc_utils.Station:
     primary = common.example_test_variable("temperature", temps)
     secondary = common.example_test_variable("dew_point_temperature", dewps)
 
-    times = np.array([dt.datetime(2024, 1, 1, 12, 0) +
-                     (i * dt.timedelta(seconds=60*60))
-                     for i in range(len(dewps))])
-    
+    start_dt = dt.datetime(2024, 1, 1, 12, 0)
+    times = pd.to_datetime(pd.DataFrame([start_dt + dt.timedelta(hours=i)\
+                              for i in range(len(dewps))])[0])
+        
     station = common.example_test_station(primary, times)
     station.dew_point_temperature = secondary
 
