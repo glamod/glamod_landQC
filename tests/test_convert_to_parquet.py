@@ -2,14 +2,15 @@
 Contains tests for convert_to_parquet.py
 """
 import os
+import glob
 import pandas as pd
 from unittest.mock import patch, Mock
 import pytest
 
 import convert_to_parquet
 
-EXAMPLE_FILES = os.listdir(os.path.join(os.path.dirname(__file__),
-                           "example_data"))
+EXAMPLE_FILES = glob.glob(os.path.join(os.path.dirname(__file__),
+                           "example_data", "*.?ff"))
 
 @pytest.mark.parametrize("compression", ("", ".gz", ".zip"))
 @patch("convert_to_parquet.setup")
