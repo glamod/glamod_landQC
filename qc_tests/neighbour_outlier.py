@@ -20,8 +20,8 @@ import setup
 
 MIN_SPREAD = 2 # TODO should this be different for each variable?
 SPREAD_LIMIT = 5 # matches HadISD which used 5*IQR
-DUBIOUS_FRACTION = 0.667 # more than 2/3 of neighbours suggest differences dubious
-STORM_FRACTION = 0.667 # fraction of negative differences to target (likely at centre of low pressure system)
+DUBIOUS_FRACTION = 2./3. # more than 2/3 of neighbours suggest differences dubious
+STORM_FRACTION = 2./3. # fraction of negative differences to target (likely at centre of low pressure system)
 DISTANT_NEIGHBOURS = 100 # km
 
 #************************************************************************
@@ -184,9 +184,9 @@ def adjust_pressure_for_tropical_storms(dubious: np.ma.MaskedArray, initial_neig
 
     :returns: np.ndarray of locations where target values are dubious given the neighbours  
     """
-
+    # select on distance
     distant, = np.where(initial_neighbours[:, 1].astype(int) > DISTANT_NEIGHBOURS)
-    print(differences[distant])
+
     if len(distant) > 0:
         # find positive and negative differences across neighbours
         positive = np.ma.where(differences[distant] > spreads[distant]*SPREAD_LIMIT)
@@ -199,12 +199,8 @@ def adjust_pressure_for_tropical_storms(dubious: np.ma.MaskedArray, initial_neig
             pos, = np.where(positive[0] == dn)
             neg, = np.where(negative[0] == dn)
 
-            print(pos)
-            print(neg)
-
             if len(neg) > 0:
                 fraction = len(neg)/(len(pos) + len(neg))
-                print(fraction)
                 if fraction > STORM_FRACTION:
                     # majority negative across matching record
                     #   only flag the positives [definitely not storms]
