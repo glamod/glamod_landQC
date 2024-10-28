@@ -4,7 +4,6 @@ Contains tests for neighour_outlier.py
 import numpy as np
 import pandas as pd
 import datetime as dt
-import pytest
 from unittest.mock import patch, Mock
 
 import neighbour_outlier
@@ -115,7 +114,7 @@ def test_read_in_buddies(read_station_mock: Mock) -> None:
 @patch("neighbour_outlier.io")
 def test_read_in_buddies_oserror(io_mock: Mock) -> None:
 
-    target_station, buddy_station = _make_target_and_buddy()
+    target_station, _ = _make_target_and_buddy()
     station_list, buddy_list = _make_station_and_buddy_list()
     
     io_mock.read_station.side_effect = OSError

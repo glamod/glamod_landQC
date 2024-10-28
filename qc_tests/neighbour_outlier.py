@@ -156,8 +156,8 @@ def calculate_data_spread(target_station: utils.Station,
 
         for bid, buddy in enumerate(differences):
 
-            if len(differences[bid, month_locs].compressed()) > utils.DATA_COUNT_THRESHOLD:
-                this_spread = utils.spread(differences[bid, month_locs])
+            if len(buddy[month_locs].compressed()) > utils.DATA_COUNT_THRESHOLD:
+                this_spread = utils.spread(buddy[month_locs])
                 if this_spread < MIN_SPREAD:
                     spreads[bid, month_locs] = MIN_SPREAD
                 else:
