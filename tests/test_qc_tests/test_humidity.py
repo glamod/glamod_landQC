@@ -62,15 +62,16 @@ def test_get_repeating_dpd_threshold(config_dict):
     dewps = np.arange(75) - 2.
     # use same array as in qc_utils test
     locs = np.array([0,
-                     10, 11, 12, 13, 14, 15,
-                     20, 21, 22, 23,
+                     10, 11, 12, 13, 14, 15, # 1 streak length 6
+                     20, 21, 22, 23, # 2 length 4
                      30, 31, 32, 33,
-                     40, 41, 42,
+                     40, 41, 42, # 3 length 3
                      50, 51, 52,
                      60, 61, 62,
                      70])
     # create the DPD=0
     dewps[locs] = temps[locs]
+
 
     # make MetVars
     temperature = common.example_test_variable("temperature", temps)
@@ -78,8 +79,7 @@ def test_get_repeating_dpd_threshold(config_dict):
 
     humidity.get_repeating_dpd_threshold(temperature, dew_point_temperature, config_dict)
 
-    assert config_dict["HUMIDITY"]["DPD"] == 9.0
-
+    assert config_dict["HUMIDITY"]["DPD"] == 7.0
 
 
 # NOT TESTING PLOTTING
@@ -95,6 +95,7 @@ def test_super_saturation_check() -> None:
     humidity.super_saturation_check(station, station.temperature, station.dew_point_temperature)
 
     np.testing.assert_array_equal(station.dew_point_temperature.flags, expected)
+
                                           
 def test_super_saturation_check_w_mask() -> None:
 

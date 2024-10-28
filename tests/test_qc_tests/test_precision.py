@@ -32,7 +32,7 @@ def _make_station(temps: np.ndarray, dewps: np.ndarray) -> qc_utils.Station:
     start_dt = dt.datetime(2024, 1, 1, 12, 0)
     times = pd.to_datetime(pd.DataFrame([start_dt + dt.timedelta(hours=i)\
                               for i in range(len(dewps))])[0])
-        
+
     station = common.example_test_station(primary, times)
     station.dew_point_temperature = secondary
 
