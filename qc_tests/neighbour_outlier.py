@@ -59,29 +59,26 @@ def plot_neighbour_flags(times: np.ndarray, flagged_time: int,
     return # plot_neighbour_flags
 
 #************************************************************************
-def read_in_buddies(target_station: utils.Station, station_list: pd.DataFrame, 
-                    initial_neighbours: np.ndarray, variable: utils.Meteorological_Variable,
-                    diagnostics: bool = False, plots: bool = False) -> np.ndarray:
+def read_in_buddies(target_station: utils.Station, initial_neighbours: np.ndarray,
+                    diagnostics: bool = False, plots: bool = False) -> dict:
     """
-    Read in the buddy data for the neighbours
+    Read in the buddy data for the neighbours, and store in dictionary
 
     :param Station target_station: station to run on 
-    :param DataFrame station_list: complete list of stations
     :param array initial_neighbours: input neighbours (ID, distance) pairs
-    :param str variable: obs variable being run on
     :param bool diagnostics: print extra material to screen
     :param bool plots: create plots from each test
 
-    :returns: array of the buddy data [first line corresponds to target, so empty]
+    :returns: dict of the buddy objects
     
     """
-    #*************************
-    # read in in the neighbour (buddy) data
-    all_buddy_data = np.ma.zeros([len(initial_neighbours[:, 0]), len(target_station.times)])
-    all_buddy_data.mask = np.ones(all_buddy_data.shape)
+    # Get dataframe of all sations
+    station_list = utils.get_station_list()
 
-    buddy_count = 0
+    all_buddies = {}
+
     for bid, buddy_id in enumerate(initial_neighbours[:, 0]):
+
         if buddy_id == target_station.id:
             # first entry is self
             continue
@@ -101,7 +98,62 @@ def read_in_buddies(target_station: utils.Station, station_list: pd.DataFrame,
         try:
             buddy, _ = io.read_station(os.path.join(setup.SUBDAILY_PROC_DIR,
                                               f"{buddy_id:11s}.qff{setup.OUT_COMPRESSION}"),
-                                              buddy, read_flags=True) 
+                                              buddy, read_flags=True)
+
+            # store in dictionary, so that can ensure correct look up
+            all_buddies[buddy_id] = buddy
+
+        except OSError: # as e:
+            # file missing, move on to next in sequence
+            io.write_error(target_station, f"File Missing (Buddy check): {buddy_id}")
+            continue
+        except ValueError as e:
+            # some issue in the raw file
+            io.write_error(target_station, f"Error in input file (Buddy check): {buddy_id}", error=str(e))
+            continue
+
+    logger.info("All buddies read in")
+
+    return all_buddies
+
+
+def read_in_buddy_data(target_station: utils.Station, initial_neighbours: np.ndarray,
+                       all_buddies: dict, variable: utils.Meteorological_Variable,
+                       diagnostics: bool = False, plots: bool = False) -> np.ndarray:
+    """
+    Read in the buddy data for the neighbours for specified variable
+
+    :param Station target_station: station to run on 
+    :param array initial_neighbours: input neighbours (ID, distance) pairs
+    :param dict all_buddies: container of all the buddy objects, indexed by ID
+    :param str variable: obs variable being run on
+    :param bool diagnostics: print extra material to screen
+    :param bool plots: create plots from each test
+
+    :returns: array of the buddy data [first line corresponds to target, so empty]
+    
+    """
+     
+    #*************************
+    # read in in the neighbour (buddy) data
+    all_buddy_data = np.ma.zeros([len(initial_neighbours[:, 0]), len(target_station.times)])
+    all_buddy_data.mask = np.ones(all_buddy_data.shape)
+
+    buddy_count = 0
+    for bid, buddy_id in enumerate(initial_neighbours[:, 0]):
+        if buddy_id == target_station.id:
+            # first entry is self
+            continue
+        if buddy_id == "-":
+            # end of the list of buddies
+            break
+
+        if diagnostics:
+            print(f"Buddy number {bid+1}/{len(initial_neighbours[:, 0])} {buddy_id}")
+
+
+        try:
+            buddy = all_buddies[buddy_id]
 
             buddy_var = getattr(buddy, variable)
 
@@ -109,15 +161,14 @@ def read_in_buddies(target_station: utils.Station, station_list: pd.DataFrame,
             flag_locs, = np.nonzero(buddy_var.flags != "") 
             buddy_var.data.mask[flag_locs] = True
 
-        except OSError: # as e:
+        except KeyError as e:
             # file missing, move on to next in sequence
-            io.write_error(target_station, f"File Missing (Buddy, {variable}) - {buddy_id}")
+            io.write_error(target_station, f"Entry Missing (Buddy check): {variable}) - {buddy_id}", error=str(e))
             continue
-        except ValueError as e:
-            # some issue in the raw file
-            io.write_error(target_station, f"Error in input file (Buddy, {variable}) - {buddy_id}", error=str(e))
+        except AttributeError as e:
+            # file missing, move on to next in sequence
+            io.write_error(target_station, f"Variable Missing (Buddy check): {variable} - {buddy_id}", error=str(e))
             continue
-
         # match the timestamps of target_station and copy over
         match = np.in1d(target_station.times, buddy.times) 
         match_back = np.in1d(buddy.times, target_station.times)
@@ -127,11 +178,10 @@ def read_in_buddies(target_station: utils.Station, station_list: pd.DataFrame,
             all_buddy_data[bid, match] = buddy_var.data[match_back]
             buddy_count += 1
 
-    logger.info("All buddies read in")
     if buddy_count < utils.MIN_NEIGHBOURS:
-        logger.warning(f"Insufficient number of neighbours with data ({buddy_count} < {utils.MIN_NEIGHBOURS})")
+        logger.warning(f"Insufficient number of neighbours with data for {variable} ({buddy_count} < {utils.MIN_NEIGHBOURS})")
     else:
-        logger.info(f"Number of neighbours with data: {buddy_count}")
+        logger.info(f"Number of neighbours with data for {variable}: {buddy_count}")
 
     return all_buddy_data
 
@@ -217,7 +267,8 @@ def adjust_pressure_for_tropical_storms(dubious: np.ma.MaskedArray, initial_neig
 
 #************************************************************************
 def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.ndarray,
-                      variable: utils.Meteorological_Variable, diagnostics: bool = False,
+                      all_buddies: dict, variable: utils.Meteorological_Variable, 
+                      diagnostics: bool = False,
                       plots: bool = False, full: bool = False) -> None:
     """
     Works on a single station and variable.  Reads in neighbour's data,
@@ -225,12 +276,12 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.ndar
 
     :param Station target_station: station to run on 
     :param array initial_neighbours: input neighbours (ID, distance) pairs
+    :param dict all_buddies: container for all the buddy objects, indexed by ID
     :param str variable: obs variable being run on
     :param bool diagnostics: print extra material to screen
     :param bool plots: create plots from each test
     :param bool full: run full reprocessing rather than using stored values.
     """
-    station_list = utils.get_station_list()
 
     #*************************
     # extract target observations
@@ -239,8 +290,8 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.ndar
 
     #*************************
     # Read in the buddy data
-    all_buddy_data = read_in_buddies(target_station, station_list, initial_neighbours,
-                                     variable, diagnostics=diagnostics, plots=plots)
+    all_buddy_data = read_in_buddy_data(target_station, initial_neighbours, all_buddies,
+                                        variable, diagnostics=diagnostics, plots=plots)
 
     #*************************
     # find differences
@@ -307,15 +358,18 @@ def noc(target_station: utils.Station, initial_neighbours: np.ndarray, var_list:
     n_neighbours = len(np.where(initial_neighbours[:, 0] != "-")[0]) - 1
     if n_neighbours < utils.MIN_NEIGHBOURS:
         logger.warning(f"{target_station.id} has insufficient neighbours ({n_neighbours}<{utils.MIN_NEIGHBOURS})")
-        # print(f"{target_station.id} has insufficient neighbours ({n_neighbours}<{utils.MIN_NEIGHBOURS})")
+        if diagnostics:
+            print(f"{target_station.id} has insufficient neighbours ({n_neighbours}<{utils.MIN_NEIGHBOURS})")
 
     else:
         logger.info(f"{target_station.id} has {n_neighbours} neighbours")
 
+        # read in neighbour stations and store.
+        all_buddies = read_in_buddies(target_station, initial_neighbours,
+                                      diagnostics=diagnostics, plots=plots)
         for var in var_list:
-            # TODO: remove duplicated read step (reading neighbours for each variable!)
-            neighbour_outlier(target_station, initial_neighbours, var,
-                            diagnostics=diagnostics, plots=plots, full=full)
+            neighbour_outlier(target_station, initial_neighbours, all_buddies, var,
+                              diagnostics=diagnostics, plots=plots, full=full)
 
     # noc
 

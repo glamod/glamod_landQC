@@ -123,7 +123,7 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
 
         try:
             target_station, target_station_df = io.read_station(os.path.join(
-                setup.SUBDAILY_PROC_DIR, "{target_station_id:11s}.qff{setup.OUT_COMPRESSION}"),
+                setup.SUBDAILY_PROC_DIR, f"{target_station_id:11s}.qff{setup.OUT_COMPRESSION}"),
                                                                 target_station, read_flags=True)
         except OSError:
             # file missing, move on to next in sequence
@@ -183,7 +183,7 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
             
         #*************************
         # Output flagging summary file
-        io.flag_write(os.path.join(setup.SUBDAILY_FLAG_DIR, "{target_station_id:11s}.flg"), target_station_df, diagnostics=diagnostics)
+        io.flag_write(os.path.join(setup.SUBDAILY_FLAG_DIR, f"{target_station_id:11s}.flg"), target_station_df, diagnostics=diagnostics)
 
         if diagnostics or plots:
             input(f"Stop after {dt.datetime.now()-startT} of processing")

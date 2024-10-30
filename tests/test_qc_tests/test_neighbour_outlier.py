@@ -4,6 +4,7 @@ Contains tests for neighour_outlier.py
 import numpy as np
 import pandas as pd
 import datetime as dt
+import pytest
 from unittest.mock import patch, Mock
 
 import neighbour_outlier
@@ -48,35 +49,103 @@ def _make_station_and_buddy_list() -> tuple[pd.DataFrame, np.ndarray]:
     return station_list, buddy_list
 
 
+@patch("neighbour_outlier.utils.get_station_list")
 @patch("neighbour_outlier.io.read_station")
-def test_read_in_buddies_short(read_station_mock: Mock) -> None:
+def test_read_in_buddies(read_station_mock: Mock,
+                         get_station_list_mock: Mock) -> None:
 
     target_station, buddy_station = _make_target_and_buddy()
     station_list, buddy_list = _make_station_and_buddy_list()
 
+    get_station_list_mock.return_value = station_list
     read_station_mock.return_value = (buddy_station , None)
 
-    buddy_data = neighbour_outlier.read_in_buddies(target_station, station_list,
-                                                   buddy_list, "temperature")
+    buddy_dict = neighbour_outlier.read_in_buddies(target_station, buddy_list)
+ 
+    # is buddy in the dictionary
+    assert "Buddy" in buddy_dict.keys()
+    # assert it is a Station with suitable values
+    assert isinstance(buddy_dict["Buddy"], qc_utils.Station)
+    assert buddy_dict["Buddy"].lon == 100
+    np.testing.assert_array_equal(buddy_dict["Buddy"].temperature.data, buddy_station.temperature.data)
+
+
+@patch("neighbour_outlier.utils.get_station_list")
+@patch("neighbour_outlier.io")
+def test_read_in_buddies_oserror(io_mock: Mock,
+                                 get_station_list_mock: Mock) -> None:
+
+    target_station, buddy_station = _make_target_and_buddy()
+    station_list, buddy_list = _make_station_and_buddy_list()
+
+    get_station_list_mock.return_value = station_list
+
+    io_mock.read_station.side_effect = OSError
+    _ = neighbour_outlier.read_in_buddies(target_station, buddy_list)
+
+    # Check error handling
+    io_mock.write_error.assert_called_once_with(target_station,
+                                                "File Missing (Buddy check): Buddy")
+    
+
+@patch("neighbour_outlier.utils.get_station_list")
+@patch("neighbour_outlier.io")
+def test_read_in_buddies_valueerror(io_mock: Mock,
+                                    get_station_list_mock: Mock) -> None:
+
+    target_station, _ = _make_target_and_buddy()
+    station_list, buddy_list = _make_station_and_buddy_list()
+
+    get_station_list_mock.return_value = station_list
+    io_mock.read_station.side_effect = ValueError("error text")
+    _ = neighbour_outlier.read_in_buddies(target_station, buddy_list)
+
+    # Check error handling
+    io_mock.write_error.assert_called_once_with(target_station,
+                                                "Error in input file (Buddy check): Buddy",
+                                                error="error text")
+
+
+def test_read_in_buddy_data() -> None:
+
+    target_station, buddy_station = _make_target_and_buddy()
+
+    # add some extra ones to ensure resulting array is correct length
+    buddy_list = np.array([["Target", 0],
+                           ["Buddy1", "20"],
+                           ["Buddy2", "20"],
+                           ["Buddy3", "20"],
+                           ["-", "9999"]])
+
+    all_buddies = {"Buddy1" : buddy_station,
+                   "Buddy2" : buddy_station,
+                   "Buddy3" : buddy_station}
+
+    # do the call
+    buddy_data = neighbour_outlier.read_in_buddy_data(target_station, buddy_list, 
+                                                      all_buddies, "temperature")
 
     # first entry is blank (for self)
     assert len(buddy_data[0].compressed()) == 0
+    assert len(buddy_data) == 5
+    # last entry wasn't filled
+    assert len(buddy_data[-1].compressed()) == 0
 
-    # second should contain buddy data
-    np.testing.assert_array_equal(buddy_data[1], np.ma.arange(10))
-    
 
 @patch("neighbour_outlier.io.read_station")
-def test_read_in_buddies_offset(read_station_mock: Mock) -> None:
+def test_read_in_buddy_data_offset(read_station_mock: Mock) -> None:
 
     start_dt = dt.datetime(2000, 1, 1, 2, 0) # 2 hour offset
     target_station, buddy_station = _make_target_and_buddy(start_dt)
-    station_list, buddy_list = _make_station_and_buddy_list()
-    
+    _, buddy_list = _make_station_and_buddy_list()
+    all_buddies = {"Buddy" : buddy_station}
+
+    # Mock the return value
     read_station_mock.return_value = (buddy_station , None)
 
-    buddy_data = neighbour_outlier.read_in_buddies(target_station, station_list,
-                                                   buddy_list, "temperature", diagnostics=True)
+    # do the call
+    buddy_data = neighbour_outlier.read_in_buddy_data(target_station, buddy_list,
+                                                      all_buddies, "temperature")
 
     # first entry is blank (for self)
     assert len(buddy_data[0].compressed()) == 0
@@ -86,62 +155,43 @@ def test_read_in_buddies_offset(read_station_mock: Mock) -> None:
                                                               mask=[1, 1, 0, 0, 0, 0, 0, 0, 0, 0]))
 
 
+
 @patch("neighbour_outlier.io.read_station")
-def test_read_in_buddies(read_station_mock: Mock) -> None:
+def test_read_in_buddy_data_short(read_station_mock: Mock) -> None:
 
     target_station, buddy_station = _make_target_and_buddy()
-    station_list, _ = _make_station_and_buddy_list()
+    _, buddy_list = _make_station_and_buddy_list()
+    all_buddies = {"Buddy" : buddy_station}
 
-    # add some extra ones to ensure resulting array is correct length
-    buddy_list = np.array([["Target", 0],
-                           ["Buddy", "20"],
-                           ["Buddy", "20"],
-                           ["Buddy", "20"],
-                           ["-", "9999"]])
-
+    # Mock return values
     read_station_mock.return_value = (buddy_station , None)
 
-    buddy_data = neighbour_outlier.read_in_buddies(target_station, station_list,
-                                                   buddy_list, "temperature")
-
+    # do the call
+    buddy_data = neighbour_outlier.read_in_buddy_data(target_station, buddy_list,
+                                                      all_buddies, "temperature")
+ 
     # first entry is blank (for self)
     assert len(buddy_data[0].compressed()) == 0
-    assert len(buddy_data) == 5
-    # last entry wasn't filled
-    assert len(buddy_data[-1].compressed()) == 0
+
+    # second should contain buddy data
+    np.testing.assert_array_equal(buddy_data[1], np.ma.arange(10))
 
 
-@patch("neighbour_outlier.io")
-def test_read_in_buddies_oserror(io_mock: Mock) -> None:
+@patch("neighbour_outlier.io.write_error")
+def test_read_in_buddy_data_attributeerror(write_error_mock: Mock) -> None:
 
-    target_station, _ = _make_target_and_buddy()
-    station_list, buddy_list = _make_station_and_buddy_list()
+    target_station, buddy_station = _make_target_and_buddy()
+    _, buddy_list = _make_station_and_buddy_list()
+    all_buddies = {"Buddy" : buddy_station}
     
-    io_mock.read_station.side_effect = OSError
 
-    _ = neighbour_outlier.read_in_buddies(target_station, station_list,
-                                          buddy_list, "temperature")
+    _ = neighbour_outlier.read_in_buddy_data(target_station, buddy_list,
+                                             all_buddies, "dummy_var")
 
-    # Check error handling
-    io_mock.write_error.assert_called_once_with(target_station,
-                                                "File Missing (Buddy, temperature) - Buddy")
-
-
-@patch("neighbour_outlier.io")
-def test_read_in_buddies_valueerror(io_mock: Mock) -> None:
-
-    target_station, _ = _make_target_and_buddy()
-    station_list, buddy_list = _make_station_and_buddy_list()
-
-    io_mock.read_station.side_effect = ValueError("error text")
-
-    _ = neighbour_outlier.read_in_buddies(target_station, station_list,
-                                          buddy_list, "temperature")
-
-    # Check error handling
-    io_mock.write_error.assert_called_once_with(target_station,
-                                                "Error in input file (Buddy, temperature) - Buddy",
-                                                error="error text")
+        # Check error handling
+    write_error_mock.assert_called_once_with(target_station,
+                                            "Variable Missing (Buddy check): dummy_var - Buddy",
+                                            error="'Station' object has no attribute 'dummy_var'")
 
 
 def test_calculate_data_spread() -> None:
@@ -264,24 +314,19 @@ def test_adjust_pressure_for_tropical_storms() -> None:
     np.testing.assert_array_equal(expected, dubious)
 
 
-@patch("neighbour_outlier.read_in_buddies")
-@patch("neighbour_outlier.utils.get_station_list")
-def test_neighbour_outlier(get_station_list_mock: Mock,
-                           read_buddies_mock: Mock) -> None:
+@patch("neighbour_outlier.read_in_buddy_data")
+def test_neighbour_outlier(read_buddy_data_mock: Mock) -> None:
 
-    instring = [["Target", 45, 100, 10],
-                ["Buddy1", 55, 100, 10],
-                ["Buddy2", 65, 100, 10],
-                ["Buddy3", 75, 100, 10],
-                ["Buddy4", 85, 100, 10],
-                ]
-    get_station_list_mock.return_value = pd.DataFrame(instring, columns=["id", "latitude",
-                                                   "longitude", "elevation"])
     initial_neighbours = np.array([["Target", 0],
                                     ["Buddy1", "120"],
                                     ["Buddy2", "120"],
                                     ["Buddy3", "120"],
                                     ["Buddy4", "80"]])
+    
+    all_buddies = {"Buddy1" : qc_utils.Station("Buddy1", 45, 100 , 10),
+                   "Buddy2" : qc_utils.Station("Buddy1", 45, 100 , 10),
+                   "Buddy3" : qc_utils.Station("Buddy1", 45, 100 , 10),
+                   "Buddy4" : qc_utils.Station("Buddy1", 45, 100 , 10),}
 
     temperatures = common.example_test_variable("temperature", np.arange(140))
     target_station = common.example_test_station(temperatures)
@@ -289,41 +334,36 @@ def test_neighbour_outlier(get_station_list_mock: Mock,
     expected_flags = np.array(["" for i in range(temperatures.data.shape[0])])
 
     # Make the buddy data, initially the same as target, and then deviate
-    all_buddies = np.tile(np.ma.arange(140.), (5, 1)) 
-    all_buddies.mask = np.zeros(all_buddies.shape)
-    all_buddies.mask[0, :] = True # target
-    all_buddies[1:4, :] += 1. # simple offset
+    all_buddy_data = np.tile(np.ma.arange(140.), (5, 1)) 
+    all_buddy_data.mask = np.zeros(all_buddy_data.shape)
+    all_buddy_data.mask[0, :] = True # target
+    all_buddy_data[1:4, :] += 1. # simple offset
 
     # Use of simple offset means spreads == MIN_SPREAD
     # now set differences > SPREAD_LIMIT*MIN_SPREAD
-    all_buddies[1:4, :20] += 20.
+    all_buddy_data[1:4, :20] += 20.
     expected_flags[:20] = "N"
 
-    read_buddies_mock.return_value = all_buddies
+    read_buddy_data_mock.return_value = all_buddy_data
 
-    neighbour_outlier.neighbour_outlier(target_station, initial_neighbours, "temperature")
+    neighbour_outlier.neighbour_outlier(target_station, initial_neighbours, all_buddies, "temperature")
 
     np.testing.assert_array_equal(target_station.temperature.flags, expected_flags)
 
 
-@patch("neighbour_outlier.read_in_buddies")
-@patch("neighbour_outlier.utils.get_station_list")
-def test_neighbour_outlier_clean(get_station_list_mock: Mock,
-                           read_buddies_mock: Mock) -> None:
+@patch("neighbour_outlier.read_in_buddy_data")
+def test_neighbour_outlier_clean(read_buddy_data_mock: Mock) -> None:
 
-    instring = [["Target", 45, 100, 10],
-                ["Buddy1", 55, 100, 10],
-                ["Buddy2", 65, 100, 10],
-                ["Buddy3", 75, 100, 10],
-                ["Buddy4", 85, 100, 10],
-                ]
-    get_station_list_mock.return_value = pd.DataFrame(instring, columns=["id", "latitude",
-                                                   "longitude", "elevation"])
     initial_neighbours = np.array([["Target", 0],
                                     ["Buddy1", "120"],
                                     ["Buddy2", "120"],
                                     ["Buddy3", "120"],
                                     ["Buddy4", "120"]])
+    
+    all_buddies = {"Buddy1" : qc_utils.Station("Buddy1", 45, 100 , 10),
+                   "Buddy2" : qc_utils.Station("Buddy1", 45, 100 , 10),
+                   "Buddy3" : qc_utils.Station("Buddy1", 45, 100 , 10),
+                   "Buddy4" : qc_utils.Station("Buddy1", 45, 100 , 10),}
 
     temperatures = common.example_test_variable("temperature", np.arange(140))
     target_station = common.example_test_station(temperatures)
@@ -331,36 +371,42 @@ def test_neighbour_outlier_clean(get_station_list_mock: Mock,
     expected_flags = np.array(["" for i in range(temperatures.data.shape[0])])
 
     # Make the buddy data, initially the same as target, and then deviate
-    all_buddies = np.tile(np.ma.arange(140.), (5, 1)) 
-    all_buddies.mask = np.zeros(all_buddies.shape)
-    all_buddies.mask[0, :] = True # target
-    all_buddies[1:2, :] += 1. # simple offset
+    all_buddy_data = np.tile(np.ma.arange(140.), (5, 1)) 
+    all_buddy_data.mask = np.zeros(all_buddy_data.shape)
+    all_buddy_data.mask[0, :] = True # target
+    all_buddy_data[1:2, :] += 1. # simple offset
 
     # Use of simple offset means spreads == MIN_SPREAD
     # now set differences > SPREAD_LIMIT*MIN_SPREAD
-    all_buddies[1:2, :20] += 20.
+    all_buddy_data[1:2, :20] += 20.
     # Only 1 neighbour bad, so too small a fraction to set any flags
 
-    read_buddies_mock.return_value = all_buddies
+    read_buddy_data_mock.return_value = all_buddy_data
 
-    neighbour_outlier.neighbour_outlier(target_station, initial_neighbours, "temperature")
+    neighbour_outlier.neighbour_outlier(target_station, initial_neighbours, all_buddies, "temperature")
 
     np.testing.assert_array_equal(target_station.temperature.flags, expected_flags)
 
 
-
+@patch("neighbour_outlier.read_in_buddies")
 @patch("neighbour_outlier.neighbour_outlier")
-def test_noc(neighbour_outlier_mock: Mock) -> None:
+def test_noc(neighbour_outlier_mock: Mock,
+             read_in_buddies_mock: Mock) -> None:
 
     # Set up data, variable & station
     temperatures = common.example_test_variable("temperature", np.arange(10))
     station = common.example_test_station(temperatures)
 
+    all_buddies = {"Buddy1" : qc_utils.Station("Buddy1", 45, 100 , 10),
+                   "Buddy2" : qc_utils.Station("Buddy1", 45, 100 , 10),
+                   "Buddy3" : qc_utils.Station("Buddy1", 45, 100 , 10),
+                   "Buddy4" : qc_utils.Station("Buddy1", 45, 100 , 10),}
+
     # Do the call, with 4 neighbours
-    neighbour_outlier.noc(station, np.array([["ID1", 20],
-                                             ["ID2", 30],
-                                             ["ID3", 40],
-                                             ["ID4", 50],]), ["temperature"])
+    neighbour_outlier.noc(station, np.array([["Buddy1", 20],
+                                             ["Buddy2", 30],
+                                             ["Buddy3", 40],
+                                             ["Buddy4", 50],]), ["temperature"])
 
     # Mock to check call occurs as expected with right return
     neighbour_outlier_mock.assert_called_once()
