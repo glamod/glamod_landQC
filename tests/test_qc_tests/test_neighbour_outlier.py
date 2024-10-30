@@ -4,13 +4,16 @@ Contains tests for neighour_outlier.py
 import numpy as np
 import pandas as pd
 import datetime as dt
-import pytest
+import os
 from unittest.mock import patch, Mock
 
 import neighbour_outlier
 import qc_utils
+import io_utils
 
 import common
+
+EXAMPLE_FILES_PATH = os.path.join(os.path.dirname(__file__), "../", "example_data")
 
 # not testing plotting
 
@@ -50,7 +53,7 @@ def _make_station_and_buddy_list() -> tuple[pd.DataFrame, np.ndarray]:
 
 
 @patch("neighbour_outlier.utils.get_station_list")
-@patch("neighbour_outlier.io.read_station")
+@patch("neighbour_outlier.io_utils.read_station")
 def test_read_in_buddies(read_station_mock: Mock,
                          get_station_list_mock: Mock) -> None:
 
@@ -71,8 +74,8 @@ def test_read_in_buddies(read_station_mock: Mock,
 
 
 @patch("neighbour_outlier.utils.get_station_list")
-@patch("neighbour_outlier.io")
-def test_read_in_buddies_oserror(io_mock: Mock,
+@patch("neighbour_outlier.io_utils")
+def test_read_in_buddies_oserror(io_utils_mock: Mock,
                                  get_station_list_mock: Mock) -> None:
 
     target_station, buddy_station = _make_target_and_buddy()
@@ -80,28 +83,28 @@ def test_read_in_buddies_oserror(io_mock: Mock,
 
     get_station_list_mock.return_value = station_list
 
-    io_mock.read_station.side_effect = OSError
+    io_utils_mock.read_station.side_effect = OSError
     _ = neighbour_outlier.read_in_buddies(target_station, buddy_list)
 
     # Check error handling
-    io_mock.write_error.assert_called_once_with(target_station,
+    io_utils_mock.write_error.assert_called_once_with(target_station,
                                                 "File Missing (Buddy check): Buddy")
     
 
 @patch("neighbour_outlier.utils.get_station_list")
-@patch("neighbour_outlier.io")
-def test_read_in_buddies_valueerror(io_mock: Mock,
+@patch("neighbour_outlier.io_utils")
+def test_read_in_buddies_valueerror(io_utils_mock: Mock,
                                     get_station_list_mock: Mock) -> None:
 
     target_station, _ = _make_target_and_buddy()
     station_list, buddy_list = _make_station_and_buddy_list()
 
     get_station_list_mock.return_value = station_list
-    io_mock.read_station.side_effect = ValueError("error text")
+    io_utils_mock.read_station.side_effect = ValueError("error text")
     _ = neighbour_outlier.read_in_buddies(target_station, buddy_list)
 
     # Check error handling
-    io_mock.write_error.assert_called_once_with(target_station,
+    io_utils_mock.write_error.assert_called_once_with(target_station,
                                                 "Error in input file (Buddy check): Buddy",
                                                 error="error text")
 
@@ -132,7 +135,7 @@ def test_read_in_buddy_data() -> None:
     assert len(buddy_data[-1].compressed()) == 0
 
 
-@patch("neighbour_outlier.io.read_station")
+@patch("neighbour_outlier.io_utils.read_station")
 def test_read_in_buddy_data_offset(read_station_mock: Mock) -> None:
 
     start_dt = dt.datetime(2000, 1, 1, 2, 0) # 2 hour offset
@@ -156,7 +159,7 @@ def test_read_in_buddy_data_offset(read_station_mock: Mock) -> None:
 
 
 
-@patch("neighbour_outlier.io.read_station")
+@patch("neighbour_outlier.io_utils.read_station")
 def test_read_in_buddy_data_short(read_station_mock: Mock) -> None:
 
     target_station, buddy_station = _make_target_and_buddy()
@@ -177,7 +180,7 @@ def test_read_in_buddy_data_short(read_station_mock: Mock) -> None:
     np.testing.assert_array_equal(buddy_data[1], np.ma.arange(10))
 
 
-@patch("neighbour_outlier.io.write_error")
+@patch("neighbour_outlier.io_utils.write_error")
 def test_read_in_buddy_data_attributeerror(write_error_mock: Mock) -> None:
 
     target_station, buddy_station = _make_target_and_buddy()
@@ -271,7 +274,7 @@ def test_adjust_pressure_for_tropical_storms_none() -> None:
     differences = np.ma.ones([5, 120]) # ~30d of 4hrly obs
     differences[0] = 0 # for target
     differences[1:, :10] = -6  # set negative flags for all buddies
-    differences[2, -10:] = 6 # set some positive flags
+    differences[1:, -10:] = 6 # set some positive flags
     spreads = np.ma.ones([5, 120]) # min spread is 1 in this test case
     spreads[0] = 0 #  for target
 
@@ -282,7 +285,10 @@ def test_adjust_pressure_for_tropical_storms_none() -> None:
                                                                     spreads)
 
     # For Buddy2, len(neg) = len(pos), so no flags
+    # For Buddy4, not distant enough, so not affected by this test
     expected = np.ma.zeros(differences.shape)
+    expected[1:4, :10] = 1
+    expected[1:4, -10:] = 1
 
     np.testing.assert_array_equal(expected, dubious)
 
@@ -424,3 +430,48 @@ def test_noc_few_buddies(neighbour_outlier_mock: Mock) -> None:
 
     # Mock to check call wasn't made
     neighbour_outlier_mock.assert_not_called()
+
+
+@patch("neighbour_outlier.utils.get_station_list")
+@patch("neighbour_outlier.setup")
+def test_noc_example_data(setup_mock: Mock,
+                          station_list_mock: Mock) -> None:
+
+    # the neighbours and target all have data for 1979.
+
+    setup_mock.SUBDAILY_PROC_DIR = EXAMPLE_FILES_PATH
+    setup_mock.OUT_COMPRESSION = ""
+
+    station_list = [["CHM00052353", 41.967, 100.883, 946.0],
+                ["AJM00037843", 40.0170, 48.4670, -15.0],
+                ["AJM00037849", 40.0170, 48.9170, -5.0],
+                ["AJM00037898", 39.6500, 46.5330, 1099.0],
+                ["AMM00037874", 39.8000, 44.7000, 818.0], # no overlapping data
+                ]
+    station_list_mock.return_value = pd.DataFrame(station_list, columns=["id", "latitude",
+                                                   "longitude", "elevation"])
+
+    target_station = qc_utils.Station("CHM00052353", 41.967, 100.883, 946.0)
+    target_station, _ = io_utils.read_station(os.path.join(EXAMPLE_FILES_PATH, "CHM00052353.qff"),
+                                              target_station, read_flags=True)
+    
+    initial_neighbours = np.array([["CHM00052353", 0],
+                                  ["AJM00037843", 110],
+                                  ["AJM00037849", 120],
+                                  ["AJM00037898", 130],
+                                  ["AMM00037874", 140]])
+    
+    var_list = ["sea_level_pressure"]
+
+    neighbour_outlier.noc(target_station, initial_neighbours, var_list, diagnostics=True)
+
+    # Manually set bad values (positive) 1979/8/14 and negative 1979/8/15
+    locs, = np.nonzero(np.logical_and(np.logical_and(target_station.years == 1979, 
+                                                     target_station.months == 8),
+                                      target_station.days == 14))
+    example_flags = np.array(["" for _ in target_station.times])
+    example_flags[locs] = "N"
+
+    print(target_station.sea_level_pressure.flags)
+    print(locs)
+    np.testing.assert_array_equal(target_station.sea_level_pressure.flags, example_flags)

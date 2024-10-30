@@ -48,8 +48,6 @@ def example_test_variable(name: str,
 
     variable.flags = np.array(["" for _ in vardata])
 
-    variable.flags = np.array(["" for i in range(len(vardata))])
-
     return variable
 
 

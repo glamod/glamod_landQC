@@ -26,7 +26,7 @@ def test_read_psv() -> None:
     df = io_utils.read_psv(infile, separator)
 
     assert len(df.columns) == 238+len(setup.obs_var_list)
-    assert df.shape[0] == 144 # checked manually, and rows ignore header
+    assert df.shape[0] == 143 # checked manually, and rows ignore header
 
 
 def test_read_psv_fileerror() -> None:
@@ -129,12 +129,12 @@ def test_read_station() -> None:
 
     # use example data, so these values will always be right
     assert station.years[0] == 1979
-    assert station.months[0] == 7  
-    assert station.days[0] == 13
-    assert station.hours[0] == 21    
-    assert station.times[0] == dt.datetime(1979, 7, 13, 21, 0)
+    assert station.months[0] == 8
+    assert station.days[0] == 14
+    assert station.hours[0] == 0
+    assert station.times[0] == dt.datetime(1979, 8, 14, 0, 0)
 
-    assert station_df.shape == (144, 244)
+    assert station_df.shape == (143, 244)
 
 
 def test_read_station_error() -> None:

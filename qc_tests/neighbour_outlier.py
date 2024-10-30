@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 # internal utils
 import qc_utils as utils
-import io_utils as io
+import io_utils
 import setup
 #************************************************************************
 
@@ -86,7 +86,7 @@ def read_in_buddies(target_station: utils.Station, initial_neighbours: np.ndarra
             # end of the list of buddies
             break
 
-            if diagnostics:
+        if diagnostics:
             print(f"Buddy number {bid+1}/{len(initial_neighbours[:, 0])} {buddy_id}")
 
         # set up station object to hold information
@@ -96,7 +96,7 @@ def read_in_buddies(target_station: utils.Station, initial_neighbours: np.ndarra
                                 station_list.iloc[buddy_idx].elevation.values[0])
 
         try:
-            buddy, _ = io.read_station(os.path.join(setup.SUBDAILY_PROC_DIR,
+            buddy, _ = io_utils.read_station(os.path.join(setup.SUBDAILY_PROC_DIR,
                                               f"{buddy_id:11s}.qff{setup.OUT_COMPRESSION}"),
                                               buddy, read_flags=True)
 
@@ -105,11 +105,11 @@ def read_in_buddies(target_station: utils.Station, initial_neighbours: np.ndarra
 
         except OSError: # as e:
             # file missing, move on to next in sequence
-            io.write_error(target_station, f"File Missing (Buddy check): {buddy_id}")
+            io_utils.write_error(target_station, f"File Missing (Buddy check): {buddy_id}")
             continue
         except ValueError as e:
             # some issue in the raw file
-            io.write_error(target_station, f"Error in input file (Buddy check): {buddy_id}", error=str(e))
+            io_utils.write_error(target_station, f"Error in input file (Buddy check): {buddy_id}", error=str(e))
             continue
 
     logger.info("All buddies read in")
@@ -163,11 +163,11 @@ def read_in_buddy_data(target_station: utils.Station, initial_neighbours: np.nda
 
         except KeyError as e:
             # file missing, move on to next in sequence
-            io.write_error(target_station, f"Entry Missing (Buddy check): {variable}) - {buddy_id}", error=str(e))
+            io_utils.write_error(target_station, f"Entry Missing (Buddy check): {variable}) - {buddy_id}", error=str(e))
             continue
         except AttributeError as e:
             # file missing, move on to next in sequence
-            io.write_error(target_station, f"Variable Missing (Buddy check): {variable} - {buddy_id}", error=str(e))
+            io_utils.write_error(target_station, f"Variable Missing (Buddy check): {variable} - {buddy_id}", error=str(e))
             continue
         # match the timestamps of target_station and copy over
         match = np.in1d(target_station.times, buddy.times) 
@@ -249,16 +249,22 @@ def adjust_pressure_for_tropical_storms(dubious: np.ma.MaskedArray, initial_neig
             pos, = np.where(positive[0] == dn)
             neg, = np.where(negative[0] == dn)
 
+            # by default, flag all dubious values greater difference than expected
+            dubious[dist_neigh, positive[1][pos]] = 1               
+            dubious[dist_neigh, negative[1][neg]] = 1
+
+            # but if there are negative ones, then if these dominate,
+            #   it's likely because of storms, so unflag these as we want to retain
             if len(neg) > 0:
                 fraction = len(neg)/(len(pos) + len(neg))
                 if fraction > STORM_FRACTION:
                     # majority negative across matching record
                     #   only flag the positives [definitely not storms]
-                    dubious[dist_neigh, positive[1][pos]] = 1
+                    dubious[dist_neigh, negative[1][neg]] = 0
 
     else:
         # all stations close by so storms shouldn't affect, include all
-        # note where differences exceed the spread
+        # note where differences exceed the spread (using np.abs to get all)
         dubious_locs = np.ma.where(np.ma.abs(differences) > spreads*SPREAD_LIMIT)
         dubious[dubious_locs] = 1
 
@@ -295,7 +301,7 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.ndar
 
     #*************************
     # find differences
-    differences = all_buddy_data - obs_var.data
+    differences = obs_var.data - all_buddy_data
 
     #*************************
     # find spread of differences on monthly basis (with minimum value)
@@ -325,6 +331,7 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.ndar
 
     # flag if large enough fraction (>0.66)
     sufficient, = np.ma.where(dubious_count > DUBIOUS_FRACTION*neighbour_count)
+
     flags[sufficient] = "N"
 
     if plots:

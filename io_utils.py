@@ -28,7 +28,7 @@ def read_psv(infile: str, separator: str) -> pd.DataFrame:
 
     try:
         df = pd.read_csv(infile, sep=separator, compression="infer",
-                         dtype=setup.DTYPE_DICT, na_values="Null", quoting=3)
+                         dtype=setup.DTYPE_DICT, na_values="Null", quoting=3, index_col=False)
     except FileNotFoundError as e:
         logger.warning(f"psv file not found: {str(e)}")
         print(str(e))
@@ -87,6 +87,7 @@ def calculate_datetimes(station_df: pd.DataFrame) -> pd.Series:
                     # if Datatime doesn't throw an error here, then it's valid
                     _ = dt.datetime(yy, month[y], day[y])
                 except ValueError:
+                    print(f"Bad date: {yy}-{month[y]}-{day[y]}\n")
                     logger.warning(f"Bad date: {yy}-{month[y]}-{day[y]}\n")
                     raise ValueError(f"Bad date - {yy}-{month[y]}-{day[y]}")
 
