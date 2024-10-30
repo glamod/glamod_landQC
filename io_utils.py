@@ -200,13 +200,19 @@ def flag_write(outfilename: str, df: pd.DataFrame, diagnostics: bool = False) ->
                 locs = flags[flags.str.contains(test)]
 
                 # For percentage, compare against all obs, not obs for that var
-                outfile.write(f"{var} : {test} : {locs.shape[0]/np.ma.count(this_var_data)}\n")
+                if np.ma.count(this_var_data) == 0:
+                    outfile.write(f"{var} : {test} : 0\n")
+                else:
+                    outfile.write(f"{var} : {test} : {locs.shape[0]/np.ma.count(this_var_data)}\n")
                 outfile.write(f"{var} : {test}_counts : {locs.shape[0]}\n")
 
 
             # for total, get number of set flags (any value)
             flagged, = np.where(flags != "")
-            outfile.write(f"{var} : All : {flagged.shape[0]/np.ma.count(this_var_data)}\n")
+            if np.ma.count(this_var_data) == 0:
+                outfile.write(f"{var} : All : 0\n")
+            else:
+                outfile.write(f"{var} : All : {flagged.shape[0]/np.ma.count(this_var_data)}\n")
             outfile.write(f"{var} : All_counts : {flagged.shape[0]}\n")
 
             logging.info(f"{var} - {flagged.shape[0]}")
