@@ -2,14 +2,15 @@
 Contains tests for convert_to_parquet.py
 """
 import os
+import glob
 import pandas as pd
 from unittest.mock import patch, Mock
 import pytest
 
 import convert_to_parquet
 
-EXAMPLE_FILES = os.listdir(os.path.join(os.path.dirname(__file__),
-                           "example_data"))
+EXAMPLE_FILES = glob.glob(os.path.join(os.path.dirname(__file__),
+                           "example_data", "*.?ff"))
 
 @pytest.mark.parametrize("compression", ("", ".gz", ".zip"))
 @patch("convert_to_parquet.setup")
@@ -54,8 +55,9 @@ def test_process_files(setup_mock: Mock) -> None:
         assert key in [1979, 1985]
 
     # check length of Dataframes for each key are correct
-    assert yearly_data[1979][0].shape[0] == 358
-    assert yearly_data[1979][1].shape[0] == 144
+    for frame in yearly_data[1979]:
+        # can't presume the order will always be the same
+        assert frame.shape[0] in (144, 358)
     assert yearly_data[1985][0].shape[0] == 40
 
 

@@ -36,7 +36,7 @@ import setup
 #************************************************************************
 
 #************************************************************************
-def read_neighbours(restart_id: str = "", end_id: str = "") -> np.array:
+def read_neighbours(restart_id: str = "", end_id: str = "") -> np.ndarray:
     """
     Read the neighbour file to store neighbours and distances [station, neighbours, distances]
 
@@ -125,7 +125,7 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
             target_station, target_station_df = io.read_station(os.path.join(
                 setup.SUBDAILY_PROC_DIR, f"{target_station_id:11s}.qff{setup.OUT_COMPRESSION}"),
                                                                 target_station, read_flags=True)
-        except OSError:
+        except FileNotFoundError:
             # file missing, move on to next in sequence
             logging.warning(f"File for {target_station.id} missing")
             print("") # for on screen spacing of text

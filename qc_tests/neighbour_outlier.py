@@ -86,7 +86,7 @@ def read_in_buddies(target_station: utils.Station, initial_neighbours: np.ndarra
             # end of the list of buddies
             break
 
-        if diagnostics:
+            if diagnostics:
             print(f"Buddy number {bid+1}/{len(initial_neighbours[:, 0])} {buddy_id}")
 
         # set up station object to hold information

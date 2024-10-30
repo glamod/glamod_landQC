@@ -20,7 +20,7 @@ import qc_utils as utils
 #*********************************************
 def plot_flags(primary: utils. Meteorological_Variable,
                secondary: utils.Meteorological_Variable,
-               times: np.array, locations: np.array) -> None:
+               times: np.ndarray, locations: np.ndarray) -> None:
     '''
     Plot each month of observations and the flags
 

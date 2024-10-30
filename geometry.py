@@ -5,7 +5,7 @@
 import numpy as np
 
 
-def cross_indices(array_a: np.array, array_b: np.array = None) -> tuple[np.array, np.array]:
+def cross_indices(array_a: np.ndarray, array_b: np.ndarray = None) -> tuple[np.ndarray, np.ndarray]:
     """Construct an array of indices mapping between all combinations of elements of input arrays.
     Arg:
         array_a:
@@ -29,7 +29,7 @@ def cross_indices(array_a: np.array, array_b: np.array = None) -> tuple[np.array
     return indices_0, indices_1
 
 
-def cartesian_to_polar2d(V: np.array) -> np.array:
+def cartesian_to_polar2d(V: np.ndarray) -> np.ndarray:
     """Convert 3D cartesian locations in V to polar coordinates.
     Uses the convention that x-axis is 0E -> 0N, y-axis is 90E -> 0N, and z is 0E -> 90N.
     Args:
@@ -46,7 +46,7 @@ def cartesian_to_polar2d(V: np.array) -> np.array:
     return np.degrees(np.vstack((latitude, longitude)).T)
 
 
-def polar2d_to_cartesian(polar2d: np.array) -> np.array:
+def polar2d_to_cartesian(polar2d: np.ndarray) -> np.ndarray:
     """Convert 2D polar coordinates to cartesian coordinates on a unit sphere.
     Args:
         polar2d:
@@ -64,7 +64,7 @@ def polar2d_to_cartesian(polar2d: np.array) -> np.array:
     return np.vstack((x, y, z)).T
 
 
-def cartesian_to_polar3d(V: np.array) -> np.array:
+def cartesian_to_polar3d(V: np.ndarray) -> np.ndarray:
     """Convert 3D cartesian locations in V to polar coordinates.
     Using the convention describing vectors from the origin as (latitude, longitude, length), unit vectors along each
     axis define the axes as:
@@ -86,7 +86,7 @@ def cartesian_to_polar3d(V: np.array) -> np.array:
     return np.vstack((np.degrees(latitude), np.degrees(longitude), radius)).T
 
 
-def polar3d_to_cartesian(polar3d: np.array) -> np.array:
+def polar3d_to_cartesian(polar3d: np.ndarray) -> np.ndarray:
     """Convert 3D polar coordinates to cartesian coordinates on a unit sphere.
     Args:
         polar3d:
@@ -105,7 +105,7 @@ def polar3d_to_cartesian(polar3d: np.array) -> np.array:
     return np.vstack((x, y, z)).T
 
 
-def vector_angle(X: np.array, Y: np.array) -> np.array:
+def vector_angle(X: np.ndarray, Y: np.ndarray) -> np.ndarray:
     """Compute angles between N pairs of vectors in arrays X and Y.
     Uses arctan2 form that is numerically stable for small angles.
     Args:
@@ -126,7 +126,7 @@ def vector_angle(X: np.array, Y: np.array) -> np.array:
                           np.linalg.norm((X.T * Y_norm).T + (Y.T * X_norm).T, axis=1))
 
 
-def cross_distance(locations_a: np.array, locations_b: np.array = None, R: int = 1.0) -> np.array:
+def cross_distance(locations_a: np.ndarray, locations_b: np.ndarray = None, R: int = 1.0) -> np.ndarray:
     """Compute cross distances on a sphere between all combinations of input locations.
     Args:
         locations_a:

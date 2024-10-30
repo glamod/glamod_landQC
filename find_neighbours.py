@@ -35,7 +35,7 @@ DEFAULT_SEPARATION = 9999
 CHUNKSIZE = 1000 # size of arrays to split ID list into for distances
 
 #************************************************************************
-def get_cartesian(latitudes: np.array, longitudes: np.array) -> np.array:
+def get_cartesian(latitudes: np.ndarray, longitudes: np.ndarray) -> np.ndarray:
     """
     Compute the matrix of coranges between all location in a grid
     Args:
@@ -56,7 +56,7 @@ def get_cartesian(latitudes: np.array, longitudes: np.array) -> np.array:
     return cartesian_coords # get_cartesian
 
 #************************************************************************
-def compute_corange_matrix(cartesian_coords_a: np.array, cartesian_coords_b: np.array = None) -> np.array:
+def compute_corange_matrix(cartesian_coords_a: np.ndarray, cartesian_coords_b: np.ndarray = None) -> np.ndarray:
     """Compute the matrix of coranges between all location in a grid
     Args:
         cartesian_coords_a:
@@ -77,7 +77,7 @@ def compute_corange_matrix(cartesian_coords_a: np.array, cartesian_coords_b: np.
 
 #************************************************************************
 def get_neighbours(station_list_a: pd.DataFrame, station_list_b: pd.DataFrame = None,
-                   diagnostics: bool = False, plots: bool = False, full: bool = False) -> np.array:
+                   diagnostics: bool = False, plots: bool = False, full: bool = False) -> np.ndarray:
     """
     Find the neighbour indices and distances for the list supplied 
 

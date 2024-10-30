@@ -2,6 +2,7 @@
 Contains tests for precision.py
 """
 import numpy as np
+import pandas as pd
 import datetime as dt
 import pytest
 from unittest.mock import patch, Mock
@@ -15,7 +16,7 @@ import common
 all_flagged = np.array(["n" for _ in range(120)])
 none_flagged = np.array(["" for _ in range(120)])
 
-def _make_station(temps: np.array, dewps: np.array) -> qc_utils.Station:
+def _make_station(temps: np.ndarray, dewps: np.ndarray) -> qc_utils.Station:
     """
     Create a station with two paired variables
 
@@ -28,10 +29,10 @@ def _make_station(temps: np.array, dewps: np.array) -> qc_utils.Station:
     primary = common.example_test_variable("temperature", temps)
     secondary = common.example_test_variable("dew_point_temperature", dewps)
 
-    times = np.array([dt.datetime(2024, 1, 1, 12, 0) +
-                     (i * dt.timedelta(seconds=60*60))
-                     for i in range(len(dewps))])
-    
+    start_dt = dt.datetime(2024, 1, 1, 12, 0)
+    times = pd.to_datetime(pd.DataFrame([start_dt + dt.timedelta(hours=i)\
+                              for i in range(len(dewps))])[0])
+
     station = common.example_test_station(primary, times)
     station.dew_point_temperature = secondary
 
@@ -40,7 +41,7 @@ def _make_station(temps: np.array, dewps: np.array) -> qc_utils.Station:
 
 @pytest.mark.parametrize("t_divisor, d_divisor, expected", [(10, 1, all_flagged),
                                                              (10, 10, none_flagged)])
-def test_precision_cross_check(t_divisor: int, d_divisor: int, expected: np.array):
+def test_precision_cross_check(t_divisor: int, d_divisor: int, expected: np.ndarray):
 
     length = 120
     temps = np.ma.arange(0, length/t_divisor, 1/t_divisor)

@@ -31,7 +31,7 @@ QC_TESTS = {"C" : "Climatological",
             "E" : "Clean Up",
             "F" : "Frequent Value",
             "H" : "High Flag Rate",
-            "K" : "Streaks",
+            "K" : "Repeating Streaks",
             "L" : "Logic",
             "N" : "Neighbour",
             "S" : "Spike",
@@ -45,6 +45,8 @@ QC_TESTS = {"C" : "Climatological",
             "o" : "Odd Cluster",
             "p" : "Pressure",
             "w" : "Winds",
+            "x" : "Excess streak proportion",
+            "y" : "Repeated Day streaks"
             }
 
 
@@ -174,19 +176,19 @@ def get_station_list(restart_id: str = "", end_id: str = "") -> pd.DataFrame:
 
     # work from the end to save messing up the start indexing
     if end_id != "":
-        endindex, = np.where(station_IDs == end_id)
+        endindex, = np.nonzero(station_IDs == end_id)
         station_list = station_list.iloc[: endindex[0]+1]
 
     # and do the front
     if restart_id != "":
-        startindex, = np.where(station_IDs == restart_id)
+        startindex, = np.nonzero(station_IDs == restart_id)
         station_list = station_list.iloc[startindex[0]:]
 
     return station_list.reset_index(drop=True) # get_station_list
 
 
 #************************************************************************
-def insert_flags(qc_flags: np.array, flags: np.array) -> np.array:
+def insert_flags(qc_flags: np.ndarray, flags: np.ndarray) -> np.ndarray:
     """
     Update QC flags with the new flags
 
@@ -272,7 +274,7 @@ def populate_station(station: Station, df: pd.DataFrame, obs_var_list: list, rea
     return # populate_station
 
 #*********************************************
-def calculate_IQR(data: np.array, percentile: float = 0.25) -> float:
+def calculate_IQR(data: np.ndarray, percentile: float = 0.25) -> float:
     ''' Calculate the IQR of the data '''
 
     try:
@@ -288,7 +290,7 @@ def calculate_IQR(data: np.array, percentile: float = 0.25) -> float:
     return sorted_data[n_data - quartile] - sorted_data[quartile] # calculate_IQR
     
 #*********************************************
-def mean_absolute_deviation(data: np.array, median: bool = False) -> float:    
+def mean_absolute_deviation(data: np.ndarray, median: bool = False) -> float:    
     ''' Calculate the MAD of the data '''
     
     if median:
@@ -300,7 +302,7 @@ def mean_absolute_deviation(data: np.array, median: bool = False) -> float:
     return mad # mean_absolute_deviation
 
 #*********************************************
-def linear(X: np.array, p: np.array) -> np.array:
+def linear(X: np.ndarray, p: np.ndarray) -> np.ndarray:
     '''
     decay function for line fitting
     p[0]=intercept
@@ -309,7 +311,7 @@ def linear(X: np.array, p: np.array) -> np.array:
     return p[1]*X + p[0] # linear
 
 #*********************************************
-def residuals_linear(p: np.array, Y: np.array, X: np.array) -> np.array:
+def residuals_linear(p: np.ndarray, Y: np.ndarray, X: np.ndarray) -> np.ndarray:
     '''
     Least squared residuals from linear trend
     '''
@@ -319,7 +321,7 @@ def residuals_linear(p: np.array, Y: np.array, X: np.array) -> np.array:
 
 
 #*********************************************
-def gcv_calculate_binmax(indata: np.array, binmin: float, binwidth: float) -> float:
+def gcv_calculate_binmax(indata: np.ndarray, binmin: float, binwidth: float) -> float:
     """
     Determine the appropriate largest bin to use.
 
@@ -333,7 +335,10 @@ def gcv_calculate_binmax(indata: np.array, binmin: float, binwidth: float) -> fl
 
     MAX_N_BINS = 20000
     # so that have sufficient x-bins to fit to
-    binmax = np.max([2 * max(np.ceil(np.abs(indata))), 10])
+    if binwidth < 0.1:
+        binmax = np.max([2 * max(np.ceil(np.abs(indata))), 1])
+    else:    
+        binmax = np.max([2 * max(np.ceil(np.abs(indata))), 10])
 
     # if too big, then adjust
     if (binmax - binmin)/binwidth > MAX_N_BINS:
@@ -345,45 +350,69 @@ def gcv_calculate_binmax(indata: np.array, binmin: float, binwidth: float) -> fl
     return binmax  #gcv_calculate_binmax
     
 
-
-def gcv_central_section(full_hist: np.array) -> tuple[int, int]:
+#*********************************************
+def gcv_zeros_in_central_section(histogram: np.ndarray, inner_n: int) -> int:
     """
-    A routine to determine if, for a distribution with multiple peaks, the central
-    section is sufficiently big.
-    
+    Helper routine for get_critical_values() ["gcv"] to determine if, for a distribution
+    with multiple peaks, the central section is sufficiently big.  When fitting a x^-1 line
+    in get_critical_values(), this may not work as intended if many of the bins close to x=0 have
+    y=0.  This routine counts the number of zero-valued bins within the inner_n bins.
+
+    :param array histogram: histogram of values to assess
+    :param int inner_n: how many of the inner bins to assess
+
+    :returns: n_zeros   how many n_zeros within limit bins of the centre
     """
 
+    if len(np.nonzero(histogram == 0)[0]) == 0:
+        # No zero bins, so central section is the whole histogram
+        return 0
 
-    # use only the central section (as long as it's 5(10) or more bins)
-    for limit_threshold in [5, 10]:
-        i = 0
-        n_zeros = 0
-        limit = 0
-        while limit < limit_threshold:
-            # count outwards until there is a zero-valued bin
-            try:
-                limit = np.argwhere(full_hist == 0)[i][0]
-                n_zeros += 1
-                i += 1
-            except IndexError:
-                # no zero bins in this histogram
-                limit = len(full_hist)
-                break
-
-        if n_zeros >= 3 and limit == 5:
-            # check the next limit
-            pass
-        else:
-            # got a decent enough central region
-            #   or extended limit isn't enough either, caught later
+    # Use only the central section (as long as it's 5(10) or more bins)
+    n_zeros = 0
+    index = 0
+    while index < inner_n:
+        # if not gone beyond the end of the histogram
+        if index >= len(histogram):
             break
+        # Count outwards until there is a zero-valued bin
+        if histogram[index] == 0:
+            n_zeros += 1
+        index += 1
 
-    return limit, n_zeros  # gcv_central_section
+    return n_zeros  # gcv_zeros_in_central_section
 
 
 #*********************************************
-def get_critical_values(indata: np.array, binmin: float = 0, binwidth: float = 1, plots: bool = False, diagnostics: bool = False, \
-                        line_label: str = "", xlabel: str = "", title: str = "", old_threshold: float = 0) -> float:
+def gcv_linear_fit_to_log_histogram(histogram: np.array, bins: np.array) -> np.array:
+    """
+    Take the log10 of the histogram values, and fit a linear x^-1 line
+
+    :param array histogram: the histogram values to fit
+    :param array bins: the histogram bins
+
+    :returns: array of fit parameters of (norm, slope)   
+    """
+
+    # and take log10
+    histogram = np.log10(histogram)
+
+    # Working in log-yscale
+    # a 10^bx, expecting b to be negative
+    a = histogram[np.argmax(histogram)]
+    b = 1
+
+    p0 = np.array([a, b])
+    result = least_squares(residuals_linear, p0, args=(histogram, bins), max_nfev=10000, verbose=0, method="lm")
+
+    return result.x
+
+
+#*********************************************
+def get_critical_values(indata: np.ndarray, binmin: float = 0, binwidth: float = 1,
+                        plots: bool = False, diagnostics: bool = False,
+                        line_label: str = "", xlabel: str = "", title: str = "") -> float:
+
     """
     Plot histogram on log-y scale and fit 1/x decay curve to set threshold
 
@@ -397,125 +426,141 @@ def get_critical_values(indata: np.array, binmin: float = 0, binwidth: float = 1
     :param str title: plot title
  
     :returns:
-       critical value
-
+       float critical value
     """
 
-    if len(set(indata)) > 1:
+    if len(set(indata)) == 1:
+        # All data at a single value, so set threshold above this
+        threshold = max(indata) + binwidth
+        return threshold
+    
+    elif len(indata) == 0:
+        # If no data, return 0+binwidth as the threshold to ensure a positive value
+        threshold = 0+binwidth
+        return threshold
 
-        # set up the bins and make a histogram.  Use Absolute values
-        binmax = gcv_calculate_binmax(indata, binmin, binwidth)
-        bins = np.arange(binmin, binmax, binwidth)
-        full_hist, full_edges = np.histogram(np.abs(indata), bins=bins)
+    # Or there is data to process, let's go
+    # set up the bins and make a histogram.  Use Absolute values
+    binmax = gcv_calculate_binmax(indata, binmin, binwidth)
+    bins = np.arange(binmin, binmax, binwidth)
+    full_hist, full_edges = np.histogram(np.abs(indata), bins=bins)
 
-        if len(full_hist) > 1:
+    if len(full_hist) <= 1:
+        threshold = max(indata) + binwidth
+        return threshold
 
-            limit, n_zeros = gcv_central_section(full_hist)
-
-            if limit == 10 and n_zeros >= 7:
-                # extended central bit is mainly zeros
-                # can't continue
+    # Check if the first 5(10) bins have sufficient data
+    n_zeros = gcv_zeros_in_central_section(full_hist, 5)
+    if n_zeros >= 3:
+        # Note: although cannot have streaks length < 2, this is handled
+        #       via the binmin argument (set to 2 in humidity DPD and streaks)
+        if len(full_hist) > 5:
+            n_zeros = gcv_zeros_in_central_section(full_hist, 10)   
+            if n_zeros >= 6:
+                # Extended central bit is mainly zeros
+                # can't continue, set threshold to exceed data
                 threshold = max(indata) + binwidth
-
-            else:
-
-                # use this central section for fitting
-                edges = full_edges[:limit]
-                central_hist = full_hist[:limit]
-
-                # remove inf's
-                goods, = np.where(central_hist != 0)
-
-                # if insufficient short streaks/small differences for centre of distribution
-                if len(goods) < 2:
-                    threshold = max(indata) + binwidth
-
-                else:
-                    hist = central_hist[goods]
-                    edges = edges[goods]
-
-                    # and take log10
-                    hist = np.log10(hist)
-
-                    # Working in log-yscale from hereon
-                    # a 10^-bx
-                    a = hist[np.argmax(hist)]
-                    b = 1
-
-                    p0 = np.array([a, b])
-                    result = least_squares(residuals_linear, p0, args=(hist, edges), max_nfev=10000, verbose=0, method="lm")
-
-                    fit = result.x
-
-                    fit_curve = linear(full_edges, fit)
-
-                    if fit[1] < 0:
-                        # negative slope as expected
-
-                        # where does *fit* fall below log10(0.1) = -1, then..
-                        try:
-                            fit_below_point1, = np.argwhere(fit_curve < -1)[0]
-
-                            # find first empty bin after that
-                            first_zero_bin, = np.argwhere(full_hist[fit_below_point1:] == 0)[0]
-                            threshold = binwidth * (binmin + fit_below_point1 + first_zero_bin)
-
-                        except IndexError:
-                            # too shallow a decay - use default maximum.  Retains all data
-                            threshold = len(full_hist)*binwidth
-
-                    else:
-                        # positive slope - likely malformed distribution.  Retains all data
-                        threshold = len(full_hist)*binwidth
-
-                    if plots:
-                        plot_log_distribution(full_edges, full_hist, fit_curve, threshold, line_label, xlabel, title)
-
+                return threshold
         else:
+            # Extended central bit is mainly zeros
+            # can't continue, set threshold to exceed data
+            threshold = max(indata) + binwidth
+            return threshold
+
+    # Use this central section for fitting
+    #  Avoids risk of secondary populations in the distribution affecting the fit
+    edges = full_edges[:10]
+    central_hist = full_hist[:10]
+
+    # Remove zeros (turn into infs in log-space)
+    goods, = np.nonzero(central_hist != 0)
+    hist = central_hist[goods]
+    edges = edges[goods]
+
+    # Get the curve, and the best fit points
+    fit = gcv_linear_fit_to_log_histogram(hist, edges)
+    fit_curve = linear(full_edges, fit)
+
+
+    if fit[1] < 0:
+        # negative slope as expected
+
+        # where does *fit* fall below log10(0.1) = -1, then..
+        try:
+            fit_below_point1, = np.argwhere(fit_curve < -1)[0]
+            # find first empty bin after that
+            first_zero_bin, = np.argwhere(full_hist[fit_below_point1:] == 0)[0]
+            threshold = binwidth * (binmin + fit_below_point1 + first_zero_bin)
+            if isinstance(threshold, np.integer):
+                # JSON encoder can't cope with np.int64 objects
+                threshold = int(threshold)
+
+        except IndexError:
+            # Too shallow a decay - use default maximum.  Retains all data
+            #   If there were a value much higher, then because a negative
+            #   slope the above snippet should run, rather than this one.
             threshold = max(indata) + binwidth
 
-    elif len(set(indata)) == 1:
+    else:
+        # Positive slope - likely malformed distribution.  Retains all data
+        #    The test won't work well given the fit, so just take the data max.
         threshold = max(indata) + binwidth
 
-    else:
-        # if no data, return 0+binwidth as the threshold to ensure a positive value
-        threshold = np.copy(binwidth)
- 
+    if plots:
+        plot_log_distribution(full_edges, full_hist, fit_curve, threshold, line_label, xlabel, title)
+
     return threshold # get_critical_values
 
+
 #*********************************************
-def plot_log_distribution(edges: np.array, hist: np.array, fit: np.array, threshold: float, line_label: str, xlabel: str, title: str) -> None:
+def plot_log_distribution(edges: np.ndarray, hist: np.ndarray, fit: np.ndarray, threshold: float, line_label: str, xlabel: str, title: str) -> None:
     """
     Plot distribution on a log scale and show the fit
 
     """
     import matplotlib.pyplot as plt
+    import matplotlib.ticker as mticker
+    _, ax = plt.subplots()
     
-    plt.clf()
     # stretch bars, so can run off below 0
-    plot_hist = np.array([np.log10(x) if x != 0 else -1 for x in hist])
-    plt.step(edges[1:], plot_hist, color='k', label=line_label, where="pre")
+#    plot_hist = np.array([np.log10(x) if x != 0 else -1 for x in hist])
+#    plt.step(edges[1:], plot_hist, color='k', label=line_label, where="pre")
+    
+    # set values == 0 to be 0.01, so can plot on a log plot
+    plot_hist = np.array([x if x != 0 else 0.01 for x in hist])
+    plt.step(edges[:-1], plot_hist, color='k', label=line_label, where="mid")
+
+    # convert the fit in log space to actuals
+    fit = [10**i for i in fit]
     plt.plot(edges, fit, 'b-', label="best fit")          
     
     plt.xlabel(xlabel)
-    plt.ylabel("log10(Frequency)")
+    plt.ylabel("Frequency (logscale))")
     
-    # set y-lim to something sensible
-    plt.ylim([-0.3, max(plot_hist)+0.5])
+    # set y-lim to something sensible in actual space
+    plt.ylim([-1.3, max(plot_hist)+0.5])
+    plt.ylim([0.01, max(plot_hist)*3])
     plt.xlim([0, max(edges)])
     
     plt.axvline(threshold, c='r', label=f"threshold = {threshold}")
     
     plt.legend(loc="upper right")
     plt.title(title)
-       
+    plt.yscale("log")
+
+    # sort axes formats
+    ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda y, _: '{:g}'.format(y)))
+    if max(edges) > 2:
+        ax.xaxis.set_major_locator(mticker.MultipleLocator(2))
+    else:
+        ax.xaxis.set_major_locator(mticker.MultipleLocator(0.1))
     plt.show()
 
     return # plot_log_distribution
 
 
 #*********************************************
-def average(data: np.array) -> float:
+def average(data: np.ndarray) -> float:
     """
     Routine to wrap mean or median functions so can easily switch
     """
@@ -528,7 +573,7 @@ def average(data: np.array) -> float:
     # average
 
 #*********************************************
-def spread(data: np.array) -> float:
+def spread(data: np.ndarray) -> float:
     """
     Routine to wrap st-dev, IQR or MAD functions so can easily switch
     """
@@ -550,7 +595,7 @@ def spread(data: np.array) -> float:
     # spread
 
 #*********************************************
-def winsorize(data: np.array, percent: float) -> np.array:
+def winsorize(data: np.ndarray, percent: float) -> np.ndarray:
     """
     Replace data greater/less than upper/lower percentile with percentile value
     """
@@ -569,7 +614,7 @@ def winsorize(data: np.array, percent: float) -> np.array:
     return data # winsorize
 
 #************************************************************************
-def create_bins(data: np.array, width: float, obs_var_name: str, anomalies: bool = False):
+def create_bins(data: np.ndarray, width: float, obs_var_name: str, anomalies: bool = False):
 
     bmin = np.floor(np.ma.min(data))
     bmax = np.ceil(np.ma.max(data))
@@ -608,7 +653,7 @@ def create_bins(data: np.array, width: float, obs_var_name: str, anomalies: bool
         return bins # create_bins
 
 #*********************************************
-def gaussian(X: np.array, p: np.array) -> np.array:
+def gaussian(X: np.ndarray, p: np.ndarray) -> np.ndarray:
     '''
     Gaussian function for line fitting
     p[0]=norm
@@ -619,7 +664,7 @@ def gaussian(X: np.array, p: np.array) -> np.array:
     return (norm*(np.exp(-((X-mu)*(X-mu))/(2.0*sig*sig)))) # gaussian
 
 #*********************************************
-def skew_gaussian(X: np.array, p: np.array) -> np.array:
+def skew_gaussian(X: np.ndarray, p: np.ndarray) -> np.ndarray:
     '''
     Gaussian function for line fitting
     p[0]=norm
@@ -632,7 +677,7 @@ def skew_gaussian(X: np.array, p: np.array) -> np.array:
         (1 + scipy.special.erf(skew*(X-mu)/(sig*np.sqrt(2)))) # skew_gaussian
 
 #*********************************************
-def residuals_skew_gaussian(p: np.array, Y: np.array, X: np.array) -> np.array:
+def residuals_skew_gaussian(p: np.ndarray, Y: np.ndarray, X: np.ndarray) -> np.ndarray:
     '''
     Least squared residuals from linear trend
     '''
@@ -652,7 +697,7 @@ def invert_gaussian(Y: float, p: float) -> float:
     return mu + (sig*np.sqrt(-2*np.log(Y/norm))) # invert_gaussian
 
 #*********************************************
-def residuals_gaussian(p: np.array, Y: np.array, X: np.array) -> np.array:
+def residuals_gaussian(p: np.ndarray, Y: np.ndarray, X: np.ndarray) -> np.ndarray:
     '''
     Least squared residuals from linear trend
     '''
@@ -661,7 +706,7 @@ def residuals_gaussian(p: np.array, Y: np.array, X: np.array) -> np.array:
     return err # residuals_gaussian
 
 #*********************************************
-def fit_gaussian(x: np.array, y: np.array, norm: float, mu: float = MDI, sig: float = MDI, skew: float = MDI) -> np.array:
+def fit_gaussian(x: np.ndarray, y: np.ndarray, norm: float, mu: float = MDI, sig: float = MDI, skew: float = MDI) -> np.ndarray:
     '''
     Fit a gaussian to the data provided
     Inputs:
@@ -694,7 +739,7 @@ def fit_gaussian(x: np.array, y: np.array, norm: float, mu: float = MDI, sig: fl
     return result.x # fit_gaussian
 
 #************************************************************************
-def find_gap(hist: np.array, bins: np.array, threshold: float, gap_size: int, upwards: bool = True) -> float:
+def find_gap(hist: np.ndarray, bins: np.ndarray, threshold: float, gap_size: int, upwards: bool = True) -> float:
     '''
     Walk the bins of the distribution to find a gap and return where it starts
    
@@ -749,7 +794,7 @@ def find_gap(hist: np.array, bins: np.array, threshold: float, gap_size: int, up
     return gap_start # find_gap
 
 #*********************************************
-def reporting_accuracy(indata: np.array, winddir: bool = False, plots: bool = False) -> float:
+def reporting_accuracy(indata: np.ndarray, winddir: bool = False, plots: bool = False) -> float:
     '''
     Uses histogram of remainders to look for special values
 
@@ -820,7 +865,7 @@ def reporting_accuracy(indata: np.array, winddir: bool = False, plots: bool = Fa
     return resolution # reporting_accuracy
 
 #*********************************************
-def reporting_frequency(intimes: np.array, inobs: np.array) -> float:
+def reporting_frequency(intimes: np.ndarray, inobs: np.ndarray) -> float:
     '''
     Uses histogram of remainders to look for special values
 
@@ -890,14 +935,14 @@ def high_flagging(station: Station) -> bool:
 
         obs_var = getattr(station, ov)
 
-        obs_locs, = np.where(obs_var.data.mask == False)
+        obs_locs, = np.nonzero(obs_var.data.mask == False)
 
         if obs_locs.shape[0] > 10 * DATA_COUNT_THRESHOLD:
             # require sufficient observations to make a flagged fraction useful.
 
             flags = obs_var.flags
 
-            flagged, = np.where(flags[obs_locs] != "")
+            flagged, = np.nonzero(flags[obs_locs] != "")
 
             if flagged.shape[0] / obs_locs.shape[0] > HIGH_FLAGGING:
                 bad = True
@@ -947,14 +992,24 @@ def find_continent(country_code: str) -> str:
     return concord[country_code]
 
 #************************************************************************
-def prepare_data_repeating_string(data, diff=0, plots=False, diagnostics=False):
+def prepare_data_repeating_streak(data: np.ndarray, diff:int = 0,
+                                  plots:bool = False, diagnostics:bool = False) -> tuple[np.array,
+                                                                                         np.array,
+                                                                                         np.array]:
     """
-    Prepare the data for repeating strings
+    Prepare the data for repeating streaks
 
     :param np.array data: data to assess
-    :param int diff: difference to look for (0 in strings of data, 1 in strings of indices)
+    :param int diff: difference to look for (0 in streaks of data - i.e. same values
+                                             1 in streaks of indices - i.e. adjacent locations)
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
+
+    :returns: tuple(array, array, array)
+
+    array of the streak lengths in temporal order
+    array of the grouped differences (difference, count)
+    array of the streak locations [in grouped differences, so need double expansion]
     """
 
     # want locations where first differences are zero
@@ -964,17 +1019,18 @@ def prepare_data_repeating_string(data, diff=0, plots=False, diagnostics=False):
 
     # group the differences
     #     array of (value_diff, count) pairs
+    #     Inspired by https://stackoverflow.com/a/58222158
     grouped_diffs = np.array([[g[0], len(list(g[1]))] for g in itertools.groupby(value_diffs)])
 
-    # all string lengths
-    strings, = np.where(grouped_diffs[:, 0] == diff)
-    repeated_string_lengths = grouped_diffs[strings, 1] + 1
+    # all streak lengths
+    streaks, = np.nonzero(grouped_diffs[:, 0] == diff)
+    repeated_streak_lengths = grouped_diffs[streaks, 1] + 1
  
-    return repeated_string_lengths, grouped_diffs, strings # prepare_data_repeating_string
+    return repeated_streak_lengths, grouped_diffs, streaks # prepare_data_repeating_streak
 
 
 #************************************************************************
-def custom_logger(logfile):
+def custom_logger(logfile: str):
 
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)

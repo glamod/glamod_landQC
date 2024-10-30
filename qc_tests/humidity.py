@@ -40,11 +40,11 @@ def get_repeating_dpd_threshold(temperatures: utils.Meteorological_Variable,
 
     # only process further if there are enough locations
     if len(locs) > 1:
-        repeated_string_lengths, _, _ = utils.prepare_data_repeating_string(locs, diff=1, plots=plots, diagnostics=diagnostics)
+        repeated_streak_lengths, _, _ = utils.prepare_data_repeating_streak(locs, diff=1, plots=plots, diagnostics=diagnostics)
 
         # bin width is 1 as dealing with the index.
-        # minimum bin value is 2 as this is the shortest string possible
-        threshold = utils.get_critical_values(repeated_string_lengths, binmin=2,
+        # minimum bin value is 2 as this is the shortest streak possible
+        threshold = utils.get_critical_values(repeated_streak_lengths, binmin=2,
                                               binwidth=1.0, plots=plots,
                                               diagnostics=diagnostics,
                                               title="DPD streak length",
@@ -71,7 +71,7 @@ def get_repeating_dpd_threshold(temperatures: utils.Meteorological_Variable,
 #*********************************************
 def plot_humidities(T: utils.Meteorological_Variable,
                     D: utils.Meteorological_Variable, 
-                    times: np.array,
+                    times: np.ndarray,
                     bad: int) -> None:
     '''
     Plot each observation of SSS or DPD against surrounding data
@@ -103,7 +103,7 @@ def plot_humidities(T: utils.Meteorological_Variable,
     return # plot_humidities
 
 #*********************************************
-def plot_humidity_streak(times: np.array,
+def plot_humidity_streak(times: np.ndarray,
                          T: utils.Meteorological_Variable,
                          D: utils.Meteorological_Variable,
                          streak_start: int, streak_end: int) -> None:
@@ -163,11 +163,11 @@ def super_saturation_check(station: utils.Station,
     # and whole month of dewpoints if month has a high proportion (of dewpoint obs)
     for year in np.unique(station.years):
         for month in range(1, 13):
-            month_locs, = np.where(np.logical_and(station.years == year,
+            month_locs, = np.nonzero(np.logical_and(station.years == year,
                                                   station.months == month,
                                                   dewpoints.data.mask == True))
             if month_locs.shape[0] != 0:
-                flagged, = np.where(flags[month_locs] == "h")
+                flagged, = np.nonzero(flags[month_locs] == "h")
                 if (flagged.shape[0]/month_locs.shape[0]) > HIGH_FLAGGING_THRESHOLD:
                     flags[month_locs] = "h"
 
@@ -180,12 +180,12 @@ def super_saturation_check(station: utils.Station,
             plot_humidities(temperatures, dewpoints, station.times, bad)
 
     logger.info(f"Supersaturation {dewpoints.name}")
-    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
+    logger.info(f"   Cumulative number of flags set: {len(np.nonzero(flags != '')[0])}")
 
     return # super_saturation_check
 
 #************************************************************************
-def dew_point_depression_streak(times: np.array,
+def dew_point_depression_streak(times: np.ndarray,
                                 temperatures: utils.Meteorological_Variable,
                                 dewpoints: utils.Meteorological_Variable,
                                 config_dict: dict,
@@ -222,15 +222,15 @@ def dew_point_depression_streak(times: np.array,
 
     # only process further if there are enough locations
     if len(locs) > 1:
-        repeated_string_lengths, grouped_diffs, strings = utils.prepare_data_repeating_string(locs, diff=1, plots=plots, diagnostics=diagnostics)
+        repeated_streak_lengths, grouped_diffs, streaks = utils.prepare_data_repeating_streak(locs, diff=1, plots=plots, diagnostics=diagnostics)
 
         # above threshold
-        bad, = np.where(repeated_string_lengths >= threshold)
+        bad, = np.nonzero(repeated_streak_lengths >= threshold)
 
-        # flag identified strings
-        for string in bad:
-            start = int(np.sum(grouped_diffs[:strings[string], 1]))
-            end = start + int(grouped_diffs[strings[string], 1]) + 1
+        # flag identified streaks
+        for streak in bad:
+            start = int(np.sum(grouped_diffs[:streaks[streak], 1]))
+            end = start + int(grouped_diffs[streaks[streak], 1]) + 1
             flags[locs[start : end]] = "h"
 
             if plots:
@@ -240,7 +240,7 @@ def dew_point_depression_streak(times: np.array,
         dewpoints.flags = utils.insert_flags(dewpoints.flags, flags)
 
     logger.info(f"Dewpoint Depression {dewpoints.name}")
-    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
+    logger.info(f"   Cumulative number of flags set: {len(np.nonzero(flags != '')[0])}")
 
     return # dew_point_depression_streak
 

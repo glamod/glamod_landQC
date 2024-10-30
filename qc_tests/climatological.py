@@ -20,8 +20,8 @@ GAP_SIZE = 2
 BIN_WIDTH = 0.5
 
 #************************************************************************
-def get_weights(monthly_anoms: np.array, monthly_subset: np.array,
-                filter_subset: np.array) -> float:
+def get_weights(monthly_anoms: np.ndarray, monthly_subset: np.ndarray,
+                filter_subset: np.ndarray) -> float:
     '''
     Get the weights for the low pass filter.
 
@@ -43,8 +43,8 @@ def get_weights(monthly_anoms: np.array, monthly_subset: np.array,
     return weights # get_weights
 
 #************************************************************************
-def low_pass_filter(normed_anomalies: np.array, station: utils.Station,
-                    monthly_anoms: np.array, month: int) -> np.array:
+def low_pass_filter(normed_anomalies: np.ndarray, station: utils.Station,
+                    monthly_anoms: np.ndarray, month: int) -> np.ndarray:
     '''
     Run the low pass filter - get suitable ranges, get weights, and apply
 
