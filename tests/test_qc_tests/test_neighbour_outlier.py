@@ -78,7 +78,7 @@ def test_read_in_buddies(read_station_mock: Mock,
 def test_read_in_buddies_oserror(io_utils_mock: Mock,
                                  get_station_list_mock: Mock) -> None:
 
-    target_station, buddy_station = _make_target_and_buddy()
+    target_station, _ = _make_target_and_buddy()
     station_list, buddy_list = _make_station_and_buddy_list()
 
     get_station_list_mock.return_value = station_list
@@ -403,7 +403,7 @@ def test_noc(neighbour_outlier_mock: Mock,
     temperatures = common.example_test_variable("temperature", np.arange(10))
     station = common.example_test_station(temperatures)
 
-    all_buddies = {"Buddy1" : qc_utils.Station("Buddy1", 45, 100 , 10),
+    read_in_buddies_mock.return_value  = {"Buddy1" : qc_utils.Station("Buddy1", 45, 100 , 10),
                    "Buddy2" : qc_utils.Station("Buddy1", 45, 100 , 10),
                    "Buddy3" : qc_utils.Station("Buddy1", 45, 100 , 10),
                    "Buddy4" : qc_utils.Station("Buddy1", 45, 100 , 10),}
