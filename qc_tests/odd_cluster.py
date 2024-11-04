@@ -52,7 +52,7 @@ def plot_cluster(times: np.ndarray, obs_var: utils.Meteorological_Variable,
 
     # simple plot
     plt.clf()
-    plt.plot(times[start: end], obs_var.data[start, end], 'bo')
+    plt.plot(times[start: end], obs_var.data[start: end], 'bo')
     plt.plot(times[oc_start: oc_end], obs_var.data[oc_start: oc_end], 'ro')
 
     plt.ylabel(obs_var.name.capitalize())
