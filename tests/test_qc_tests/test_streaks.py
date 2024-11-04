@@ -338,6 +338,42 @@ def test_repeating_day() -> None:
     np.testing.assert_array_equal(expected_flags, obs_var.flags)
 
 
+def test_repeating_day_multiple() -> None:
+    # adding test for two batches of repeating days to address #171
+    #  where reinitialisation of array missed the dtype=(int)
+
+    # set up the data (mask one day too)
+    indata = np.ma.arange(24*16) # 16 days
+    indata.mask = np.zeros(indata.shape[0])
+    indata.mask [-23:] = True
+    expected_flags = np.array(["" for _ in indata])
+
+    # add a streak of 3 repeated days (days 2-5)
+    indata[72:96] = indata[48:72]
+    indata[96:120] = indata[48:72]
+    expected_flags[48:120] = "y"
+
+    # add another streak of 3 repeated days (days 9-11)
+    indata[216:240] = indata[192:216]
+    indata[240:264] = indata[192:216]
+    expected_flags[192:264] = "y"
+
+    # make station and MetVar
+    obs_var = common.example_test_variable("temperature", indata)
+    station = common.example_test_station(obs_var)
+
+    # set up config_dict
+    config_dict = {}
+    CD_dayrepeat = {"DayRepeat" : 2}
+    config_dict[f"STREAK-{obs_var.name}"] = CD_dayrepeat    
+    
+    # make the call
+    streaks.repeating_day(obs_var, station, config_dict, determine_threshold=False)
+
+    # check flags as expected
+    np.testing.assert_array_equal(expected_flags, obs_var.flags)
+
+
 # def test_hourly_repeat():
 
 @pytest.mark.parametrize("full", [True, False])
