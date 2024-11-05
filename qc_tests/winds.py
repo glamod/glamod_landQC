@@ -37,7 +37,7 @@ def logical_checks(speed, direction, fix=False, plots=False, diagnostics=False):
         direction.data[fix_zero_direction] = 0
         direction.data.mask[fix_zero_direction] = False
     else:
-        dflags[fix_zero_direction] = "w"
+        dflags[fix_zero_direction] = "1"
     if diagnostics:
         print("  Zero direction : {}".format(len(fix_zero_direction[0])))
 
@@ -79,7 +79,8 @@ def logical_checks(speed, direction, fix=False, plots=False, diagnostics=False):
 
         print("Wind Logical".format(speed.name))
         print("   Cumulative number of {} flags set: {}".format(speed.name, len(np.where(sflags != "")[0])))
-        print("   Cumulative number of {} flags set: {}".format(direction.name, len(np.where(dflags != "")[0])))
+        print("   Cumulative number of {} flags set: {}".format(direction.name, len(np.where(dflags == "w")[0])))
+        print("   Cumulative number of {} convention flags set: {}".format(direction.name, len(np.where(dflags == "1")[0])))
 
     return # logical_checks
 
