@@ -176,22 +176,28 @@ do
         if [ "${stn:0:1}" == "U" ]; then
             # US stations take a long time
             echo "#SBATCH --time=60:00" >> ${lotus_script} # 60mins
+            echo "#SBATCH --mem=10000" >> ${lotus_script}
+        elif [ "${stn:0:1}" == "G" ]; then
+            # Some German stations take a long time
+            echo "#SBATCH --time=60:00" >> ${lotus_script} # 60mins
+            echo "#SBATCH --mem=10000" >> ${lotus_script}
         else
             echo "#SBATCH --time=30:00" >> ${lotus_script} # 20mins
+            echo "#SBATCH --mem=8000" >> ${lotus_script}
         fi
     elif  [ "${STAGE}" == "N" ]; then
         echo "#SBATCH --time=20:00" >> ${lotus_script} # 20mins
+        echo "#SBATCH --mem=6000" >> ${lotus_script}
     fi
-    echo "#SBATCH --mem=6000" >> ${lotus_script}
     echo "" >> ${lotus_script}
     # echo "source ${VENVDIR}/bin/activate" >> ${lotus_script}
     echo "conda activate glamod_QC" >> ${lotus_script}
     echo "" >> ${lotus_script}
 
     if [ "${STAGE}" == "I" ]; then
-        echo "python -m intra_checks --restart_id ${stn} --end_id ${stn} --full --diagnostics" >> ${lotus_script}
+        echo "python -m intra_checks --restart_id ${stn} --end_id ${stn} --clobber --full" >> ${lotus_script}
     elif  [ "${STAGE}" == "N" ]; then
-        echo "python -m inter_checks --restart_id ${stn} --end_id ${stn} --full --diagnostics" >> ${lotus_script}
+        echo "python -m inter_checks --restart_id ${stn} --end_id ${stn} --clobber --full" >> ${lotus_script}
     fi
 
     # now check if we should submit it.
