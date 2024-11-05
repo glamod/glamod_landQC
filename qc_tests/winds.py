@@ -76,14 +76,14 @@ def logical_checks(speed: utils.Meteorological_Variable, direction: utils.Meteor
     if diagnostics:
 
         print("Wind Logical")
-        print(f"   Cumulative number of {speed.name} flags set: {len(np.where(sflags != "")[0])}")
-        print(f"   Cumulative number of {direction.name} flags set: {len(np.where(dflags == "w")[0])}")
-        print(f"   Cumulative number of {direction.name} convention flags set: {len(np.where(dflags == "1")[0])}")
+        print(f"   Cumulative number of {speed.name} flags set: {len(np.where(sflags != '')[0])}")
+        print(f"   Cumulative number of {direction.name} flags set: {len(np.where(dflags == 'w')[0])}")
+        print(f"   Cumulative number of {direction.name} convention flags set: {len(np.where(dflags == '1')[0])}")
 
     logger.info("Wind Logical")
     logger.info(f"   Cumulative number of {speed.name} flags set: {len(np.where(sflags != '')[0])}")
     logger.info(f"   Cumulative number of {direction.name} flags set: {len(np.where(dflags == 'w')[0])}")
-    logger.info(f"   Cumulative number of {direction.name} convention flags set: {len(np.where(dflags == "1")[0])}")
+    logger.info(f"   Cumulative number of {direction.name} convention flags set: {len(np.where(dflags == '1')[0])}")
 
 
     return # logical_checks
