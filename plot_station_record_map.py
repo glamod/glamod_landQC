@@ -17,7 +17,7 @@ import cartopy.feature as cfeature
 import setup
 
 #*********************************************
-def get_full_station_list():
+def get_full_station_list() -> pd.DataFrame:
     """
     Read in station list file(s) and return dataframe
 
@@ -34,7 +34,7 @@ def get_full_station_list():
 
 # ------------------------------------------------------------------------
 # process the station list
-def main():
+def main() -> None:
     """
     Main script.  Makes inventory and other metadata files
 

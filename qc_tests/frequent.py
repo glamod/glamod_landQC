@@ -6,6 +6,8 @@ Check for observation values which occur much more frequently than expected.
 """
 #************************************************************************
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 import qc_utils as utils
 #************************************************************************
@@ -15,7 +17,8 @@ BIN_WIDTH = 1.0
 RATIO = 0.5
 
 #************************************************************************
-def identify_values(obs_var, station, config_dict, plots=False, diagnostics=False):
+def identify_values(obs_var: utils.Meteorological_Variable, station: utils.Station, config_dict: dict,
+                    plots: bool = False, diagnostics: bool = False) -> None:
     """
     Use distribution to identify frequent values.  Then also store in config file.
 
@@ -30,8 +33,8 @@ def identify_values(obs_var, station, config_dict, plots=False, diagnostics=Fals
     #           to vary over the p-o-r?  I.e. 1C in early, to 0.5C to 0.1C in different decades?
 
     # store bin width
-    CD_width = {"width" : "{}".format(BIN_WIDTH)}
-    config_dict["FREQUENT-{}".format(obs_var.name)] = CD_width
+    CD_width = {"width" : f"{BIN_WIDTH}"}
+    config_dict[f"FREQUENT-{obs_var.name}"] = CD_width
 
     for month in range(1, 13):
 
@@ -41,7 +44,7 @@ def identify_values(obs_var, station, config_dict, plots=False, diagnostics=Fals
 
         if len(month_data.compressed()) < utils.DATA_COUNT_THRESHOLD:
             # insufficient data, so write out empty config and move on
-            config_dict["FREQUENT-{}".format(obs_var.name)]["{}".format(month)] = []
+            config_dict[f"FREQUENT-{obs_var.name}"][f"{month}"] = []
             continue
 
         # adjust bin widths according to reporting accuracy
@@ -63,7 +66,7 @@ def identify_values(obs_var, station, config_dict, plots=False, diagnostics=Fals
 
             plt.ylabel("Number of Observations")
             plt.xlabel(obs_var.name.capitalize())
-            plt.title("{} - month {}".format(station.id, month))
+            plt.title(f"{station.id} - month {month}")
 
         # Scan through the histogram
         #   check if a bin is the maximum of a local area ("ROLLING")
@@ -91,13 +94,14 @@ def identify_values(obs_var, station, config_dict, plots=False, diagnostics=Fals
 
 
         # write out the thresholds...
-        config_dict["FREQUENT-{}".format(obs_var.name)]["{}".format(month)] = suspect
+        config_dict[f"FREQUENT-{obs_var.name}"][f"{month}"] = suspect
 
     return # identify_values
 
 
 #************************************************************************
-def frequent_values(obs_var, station, config_dict, plots=False, diagnostics=False):
+def frequent_values(obs_var: utils.Meteorological_Variable, station: utils.Station,
+                    config_dict: dict, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Use config file to read frequent values.  Check each month to see if appear.
 
@@ -117,13 +121,12 @@ def frequent_values(obs_var, station, config_dict, plots=False, diagnostics=Fals
 
         # read in bin-width and suspect bins for this month
         try:
-            width = float(config_dict["FREQUENT-{}".format(obs_var.name)]["width"])
-            suspect_bins = config_dict["FREQUENT-{}".format(obs_var.name)]["{}".format(month)]
+            width = float(config_dict[f"FREQUENT-{obs_var.name}"]["width"])
+            suspect_bins = config_dict[f"FREQUENT-{obs_var.name}"][f"{month}"]
         except KeyError:
-            print("Information missing in config dictionary")
             identify_values(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
-            width = float(config_dict["FREQUENT-{}".format(obs_var.name)]["width"])
-            suspect_bins = config_dict["FREQUENT-{}".format(obs_var.name)]["{}".format(month)]
+            width = float(config_dict[f"FREQUENT-{obs_var.name}"]["width"])
+            suspect_bins = config_dict[f"FREQUENT-{obs_var.name}"][f"{month}"]
  
         # skip on if nothing to find
         if len(suspect_bins) == 0:
@@ -179,7 +182,7 @@ def frequent_values(obs_var, station, config_dict, plots=False, diagnostics=Fals
 
             plt.ylabel("Number of Observations")
             plt.xlabel(obs_var.name.capitalize())
-            plt.title("{} - month {}".format(station.id, month))
+            plt.title(f"{station.id} - month {month}")
 
             bad_hist = np.copy(hist)
             for b, bar in enumerate(bad_hist):
@@ -192,15 +195,13 @@ def frequent_values(obs_var, station, config_dict, plots=False, diagnostics=Fals
     # append flags to object
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
-    if diagnostics:
-
-        print("Frequent Values {}".format(obs_var.name))
-        print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
+    logger.info(f"Frequent Values {obs_var.name}")
+    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # frequent_values
 
 #************************************************************************
-def fvc(station, var_list, config_dict, full=False, plots=False, diagnostics=False):
+def fvc(station: utils.Station, var_list: list, config_dict: dict, full: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Run through the variables and pass to the Frequent Value Check
 

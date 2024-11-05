@@ -5,6 +5,8 @@ High Flag Rate Check
 Check for high flagging rates in each obs variable.  Indicate to 
 withhold station if in more than one.
 
+This is for the whole timeseries of data, whereas clean_up.py assesses monthly
+
 For the pressure and wind synergistic variables, if one has these flags set,
 then the other will be set too.
 
@@ -12,13 +14,16 @@ Run at the end of both the internal and neighbour checks.
 """
 #************************************************************************
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 import qc_utils as utils
 
 #************************************************************************
-def set_synergistic_flags(station, var):
+def set_synergistic_flags(station: utils.Station, var: str) -> None:
     """
-    Set the flags on a synergistic variable.
+    Set the flags on a synergistic variable. High flagging rate set
+    on all obs in the variable, so no need to do any extra comparison
 
     :param Station station: Station Object for the station
     :param str var: name of variable
@@ -26,7 +31,7 @@ def set_synergistic_flags(station, var):
     obs_var = getattr(station, var)
 
     new_flags = np.array(["" for i in range(obs_var.data.shape[0])])
-    old_flags = obs_var.flags
+    # old_flags = obs_var.flags
     obs_locs, = np.where(obs_var.data.mask == False)
 
     if obs_locs.shape[0] > 10 * utils.DATA_COUNT_THRESHOLD:
@@ -40,13 +45,16 @@ def set_synergistic_flags(station, var):
     return # set_synergistic_flags
 
 #************************************************************************
-def high_flag_rate(obs_var, plots=False, diagnostics=False):
+def high_flag_rate(obs_var: utils.Meteorological_Variable,
+                   plots: bool = False, diagnostics: bool = False) -> tuple[np.ndarray, bool]:
     """
     Check for high flag rates, and remove any remaining observations.
 
     :param MetVar obs_var: meteorological variable object
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
+
+    :returns: (array, bool) - new flags and if any have been set
     """
     any_flags_set = False
     new_flags = np.array(["" for i in range(obs_var.data.shape[0])])
@@ -67,24 +75,19 @@ def high_flag_rate(obs_var, plots=False, diagnostics=False):
 
         if flagged.shape[0] / obs_locs.shape[0] > utils.HIGH_FLAGGING:
             if diagnostics:
-                print("{} flagging rate of {:5.1f}%".format(
-                    obs_var.name, 100*(flagged.shape[0] / obs_locs.shape[0]))
-                )
+                print(f" {obs_var.name} flagging rate of {100*(flagged.shape[0] / obs_locs.shape[0]):5.1f}%")
             # Set flags only obs currently unflagged.
             unflagged, = np.where(old_flags[obs_locs] == "")
             new_flags[obs_locs[unflagged]] = "H"
             any_flags_set = True
 
-    if diagnostics:
-        print("High Flag Rate {}".format(obs_var.name))
-        print("   Cumulative number of flags set: {}".format(
-            len(np.where(new_flags == "H")[0]))
-        )
+    logger.info(f"High Flag Rate {obs_var.name}")
+    logger.info(f"   Cumulative number of flags set: {len(np.where(new_flags == 'H')[0])}")
 
     return new_flags, any_flags_set # high_flag_rate
 
 #************************************************************************
-def hfr(station, var_list, full=False, plots=False, diagnostics=False):
+def hfr(station: utils.Station, var_list: list, full: bool = False, plots: bool = False, diagnostics: bool = False) -> int:
     """
     Run through the variables and pass to the High Flag Rate Check
 

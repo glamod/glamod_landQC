@@ -24,10 +24,9 @@ import os.path
 DEFAULT_SPHERICAL_EARTH_RADIUS=6367470
 
 import numpy as np
-import scipy.linalg
+import pandas as pd
 
-
-from geometry import polar2d_to_cartesian, cross_distance, vector_angle
+from geometry import polar2d_to_cartesian, cross_distance
 
 import qc_utils as utils
 from setup import SUBDAILY_CONFIG_DIR
@@ -36,7 +35,7 @@ DEFAULT_SEPARATION = 9999
 CHUNKSIZE = 1000 # size of arrays to split ID list into for distances
 
 #************************************************************************
-def get_cartesian(latitudes, longitudes):
+def get_cartesian(latitudes: np.ndarray, longitudes: np.ndarray) -> np.ndarray:
     """
     Compute the matrix of coranges between all location in a grid
     Args:
@@ -57,7 +56,7 @@ def get_cartesian(latitudes, longitudes):
     return cartesian_coords # get_cartesian
 
 #************************************************************************
-def compute_corange_matrix(cartesian_coords_a, cartesian_coords_b=None):
+def compute_corange_matrix(cartesian_coords_a: np.ndarray, cartesian_coords_b: np.ndarray = None) -> np.ndarray:
     """Compute the matrix of coranges between all location in a grid
     Args:
         cartesian_coords_a:
@@ -77,7 +76,8 @@ def compute_corange_matrix(cartesian_coords_a, cartesian_coords_b=None):
     return coranges # compute_corange_matrix
 
 #************************************************************************
-def get_neighbours(station_list_a, station_list_b=None, diagnostics=False, plots=False, full=False):
+def get_neighbours(station_list_a: pd.DataFrame, station_list_b: pd.DataFrame = None,
+                   diagnostics: bool = False, plots: bool = False, full: bool = False) -> np.ndarray:
     """
     Find the neighbour indices and distances for the list supplied 
 
@@ -143,7 +143,7 @@ def get_neighbours(station_list_a, station_list_b=None, diagnostics=False, plots
     return neighbours # get_neighbours
 
 #************************************************************************
-def main(restart_id="", end_id="", diagnostics=False, plots=False, full=False):
+def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False, plots: bool = False, full: bool = False) -> None:
     """
     Find all possible neighbours.  Works in chunks to save on resources.
 
@@ -171,7 +171,7 @@ def main(restart_id="", end_id="", diagnostics=False, plots=False, full=False):
     # process sub-arrays down
     for sa1, sub_arr1 in enumerate(sub_arrays):
         if diagnostics:
-            print("{}/{}".format(sa1+1, len(sub_arrays)))
+            print(f"{sa1+1}/{len(sub_arrays)}")
         # extract neighbour array to work on
         these_station_neighbours = neighbours[sub_arr1.index.start : sub_arr1.index.stop]
 
@@ -226,19 +226,19 @@ def main(restart_id="", end_id="", diagnostics=False, plots=False, full=False):
                 if len(match) == 1:
                     station[[0, match[0]]]=station[[match[0], 0]]
                 else:
-                    input("{} issue".format(station))
+                    input(f"{station} has issue")
 
             outstring = ""
             # each neighbour
             for neighb in station:
                 if neighb[0] != -1:
-                    outstring = "{:s} {:<11s} {:8d}".format(outstring, station_list.id[neighb[0]], neighb[1])
+                    outstring = f"{outstring:s} {station_list.id[neighb[0]]:<11s} {neighb[1]:8d}"
                 else:
-                    outstring = "{:s} {:>11s} {:8d}".format(outstring, "-", neighb[1])
+                    outstring = f"{outstring:s} {'-':>11s} {neighb[1]:8d}"
                     
 #            input("stop")
 
-            outfile.write("{}\n".format(outstring))
+            outfile.write(f"{outstring}\n")
 
     return # main
 

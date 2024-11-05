@@ -9,6 +9,8 @@ and extra knowledge where available
 """
 #************************************************************************
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 import qc_utils as utils
 
@@ -46,7 +48,8 @@ mins = {"temperature" : T_N, "dew_point_temperature" : D_N, "wind_speed" : W_N, 
   
 
 #************************************************************************
-def record_check(obs_var, continent, plots=False, diagnostics=False):
+def record_check(obs_var: utils.Meteorological_Variable, continent: str,
+                 plots: bool = False, diagnostics: bool = False) -> np.ndarray:
     """
     Check for exceedences of world record values
 
@@ -54,6 +57,8 @@ def record_check(obs_var, continent, plots=False, diagnostics=False):
     :param str continent: continent of the station location
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
+
+    :returns: np.array of flags
     """
     assert isinstance(obs_var, utils.Meteorological_Variable)
     assert isinstance(continent, str)
@@ -74,14 +79,14 @@ def record_check(obs_var, continent, plots=False, diagnostics=False):
     flags[too_high] = "W"
     flags[too_low] = "W"
 
-    if diagnostics:
-        print("World Records {} ({})".format(obs_var.name, continent))
-        print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
+    logger.info(f"World Records {obs_var.name} ({continent})")
+    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return flags # record_check
 
 #************************************************************************
-def wrc(station, var_list, full=False, plots=False, diagnostics=False):
+def wrc(station: utils.Station, var_list: list, full: bool = False,
+        plots: bool = False,diagnostics: bool = False) -> None:
     """
     Run through the variables and pass to the World Record Check.
 

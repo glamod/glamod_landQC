@@ -1,6 +1,5 @@
 import os
 import datetime as dt
-import argparse
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -25,7 +24,7 @@ TODAY = dt.datetime.strftime(dt.datetime.now(), "%Y%m%d")
 
  
 #*********************************************
-def read_stations():
+def read_stations() -> np.ndarray:
     """
     Process the GHCNH history file
 
@@ -54,18 +53,18 @@ def read_stations():
 
 
     except OSError:
-        print("{:s} does not exist.  Check download".format(setup.STATION_LIST))
+        print(f"{setup.STATION_LIST:s} does not exist.  Check download")
         raise OSError
     
-    print("{} stations in full GHCNH".format(len(station_IDs)))
+    print(f"{len(station_IDs)} stations in full GHCNH")
 
-    print("{} stations with defined metadata".format(len(all_stations)))
+    print(f"{len(all_stations)} stations with defined metadata")
   
     return np.array(all_stations) # read_stations
 
 
 #*********************************************
-def extract_inventory(station, inventory):
+def extract_inventory(station: utils.Station, inventory: np.ndarray) -> np.ndarray:
     """
     Extract the information from the ISD inventory file
 
@@ -81,7 +80,7 @@ def extract_inventory(station, inventory):
     locs, = np.where(inventory[:, 0] == station.id)
 
     if len(locs) == 0:
-        return []
+        return np.array([])
     else:
         this_station = inventory[locs, :]
 
@@ -96,7 +95,7 @@ def extract_inventory(station, inventory):
 
 
 #*********************************************
-def process_inventory(candidate_stations):
+def process_inventory(candidate_stations: list) -> list:
 
     """
     Process the ISD inventory file
@@ -119,11 +118,11 @@ def process_inventory(candidate_stations):
         pass
 
     present_stations = []
-    long_stations = []
-    final_stations = []
+    # long_stations = []
+    # final_stations = []
     # spin through each station
     for s, station in enumerate(candidate_stations):
-        # print("{}/{}".format(s, len(candidate_stations)))
+        # print("{s}/{len(candidate_stations)}")
 
         # extract the observations in each month for this station
         monthly_obs = extract_inventory(station, inventory)
@@ -138,7 +137,7 @@ def process_inventory(candidate_stations):
     return present_stations # process_inventory
 
 #*********************************************
-def stations_per_year(candidate_stations):
+def stations_per_year(candidate_stations: list) -> list:
     """
     Return list of which years each station is present in
 
@@ -164,14 +163,13 @@ def stations_per_year(candidate_stations):
     return stations_active_in_years # stations_per_year
 
 #*********************************************
-def plot_stations(station_list, outfile, title=""):
+def plot_stations(station_list: list, outfile: str, title: str = "") -> None:
     """
     Plot the stations on a global map
 
     :param list station_list: list of station objects
     :param str outfile: name of output file
     :param str title: plot title
-    :returns:
     """
 
 
@@ -190,7 +188,7 @@ def plot_stations(station_list, outfile, title=""):
     ax.set_extent([-180.1, 180.1, -90, 90], crs=ccrs.PlateCarree())
 
     lats, lons = [], []
-    mlats, mlons = [], []
+    # mlats, mlons = [], []
 
     for stn in station_list:
 
@@ -198,15 +196,15 @@ def plot_stations(station_list, outfile, title=""):
         lons += [stn.lon]
 
     ax.scatter(lons, lats, transform=ccrs.PlateCarree(), s=1, c='midnightblue',
-               edgecolor='midnightblue', label='GHCNH {} stations'.format(TODAY))
+               edgecolor='midnightblue', label=f'GHCNH {TODAY} stations')
 
     ax.set_global()
  
     plt.legend(loc='lower center', ncol=2, bbox_to_anchor=(0.5, -0.17), frameon=False, prop={'size':13})
     if title != "":
-        plt.suptitle("{} - {} stations".format(title, len(lats)))
+        plt.suptitle(f"{title} - {len(lats)} stations")
     else:
-        plt.suptitle("{} stations".format(len(lats)))
+        plt.suptitle(f"{len(lats)} stations")
 
     watermarkstring = dt.datetime.strftime(dt.datetime.now(), "%d-%b-%Y %H:%M")
     plt.figtext(0.01, 0.01, watermarkstring, size=5)
@@ -218,7 +216,7 @@ def plot_stations(station_list, outfile, title=""):
 
 
 #****************************************************
-def plot_gridded_map(station_list, outfile, title=""):
+def plot_gridded_map(station_list: list, outfile: str, title: str = "") -> None:
 
     #*************************
     # plot a gridded map
@@ -232,7 +230,7 @@ def plot_gridded_map(station_list, outfile, title=""):
     rawlats = np.arange(-90., 90.+delta_lat, delta_lat)
     gridlon, gridlat = np.meshgrid(rawlons, rawlats)
     # set up empty array for gridded data
-    griddata = np.zeros(list(gridlon.shape))
+    # griddata = np.zeros(list(gridlon.shape))
 
     UsedStation = np.zeros(len(station_list))
 
@@ -304,15 +302,12 @@ def plot_gridded_map(station_list, outfile, title=""):
 
 
 #****************************************************
-def plot_station_number_over_time(station_list, outfile):
+def plot_station_number_over_time(station_list: list, outfile: str) -> None:
     """
     Plot the number of stations in each year
 
     :param list station_list: list of station objects
-
     :param str outfile: name of output file
-
-    :returns:
     """
     # flatten list
     stations_active_in_years = stations_per_year(station_list)
@@ -363,12 +358,12 @@ def plot_station_number_over_time(station_list, outfile):
 
 
 #*********************************************
-def main():
+def main() -> None:
 
     # parse text file into candidate list, with lat, lon, elev and time span limits applied
     all_stations = read_stations()      
     plot_stations(all_stations,
-                  os.path.join(setup.SUBDAILY_IMAGE_DIR, 'ghcnh_station_distribution_{}.png'.format(TODAY)),
+                  os.path.join(setup.SUBDAILY_IMAGE_DIR, f'ghcnh_station_distribution_{TODAY}.png'),
                   title="GHCNh Stations")
 
     # use inventory to further refine station list
@@ -376,10 +371,10 @@ def main():
 
     # plot distribution of stations
     plot_station_number_over_time(candidate_stations,
-                                  os.path.join(setup.SUBDAILY_IMAGE_DIR, 'ghcnh_station_number_{}'.format(TODAY))) 
+                                  os.path.join(setup.SUBDAILY_IMAGE_DIR, f'ghcnh_station_number_{TODAY}'))
 
     plot_gridded_map(candidate_stations,
-                     os.path.join(setup.SUBDAILY_IMAGE_DIR, 'ghcnh_gridded_station_distribution_{}.png'.format(TODAY)),
+                     os.path.join(setup.SUBDAILY_IMAGE_DIR, f'ghcnh_gridded_station_distribution_{TODAY}.png'),
                      title="GHCNh Stations")
 
     # plot station numbers in all years
@@ -392,7 +387,7 @@ def main():
                 plot_list += [stn]
 
         plot_stations(plot_list,
-                      os.path.join(setup.SUBDAILY_IMAGE_DIR, "ghcnh_station_number_in_{}_{}.png".format(year, TODAY)),
+                      os.path.join(setup.SUBDAILY_IMAGE_DIR, f"ghcnh_station_number_in_{year}_{TODAY}.png"),
                       title=str(year)), 
         print(year, len(plot_list))
 

@@ -6,6 +6,8 @@ Find isolated data (single points and small runs)
 """
 #************************************************************************
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 import qc_utils as utils
 #************************************************************************
@@ -18,11 +20,12 @@ HadISD uses 2 days (48h)
 Did try 7 days for initial run (October 2019) but still flagging lots of obs
 Next version using 4 weeks (~1 month) to get the really isolated ones.
 """
-MIN_SEPARATION = 28*24 # separated by Z hours on either side from other data
+MIN_SEPARATION = 28*24 # separated by Z days on either side from other data
 
 
 #*********************************************
-def plot_cluster(times, obs_var, oc_start, oc_end):
+def plot_cluster(times: np.ndarray, obs_var: utils.Meteorological_Variable,
+                 oc_start: int, oc_end: int) -> None:
     '''
     Plot each odd cluster highlighted against surrounding data
 
@@ -30,8 +33,6 @@ def plot_cluster(times, obs_var, oc_start, oc_end):
     :param MetVar obs_var: Meteorological variable object
     :param int oc_start: start of cluster in data array index
     :param int oc_end: end of cluster in data array index
-
-    :returns:
     '''
     import matplotlib.pyplot as plt
 
@@ -51,7 +52,7 @@ def plot_cluster(times, obs_var, oc_start, oc_end):
 
     # simple plot
     plt.clf()
-    plt.plot(times[start: end], obs_var.data[start, end], 'bo')
+    plt.plot(times[start: end], obs_var.data[start: end], 'bo')
     plt.plot(times[oc_start: oc_end], obs_var.data[oc_start: oc_end], 'ro')
 
     plt.ylabel(obs_var.name.capitalize())
@@ -60,7 +61,8 @@ def plot_cluster(times, obs_var, oc_start, oc_end):
     return # plot_cluster
 
 #************************************************************************
-def flag_clusters(obs_var, station, plots=False, diagnostics=False):
+def flag_clusters(obs_var: utils.Meteorological_Variable, station: utils.Station,
+                  plots: bool = False, diagnostics: bool = False) -> None:
     """
     Go through the clusters of data and flag if meet requirements
 
@@ -72,16 +74,25 @@ def flag_clusters(obs_var, station, plots=False, diagnostics=False):
 
     flags = np.array(["" for i in range(obs_var.data.shape[0])])
 
-    time_differences = np.diff(station.times)/np.timedelta64(1, "m")
+    these_times = np.ma.copy(station.times)
+    these_times.mask = obs_var.data.mask
+    time_differences = np.ma.diff(these_times)/np.timedelta64(1, "m")
 
-    potential_cluster_ends, = np.where(time_differences >= MIN_SEPARATION * 60)
+    potential_cluster_ends, = np.nonzero(time_differences >= MIN_SEPARATION * 60)
 
-    # TODO - need explicit checks for start and end of timeseries
+    if len(potential_cluster_ends) == 0:
+        # no odd clusters identified
+        logger.info(f"Odd Cluster {obs_var.name}")
+        logger.info("   No flags set")
+        return
+
+
+    # spin through the *end*s of potential clusters
     for ce, cluster_end in enumerate(potential_cluster_ends):
-
         if ce == 0:
             # check if cluster at start of series (long gap after a first few points)
-            cluster_length = station.times.iloc[cluster_end]-station.times.iloc[0] 
+            cluster_length = station.times.iloc[cluster_end]-station.times.iloc[0]
+            
             if cluster_length.asm8/np.timedelta64(1, "h") < MAX_LENGTH_TIME:
                 # could be a cluster
                 if len(flags[:cluster_end+1]) < MAX_LENGTH_OBS:
@@ -90,23 +101,11 @@ def flag_clusters(obs_var, station, plots=False, diagnostics=False):
                     if plots:
                         plot_cluster(station, obs_var, 0, cluster_end+1)
 
-        elif ce == len(potential_cluster_ends) - 1:
-
-            # check if cluster at end of series (long gap before last few points)
-            cluster_length = station.times.iloc[-1] - station.times.iloc[cluster_end+1] # add one to find cluster start!
-            if cluster_length.asm8/np.timedelta64(1, "h") < MAX_LENGTH_TIME:
-                # could be a cluster
-                if len(flags[cluster_end+1:]) < MAX_LENGTH_OBS:
-                    flags[cluster_end+1:] = "o"
-
-                    if plots:
-                        plot_cluster(station, obs_var, cluster_end+1, -1)
-
-
-        if ce > 0:
+        elif ce > 0:
             # check for cluster in series.
             #  use previous gap > MIN_SEPARATION to define cluster and check length
             cluster_length = station.times.iloc[cluster_end] - station.times.iloc[potential_cluster_ends[ce-1]+1] # add one to find cluster start!
+
             if cluster_length.asm8/np.timedelta64(1, "h") < MAX_LENGTH_TIME:
                 # could be a cluster
                 if len(flags[potential_cluster_ends[ce-1]+1: cluster_end+1]) < MAX_LENGTH_OBS:
@@ -115,18 +114,30 @@ def flag_clusters(obs_var, station, plots=False, diagnostics=False):
                     if plots:
                         plot_cluster(station.times, obs_var, potential_cluster_ends[ce-1]+1, cluster_end+1)
 
+        if ce == len(potential_cluster_ends) - 1:
+            # Finally, check last stretch
+            # As end of the sequence there's no end to calculate the time-diff for
+            # check if cluster at end of series (long gap before last few points)
+            cluster_length = station.times.iloc[-1] - station.times.iloc[cluster_end+1] # add one to find cluster start!
+ 
+            if cluster_length.asm8/np.timedelta64(1, "h") < MAX_LENGTH_TIME:
+                # could be a cluster
+                if len(flags[cluster_end+1:]) < MAX_LENGTH_OBS:
+                    flags[cluster_end+1:] = "o"
+
+                    if plots:
+                        plot_cluster(station, obs_var, cluster_end+1, -1)
+
     # append flags to object
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
-    if diagnostics:
-
-        print("Odd Cluster {}".format(obs_var.name))
-        print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
+    logger.info(f"Odd Cluster {obs_var.name}")
+    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # flag_clusters
 
 #************************************************************************
-def occ(station, var_list, config_file, full=False, plots=False, diagnostics=False):
+def occ(station: utils.Station, var_list: list, config_file: str, full: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Run through the variables and pass to the Odd Cluster Check
 

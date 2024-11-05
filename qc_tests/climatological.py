@@ -9,6 +9,8 @@ A low pass filter reduces the effect of long-term changes.
 #************************************************************************
 import numpy as np
 from scipy.stats import skew
+import logging
+logger = logging.getLogger(__name__)
 
 import qc_utils as utils
 #************************************************************************
@@ -18,7 +20,8 @@ GAP_SIZE = 2
 BIN_WIDTH = 0.5
 
 #************************************************************************
-def get_weights(monthly_anoms, monthly_subset, filter_subset):
+def get_weights(monthly_anoms: np.ndarray, monthly_subset: np.ndarray,
+                filter_subset: np.ndarray) -> float:
     '''
     Get the weights for the low pass filter.
 
@@ -40,7 +43,8 @@ def get_weights(monthly_anoms, monthly_subset, filter_subset):
     return weights # get_weights
 
 #************************************************************************
-def low_pass_filter(normed_anomalies, station, monthly_anoms, month):
+def low_pass_filter(normed_anomalies: np.ndarray, station: utils.Station,
+                    monthly_anoms: np.ndarray, month: int) -> np.ndarray:
     '''
     Run the low pass filter - get suitable ranges, get weights, and apply
 
@@ -81,7 +85,8 @@ def low_pass_filter(normed_anomalies, station, monthly_anoms, month):
     return normed_anomalies # low_pass_filter
 
 #************************************************************************
-def prepare_data(obs_var, station, month, diagnostics=False, winsorize=True):
+def prepare_data(obs_var: utils.Meteorological_Variable, station: utils.Station,
+                 month: int, diagnostics: bool = False, winsorize: bool = True) -> np.ma.array:
     """
     Prepare the data for the climatological check.  Makes anomalies and applies low-pass filter
 
@@ -157,7 +162,9 @@ def prepare_data(obs_var, station, month, diagnostics=False, winsorize=True):
         return anomalies # prepare_data
 
 #************************************************************************
-def find_month_thresholds(obs_var, station, config_dict, plots=False, diagnostics=False, winsorize=True):
+def find_month_thresholds(obs_var: utils.Meteorological_Variable, station: utils.Station,
+                          config_dict: dict, plots: bool = False, diagnostics: bool = False,
+                          winsorize: bool = True) -> None:
     """
     Use distribution to identify threshold values.  Then also store in config file.
 
@@ -203,8 +210,8 @@ def find_month_thresholds(obs_var, station, config_dict, plots=False, diagnostic
                 plt.yscale("log")
 
                 plt.ylabel("Number of Observations")
-                plt.xlabel("Scaled {}".format(obs_var.name.capitalize()))
-                plt.title("{} - month {}".format(station.id, month))
+                plt.xlabel(f"Scaled {obs_var.name.capitalize()}")
+                plt.title(f"{station.id} - month {month}")
 
                 plt.plot(bincentres, fitted_curve)
                 plt.ylim([0.1, max(hist)*2])
@@ -226,18 +233,20 @@ def find_month_thresholds(obs_var, station, config_dict, plots=False, diagnostic
                 plt.show()
 
             # Store values
+            # add uthresh first, then lthresh
             try:
-                config_dict["CLIMATOLOGICAL-{}".format(obs_var.name)]["{}-uthresh".format(month)] = upper_threshold
+                config_dict[f"CLIMATOLOGICAL-{obs_var.name}"][f"{month}-uthresh"] = upper_threshold
             except KeyError:
-                CD_uthresh = {"{}-uthresh".format(month) : upper_threshold}
-                config_dict["CLIMATOLOGICAL-{}".format(obs_var.name)] = CD_uthresh
+                CD_uthresh = {f"{month}-uthresh" : upper_threshold}
+                config_dict[f"CLIMATOLOGICAL-{obs_var.name}"] = CD_uthresh
     
-            config_dict["CLIMATOLOGICAL-{}".format(obs_var.name)]["{}-lthresh".format(month)] = lower_threshold
+            config_dict[f"CLIMATOLOGICAL-{obs_var.name}"][f"{month}-lthresh"] = lower_threshold
 
     return # find_month_thresholds
 
 #************************************************************************
-def monthly_clim(obs_var, station, config_dict, logfile="", plots=False, diagnostics=False, winsorize=True):
+def monthly_clim(obs_var: utils.Meteorological_Variable, station: utils.Station, config_dict: dict,
+                 logfile: str = "", plots: bool = False, diagnostics: bool = False, winsorize: bool = True):
     """
     Run through the variables and pass to the Distributional Gap Checks
 
@@ -260,17 +269,17 @@ def monthly_clim(obs_var, station, config_dict, logfile="", plots=False, diagnos
         if len(normalised_anomalies.compressed()) >= utils.DATA_COUNT_THRESHOLD:
 
             bins = utils.create_bins(normalised_anomalies, BIN_WIDTH, obs_var.name)
-            bincentres = bins[1:] - (BIN_WIDTH/2)
+            # bincentres = bins[1:] - (BIN_WIDTH/2)
             hist, bin_edges = np.histogram(normalised_anomalies.compressed(), bins)
 
             try:
-                upper_threshold = float(config_dict["CLIMATOLOGICAL-{}".format(obs_var.name)]["{}-uthresh".format(month)])
-                lower_threshold = float(config_dict["CLIMATOLOGICAL-{}".format(obs_var.name)]["{}-lthresh".format(month)])
+                upper_threshold = float(config_dict[f"CLIMATOLOGICAL-{obs_var.name}"][f"{month}-uthresh"])
+                lower_threshold = float(config_dict[f"CLIMATOLOGICAL-{obs_var.name}"][f"{month}-lthresh"])
             except KeyError:
                 print("Information missing in config file")
                 find_month_thresholds(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
-                upper_threshold = float(config_dict["CLIMATOLOGICAL-{}".format(obs_var.name)]["{}-uthresh".format(month)])
-                lower_threshold = float(config_dict["CLIMATOLOGICAL-{}".format(obs_var.name)]["{}-lthresh".format(month)])
+                upper_threshold = float(config_dict[f"CLIMATOLOGICAL-{obs_var.name}"][f"{month}-uthresh"])
+                lower_threshold = float(config_dict[f"CLIMATOLOGICAL-{obs_var.name}"][f"{month}-lthresh"])
 
             # now to find the gaps
             uppercount = len(np.where(normalised_anomalies > upper_threshold)[0])
@@ -301,8 +310,8 @@ def monthly_clim(obs_var, station, config_dict, logfile="", plots=False, diagnos
                 plt.yscale("log")
 
                 plt.ylabel("Number of Observations")
-                plt.xlabel("Scaled {}".format(obs_var.name.capitalize()))
-                plt.title("{} - month {}".format(station.id, month))
+                plt.xlabel(f"Scaled {obs_var.name.capitalize()}")
+                plt.title(f"{station.id} - month {month}")
 
                 plt.ylim([0.1, max(hist)*2])
                 plt.axvline(upper_threshold, c="r")
@@ -317,16 +326,15 @@ def monthly_clim(obs_var, station, config_dict, logfile="", plots=False, diagnos
     # append flags to object
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
-    if diagnostics:
-
-        print("Climatological {}".format(obs_var.name))
-        print("   Cumulative number of flags set: {}".format(len(np.where(flags != "")[0])))
+    logger.info(f"Climatological {obs_var.name}")
+    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # monthly_clim
 
 
 #************************************************************************
-def coc(station, var_list, config_dict, full=False, plots=False, diagnostics=False):
+def coc(station: utils.Station, var_list: list, config_dict: dict, full: bool = False,
+        plots: bool = False, diagnostics: bool = False) -> None:
     """
     Run through the variables and pass to the Climatological Outlier Checks
 

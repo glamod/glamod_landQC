@@ -24,7 +24,7 @@ TODAY = dt.datetime.strftime(dt.datetime.now(), "%Y%m%d")
 
 
 #*********************************************
-def read_stations():
+def read_stations() -> None:
     """
     Process the GHCNH history file
     
@@ -44,7 +44,7 @@ def read_stations():
 
         station_IDs = station_list.id
         for st, station_id in enumerate(station_IDs):
-            # print("{} {:11s} ({}/{})".format(dt.datetime.now(), station_id, st+1, station_IDs.shape[0]))
+            # print(f"{dt.datetime.now()} {station_id:11s} ({st+1}/{station_IDs.shape[0]})")
 
             station = utils.Station(station_id, station_list.latitude[st], station_list.longitude[st],
                                     station_list.elevation[st])
@@ -61,18 +61,19 @@ def read_stations():
 
 
     except OSError:
-        print("{:s} does not exist.".format(setup.STATION_LIST))
+        print(f"{setup.STATION_LIST:s} does not exist.")
         raise OSError
     
-    print("{} stations in full GHCNH".format(len(station_IDs)))
+    print(f"{len(station_IDs)} stations in full GHCNH")
 
-    print("{} stations with defined metadata".format(len(all_stations)))
+    print(f"{len(all_stations)} stations with defined metadata")
     
     return np.array(all_stations) # read_stations
 
 
 #*********************************************
-def extract_inventory(station, inventory, data_start, data_end, do_mergers=True):
+def extract_inventory(station: utils.Station, inventory: np.ndarray, data_start: int,
+                      data_end: int, do_mergers:bool = True) -> np.ndarray:
     """
     Extract the information from the ISD inventory file
 
@@ -125,7 +126,7 @@ def extract_inventory(station, inventory, data_start, data_end, do_mergers=True)
 
 
 #*********************************************
-def process_inventory(candidate_stations, data_start, data_end):
+def process_inventory(candidate_stations: list, data_start: int, data_end: int) -> None:
 
     """
     Process the ISD inventory file
@@ -149,7 +150,7 @@ def process_inventory(candidate_stations, data_start, data_end):
     last_station = "-"
     # spin through each station
     for s, station in enumerate(candidate_stations):
-        # print("{}/{}".format(s, len(candidate_stations)))
+        # print(f"{s}/{len(candidate_stations)}")
 
         if station.id[0] != last_station:
             name_labels += [[station.id[0], f"{s}"]]
@@ -190,7 +191,7 @@ def process_inventory(candidate_stations, data_start, data_end):
     ax2.set_yticks(name_labels[:, 1].astype(int), name_labels[:, 0])
     ax2.set_ylabel("Station start letter")
 
-    plt.savefig(os.path.join(setup.SUBDAILY_IMAGE_DIR, "station_plot_{}.png".format(setup.DATESTAMP[:-1])), dpi=300)
+    plt.savefig(os.path.join(setup.SUBDAILY_IMAGE_DIR, f"station_plot_{setup.DATESTAMP[:-1]}.png"), dpi=300)
                         
     return # process_inventory
 

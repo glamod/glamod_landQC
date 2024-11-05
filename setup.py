@@ -10,14 +10,13 @@ import configparser
 import sys
 import json
 import numpy as np
-import stat
 
 #*********************************************
 # Process Configuration file
 CONFIG_FILE = "./configuration.txt"
 
 if not os.path.exists(os.path.join(os.path.dirname(__file__), CONFIG_FILE)):
-    print("Configuration file missing - {}".format(os.path.join(os.path.dirname(__file__), CONFIG_FILE)))
+    print(f"Configuration file missing - {os.path.join(os.path.dirname(__file__), CONFIG_FILE)}")
     sys.exit()
 else:
     CONFIG_FILE = os.path.join(os.path.dirname(__file__), CONFIG_FILE)
@@ -72,6 +71,10 @@ SUBDAILY_FLAG_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "flags"), DATESTA
 if not os.path.exists(SUBDAILY_FLAG_DIR):
     os.makedirs(SUBDAILY_FLAG_DIR)
 
+SUBDAILY_LOG_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "logs"), DATESTAMP)
+if not os.path.exists(SUBDAILY_LOG_DIR):
+    os.makedirs(SUBDAILY_LOG_DIR)
+
 SUBDAILY_ERROR_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "errors"), DATESTAMP)
 if not os.path.exists(SUBDAILY_ERROR_DIR):
     os.makedirs(SUBDAILY_ERROR_DIR)
@@ -117,14 +120,14 @@ for var_list in (obs_var_list, carry_thru_var_list):
         else:
             DTYPE_DICT[var] = np.float64
 
-        DTYPE_DICT["{}_Source_ID".format(var)] = str
-        DTYPE_DICT["{}_QC_flag".format(var)] = str
-        DTYPE_DICT["{}_Measurement_Code".format(var)] = str
-        DTYPE_DICT["{}_Quality_Code".format(var)] = str
-        DTYPE_DICT["{}_Report_Type".format(var)] = str
-        DTYPE_DICT["{}_Source_Code".format(var)] = str
-        DTYPE_DICT["{}_Source_Station_ID".format(var)] = str
-#        DTYPE_DICT["Source_ID.{}".format(v+1)] = str
+        DTYPE_DICT[f"{var}_Source_ID"] = str
+        DTYPE_DICT[f"{var}_QC_flag"] = str
+        DTYPE_DICT[f"{var}_Measurement_Code"] = str
+        DTYPE_DICT[f"{var}_Quality_Code"] = str
+        DTYPE_DICT[f"{var}_Report_Type"] = str
+        DTYPE_DICT[f"{var}_Source_Code"] = str
+        DTYPE_DICT[f"{var}_Source_Station_ID"] = str
+#        DTYPE_DICT[f"Source_ID.{v+1}")] = str
 
 DTYPE_DICT["Source_ID"] = str
 

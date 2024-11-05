@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 '''
 io_utils - contains scripts for read/write of main files
@@ -7,7 +8,7 @@ import shutil
 import glob
 
 #*********************************************
-def copy_tree(source, destination, diagnostics=False):
+def copy_tree(source: str, destination: str, diagnostics: bool = False) -> None:
     """
     Perform local copy from networked storage to working area 
         (e.g. GWS to /work/scratch )
@@ -28,7 +29,7 @@ def copy_tree(source, destination, diagnostics=False):
             pass
         # don't need to make as copytree will do
         if diagnostics:
-            print("{} removed".format(destination))
+            print(f"{destination} removed")
         
 
     # copy entire tree
@@ -39,13 +40,14 @@ def copy_tree(source, destination, diagnostics=False):
             os.utime(os.path.join(root, fname), None)
 
     if diagnostics:
-        print("copied {} to {}".format(source, destination))
+        print(f"copied {source} to {destination}")
     
     return # copy_tree
 
 
 #*********************************************
-def copy_files(source, destination, extension="", clobber=True, wipe=True, diagnostics=False):
+def copy_files(source: str, destination: str, extension:str = "",
+               clobber:bool = True, wipe: bool = True, diagnostics: bool = False) -> None:
     """
     Perform local copy from networked storage to working area 
         (e.g. GWS/file.txt to /work/scratch/file.txt )
@@ -65,7 +67,7 @@ def copy_files(source, destination, extension="", clobber=True, wipe=True, diagn
             os.mkdir(destination)
         
     # for each file at a time
-    for filename in glob.glob(r'{}*{}'.format(os.path.expanduser(source), extension)):
+    for filename in glob.glob(fr'{os.path.expanduser(source)}*{extension}'):
 
         if not os.path.exists(os.path.join(destination, filename.split("/")[-1])):
             # file doesn't exist, so copy
@@ -84,7 +86,7 @@ def copy_files(source, destination, extension="", clobber=True, wipe=True, diagn
                 
             else:
                 if diagnostics:
-                    print(" exists".format(filename))
+                    print(f"{filename} exists")
     
         # force update of timestamps
         os.utime(os.path.join(destination, filename.split("/")[-1]), None)

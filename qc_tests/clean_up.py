@@ -7,6 +7,8 @@ or if only a few observations left [not active].
 """
 #************************************************************************
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 import qc_utils as utils
 
@@ -14,11 +16,16 @@ LOW_COUNT_THRESHOLD = 0
 HIGH_FLAGGING_THRESHOLD = 0.6
 
 #************************************************************************
-def clean_up(obs_var, station, plots=False, diagnostics=False):
+def clean_up(obs_var: utils.Meteorological_Variable, station: utils.Station,
+             low_counts: int = LOW_COUNT_THRESHOLD, high_flags: float = HIGH_FLAGGING_THRESHOLD,
+             plots: bool = False, diagnostics:bool = False) -> np.ndarray:
     """
     Check for high flagging rates within a calendar month and flag remaining
 
     :param MetVar obs_var: meteorological variable object
+    :param Station station: Station object
+    :param int low_counts: threshold of low counts below which remaining unflagged obs are flagged
+    :param float high_flags: threshold above which flags are set on remaining unflagged obs
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
@@ -40,31 +47,30 @@ def clean_up(obs_var, station, plots=False, diagnostics=False):
             flagged, = np.where(old_flags[month_locs][obs_locs] != "")
             unflagged, = np.where(old_flags[month_locs][obs_locs] == "")
 
-            if unflagged.shape[0] < LOW_COUNT_THRESHOLD:
+            if unflagged.shape[0] < low_counts:
                 # insufficient unflagged observations left
                 new_flags[month_locs[obs_locs][unflagged]] = "E"
-                if diagnostics:
-                    print("Low count {} - {} : {}".format(year, month, len(obs_locs)))
+                logger.info(f"Low count {obs_var.name}: {year}/{month} :  {len(obs_locs)}")
 
             else:
                 if flagged.shape[0] == 0:
                     # no flags set so just skip
                     pass
-                elif flagged.shape[0] / n_obs > HIGH_FLAGGING_THRESHOLD:
+                elif flagged.shape[0] / n_obs > high_flags:
                     # flag remainder
-                    new_flags[month_locs[obs_locs]] = "E"
+                    new_flags[month_locs[obs_locs][unflagged]] = "E"
                     if diagnostics:
-                        print("High flag {} - {} : {} ({}%)".format(year, month, len(obs_locs), (100*flagged.shape[0] / n_obs)))
-                        print(np.unique(old_flags[month_locs][obs_locs][flagged]))
+                        print(f"High flag {obs_var.name}: {year}/{month} : {len(obs_locs)} ({(100*flagged.shape[0] / n_obs)}%)")
 
-    if diagnostics:
-        print("Clean Up {}".format(obs_var.name))
-        print("   Cumulative number of flags set: {}".format(len(np.where(new_flags != "")[0])))
+
+    logger.info(f"Clean Up {obs_var.name}")
+    logger.info(f"   Cumulative number of flags set: {len(np.where(new_flags != '')[0])}")
 
     return new_flags # clean_up
 
 #************************************************************************
-def mcu(station, var_list, full=False, plots=False, diagnostics=False):
+def mcu(station: utils.Meteorological_Variable, var_list: list, full: bool = False,
+        plots: bool = False, diagnostics: bool = False) -> None:
     """
     Run through the variables and pass to monthly clean up
 
