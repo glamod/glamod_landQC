@@ -23,7 +23,7 @@ TESTS_FOR_VARS = {"temperature": ["All", "C", "D", "E", "F", "H", "K", "L", "N",
                                               'S', 'T', 'V', 'd', 'o', 'p', 'x', 'y'],
                   "wind_speed" : ['All', 'E', 'H', 'K', 'L', 'N', 'S', 'T', 'V',
                                   'W', 'o', 'w', 'x', 'y'],
-                  "wind_direction" : ['All', 'E', 'H', 'K', 'L', 'w', 'x', 'y']}
+                  "wind_direction" : ['All', 'E', 'H', 'K', 'L', 'w', 'x', 'y', "1"]}
 
 UNITS = {"" : "%", "_counts" : "cts"}
 
