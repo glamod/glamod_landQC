@@ -203,10 +203,10 @@ do
     # now check if we should submit it.
     # ensure don't overload the queue, max of e.g. 50
     n_jobs=$(squeue --user="${USER}" | wc -l)
-    while [ "${n_jobs}" -gt ${MAX_N_JOBS} ];
+    while [ "${n_jobs}" -gt "${MAX_N_JOBS}" ];
     do        
         echo "sleeping for ${WAIT_N_MINS}min to clear queue"
-        sleep ${WAIT_N_MINS}m
+        sleep "${WAIT_N_MINS}m"
         n_jobs=$(squeue --user="${USER}" | wc -l)
     done
 
