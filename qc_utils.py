@@ -25,7 +25,8 @@ UNIT_DICT = {"temperature" : "degrees C", \
              "sea_level_pressure" : "hPa hectopascals", \
              "station_level_pressure" : "hPa hectopascals"}
 
-
+# Letters for flags which should exclude data
+# Numbers for information flags, the data are valid, but not necessarily adhering to conventions
 QC_TESTS = {"C" : "Climatological",
             "D" : "Distribution - Monthly",
             "E" : "Clean Up",
@@ -46,7 +47,8 @@ QC_TESTS = {"C" : "Climatological",
             "p" : "Pressure",
             "w" : "Winds",
             "x" : "Excess streak proportion",
-            "y" : "Repeated Day streaks"
+            "y" : "Repeated Day streaks",
+            "1" : "Wind logical - calm, masked direction",
             }
 
 
@@ -176,12 +178,12 @@ def get_station_list(restart_id: str = "", end_id: str = "") -> pd.DataFrame:
 
     # work from the end to save messing up the start indexing
     if end_id != "":
-        endindex, = np.nonzero(station_IDs == end_id)
+        endindex, = np.where(station_IDs == end_id)
         station_list = station_list.iloc[: endindex[0]+1]
 
     # and do the front
     if restart_id != "":
-        startindex, = np.nonzero(station_IDs == restart_id)
+        startindex, = np.where(station_IDs == restart_id)
         station_list = station_list.iloc[startindex[0]:]
 
     return station_list.reset_index(drop=True) # get_station_list

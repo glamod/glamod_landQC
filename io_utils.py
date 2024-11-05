@@ -203,8 +203,8 @@ def flag_write(outfilename: str, df: pd.DataFrame, diagnostics: bool = False) ->
                 outfile.write(f"{var} : {test}_counts : {locs.shape[0]}\n")
 
 
-            # for total, get number of set flags (any value)
-            flagged, = np.where(flags != "")
+            # for total, get number of set flags (excluding fixable wind logical)
+            flagged, = np.where(np.logical_and(flags != "", flags != "1"))
             outfile.write(f"{var} : All : {flagged.shape[0]/np.ma.count(this_var_data)}\n")
             outfile.write(f"{var} : All_counts : {flagged.shape[0]}\n")
 

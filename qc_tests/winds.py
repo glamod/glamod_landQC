@@ -40,8 +40,9 @@ def logical_checks(speed: utils.Meteorological_Variable, direction: utils.Meteor
         direction.data[fix_zero_direction] = 0
         direction.data.mask[fix_zero_direction] = False
     else:
-        dflags[fix_zero_direction] = "w"
-    logger.info(f"  Zero direction : {len(fix_zero_direction[0])}")
+        dflags[fix_zero_direction] = "1"
+    if diagnostics:
+        print("  Zero direction : {}".format(len(fix_zero_direction[0])))
 
     # negative speeds (can't fix)
     negative_speed = np.ma.where(speed.data < 0)
@@ -72,9 +73,18 @@ def logical_checks(speed: utils.Meteorological_Variable, direction: utils.Meteor
     speed.flags = utils.insert_flags(speed.flags, sflags)
     direction.flags = utils.insert_flags(direction.flags, dflags)
 
+    if diagnostics:
+
+        print("Wind Logical")
+        print(f"   Cumulative number of {speed.name} flags set: {len(np.where(sflags != '')[0])}")
+        print(f"   Cumulative number of {direction.name} flags set: {len(np.where(dflags == 'w')[0])}")
+        print(f"   Cumulative number of {direction.name} convention flags set: {len(np.where(dflags == '1')[0])}")
+
     logger.info("Wind Logical")
     logger.info(f"   Cumulative number of {speed.name} flags set: {len(np.where(sflags != '')[0])}")
-    logger.info(f"   Cumulative number of {direction.name} flags set: {len(np.where(dflags != '')[0])}")
+    logger.info(f"   Cumulative number of {direction.name} flags set: {len(np.where(dflags == 'w')[0])}")
+    logger.info(f"   Cumulative number of {direction.name} convention flags set: {len(np.where(dflags == '1')[0])}")
+
 
     return # logical_checks
 
