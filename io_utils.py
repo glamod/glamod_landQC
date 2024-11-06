@@ -211,6 +211,8 @@ def flag_write(outfilename: str, df: pd.DataFrame, diagnostics: bool = False) ->
             logging.info(f"{var} - {flagged.shape[0]}")
             if diagnostics:
                 print(f"{var} - {flagged.shape[0]}")
+                print(f"{var} - {flagged.shape[0]/np.ma.count(this_var_data)}")
+
 
     return # flag_write
 
