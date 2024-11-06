@@ -172,27 +172,31 @@ def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False) -> N
                     limits = [0.0, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 100.]
                 elif suffix == "_counts":
                     limits = [0.0, 5., 10., 50., 100., 500., 1000., 5000.]
-                    
-
-
 
                 for u, upper in enumerate(limits):
 
                     # sort the labels
                     if u == 0:
                         locs, = np.where(flag_fraction == 0)
-                        label = f"{upper}{UNITS[suffix]}: {len(locs)}"
+                        upper_label = f'{upper:.0f}' if suffix == "_counts" else f'{upper:0.1f}'
+                        label = f'{upper_label}{UNITS[suffix]}: {len(locs)}'
+                    elif upper == limits[-1]:
+                        # if the last entry, then don't use an upper bound
+                        #   counts and % will likely be at times greater than 5000/100%
+                        locs, = np.where(flag_fraction > limits[u-1])
+                        upper_label = f'{limits[u-1]:.0f}' if suffix == "_counts" else f'{limits[u-1]:0.1f}'
+                        label = f'>{upper_label}{UNITS[suffix]}: {len(locs)}'
                     else:
                         locs, = np.where(np.logical_and(flag_fraction <= upper, \
                                                         flag_fraction > limits[u-1]))
-                        label = f">{limits[u-1]} to {upper}{UNITS[suffix]}: {len(locs)}"
-                        if upper == limits[-1]:
-                            label = f">{limits[u-1]}{UNITS[suffix]}: {len(locs)}"
+                        lower_label = f'{limits[u-1]:.0f}' if suffix == "_counts" else f'{limits[u-1]:0.1f}'
+                        upper_label = f'{upper:.0f}' if suffix == "_counts" else f'{upper:0.1f}'
+                        label = f'>{lower_label} to {upper_label}{UNITS[suffix]}: {len(locs)}'
 
                     # and plot
                     if len(locs) > 0:
                         ax.scatter(lons[locs], lats[locs], transform=ccrs.PlateCarree(), s=15, color=tuple([float(c)/255 for c in colors[u]]), \
-                                   edgecolors="none", label = label)
+                                   edgecolors="none", label=label)
 
                     else:
                         ax.scatter([0], [-90], transform=ccrs.PlateCarree(), s=15, color=tuple([float(c)/255 for c in colors[u]]), \
