@@ -150,6 +150,12 @@ def read_in_buddy_data(target_station: utils.Station, initial_neighbours: np.nda
         if diagnostics:
             print(f"Buddy number {bid+1}/{len(initial_neighbours[:, 0])} {buddy_id}")
 
+        # If buddy missing, then no key in the dictionary
+        #   Capture and move on, as KeyError below results in confusing message
+        if buddy_id not in all_buddies.keys():
+            if diagnostics:
+                print(f"  No entry for Buddy, file missing")
+            continue
 
         try:
             buddy = all_buddies[buddy_id]
