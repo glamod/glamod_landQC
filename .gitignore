@@ -5,3 +5,5 @@ _templates
 *.pyc
 .vscode/
 .coverage
+logs/
+lotus_scripts/

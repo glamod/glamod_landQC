@@ -491,7 +491,7 @@ def repeating_day(obs_var: utils.Meteorological_Variable, station: utils.Station
 
                         all_lengths += [streak_length]
                         streak_length = 0
-                        streak_locs = np.array([])
+                        streak_locs = np.array([], dtype=(int))
 
                 # make copies for next loop
                 previous_day_data = np.ma.copy(this_day_data)

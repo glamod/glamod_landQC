@@ -50,7 +50,7 @@ def clean_up(obs_var: utils.Meteorological_Variable, station: utils.Station,
             if unflagged.shape[0] < low_counts:
                 # insufficient unflagged observations left
                 new_flags[month_locs[obs_locs][unflagged]] = "E"
-                logger.info(f"Low count {year} - {month} : {len(obs_locs)}")
+                logger.info(f"Low count {obs_var.name}: {year}/{month} :  {len(obs_locs)}")
 
             else:
                 if flagged.shape[0] == 0:

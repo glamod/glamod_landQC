@@ -25,7 +25,8 @@ UNIT_DICT = {"temperature" : "degrees C", \
              "sea_level_pressure" : "hPa hectopascals", \
              "station_level_pressure" : "hPa hectopascals"}
 
-
+# Letters for flags which should exclude data
+# Numbers for information flags, the data are valid, but not necessarily adhering to conventions
 QC_TESTS = {"C" : "Climatological",
             "D" : "Distribution - Monthly",
             "E" : "Clean Up",
@@ -46,7 +47,8 @@ QC_TESTS = {"C" : "Climatological",
             "p" : "Pressure",
             "w" : "Winds",
             "x" : "Excess streak proportion",
-            "y" : "Repeated Day streaks"
+            "y" : "Repeated Day streaks",
+            "1" : "Wind logical - calm, masked direction",
             }
 
 
