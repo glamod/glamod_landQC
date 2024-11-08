@@ -196,6 +196,7 @@ def flag_write(outfilename: str, df: pd.DataFrame, diagnostics: bool = False) ->
             this_var_data = df[var].fillna(MDI).to_numpy().astype(float)
             this_var_data = np.ma.masked_where(this_var_data == MDI, this_var_data)
 
+            # write out for all tests, regardless if set for this variable or not
             for test in QC_TESTS.keys():
                 locs = flags[flags.str.contains(test)]
 
@@ -219,7 +220,7 @@ def flag_write(outfilename: str, df: pd.DataFrame, diagnostics: bool = False) ->
             logging.info(f"{var} - {flagged.shape[0]}")
             if diagnostics:
                 print(f"{var} - {flagged.shape[0]}")
-                print(f"{var} - {flagged.shape[0]/np.ma.count(this_var_data)}")
+                print(f"{var} - {100*flagged.shape[0]/np.ma.count(this_var_data):.1f}%")
 
 
     return # flag_write
