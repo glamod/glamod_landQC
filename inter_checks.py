@@ -164,7 +164,7 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
         # write in the flag information
         for var in setup.obs_var_list:
             obs_var = getattr(target_station, var)
-            target_station_df["{var}_QC_flag"] = obs_var.flags
+            target_station_df[f"{var}_QC_flag"] = obs_var.flags
 
         #*************************
         # Output of QFF
@@ -183,7 +183,7 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
             
         #*************************
         # Output flagging summary file
-        io.flag_write(os.path.join(setup.SUBDAILY_FLAG_DIR, "{target_station_id:11s}.flg"), target_station_df, diagnostics=diagnostics)
+        io.flag_write(os.path.join(setup.SUBDAILY_FLAG_DIR, f"{target_station_id:11s}.flg"), target_station_df, diagnostics=diagnostics)
 
         if diagnostics or plots:
             input(f"Stop after {dt.datetime.now()-startT} of processing")

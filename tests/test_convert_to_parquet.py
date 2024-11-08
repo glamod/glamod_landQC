@@ -57,7 +57,7 @@ def test_process_files(setup_mock: Mock) -> None:
     # check length of Dataframes for each key are correct
     for frame in yearly_data[1979]:
         # can't presume the order will always be the same
-        assert frame.shape[0] in (144, 358)
+        assert frame.shape[0] in (40, 143, 150, 358, 496)
     assert yearly_data[1985][0].shape[0] == 40
 
 

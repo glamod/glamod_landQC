@@ -60,7 +60,7 @@ def clean_up(obs_var: utils.Meteorological_Variable, station: utils.Station,
                     # flag remainder
                     new_flags[month_locs[obs_locs][unflagged]] = "E"
                     if diagnostics:
-                        print(f"High flag {obs_var.name}: {year}/{month} : {len(obs_locs)} ({(100*flagged.shape[0] / n_obs)}%)")
+                        print(f"Clean up high flagging {year} - {month} : {len(obs_locs)} ({(100*flagged.shape[0] / n_obs)}%)")
 
 
     logger.info(f"Clean Up {obs_var.name}")

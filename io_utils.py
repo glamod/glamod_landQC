@@ -28,7 +28,7 @@ def read_psv(infile: str, separator: str) -> pd.DataFrame:
 
     try:
         df = pd.read_csv(infile, sep=separator, compression="infer",
-                         dtype=setup.DTYPE_DICT, na_values="Null", quoting=3)
+                         dtype=setup.DTYPE_DICT, na_values="Null", quoting=3, index_col=False)
     except FileNotFoundError as e:
         logger.warning(f"psv file not found: {str(e)}")
         print(str(e))
@@ -87,6 +87,7 @@ def calculate_datetimes(station_df: pd.DataFrame) -> pd.Series:
                     # if Datatime doesn't throw an error here, then it's valid
                     _ = dt.datetime(yy, month[y], day[y])
                 except ValueError:
+                    print(f"Bad date: {yy}-{month[y]}-{day[y]}\n")
                     logger.warning(f"Bad date: {yy}-{month[y]}-{day[y]}\n")
                     raise ValueError(f"Bad date - {yy}-{month[y]}-{day[y]}")
 
@@ -199,13 +200,20 @@ def flag_write(outfilename: str, df: pd.DataFrame, diagnostics: bool = False) ->
                 locs = flags[flags.str.contains(test)]
 
                 # For percentage, compare against all obs, not obs for that var
-                outfile.write(f"{var} : {test} : {locs.shape[0]/np.ma.count(this_var_data)}\n")
+                if np.ma.count(this_var_data) == 0:
+                    outfile.write(f"{var} : {test} : 0\n")
+                else:
+                    outfile.write(f"{var} : {test} : {locs.shape[0]/np.ma.count(this_var_data)}\n")
                 outfile.write(f"{var} : {test}_counts : {locs.shape[0]}\n")
 
 
             # for total, get number of set flags (excluding fixable wind logical)
             flagged, = np.where(np.logical_and(flags != "", flags != "1"))
-            outfile.write(f"{var} : All : {flagged.shape[0]/np.ma.count(this_var_data)}\n")
+            if np.ma.count(this_var_data) == 0:
+                outfile.write(f"{var} : All : 0\n")
+            else:
+                outfile.write(f"{var} : All : {flagged.shape[0]/np.ma.count(this_var_data)}\n")
+
             outfile.write(f"{var} : All_counts : {flagged.shape[0]}\n")
 
             logging.info(f"{var} - {flagged.shape[0]}")

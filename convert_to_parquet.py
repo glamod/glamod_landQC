@@ -56,9 +56,9 @@ def process_files(qff_files: list, diagnostics: bool = False) -> dict:
         
         # Read the .qff.gz file treating all columns as strings initially
         if setup.OUT_COMPRESSION == ".gz":
-            df = pd.read_csv(file_path, sep='|', compression='gzip', dtype=str)
+            df = pd.read_csv(file_path, sep='|', compression='gzip', dtype=str, index_col=False)
         else:
-            df = pd.read_csv(file_path, sep='|', dtype=str)
+            df = pd.read_csv(file_path, sep='|', dtype=str, index_col=False)
 
         # Ensure the 'Year' column exists
         if 'Year' not in df.columns:
