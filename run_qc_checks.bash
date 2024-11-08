@@ -169,8 +169,8 @@ do
     echo "#SBATCH --qos=normal" >> "${lotus_script}"
 
     echo "#SBATCH --job-name=QC_${stn}" >> "${lotus_script}"
-    echo "#SBATCH --output=${LOG_DIR}/${stn}.out" >> "${lotus_script}"
-    echo "#SBATCH --error=${LOG_DIR}/${stn}.err " >> "${lotus_script}"
+    echo "#SBATCH --output=${LOG_DIR}/${stn}_${STAGE}.out" >> "${lotus_script}"
+    echo "#SBATCH --error=${LOG_DIR}/${stn}_${STAGE}.err " >> "${lotus_script}"
     
     if [ "${STAGE}" == "I" ]; then
         if [ "${stn:0:1}" == "U" ]; then
@@ -186,8 +186,18 @@ do
             echo "#SBATCH --mem=8000" >> "${lotus_script}"
         fi
     elif  [ "${STAGE}" == "N" ]; then
-        echo "#SBATCH --time=20:00" >> "${lotus_script}" # 20mins
-        echo "#SBATCH --mem=6000" >> "${lotus_script}"
+        if [ "${stn:0:1}" == "U" ]; then
+            # US stations take lots of memory
+            echo "#SBATCH --time=20:00" >> "${lotus_script}" # 20mins
+            echo "#SBATCH --mem=30000" >> "${lotus_script}"
+        elif [ "${stn:0:1}" == "G" ]; then
+            # Some German stations take lots of memory
+            echo "#SBATCH --time=20:00" >> "${lotus_script}" # 20mins
+            echo "#SBATCH --mem=30000" >> "${lotus_script}"
+        else
+            echo "#SBATCH --time=20:00" >> "${lotus_script}" # 20mins
+            echo "#SBATCH --mem=10000" >> "${lotus_script}"
+        fi
     fi
     echo "" >> "${lotus_script}"
     # echo "source ${VENVDIR}/bin/activate" >> "${lotus_script}"
