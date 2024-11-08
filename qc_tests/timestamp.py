@@ -69,11 +69,19 @@ def identify_multiple_values(obs_var: utils.Meteorological_Variable, times: np.n
         print(f" Number of identical timestamps in {obs_var.name}: {multiple_obs_at_time.shape[0]}")
 
     if len(multiple_obs_at_time) != 0:
+        # to the observations differ for the entries
         suspect_locs, = np.ma.where(value_diffs[multiple_obs_at_time] != 0)
 
-        # set the first of the obs, then the second which make the diff
-        compressed_flags[multiple_obs_at_time[suspect_locs]] = "T"
-        compressed_flags[multiple_obs_at_time[suspect_locs]+1] = "T"
+        if len(suspect_locs) > 0:
+            # Observations have different values, so not clear which is correct.
+            #   Flag both
+            # set the first of the obs, then the second which make the diff
+            compressed_flags[multiple_obs_at_time[suspect_locs]] = "T"
+            compressed_flags[multiple_obs_at_time[suspect_locs]+1] = "T"
+        else:
+            # Observations have the _same_ value, so add information flag onl
+            compressed_flags[multiple_obs_at_time] = "2"
+            compressed_flags[multiple_obs_at_time+1] = "2"
 
         # Uncompress the flags & insert
         flags = np.array(["" for i in range(obs_var.data.shape[0])])
