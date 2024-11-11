@@ -1,5 +1,5 @@
 #!/bin/bash
-#set -x
+set -x
 #****************************************************************** 
 # Script to process all the stations.  Runs through station list
 #   and submits each as a separate jobs on Bastion
@@ -37,7 +37,7 @@ shift
 #**************************************
 # other settings
 cwd=$(pwd)
-STATIONS_PER_BATCH=1 # 000
+STATIONS_PER_BATCH=10 # 00
 
 SCRIPT_DIR=${cwd}/parallel_scripts/
 if [ ! -d "${SCRIPT_DIR}" ]; then
@@ -54,10 +54,10 @@ function write_and_submit_bastion_script {
     screen -S "qc_${batch}" -d -m
 
     # run the parallel script in this detached screen
-    screen -r "qc_${batch}" -X stuff $'conda activate glamod_qc \n'
+    screen -r "qc_${batch}" -X stuff $'conda activate glamod_QC \n'
 
     # run the parallel script in this detached screen
-    screen -r "qc_${batch}" -X stuff $'parallel -jobs 10 < ${parallel_script} \n'
+    screen -r "qc_${batch}" -X stuff $"parallel --jobs 10 < ${parallel_script} "
 
 
 } # write_and_submit_bastion_script
@@ -266,6 +266,8 @@ do
 	        elif  [ "${STAGE}" == "N" ]; then
 		        echo "python3 ${cwd}/inter_checks.py --restart_id ${stn} --end_id ${stn} --full --clobber" >> "${parallel_script}"
 	        fi
+            # increment station counter (don't for other elifs to reduce jobs)
+            let scnt=scnt+1
 
 	    # if not overwrite
 	    else
@@ -290,6 +292,8 @@ do
 		            # no output, include
 		            echo "python3 ${cwd}/intra_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics" >> "${parallel_script}"
 
+                    # increment station counter (don't for other elifs to reduce jobs)
+                    let scnt=scnt+1
                 fi
  
             elif [ "${STAGE}" == "N" ]; then
