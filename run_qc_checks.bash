@@ -5,10 +5,11 @@
 #   and submits each as a separate jobs to LOTUS
 #
 # CALL
-#    bash run_qc.bash STAGE WAIT
+#    bash run_qc.bash STAGE WAIT CLOBBER
 #    
 #    STAGE = I [internal] or N [neighbour]
 #     WAIT = T [true] or F [false] # wait for upstream files to be ready
+#  CLOBBER = C [clobber] or S [skip] # overwrite or skip existing files
 #****************************************************************** 
 
 STAGE=$1
