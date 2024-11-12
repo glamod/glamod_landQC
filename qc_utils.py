@@ -708,7 +708,9 @@ def residuals_gaussian(p: np.ndarray, Y: np.ndarray, X: np.ndarray) -> np.ndarra
     return err # residuals_gaussian
 
 #*********************************************
-def fit_gaussian(x: np.ndarray, y: np.ndarray, norm: float, mu: float = MDI, sig: float = MDI, skew: float = MDI) -> np.ndarray:
+def fit_gaussian(x: np.ndarray, y: np.ndarray,
+                 norm: float, mu: float = MDI,
+                 sig: float = MDI, skew: float = MDI) -> np.ndarray:
     '''
     Fit a gaussian to the data provided
     Inputs:
