@@ -10,7 +10,7 @@ import pytest
 import convert_to_parquet
 
 EXAMPLE_FILES = glob.glob(os.path.join(os.path.dirname(__file__),
-                           "example_data", "*.?ff"))
+                           "example_data", "*.qff"))
 
 @pytest.mark.parametrize("compression", ("", ".gz", ".zip"))
 @patch("convert_to_parquet.setup")
