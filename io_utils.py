@@ -8,10 +8,34 @@ import pandas as pd
 import numpy as np
 import setup
 import datetime as dt
+import csv
 import logging
 logger = logging.getLogger(__name__)
         
 from qc_utils import Station, populate_station, MDI, QC_TESTS
+
+#************************************************************************
+def count_skip_rows(infile: str) -> list:
+    """
+    Read through the file, counting matches for expected header,
+    but in unexpected lines (!=0).  Return these line numbers as list (zero-indexed)
+
+    :param infile str: file to process
+    
+    :returns: list of line numbers
+    """
+    skip_rows = []
+    with open(infile, "r") as data_file:
+        reader = csv.reader(data_file)
+        for r, row in enumerate(reader):
+            if r == 0:
+                continue
+            if "Station_ID|Station_name" in row[0]:
+                logger.warning(f"Extra header row at line {r}")
+                skip_rows += [r]
+
+    return skip_rows
+
 
 #************************************************************************
 def read_psv(infile: str, separator: str) -> pd.DataFrame:
@@ -33,6 +57,19 @@ def read_psv(infile: str, separator: str) -> pd.DataFrame:
         logger.warning(f"psv file not found: {str(e)}")
         print(str(e))
         raise FileNotFoundError(str(e))
+    except ValueError as e:
+        logger.warning(f"Error in psv rows: {str(e)}")
+        print(str(e))
+        # Presuming that there is an extra header line somewhere in the file
+
+        # Find location of the extra header line
+        skip_rows = count_skip_rows(infile)
+
+        # Now re-read the file
+        df = pd.read_csv(infile, sep=separator, compression="infer",
+                         dtype=setup.DTYPE_DICT, na_values="Null", quoting=3,
+                         index_col=False, skiprows=skip_rows)
+
     except pd.errors.ParserError as e:
         logger.warning(f"Parser Error: {str(e)}")
         print(str(e))
@@ -55,10 +92,7 @@ def read(infile:str) -> pd.DataFrame:
 
     # for .psv
     if os.path.exists(infile):
-        try:
-            df = read_psv(infile, "|")
-        except pd.errors.ParserError:
-            raise pd.errors.ParserError
+        df = read_psv(infile, "|")
     else:
         raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), infile)
 
@@ -196,6 +230,7 @@ def flag_write(outfilename: str, df: pd.DataFrame, diagnostics: bool = False) ->
             this_var_data = df[var].fillna(MDI).to_numpy().astype(float)
             this_var_data = np.ma.masked_where(this_var_data == MDI, this_var_data)
 
+            # write out for all tests, regardless if set for this variable or not
             for test in QC_TESTS.keys():
                 locs = flags[flags.str.contains(test)]
 
@@ -219,7 +254,7 @@ def flag_write(outfilename: str, df: pd.DataFrame, diagnostics: bool = False) ->
             logging.info(f"{var} - {flagged.shape[0]}")
             if diagnostics:
                 print(f"{var} - {flagged.shape[0]}")
-                print(f"{var} - {flagged.shape[0]/np.ma.count(this_var_data)}")
+                print(f"{var} - {100*flagged.shape[0]/np.ma.count(this_var_data)}")
 
 
     return # flag_write
