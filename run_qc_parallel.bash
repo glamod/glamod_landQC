@@ -95,6 +95,7 @@ QFF_ZIP="$(grep "out_compression " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 VERSION="$(grep "version " "${CONFIG_FILE}" | grep -v "${MFF_VER}" | awk -F'= ' '{print $2}')"
 ERR_DIR="$(grep "errors " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 LOG_DIR="$(grep "logs " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
+CONFIG_DIR="$(grep "config " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 if [ ! -d "${ROOTDIR}${LOG_DIR}" ]; then
     mkdir "${ROOTDIR}${LOG_DIR}"
 fi
@@ -102,8 +103,8 @@ fi
 #**************************************
 # if neighbour checks make sure all files in place
 if [ "${STAGE}" == "N" ]; then
-    echo "${ROOTDIR}${QFF_DIR%/}_configs/${VERSION}neighbours.txt"
-    if [ ! -f "${ROOTDIR}${QFF_DIR%/}_configs/${VERSION}neighbours.txt" ]; then
+    echo "${CONFIG_DIR}${VERSION}neighbours.txt"
+    if [ ! -f "${CONFIG_DIR}${VERSION}neighbours.txt" ]; then
         read -p "Neighbour file missing - do you want to create? (Y/N): " run_neighbours
 
     else
@@ -116,15 +117,14 @@ if [ "${STAGE}" == "N" ]; then
 	conda activate glamod_QC
     python "${cwd}/find_neighbours.py"
 
-	wc -l "${ROOTDIR}${QFF_DIR%/}_configs/${VERSION}neighbours.txt"
+	wc -l "${CONFIG_DIR}${VERSION}neighbours.txt"
     else
-	if [ ! -f "${ROOTDIR}${QFF_DIR%/}_configs/${VERSION}neighbours.txt" ]; then
+	if [ ! -f "${CONFIG_DIR}${VERSION}neighbours.txt" ]; then
 	    echo "Not running neighbour finding routine and doesn't exist: Exit"
 	    exit
 	fi
     fi
 fi
-
 
 # set up list of stations
 STATION_LIST="$(grep "station_list " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
@@ -135,7 +135,7 @@ stn_ids=$(awk -F" " '{print $1}' "${station_list_file}")
 
 #**************************************
 echo "Check all upstream stations present"
-missing_file=missing.txt
+missing_file="${CONFIG_DIR}{VERSION}missing_${STAGE}.txt"
 if [ -e ${missing_file} ]; then
     rm ${missing_file}
 fi
