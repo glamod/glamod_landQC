@@ -88,10 +88,11 @@ def test_identify_multiple_values_same():
     station.times[3] = station.times[2]
 
     # Even though two time stamps are the same, the values are identical
-    #   (np.ones) so no flag set
+    #   (np.ones) but an information flag still set
     expected = np.array(["" for _ in range(10)])
+    expected[2:4] = "2"
 
-    timestamp.identify_multiple_values(obs_var, station. times, {})
+    timestamp.identify_multiple_values(obs_var, station.times, {})
 
     np.testing.assert_array_equal(obs_var.flags, expected)
 

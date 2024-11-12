@@ -49,6 +49,7 @@ QC_TESTS = {"C" : "Climatological",
             "x" : "Excess streak proportion",
             "y" : "Repeated Day streaks",
             "1" : "Wind logical - calm, masked direction",
+            "2" : "Timestamp - identical observation qvalues",
             }
 
 
