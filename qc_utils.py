@@ -736,10 +736,10 @@ def fit_gaussian(x: np.ndarray, y: np.ndarray,
     # call the appropriate fitting function and routine
     if skew == MDI:
         p0 = np.array([norm, mu, sig])
-        result = least_squares(residuals_gaussian, p0, args=(y, x), max_nfev=10000, verbose=0, method="lm")
+        result = least_squares(residuals_gaussian, p0, args=(y, x), max_nfev=10000, verbose=0, method="trf", jac="3-point")
     else:
         p0 = np.array([norm, mu, sig, skew])
-        result = least_squares(residuals_skew_gaussian, p0, args=(y, x), max_nfev=10000, verbose=0, method="lm")
+        result = least_squares(residuals_skew_gaussian, p0, args=(y, x), max_nfev=10000, verbose=0, method="trf", jac="3-point")
     return result.x # fit_gaussian
 
 #************************************************************************
