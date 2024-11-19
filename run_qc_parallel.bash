@@ -37,7 +37,8 @@ shift
 #**************************************
 # other settings
 cwd=$(pwd)
-STATIONS_PER_BATCH=10000
+STATIONS_PER_BATCH=15000
+N_JOBS=10
 
 SCRIPT_DIR=${cwd}/parallel_scripts/
 if [ ! -d "${SCRIPT_DIR}" ]; then
@@ -57,7 +58,7 @@ function write_and_submit_bastion_script {
     screen -r "qc_${batch}" -X stuff $'conda activate glamod_QC \n'
 
     # run the parallel script in this detached screen
-    screen -r "qc_${batch}" -X stuff $"parallel --jobs 10 < ${parallel_script} "
+    screen -r "qc_${batch}" -X stuff $"parallel --jobs ${N_JOBS} < ${parallel_script} "
 
 
 } # write_and_submit_bastion_script
@@ -113,7 +114,7 @@ if [ "${STAGE}" == "N" ]; then
     # check if needing to run
     if [ "${run_neighbours}" == "Y" ] || [ "${run_neighbours}" == "y" ]; then
 	echo "Running neighbour finding routine"
-	module load conda
+	# module load conda
 	conda activate glamod_QC
     python "${cwd}/find_neighbours.py"
 
@@ -336,7 +337,7 @@ do
 
 	    # just for ease of reading the script output
 	    sleep 1
-	    exit
+#	    exit
 
     fi
 #    exit
