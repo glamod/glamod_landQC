@@ -193,6 +193,7 @@ def test_lc_start(write_error_mock: Mock,
 
     station = _make_station()
     station.times[0] = time
+    print(station.times)
 
     return_code = logic_checks.lc(station, ["temperature"])
 
@@ -214,3 +215,16 @@ def test_lc_end(write_error_mock: Mock,
     return_code = logic_checks.lc(station, ["temperature"])
 
     assert return_code == expected
+
+
+@patch("logic_checks.write_logic_error")
+def test_lc_time_diff(write_error_mock: Mock) -> None:
+    
+
+    station = _make_station()
+    # repeat the first two entries
+    station.times[8:] = station.times[:2]
+
+    return_code = logic_checks.lc(station, ["temperature"])
+
+    assert return_code == -1
