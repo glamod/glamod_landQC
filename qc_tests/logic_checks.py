@@ -9,6 +9,7 @@ import os
 import json
 import datetime as dt
 import numpy as np
+import pandas as pd
 import setup
 import logging
 logger = logging.getLogger(__name__)
@@ -133,6 +134,19 @@ def lc(station: utils.Station, var_list: list, full: bool = False,
         logger.info(f"Bad end time: {station.times[-1]}")
         return_code = -1
     
+    # For Release 7 had some discontinuities in the times, with a repeated chunk
+    #  Time stamp went from 2023/5/31/21:00 to 2023/1/1/00:00
+    time_differences = station.times.diff()
+    bad_differences = time_differences[time_differences < pd.Timedelta(0)]
+    if len(bad_differences) != 0:
+        bad_location = bad_differences.index.to_numpy()
+        for location in bad_location:
+            write_logic_error(station,
+                              f"Dates not in ascending order: {station.times[location-1: location+1].to_string()}",
+                              diagnostics=diagnostics)
+            logger.info(f"Dates not in ascending order: {station.times[location-1: location+1].to_string()}")
+
+        return_code = -1
 
     # Now do logic checks on observations
 
