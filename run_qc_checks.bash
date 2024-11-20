@@ -1,5 +1,5 @@
 #!/bin/bash
-#set -x
+set -x
 #****************************************************************** 
 # Script to process all the stations.  Runs through station list
 #   and submits each as a separate jobs to LOTUS
@@ -68,9 +68,9 @@ MFF_ZIP="$(grep "in_compression " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 PROC_DIR="$(grep "proc " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 QFF_DIR="$(grep "qff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 QFF_ZIP="$(grep "out_compression " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
-VERSION="$(grep "version " "${CONFIG_FILE}" | grep -v "${MFF_VER}" | awk -F'= ' '{print $2}')"
+VERSION="$(grep "version " "${CONFIG_FILE}" | awk -F'= ' 'FNR == 2 {print $2}')"
 ERR_DIR="$(grep "errors " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"  # ${QFF_DIR%/}_errors/
-
+exit
 #**************************************
 # if neighbour checks make sure all files in place
 if [ "${STAGE}" == "N" ]; then
