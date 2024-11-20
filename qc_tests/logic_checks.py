@@ -141,9 +141,9 @@ def lc(station: utils.Station, var_list: list, full: bool = False,
     if len(bad_differences) != 0:
         for location in bad_differences:
             write_logic_error(station,
-                              f"Dates not in ascending order: {station.times[location: location+2].to_string()}",
+                              f"Dates not in ascending order:\n{station.times[location: location+2].to_string()}",
                               diagnostics=diagnostics)
-            logger.warning(f"Dates not in ascending order: {station.times[location: location+2].to_string()}")
+            logger.warning(f"Dates not in ascending order:\n{station.times[location: location+2].to_string()}")
 
         return_code = -1
 
