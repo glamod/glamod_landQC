@@ -74,6 +74,10 @@ def read_psv(infile: str, separator: str) -> pd.DataFrame:
         logger.warning(f"Parser Error: {str(e)}")
         print(str(e))
         raise pd.errors.ParserError(str(e))
+    except EOFError as e:
+        logger.warning(f"End of File Error (gzip): {str(e)}")
+        print(str(e))
+        raise EOFError(str(e))
 
     # Number of columns at August 2023, or after adding flag columns
     assert len(df.columns) in [238, 238+len(setup.obs_var_list)]

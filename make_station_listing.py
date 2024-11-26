@@ -48,6 +48,10 @@ def main() -> None:
             # some issue in the raw file
             print(f"{station}, Error in input file, {str(e)}")
             continue
+        except EOFError as e:
+            # some issue in the gzip archive
+            print(f"{station}, Error in gzip file, {str(e)}")
+            continue
 
         if len(station.times) == 0:
             begins[st] = "99999999"
