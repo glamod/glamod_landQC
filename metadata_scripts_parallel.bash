@@ -17,14 +17,18 @@ function write_and_submit_bastion_script {
 
 } # write_and_submit_bastion_script
 
+cwd=$(pwd)
+SCRIPT_DIR=${cwd}/parallel_scripts/
 parallel_script="${SCRIPT_DIR}/parallel_metadata.bash"
 
-echo "conda activate glamod_QC" > ${parallel_script}
-echo "" > ${parallel_script}
-echo "python make_inventory.py" > ${parallel_script}
-echo "python plot_inventory.py" > ${parallel_script}
-echo "python make_station_listing.py" > ${parallel_script}
-echo "python plot_station_years.py" > ${parallel_script}
-echo "python plot_station_record_map.py" > ${parallel_script}
+if [ -e "${parallel_script}" ]; then
+    rm "${parallel_script}"
+fi
+
+echo "python make_inventory.py" >> ${parallel_script}
+echo "python plot_inventory.py" >> ${parallel_script}
+echo "python make_station_listing.py" >> ${parallel_script}
+echo "python plot_station_years.py" >> ${parallel_script}
+echo "python plot_station_record_map.py" >> ${parallel_script}
 
 write_and_submit_bastion_script "${parallel_script}"
