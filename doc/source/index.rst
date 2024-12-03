@@ -20,14 +20,22 @@ although using the HadISD tests and codes as inspiration, a number of
 requirements for this service mean the code base has been written from
 scratch.
 
-Python Environment on Kay
--------------------------
+Python Environment on Kay/Bastion
+---------------------------------
 
 The QC requires a specific Python environment to run.  In the past this has been done with ``venv`` but the functionality and support on Kay with ``conda`` is better.  
 
-Firstly, you need to load the module to allow access to ``conda``::
+On Kay, you need to load the module to allow access to ``conda``::
 
   module load conda
+
+On Bastion, you need to install miniconda (which should update your
+``.bashrc`` file)::
+
+  mkdir -p ~/miniconda3
+  wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
+  bash ~/miniconda3/miniconda.sh -u -p ~/miniconda3
+  rm ~/miniconda3/miniconda.sh
 
 Then you need to build the environment from the supplied ``yml`` file::
 
@@ -35,21 +43,22 @@ Then you need to build the environment from the supplied ``yml`` file::
 
 This can take a while.  Once that has completed, you can load the environment with ::
 
-  module load conda
   conda activate glamod_QC
 
 And to deactivate::
 
   conda deactivate
 
-All the necessary Python libraries should have been installed with the ``make_venv.bash`` script, but these are also listed in the ``qc_venv_requirements.txt`` file.
+All the necessary Python libraries should have been installed.
+There is also an oler ``make_venv.bash`` script, using the
+``qc_venv_requirements.txt`` file, but this hasn't been tested in a while.
 
 Building the documentation
 --------------------------
 
 To build this Sphinx documentation to include all the doc-strings from the scripts into a pretty html file::
 
-  module load conda
+  [module load conda]
   conda activate glamod_QC
   cd doc
   make html
@@ -77,14 +86,14 @@ thresholds to use.  The configuration.txt file contains::
   errors = level1c_sub_daily_data_errors/
   metadata = level1c_sub_daily_data_metadata/
   logs = level1c_sub_daily_data_logs/
-  venvdir = /ichec/work/glamod/glamod_landQC/qc_venv/
+  venvdir = .
   [FILES]
   station_list = /ichec/work/glamod/data/level1/land/level1b_sub_daily_data/stnlist/ghcnh-station-list-rel6.txt
   station_full_list = ghcnh_station_list.txt
   inventory = ghcnd_inventory.txt
   variables = obs_variables.json
   logic = logic_config.json
-  in_compression = None
+  in_compression = 
   out_compression = .gz
   [STATISTICS]
   mean = False
@@ -133,6 +142,8 @@ Processing Files
 
 There is a quick bash script which currently is the quickest and easiest to run the system but the longer term intention is that Rose/Cylc will perform this in due course.
 
+On Kay
+^^^^^^
 The ``run_qc_taskfarm.bash`` runs both stages of the QC process by submitting batches of stations through to the Kay cluster on ICHEC using the taskfarm facility.  There are three character switches for this script:
 
 * ``I`` / ``N`` to run the Internal or Neighbour checks
@@ -143,11 +154,40 @@ So an example run for the internal checks::
 
   bash run_qc_taskfarm.bash I F C
 
+
+On Bastion
+^^^^^^^^^^
+
+The ``run_qc_parallel.bash`` runs both stages of the QC process by
+submitting batches of stations through to the Bastion CPU cluster
+using the ``parallel`` facility.  There are three character switches for this script:
+
+* ``I`` / ``N`` to run the Internal or Neighbour checks
+* ``T`` / ``F`` to wait (True) or not (False) for upstream files to be present
+* ``C`` / ``S`` to overwrite (Clobber) or keep (Skip) existing output files.
+
+So an example run for the internal checks::
+
+  bash run_qc_parallel.bash I F C
+
+General notes
+^^^^^^^^^^^^^
+
 The waiting option presumes that the mff files will be produced in the sequence they are listed in the station list (see the configuration file).  If a file is not present, the script will sleep until it appears.  This allows the QC process to start before the mingle+merge processes have completed.  Finally, you can choose whether to overwrite existing output files, or to skip the processing step if they already exists.  There is helptext for these switches as part of the script.
 
-Once completed, this script also runs a checking process to provide some summary information of the processing run, with station counts and locations.  This can be called separately as ``check_if_processed.bash`` using the ``I`` / ``N`` switches. There is also a set of maps which can be produced, to show the flagging rates and counts for each station for each test.  The Kay job for this is submitted via the ``submit_plot_scripts.bash`` script using the ``sbatch`` command.  There is also a script ``submit_metadata_scripts.bash`` which produces some of the metadata files to support the output data.
+Once completed, this script also runs a checking process to provide
+some summary information of the processing run, with station counts
+and locations.  This can be called separately as
+``check_if_processed.bash`` using the ``I`` / ``N`` switches. There is
+also a set of maps which can be produced, to show the flagging rates
+and counts for each station for each test.  The Kay job for this is
+submitted via the ``plot_scripts_slurm.bash`` /
+``plot_scripts_parallel.bash`` script using the ``sbatch`` or
+``parallel`` command.  There is also a script
+``metadata_scripts_slurm.bash`` / ``metadata_scripts_parallel.bash``
+which produces some of the metadata files to support the output data. 
 
-The python scripts called by ``run_qc_taskfarm.bash`` have their own options which can be set (see below).  For the moment, the one which allows stored values and thresholds from a previous run to be used (rather than calculated afresh) is not active.  This option was written with the near-real-time updates in mind, however has never been tested on e.g. a "diff" file.  To turn this on, you would need to edit the section of the bash script which generates the Kay job.
+The python scripts called by ``run_qc_taskfarm.bash`` / ``run_qc_parallel.bash`` have their own options which can be set (see below).  For the moment, the one which allows stored values and thresholds from a previous run to be used (rather than calculated afresh) is not active.  This option was written with the near-real-time updates in mind, however has never been tested on e.g. a "diff" file.  To turn this on, you would need to edit the section of the bash script which generates the job.
 
 
 Individual scripts
@@ -187,6 +227,9 @@ The python scripts (``intra_checks.py`` for the internal checks, and ``inter_che
 
 .. automodule:: qc_tests.timestamp
    :members: tsc
+
+.. automodule:: qc_tests.precision
+   :members: pcc
 
 .. automodule:: qc_tests.spike
    :members: sc
