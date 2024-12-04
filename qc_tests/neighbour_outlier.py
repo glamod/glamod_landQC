@@ -175,6 +175,7 @@ def read_in_buddy_data(target_station: utils.Station, initial_neighbours: np.nda
             io_utils.write_error(target_station, f"Variable Missing (Buddy check): {variable} - {buddy_id}", error=str(e))
             continue
         # match the timestamps of target_station and copy over
+        # TODO: use pandas routine: target_station.times.isin(buddy.times)
         match = np.in1d(target_station.times, buddy.times) 
         match_back = np.in1d(buddy.times, target_station.times)
 

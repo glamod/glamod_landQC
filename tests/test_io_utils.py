@@ -16,23 +16,44 @@ import setup
 EXAMPLE_FILES = os.listdir(os.path.join(os.path.dirname(__file__),
                            "example_data"))
 
-
-def test_read_psv() -> None:
+def test_count_skip_rows() -> None:
 
     infile = os.path.join(os.path.dirname(__file__),
-                          "example_data", EXAMPLE_FILES[0])
+                          "example_data", "AAI0000TNCA.mff")
+
+    result = io_utils.count_skip_rows(infile)
+
+    assert result[0] == 1000
+
+
+def test_read_psv_mff() -> None:
+
+    infile = os.path.join(os.path.dirname(__file__),
+                          "example_data", "AAI0000TNCA.mff")
+    separator = "|"
+
+    df = io_utils.read_psv(infile, separator)
+
+    assert len(df.columns) == 238
+    assert df.shape[0] == 2105 # checked manually, and rows ignore header lines
+
+
+def test_read_psv_qff() -> None:
+
+    infile = os.path.join(os.path.dirname(__file__),
+                          "example_data", "AJM00037843.qff")
     separator = "|"
 
     df = io_utils.read_psv(infile, separator)
 
     assert len(df.columns) == 238+len(setup.obs_var_list)
-    assert df.shape[0] == 143 # checked manually, and rows ignore header
+    assert df.shape[0] == 496 # checked manually, and rows ignore header
 
 
-def test_read_psv_fileerror() -> None:
+def test_read_psv_qff_fileerror() -> None:
 
     infile = os.path.join(os.path.dirname(__file__),
-                          "example_data", EXAMPLE_FILES[0])
+                          "example_data", "AJM00037843.qff")
     separator = "|"
 
     # is a FileNotFoundError raised
@@ -46,7 +67,7 @@ def test_read_psv_fileerror() -> None:
 def test_read(read_psv_mock: Mock) -> None:
 
     infile = os.path.join(os.path.dirname(__file__),
-                          "example_data", EXAMPLE_FILES[0])
+                          "example_data", "AJM00037843.qff")
 
     _ = io_utils.read(infile)
 
@@ -57,7 +78,7 @@ def test_read(read_psv_mock: Mock) -> None:
 def test_read_oserror() -> None:
 
     infile = os.path.join(os.path.dirname(__file__),
-                          "example_data", EXAMPLE_FILES[0])
+                          "example_data", "AJM00037843.qff")
 
     # is a FileNotFoundError raised
     with pytest.raises(FileNotFoundError):
@@ -121,7 +142,7 @@ def test_convert_wind_flags() -> None:
 def test_read_station() -> None:
 
     infile = os.path.join(os.path.dirname(__file__),
-                          "example_data", EXAMPLE_FILES[0])
+                          "example_data", "AJM00037898.qff")
     
     station = qc_utils.Station("AJM00037898", 39.6500, 46.5330, 1099.0)
 
@@ -147,7 +168,6 @@ def test_read_station_error() -> None:
     
     with pytest.raises(FileNotFoundError):
         station, _ = io_utils.read_station(infile, station)
-
 
 
 def test_write_psv(tmp_path) -> None:

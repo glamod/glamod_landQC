@@ -708,7 +708,9 @@ def residuals_gaussian(p: np.ndarray, Y: np.ndarray, X: np.ndarray) -> np.ndarra
     return err # residuals_gaussian
 
 #*********************************************
-def fit_gaussian(x: np.ndarray, y: np.ndarray, norm: float, mu: float = MDI, sig: float = MDI, skew: float = MDI) -> np.ndarray:
+def fit_gaussian(x: np.ndarray, y: np.ndarray,
+                 norm: float, mu: float = MDI,
+                 sig: float = MDI, skew: float = MDI) -> np.ndarray:
     '''
     Fit a gaussian to the data provided
     Inputs:
@@ -734,10 +736,10 @@ def fit_gaussian(x: np.ndarray, y: np.ndarray, norm: float, mu: float = MDI, sig
     # call the appropriate fitting function and routine
     if skew == MDI:
         p0 = np.array([norm, mu, sig])
-        result = least_squares(residuals_gaussian, p0, args=(y, x), max_nfev=10000, verbose=0, method="lm")
+        result = least_squares(residuals_gaussian, p0, args=(y, x), max_nfev=10000, verbose=0, method="trf", jac="3-point")
     else:
         p0 = np.array([norm, mu, sig, skew])
-        result = least_squares(residuals_skew_gaussian, p0, args=(y, x), max_nfev=10000, verbose=0, method="lm")
+        result = least_squares(residuals_skew_gaussian, p0, args=(y, x), max_nfev=10000, verbose=0, method="trf", jac="3-point")
     return result.x # fit_gaussian
 
 #************************************************************************

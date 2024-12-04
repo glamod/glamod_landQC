@@ -9,6 +9,7 @@ import os
 import json
 import datetime as dt
 import numpy as np
+import pandas as pd
 import setup
 import logging
 logger = logging.getLogger(__name__)
@@ -96,19 +97,19 @@ def lc(station: utils.Station, var_list: list, full: bool = False,
     return_code = 0
     if station.lat < -90 or station.lat > 90:
         write_logic_error(station, f"Bad latitude: {station.lat}", diagnostics=diagnostics)
-        logger.info(f"Bad latitude: {station.lat}")
+        logger.warning(f"Bad latitude: {station.lat}")
         return_code = -1
 
     if station.lon < -180 or station.lon > 180:
         write_logic_error(station, f"Bad longtitude: {station.lon}", diagnostics=diagnostics)
-        logger.info(f"Bad longitude: {station.lon}")
+        logger.warning(f"Bad longitude: {station.lon}")
         return_code = -1
 
     if station.lon == 0 and station.lat == 0:
         write_logic_error(station,
                           f"Bad longtitude & latitude combination: lon={station.lon}, lat={station.lat}",
                           diagnostics=diagnostics)
-        logger.info(f"Bad longitude/latitude combination: {station.lon} & {station.lat}")
+        logger.warning(f"Bad longitude/latitude combination: {station.lon} & {station.lat}")
         return_code = -1
 
     # Missing elevation acceptable - removed this for the moment (7 November 2019, RJHD)
@@ -116,23 +117,35 @@ def lc(station: utils.Station, var_list: list, full: bool = False,
     if (station.elev < -432.65 or station.elev > 8850.):
         if str(station.elev)[:4] not in ["-999", "9999"]:
             write_logic_error(station, f"Bad elevation: {station.elev}", diagnostics=diagnostics)
-            logger.info(f"Bad elevation: {station.elev}")
+            logger.warning(f"Bad elevation: {station.elev}")
             return_code = -1
         else:
-            logger.info(f"Elevation (but not flagged): {station.elev}")
+            logger.warning(f"Elevation (but not flagged): {station.elev}")
 
     if station.times.iloc[0] < dt.datetime(1700, 1, 1):
         # Pandas datetime limited to pd.Timestamp.min = Timestamp('1677-09-22 00:12:43.145225')
         write_logic_error(station, f"Bad start time: {station.times[0]}", diagnostics=diagnostics)
-        logger.info(f"Bad start time: {station.times[0]}")
+        logger.warning(f"Bad start time: {station.times[0]}")
         return_code = -1
 
     elif station.times.iloc[-1] > dt.datetime.now():
         # Pandas datetime limited to pd.Timestamp.max = Timestamp('2262-04-11 23:47:16.854775807')
         write_logic_error(station, f"Bad end time: {station.times[-1]}", diagnostics=diagnostics)
-        logger.info(f"Bad end time: {station.times[-1]}")
+        logger.warning(f"Bad end time: {station.times[-1]}")
         return_code = -1
     
+    # For Release 7 had some discontinuities in the times, with a repeated chunk
+    #  Time stamp went from 2023/5/31/21:00 to 2023/1/1/00:00
+    time_differences = np.diff(station.times.dt.to_pydatetime())
+    bad_differences, = np.nonzero(time_differences < dt.timedelta(0))
+    if len(bad_differences) != 0:
+        for location in bad_differences:
+            write_logic_error(station,
+                              f"Dates not in ascending order:\n{station.times[location: location+2].to_string()}",
+                              diagnostics=diagnostics)
+            logger.warning(f"Dates not in ascending order:\n{station.times[location: location+2].to_string()}")
+
+        return_code = -1
 
     # Now do logic checks on observations
 

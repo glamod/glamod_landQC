@@ -70,6 +70,10 @@ def main(restart_id: str = "", end_id: str = "", clobber: bool = False) -> None:
                 # some issue in the raw file
                 print(f"{station}, Error in input file, {str(e)}")
                 continue
+            except EOFError as e:
+                # some issue in the gzip archive
+                print(f"{station}, Error in gzip file, {str(e)}")
+                continue
 
             if len(station.years) == 0:
                 print(f"{station} has no data")

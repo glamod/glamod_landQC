@@ -316,10 +316,10 @@ def find_thresholds(obs_var: utils.Meteorological_Variable, station: utils.Stati
         bincentres = bins[1:] - (BIN_WIDTH/2)
         hist, bin_edges = np.histogram(normalised_anomalies, bins)
 
-        gaussian_fit = utils.fit_gaussian(bincentres, hist, max(hist),
+        gaussian_fit = utils.fit_gaussian(bincentres, hist, 0.5*max(hist),
                                           mu=np.ma.median(normalised_anomalies),
                                           sig=1.5*utils.spread(normalised_anomalies),
-                                          skew=skew(normalised_anomalies.compressed()))
+                                          skew=0.5*skew(normalised_anomalies.compressed()))
 
         fitted_curve = utils.skew_gaussian(bincentres, gaussian_fit)
 
