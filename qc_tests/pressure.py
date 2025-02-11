@@ -57,13 +57,17 @@ def plot_pressure_timeseries(sealp: utils.Meteorological_Variable,
 
 
 #*********************************************
-def plot_pressure_distribution(difference: np.ndarray, vmin: int=-1, vmax:int=1) -> None:
+def plot_pressure_distribution(difference: np.ndarray,
+                               title: str,
+                               vmin: int=-1, vmax:int=1)-> None:
     '''
     Plot distribution and include the upper and lower thresholds
 
     :param array difference: values to form histogram from 
+    :param str title: label for plot
     :param int vmin: lower locations for vertical line
     :param int vmax: upper locations for vertical line
+
     '''
     import matplotlib.pyplot as plt
 
@@ -77,6 +81,7 @@ def plot_pressure_distribution(difference: np.ndarray, vmin: int=-1, vmax:int=1)
     plt.xlim([bins[0] - 1, bins[-1] + 1])
     plt.ylabel("Observations")
     plt.xlabel("Difference (hPa)")
+    plt.title(title)
     plt.show()
 
     return # plot_pressure_distribution
@@ -140,6 +145,8 @@ def pressure_offset(sealp: utils.Meteorological_Variable,
 
     flags = np.array(["" for i in range(sealp.data.shape[0])])
 
+    # expecting sea level pressure to be larger for most land stations
+    #   so difference should be positive.
     difference = sealp.data - stnlp.data
 
     if len(difference.compressed()) >= utils.DATA_COUNT_THRESHOLD:
@@ -165,7 +172,8 @@ def pressure_offset(sealp: utils.Meteorological_Variable,
 
             # diagnostic plots
             if plots:
-                plot_pressure_distribution(difference.compressed(), vmin=(average + (THRESHOLD*spread)),
+                plot_pressure_distribution(difference, "Offset",
+                                           vmin=(average + (THRESHOLD*spread)),
                                            vmax=(average - (THRESHOLD*spread)))
 
             if len(high) != 0 or len(low) != 0:
@@ -276,7 +284,8 @@ def pressure_theory(sealp: utils.Meteorological_Variable,
 
         # diagnostic plots
         if plots:
-            plot_pressure_distribution(difference.compressed(), vmin=-THEORY_THRESHOLD,
+            plot_pressure_distribution(difference, "Theory",
+                                       vmin=-THEORY_THRESHOLD,
                                        vmax=THEORY_THRESHOLD)
 
         if len(bad_locs) != 0:
