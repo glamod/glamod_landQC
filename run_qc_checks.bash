@@ -184,8 +184,8 @@ do
     echo "#SBATCH --qos=normal" >> "${lotus_script}"
 
     echo "#SBATCH --job-name=QC_${stn}" >> "${lotus_script}"
-    echo "#SBATCH --output=${ROOT_DIR}${LOG_DIR}/${stn}_${STAGE}.out" >> "${lotus_script}"
-    echo "#SBATCH --error=${ROOT_DIR}${LOG_DIR}/${stn}_${STAGE}.err " >> "${lotus_script}"
+    echo "#SBATCH --output=${ROOTDIR}${LOG_DIR}/${stn}_${STAGE}.out" >> "${lotus_script}"
+    echo "#SBATCH --error=${ROOTDIR}${LOG_DIR}/${stn}_${STAGE}.err " >> "${lotus_script}"
     
     if [ "${STAGE}" == "I" ]; then
         if [ "${stn:0:1}" == "U" ]; then
@@ -233,7 +233,6 @@ do
         echo "sleeping for ${WAIT_N_MINS}min to clear queue"
         sleep "${WAIT_N_MINS}m"
         n_jobs=$(squeue --user="${USER}" | wc -l)
-        exit
     done
 
     let scnt=scnt+1
