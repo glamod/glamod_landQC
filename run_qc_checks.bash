@@ -85,6 +85,7 @@ if [ "${STAGE}" == "N" ]; then
     if [ "${run_neighbours}" == "Y" ] || [ "${run_neighbours}" == "y" ]; then
 	echo "Running neighbour finding routine"
 	# module load conda
+    conda init bash > /dev/null 2>&1
 	conda activate glamod_QC
     python "${cwd}/find_neighbours.py"
 
