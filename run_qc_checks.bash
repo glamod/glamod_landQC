@@ -1,16 +1,16 @@
 #!/bin/bash
 set -x
-#****************************************************************** 
+#******************************************************************
 # Script to process all the stations.  Runs through station list
-#   and submits each as a separate jobs to LOTUS
+#   and submits each as a separate jobs to SPICE
 #
 # CALL
 #    bash run_qc.bash STAGE WAIT CLOBBER
-#    
+#
 #    STAGE = I [internal] or N [neighbour]
 #     WAIT = T [true] or F [false] # wait for upstream files to be ready
 #  CLOBBER = C [clobber] or S [skip] # overwrite or skip existing files
-#****************************************************************** 
+#******************************************************************
 
 STAGE=$1
 if [ "${STAGE}" != "I" ] && [ "${STAGE}" != "N" ]; then
@@ -42,14 +42,9 @@ fi
 WAIT_N_MINS=1
 cwd=$(pwd)
 
-SCRIPT_DIR=${cwd}/lotus_scripts/
+SCRIPT_DIR=${cwd}/spice_scripts/
 if [ ! -d "${SCRIPT_DIR}" ]; then
     mkdir "${SCRIPT_DIR}"
-fi
-
-LOG_DIR=${cwd}/logs/
-if [ ! -d "${LOG_DIR}" ]; then
-    mkdir "${LOG_DIR}"
 fi
 
 #**************************************
@@ -70,22 +65,36 @@ QFF_DIR="$(grep "qff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 QFF_ZIP="$(grep "out_compression " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 VERSION="$(grep "version " "${CONFIG_FILE}" | awk -F'= ' 'FNR == 2 {print $2}')"
 ERR_DIR="$(grep "errors " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"  # ${QFF_DIR%/}_errors/
-exit
+LOG_DIR="$(grep "logs " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
+CONFIG_DIR="$(grep "config " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
+if [ ! -d "${ROOTDIR}${LOG_DIR}" ]; then
+    mkdir "${ROOTDIR}${LOG_DIR}"
+fi
+
 #**************************************
 # if neighbour checks make sure all files in place
 if [ "${STAGE}" == "N" ]; then
-    echo "${ROOTDIR}${QFF_DIR%/}_configs/${VERSION}neighbours.txt"
-    if [ ! -f "${ROOTDIR}${QFF_DIR%/}_configs/${VERSION}neighbours.txt" ]; then
-        read -p "Neighbour file missing - do you want to run Y/N" run_neighbours
+    echo "${ROOTDIR}${CONFIG_DIR}${VERSION}neighbours.txt"
+    if [ ! -f "${ROOTDIR}${CONFIG_DIR}${VERSION}neighbours.txt" ]; then
+        read -p "Neighbour file missing - do you want to create? (Y/N): " run_neighbours
 
-	    if [ "${run_neighbours}" == "Y" ]; then
-	         echo "Running neighbour finding routine"
-                 source "${VENVDIR}/bin/activate"
-                 python -m find_neighbours
-	    else
-	         echo "Not running neighbour finding routine, exit"
-	         exit
-	    fi
+    else
+	read -p "Neighbour file exists - do you want to rebuild? (Y/N): " run_neighbours
+    fi
+    # check if needing to run
+    if [ "${run_neighbours}" == "Y" ] || [ "${run_neighbours}" == "y" ]; then
+	echo "Running neighbour finding routine"
+	# module load conda
+    conda init bash > /dev/null 2>&1
+	conda activate glamod_QC
+    python "${cwd}/find_neighbours.py"
+
+	wc -l "${ROOTDIR}${CONFIG_DIR}${VERSION}neighbours.txt"
+    else
+	if [ ! -f "${ROOTDIR}${CONFIG_DIR}${VERSION}neighbours.txt" ]; then
+	    echo "Not running neighbour finding routine and doesn't exist: Exit"
+	    exit
+	fi
     fi
 fi
 
@@ -99,7 +108,7 @@ stn_ids=$(awk -F" " '{print $1}' "${station_list_file}")
 
 #**************************************
 echo "Check all upstream stations present"
-missing_file=missing.txt
+missing_file="${ROOTDIR}${CONFIG_DIR}${VERSION}missing_${STAGE}.txt"
 if [ -e "${missing_file}" ]; then
     rm "${missing_file}"
 fi
@@ -142,10 +151,16 @@ fi
 echo "Checked for all input files - see missing.txt"
 n_missing=$(wc "${missing_file}" | awk -F' ' '{print $1}')
 if [ "${n_missing}" -ne 0 ]; then
-    read -p "${n_missing} upstream files missing - do you want to run remainder Y/N? " run_lotus
-    if [ "${run_lotus}" == "N" ]; then
+    read -p "${n_missing} upstream files missing - do you want to run remainder Y/N? " run_spice
+    if [ "${run_spice}" == "N" ]; then
         exit
     fi
+else
+    read -p "All upstream files present - do you want to run the job Y/N? " run_spice
+    if [ "${run_spice}" == "N" ] || [ "${run_spice}" == "n" ]; then
+        exit
+    fi
+
 fi
 
 
@@ -155,67 +170,67 @@ fi
 for stn in ${stn_ids}
 do
     echo "${stn}"
-    
-    # make the LOTUS script and submit
-    if [ "${STAGE}" == "I" ]; then
- 	    lotus_script="${SCRIPT_DIR}/lotus_internal_${stn}.bash"
-    elif  [ "${STAGE}" == "N" ]; then
- 	    lotus_script="${SCRIPT_DIR}/lotus_external_${stn}.bash"
-    fi
-    echo "#!/bin/bash -l" > "${lotus_script}"
-    # ICHEC settings
-    # echo "#SBATCH --partition=short-serial-4hr" >> "${lotus_script}"
-    # echo "#SBATCH --account=short4hr" >> "${lotus_script}"
-    # SPICE settings
-    echo "#SBATCH --qos=normal" >> "${lotus_script}"
 
-    echo "#SBATCH --job-name=QC_${stn}" >> "${lotus_script}"
-    echo "#SBATCH --output=${LOG_DIR}/${stn}_${STAGE}.out" >> "${lotus_script}"
-    echo "#SBATCH --error=${LOG_DIR}/${stn}_${STAGE}.err " >> "${lotus_script}"
-    
+    # make the SPICE script and submit
+    if [ "${STAGE}" == "I" ]; then
+ 	    spice_script="${SCRIPT_DIR}/spice_internal_${stn}.bash"
+    elif  [ "${STAGE}" == "N" ]; then
+ 	    spice_script="${SCRIPT_DIR}/spice_external_${stn}.bash"
+    fi
+    echo "#!/bin/bash -l" > "${spice_script}"
+    # ICHEC settings
+    # echo "#SBATCH --partition=short-serial-4hr" >> "${spice_script}"
+    # echo "#SBATCH --account=short4hr" >> "${spice_script}"
+    # SPICE settings
+    echo "#SBATCH --qos=normal" >> "${spice_script}"
+
+    echo "#SBATCH --job-name=QC_${stn}" >> "${spice_script}"
+    echo "#SBATCH --output=${ROOTDIR}${LOG_DIR}/${stn}_${STAGE}.out" >> "${spice_script}"
+    echo "#SBATCH --error=${ROOTDIR}${LOG_DIR}/${stn}_${STAGE}.err " >> "${spice_script}"
+
     if [ "${STAGE}" == "I" ]; then
         if [ "${stn:0:1}" == "U" ]; then
             # US stations take a long time
-            echo "#SBATCH --time=60:00" >> "${lotus_script}" # 60mins
-            echo "#SBATCH --mem=15000" >> "${lotus_script}"
+            echo "#SBATCH --time=60:00" >> "${spice_script}" # 60mins
+            echo "#SBATCH --mem=15000" >> "${spice_script}"
         elif [ "${stn:0:1}" == "G" ]; then
             # Some German stations take a long time
-            echo "#SBATCH --time=60:00" >> "${lotus_script}" # 60mins
-            echo "#SBATCH --mem=12000" >> "${lotus_script}"
+            echo "#SBATCH --time=60:00" >> "${spice_script}" # 60mins
+            echo "#SBATCH --mem=12000" >> "${spice_script}"
         else
-            echo "#SBATCH --time=30:00" >> "${lotus_script}" # 20mins
-            echo "#SBATCH --mem=8000" >> "${lotus_script}"
+            echo "#SBATCH --time=30:00" >> "${spice_script}" # 20mins
+            echo "#SBATCH --mem=8000" >> "${spice_script}"
         fi
     elif  [ "${STAGE}" == "N" ]; then
         if [ "${stn:0:1}" == "U" ]; then
             # US stations take lots of memory
-            echo "#SBATCH --time=20:00" >> "${lotus_script}" # 20mins
-            echo "#SBATCH --mem=30000" >> "${lotus_script}"
+            echo "#SBATCH --time=20:00" >> "${spice_script}" # 20mins
+            echo "#SBATCH --mem=30000" >> "${spice_script}"
         elif [ "${stn:0:1}" == "G" ]; then
             # Some German stations take lots of memory
-            echo "#SBATCH --time=20:00" >> "${lotus_script}" # 20mins
-            echo "#SBATCH --mem=30000" >> "${lotus_script}"
+            echo "#SBATCH --time=20:00" >> "${spice_script}" # 20mins
+            echo "#SBATCH --mem=30000" >> "${spice_script}"
         else
-            echo "#SBATCH --time=20:00" >> "${lotus_script}" # 20mins
-            echo "#SBATCH --mem=10000" >> "${lotus_script}"
+            echo "#SBATCH --time=20:00" >> "${spice_script}" # 20mins
+            echo "#SBATCH --mem=10000" >> "${spice_script}"
         fi
     fi
-    echo "" >> "${lotus_script}"
-    # echo "source ${VENVDIR}/bin/activate" >> "${lotus_script}"
-    echo "conda activate glamod_QC" >> "${lotus_script}"
-    echo "" >> "${lotus_script}"
+    echo "" >> "${spice_script}"
+    # echo "source ${VENVDIR}/bin/activate" >> "${spice_script}"
+    echo "conda activate glamod_QC" >> "${spice_script}"
+    echo "" >> "${spice_script}"
 
     if [ "${STAGE}" == "I" ]; then
-        echo "python -m intra_checks --restart_id ${stn} --end_id ${stn} --clobber --full" >> "${lotus_script}"
+        echo "python -m intra_checks --restart_id ${stn} --end_id ${stn} --clobber --full" >> "${spice_script}"
     elif  [ "${STAGE}" == "N" ]; then
-        echo "python -m inter_checks --restart_id ${stn} --end_id ${stn} --clobber --full" >> "${lotus_script}"
+        echo "python -m inter_checks --restart_id ${stn} --end_id ${stn} --clobber --full" >> "${spice_script}"
     fi
 
     # now check if we should submit it.
     # ensure don't overload the queue, max of e.g. 50
     n_jobs=$(squeue --user="${USER}" | wc -l)
     while [ "${n_jobs}" -gt "${MAX_N_JOBS}" ];
-    do        
+    do
         echo "sleeping for ${WAIT_N_MINS}min to clear queue"
         sleep "${WAIT_N_MINS}m"
         n_jobs=$(squeue --user="${USER}" | wc -l)
@@ -247,37 +262,35 @@ do
                 submit=true
             elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
                 # if station not processed, then no point submitting
-                submit=skip
+                submit=false
             elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}.err" ]; then
                 # if station has had an error, then no point in submitting
-                submit=skip
+                submit=false
                 #            else
                 #                # file may well have been withheld, so skip for the moment
                 #                # 2020-06-01 - needs to be sorted better (checking the bad_stations folder)
                 #                submit=true
             fi
         fi
-        
+
         # option to skip over if upstream missing through unexpected way
         if [ "${WAIT}" == "T" ]; then
-
             if [ ${submit} == false ]; then
                 echo "upstream file ${stn} missing, sleeping 1m"
                 sleep 1m
             fi
 
         elif [ "${WAIT}" == "F" ]; then
-
             if [ ${submit} == false ]; then
                 echo "upstream file ${stn} missing, skipping"
                 submit=skip # to escape the loop as we will skip this file
             fi
         fi
-        
+
     done
 
     # if clear to submit
-    if [ $submit == true ]; then
+    if [ ${submit} == true ]; then
 
         # make directories if they don't exist
         if [ "${STAGE}" == "I" ]; then
@@ -292,7 +305,7 @@ do
 
         # if overwrite
         if [ "${CLOBBER}" == "C" ]; then
-            sbatch "${lotus_script}"
+            sbatch "${spice_script}"
             sleep 1s # allow submission to occur before moving on
 
 	    # if not overwrite
@@ -314,12 +327,12 @@ do
 
                 else
 		            # no output, submit
-                    sbatch "${lotus_script}"
-                    sleep 1s # allow submission to occur before 
-#                    exit
+                    sbatch "${spice_script}"
+                    sleep 1s # allow submission to occur before
+                    # exit
 
                 fi
-                
+
             elif [ "${STAGE}" == "N" ]; then
 
                 if [ -f "${ROOTDIR}${QFF_DIR}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
@@ -336,8 +349,8 @@ do
 
                 else
 		            # no output, submit
-                    sbatch "${lotus_script}"
-                    sleep 1s # allow submission to occur before 
+                    sbatch "${spice_script}"
+                    sleep 1s # allow submission to occur before
 #                    exit
 
                 fi
@@ -358,7 +371,7 @@ n_jobs=$(squeue --user="${USER}" | wc -l)
 # deal with Slurm header in output
 let n_jobs=n_jobs-1
 while [ ${n_jobs} -ne 0 ];
-do        
+do
     echo "All submitted, waiting 5min for queue to clear"
     sleep 5m
     n_jobs=$(squeue --user="${USER}" | wc -l)
