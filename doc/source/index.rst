@@ -20,50 +20,9 @@ although using the HadISD tests and codes as inspiration, a number of
 requirements for this service mean the code base has been written from
 scratch.
 
-Python Environment on Kay/Bastion
----------------------------------
 
-The QC requires a specific Python environment to run.  In the past this has been done with ``venv`` but the functionality and support on Kay with ``conda`` is better.  
 
-On Kay, you need to load the module to allow access to ``conda``::
 
-  module load conda
-
-On Bastion, you need to install miniconda (which should update your
-``.bashrc`` file)::
-
-  mkdir -p ~/miniconda3
-  wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
-  bash ~/miniconda3/miniconda.sh -u -p ~/miniconda3
-  rm ~/miniconda3/miniconda.sh
-
-Then you need to build the environment from the supplied ``yml`` file::
-
-  conda env create --name glamod_QC --file=environment.yml
-
-This can take a while.  Once that has completed, you can load the environment with ::
-
-  conda activate glamod_QC
-
-And to deactivate::
-
-  conda deactivate
-
-All the necessary Python libraries should have been installed.
-There is also an oler ``make_venv.bash`` script, using the
-``qc_venv_requirements.txt`` file, but this hasn't been tested in a while.
-
-Building the documentation
---------------------------
-
-To build this Sphinx documentation to include all the doc-strings from the scripts into a pretty html file::
-
-  [module load conda]
-  conda activate glamod_QC
-  cd doc
-  make html
-
-Then you can open the ``index.html`` in the `doc/build/html/` directory.
 
 
 Configuring the QC
@@ -93,7 +52,7 @@ thresholds to use.  The configuration.txt file contains::
   inventory = ghcnd_inventory.txt
   variables = obs_variables.json
   logic = logic_config.json
-  in_compression = 
+  in_compression =
   out_compression = .gz
   [STATISTICS]
   mean = False
@@ -185,7 +144,7 @@ submitted via the ``plot_scripts_slurm.bash`` /
 ``plot_scripts_parallel.bash`` script using the ``sbatch`` or
 ``parallel`` command.  There is also a script
 ``metadata_scripts_slurm.bash`` / ``metadata_scripts_parallel.bash``
-which produces some of the metadata files to support the output data. 
+which produces some of the metadata files to support the output data.
 
 The python scripts called by ``run_qc_taskfarm.bash`` / ``run_qc_parallel.bash`` have their own options which can be set (see below).  For the moment, the one which allows stored values and thresholds from a previous run to be used (rather than calculated afresh) is not active.  This option was written with the near-real-time updates in mind, however has never been tested on e.g. a "diff" file.  To turn this on, you would need to edit the section of the bash script which generates the job.
 
@@ -269,10 +228,10 @@ Technical Note, #103, 2019, https://www.metoffice.gov.uk/learning/library/public
 Expanding HadISD: quality-controlled, sub-daily station data from
 1931, RJH Dunn, KM Willett, DE Parker, L Mitchell,
 Geosci. Instrum. Method. Data Syst., 5, 473-491, (2016),
-http://www.geosci-instrum-method-data-syst.net/5/473/2016/ 
+http://www.geosci-instrum-method-data-syst.net/5/473/2016/
 
 HadISD: a quality controlled global synoptic report database for selected
 variables at long-term stations from 1973-2010, RJH Dunn, KM Willett,
 PW Thorne, EV Woolley, I Durre, A Dai, DE Parker, RS Vose, Climate of
 the Past 8, 1649-1679 (2012),
-http://www.clim-past.net/8/1649/2012/cp-8-1649-2012.html 
+http://www.clim-past.net/8/1649/2012/cp-8-1649-2012.html
