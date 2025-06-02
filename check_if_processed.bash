@@ -31,9 +31,8 @@ MFF_VER=$(grep "mff_version " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
 PROC=$(grep "proc " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
 QFF=$(grep "qff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
 QFF_ZIP="$(grep "out_compression " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
-VERSION=$(grep "version " "${CONFIG_FILE}" | grep -v "${MFF_VER}" | awk -F'= ' '{print $2}')
+VERSION=$(grep "version " "${CONFIG_FILE}" | awk -F'= ' 'FNR == 2 {print $2}')
 ERR=${QFF%/}_errors/
-
 
 # set up list of stations
 STATION_LIST=$(grep "station_list " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')

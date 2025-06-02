@@ -1,30 +1,32 @@
 #!/bin/bash
-set -x
-#******************************************************************
+#set -x
+#****************************************************************** 
 # Script to process all the stations.  Runs through station list
-#   and submits each as a separate jobs to SPICE
+#   and submits each as a separate jobs on Bastion
 #
 # CALL
 #    bash run_qc.bash STAGE WAIT CLOBBER
-#
+#    
 #    STAGE = I [internal] or N [neighbour]
 #     WAIT = T [true] or F [false] # wait for upstream files to be ready
 #  CLOBBER = C [clobber] or S [skip] # overwrite or skip existing files
-#******************************************************************
+#****************************************************************** 
 
+#**************************************
+# manage the input arguments
 STAGE=$1
 if [ "${STAGE}" != "I" ] && [ "${STAGE}" != "N" ]; then
-    echo "Please enter valid switch. I [internal] or N [neighbour]"
+    echo "Please enter valid switch. I (internal) or N (neighbour)"
     exit
 fi
 WAIT=$2
 if [ "${WAIT}" != "T" ] && [ "${WAIT}" != "F" ]; then
-    echo "Please enter valid waiting option. T [true - wait for upstream files] or F [false - skip missing files]"
+    echo "Please enter valid waiting option. T (true - wait for upstream files) or F (false - skip missing files)"
     exit
 fi
 CLOBBER=$3
 if [ "${CLOBBER}" != "C" ] && [ "${CLOBBER}" != "S" ]; then
-    echo "Please enter valid clobber option. C [clobber - overwrite existing outputs] or S [skip - keep existing outputs]"
+    echo "Please enter valid clobber option. C (clobber - overwrite existing outputs) or S (skip - keep existing outputs)"
     exit
 fi
 # remove all 3 positional characters
@@ -34,18 +36,49 @@ shift
 
 #**************************************
 # other settings
-if [ "${STAGE}" == "I" ]; then
-    MAX_N_JOBS=150
-elif [ "${STAGE}" == "N" ]; then
-    MAX_N_JOBS=50
-fi
-WAIT_N_MINS=1
 cwd=$(pwd)
+STATIONS_PER_BATCH=15000
+N_JOBS=10
 
-SCRIPT_DIR=${cwd}/spice_scripts/
+SCRIPT_DIR=${cwd}/parallel_scripts/
 if [ ! -d "${SCRIPT_DIR}" ]; then
     mkdir "${SCRIPT_DIR}"
 fi
+
+
+#**************************************
+# Set functions
+function write_and_submit_bastion_script {
+    parallel_script=${1}
+    batch=${2}
+
+    # generate a "screen" instance in detached mode
+    screen -S "qc_${batch}" -d -m
+
+    # run the parallel script in this detached screen
+    screen -r "qc_${batch}" -X stuff $'conda activate glamod_QC \n'
+
+    # run the parallel script in this detached screen
+    screen -r "qc_${batch}" -X stuff $"parallel --jobs ${N_JOBS} < ${parallel_script} 
+"
+
+
+} # write_and_submit_bastion_script
+
+function prepare_parallel_script {
+    batch=${1}
+
+    if [ "${STAGE}" == "I" ]; then
+	parallel_script="${SCRIPT_DIR}/parallel_internal_${batch}.bash"
+    elif  [ "${STAGE}" == "N" ]; then
+	parallel_script="${SCRIPT_DIR}/parallel_external_${batch}.bash"
+    fi
+    if [ -e "${parallel_script}" ]; then
+	rm "${parallel_script}"
+    fi
+    echo "${parallel_script}"
+} # prepare_parallel_script
+
 
 #**************************************
 # use configuration file to pull out paths &c
@@ -64,7 +97,7 @@ PROC_DIR="$(grep "proc " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 QFF_DIR="$(grep "qff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 QFF_ZIP="$(grep "out_compression " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 VERSION="$(grep "version " "${CONFIG_FILE}" | awk -F'= ' 'FNR == 2 {print $2}')"
-ERR_DIR="$(grep "errors " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"  # ${QFF_DIR%/}_errors/
+ERR_DIR="$(grep "errors " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 LOG_DIR="$(grep "logs " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 CONFIG_DIR="$(grep "config " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 if [ ! -d "${ROOTDIR}${LOG_DIR}" ]; then
@@ -85,7 +118,6 @@ if [ "${STAGE}" == "N" ]; then
     if [ "${run_neighbours}" == "Y" ] || [ "${run_neighbours}" == "y" ]; then
 	echo "Running neighbour finding routine"
 	# module load conda
-    conda init bash > /dev/null 2>&1
 	conda activate glamod_QC
     python "${cwd}/find_neighbours.py"
 
@@ -98,9 +130,8 @@ if [ "${STAGE}" == "N" ]; then
     fi
 fi
 
-
 # set up list of stations
-STATION_LIST=$(grep "station_list " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
+STATION_LIST="$(grep "station_list " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 station_list_file="${STATION_LIST}"
 
 wc -l "${station_list_file}"
@@ -124,7 +155,7 @@ do
         if [ -f "${ROOTDIR}${PROC_DIR}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
             processed=true
         elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
-            # if station not processed, then has been processed, and won't appear
+            # if station not processed/withheld, then has been processed, and won't appear
             processed=true
         elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}.err" ]; then
             # if station has had an error, then has been processed, and won't appear
@@ -144,155 +175,83 @@ if [ "${STAGE}" == "N" ]; then
     echo "Internal checks successful on ${n_processed_successfully} stations"
     n_processed_bad=$(eval ls "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/*.qff${QFF_ZIP}" | wc -l)
     echo "Internal checks withheld ${n_processed_bad} stations"
-    n_processed_err=$(eval ls "${ROOTDIR}${ERR_DIR}${VERSION}/*err" | wc -l)
+    n_processed_err=$(eval ls "${ROOTDIR}${ERR_DIR}${VERSION}*err" | wc -l)
     echo "Internal checks had errors on ${n_processed_err} stations"
 fi
 
 echo "Checked for all input files - see missing.txt"
 n_missing=$(wc "${missing_file}" | awk -F' ' '{print $1}')
 if [ "${n_missing}" -ne 0 ]; then
-    read -p "${n_missing} upstream files missing - do you want to run remainder Y/N? " run_spice
-    if [ "${run_spice}" == "N" ]; then
+    read -p "${n_missing} upstream files missing - do you want to run remainder Y/N? " run_bastion
+    if [ "${run_bastion}" == "N" ] || [ "${run_bastion}" == "n" ]; then
         exit
     fi
 else
-    read -p "All upstream files present - do you want to run the job Y/N? " run_spice
-    if [ "${run_spice}" == "N" ] || [ "${run_spice}" == "n" ]; then
+    read -p "All upstream files present - do you want to run the job Y/N? " run_bastion
+    if [ "${run_bastion}" == "N" ] || [ "${run_bastion}" == "n" ]; then
         exit
     fi
 
 fi
 
+#**************************************
+# Batch the stations into a number of parallel scripts
+#   one script per $STATIONS_PER_BATCH stations
+batch=1
+parallel_script="$(prepare_parallel_script "${batch}")"
 
 #**************************************
-# spin through each in turn, submitting a job
-# scnt=0
+# spin through each in turn, creating a job
+scnt=1
 for stn in ${stn_ids}
 do
     echo "${stn}"
-
-    # make the SPICE script and submit
-    if [ "${STAGE}" == "I" ]; then
- 	    spice_script="${SCRIPT_DIR}/spice_internal_${stn}.bash"
-    elif  [ "${STAGE}" == "N" ]; then
- 	    spice_script="${SCRIPT_DIR}/spice_external_${stn}.bash"
-    fi
-    echo "#!/bin/bash -l" > "${spice_script}"
-    # ICHEC settings
-    # echo "#SBATCH --partition=short-serial-4hr" >> "${spice_script}"
-    # echo "#SBATCH --account=short4hr" >> "${spice_script}"
-    # SPICE settings
-    echo "#SBATCH --qos=normal" >> "${spice_script}"
-
-    echo "#SBATCH --job-name=QC_${stn}" >> "${spice_script}"
-    echo "#SBATCH --output=${ROOTDIR}${LOG_DIR}/${stn}_${STAGE}.out" >> "${spice_script}"
-    echo "#SBATCH --error=${ROOTDIR}${LOG_DIR}/${stn}_${STAGE}.err " >> "${spice_script}"
-
-    if [ "${STAGE}" == "I" ]; then
-        if [ "${stn:0:1}" == "U" ]; then
-            # US stations take a long time
-            echo "#SBATCH --time=60:00" >> "${spice_script}" # 60mins
-            echo "#SBATCH --mem=15000" >> "${spice_script}"
-        elif [ "${stn:0:1}" == "G" ]; then
-            # Some German stations take a long time
-            echo "#SBATCH --time=60:00" >> "${spice_script}" # 60mins
-            echo "#SBATCH --mem=12000" >> "${spice_script}"
-        else
-            echo "#SBATCH --time=30:00" >> "${spice_script}" # 20mins
-            echo "#SBATCH --mem=8000" >> "${spice_script}"
-        fi
-    elif  [ "${STAGE}" == "N" ]; then
-        if [ "${stn:0:1}" == "U" ]; then
-            # US stations take lots of memory
-            echo "#SBATCH --time=20:00" >> "${spice_script}" # 20mins
-            echo "#SBATCH --mem=30000" >> "${spice_script}"
-        elif [ "${stn:0:1}" == "G" ]; then
-            # Some German stations take lots of memory
-            echo "#SBATCH --time=20:00" >> "${spice_script}" # 20mins
-            echo "#SBATCH --mem=30000" >> "${spice_script}"
-        else
-            echo "#SBATCH --time=20:00" >> "${spice_script}" # 20mins
-            echo "#SBATCH --mem=10000" >> "${spice_script}"
-        fi
-    fi
-    echo "" >> "${spice_script}"
-    # echo "source ${VENVDIR}/bin/activate" >> "${spice_script}"
-    echo "conda activate glamod_QC" >> "${spice_script}"
-    echo "" >> "${spice_script}"
-
-    if [ "${STAGE}" == "I" ]; then
-        echo "python -m intra_checks --restart_id ${stn} --end_id ${stn} --clobber --full" >> "${spice_script}"
-    elif  [ "${STAGE}" == "N" ]; then
-        echo "python -m inter_checks --restart_id ${stn} --end_id ${stn} --clobber --full" >> "${spice_script}"
-    fi
-
-    # now check if we should submit it.
-    # ensure don't overload the queue, max of e.g. 50
-    n_jobs=$(squeue --user="${USER}" | wc -l)
-    while [ "${n_jobs}" -gt "${MAX_N_JOBS}" ];
-    do
-        echo "sleeping for ${WAIT_N_MINS}min to clear queue"
-        sleep "${WAIT_N_MINS}m"
-        n_jobs=$(squeue --user="${USER}" | wc -l)
-    done
-
-    let scnt=scnt+1
-# SUBSETTING FOR DIAGNOSTICS
-#   if [ ${stn} == "AYW00057801" ]; then
-#       # test first 1000 (20240704)
-#       exit
-#   fi
-#    if [ ${scnt} -le 2000 ]; then
-#        # test first 1000 (20190913)
-#        continue
-#    elif [ ${scnt} -ge 4000 ]; then
-#        exit
-#    fi
-
+    
     # check target file exists (in case waiting on upstream process)
     submit=false
     while [ ${submit} == false ];
     do
-        if [ "${STAGE}" == "I" ]; then
-            if [ -f "${MFF_DIR}${MFF_VER}${stn}.mff${MFF_ZIP}" ]; then
-                submit=true
-            fi
-        elif [ "${STAGE}" == "N" ]; then
-            if [ -f "${ROOTDIR}${PROC_DIR}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
-                submit=true
-            elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
-                # if station not processed, then no point submitting
-                submit=false
-            elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}.err" ]; then
-                # if station has had an error, then no point in submitting
-                submit=false
-                #            else
-                #                # file may well have been withheld, so skip for the moment
-                #                # 2020-06-01 - needs to be sorted better (checking the bad_stations folder)
-                #                submit=true
-            fi
+    # check if upstream data files are present
+	if [ "${STAGE}" == "I" ]; then
+        if [ -f "${MFF_DIR}${MFF_VER}${stn}.mff${MFF_ZIP}" ]; then
+		    submit=true
         fi
-
-        # option to skip over if upstream missing through unexpected way
-        if [ "${WAIT}" == "T" ]; then
-            if [ ${submit} == false ]; then
-                echo "upstream file ${stn} missing, sleeping 1m"
-                sleep 1m
-            fi
-
-        elif [ "${WAIT}" == "F" ]; then
-            if [ ${submit} == false ]; then
-                echo "upstream file ${stn} missing, skipping"
-                submit=skip # to escape the loop as we will skip this file
-            fi
+	elif [ "${STAGE}" == "N" ]; then
+        if [ -f "${ROOTDIR}${PROC_DIR}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
+		    submit=true
+        elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
+		    # if station not processed, then no point submitting
+		    submit=false
+        elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}.err" ]; then
+		    # if station has had an error, then no point in submitting
+		    submit=false
+#            else
+#                # file may well have been withheld, so skip for the moment
+#                # 2020-06-01 - needs to be sorted better (checking the bad_stations folder)
+#                submit=true
         fi
-
+	fi
+        
+	# option to skip over if upstream missing through unexpected way
+	if [ "${WAIT}" == "T" ]; then	    
+        if [ ${submit} == false ]; then
+		    echo "upstream file ${stn} missing, sleeping 1m"
+		    sleep 1m
+        fi
+	    
+	elif [ "${WAIT}" == "F" ]; then	    
+        if [ ${submit} == false ]; then
+		    echo "upstream file ${stn} missing, skipping"
+		    break
+	        # to escape the loop as we will skip this file
+        fi
+	fi
     done
-
-    # if clear to submit
+    
+    # Have upstream file indicator, so can now insert into script
+    # make the Parallel script and submit
     if [ ${submit} == true ]; then
 
-        # make directories if they don't exist
         if [ "${STAGE}" == "I" ]; then
 	        if [ ! -e "${ROOTDIR}${PROC_DIR}${VERSION}" ]; then
 		        mkdir "${ROOTDIR}${PROC_DIR}${VERSION}"
@@ -305,11 +264,18 @@ do
 
         # if overwrite
         if [ "${CLOBBER}" == "C" ]; then
-            sbatch "${spice_script}"
-            sleep 1s # allow submission to occur before moving on
+
+	        if [ "${STAGE}" == "I" ]; then
+		        echo "python3 ${cwd}/intra_checks.py --restart_id ${stn} --end_id ${stn} --full --clobber" >> "${parallel_script}"
+	        elif  [ "${STAGE}" == "N" ]; then
+		        echo "python3 ${cwd}/inter_checks.py --restart_id ${stn} --end_id ${stn} --full --clobber" >> "${parallel_script}"
+	        fi
+            # increment station counter (don't for other elifs to reduce jobs)
+            let scnt=scnt+1
 
 	    # if not overwrite
-        else
+	    else
+
             # check if already processed before setting going
             if [ "${STAGE}" == "I" ]; then
 
@@ -326,13 +292,14 @@ do
                     echo "${stn} already processed - managed error"
 
                 else
-		            # no output, submit
-                    sbatch "${spice_script}"
-                    sleep 1s # allow submission to occur before
-                    # exit
 
+		            # no output, include
+		            echo "python3 ${cwd}/intra_checks.py --restart_id ${stn} --end_id ${stn} --full" >> "${parallel_script}"
+
+                    # increment station counter (don't for other elifs to reduce jobs)
+                    let scnt=scnt+1
                 fi
-
+ 
             elif [ "${STAGE}" == "N" ]; then
 
                 if [ -f "${ROOTDIR}${QFF_DIR}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
@@ -348,21 +315,39 @@ do
                     echo "${stn} already processed - managed error"
 
                 else
-		            # no output, submit
-                    sbatch "${spice_script}"
-                    sleep 1s # allow submission to occur before
-#                    exit
+		            # no output, include
+                    echo "python3 ${cwd}/inter_checks.py --restart_id ${stn} --end_id ${stn} --full" >> "${parallel_script}"
+
+                    # increment station counter (don't for other elifs to reduce jobs)
+                    let scnt=scnt+1
 
                 fi
+	        fi # stage
+	    fi # clobber
 
-            fi
+    else
+	    echo "${stn} not submitted, upstream file not available"
+    fi # submit
+    
+    # and write script to run this batch
+    if [ ${scnt} -eq ${STATIONS_PER_BATCH} ]; then
+	    write_and_submit_bastion_script "${parallel_script}" "${batch}"
+	
+	    # and reset counters and scripts
+	    let batch=batch+1
+	    parallel_script="$(prepare_parallel_script "${batch}")"
+	    scnt=1
 
-        fi
+	    # just for ease of reading the script output
+	    sleep 1
+#	    exit
 
     fi
 #    exit
-
+      
 done
+# and submit the final batch of stations.
+write_and_submit_bastion_script "${parallel_script}" "${batch}"
 
 
 #**************************************
@@ -371,7 +356,7 @@ n_jobs=$(squeue --user="${USER}" | wc -l)
 # deal with Slurm header in output
 let n_jobs=n_jobs-1
 while [ ${n_jobs} -ne 0 ];
-do
+do        
     echo "All submitted, waiting 5min for queue to clear"
     sleep 5m
     n_jobs=$(squeue --user="${USER}" | wc -l)

@@ -1,0 +1,14 @@
+name: glamod_QC
+dependencies:
+  - python=3.11.4
+  - sphinx_rtd_theme
+  - sphinx
+  - pandas=1.5.3
+  - scipy=1.9.3
+  - pyflakes=3.0.1
+  - numpy=1.25.0
+  - scitools-iris=3.6.1
+  - pytest=7.4.0
+  - reverse_geocoder=1.5.1
+  - coverage=7.2.2
+  - ipython[version='>=8.12']
