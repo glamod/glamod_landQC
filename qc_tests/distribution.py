@@ -177,7 +177,7 @@ def monthly_gap(obs_var: utils.Meteorological_Variable, station: utils.Station, 
             if (mid_point - step) < 0 or (mid_point + step) == standardised_months.shape[0]:
                 # reached end
                 break
-        
+
         # now follow flag locations back up through the process
         for bad_month_id in bad:
             # year ID for this set of calendar months
@@ -331,7 +331,7 @@ def find_thresholds(obs_var: utils.Meteorological_Variable, station: utils.Stati
             plt.yscale("log")
 
             plt.ylabel("Number of Observations")
-            plt.xlabel(obs_var.name.capitalize())
+            plt.xlabel(f"Normalised {obs_var.name.capitalize()} anomalies")
             plt.title(f"{station.id} - month {month}")
 
             plt.plot(bincentres, fitted_curve)
@@ -489,7 +489,7 @@ def all_obs_gap(obs_var: utils.Meteorological_Variable, station: utils.Station,
                                 separations, = np.where(storm_1diffs > np.ma.median(np.ma.diff(wind_data)))
 
                                 if len(separations) != 0:
-                                    # multiple storm signals 
+                                    # multiple storm signals
                                     storm_start = 0
                                     storm_finish = separations[0] + 1
                                     first_storm = expand_around_storms(storms[storm_start: storm_finish], len(wind_data))
@@ -512,8 +512,8 @@ def all_obs_gap(obs_var: utils.Meteorological_Variable, station: utils.Station,
 
                             # single entry
                             elif len(storms) != 0:
-                                # expand around the storm signal (rather than 
-                                #  just unflagging what could be the peak and 
+                                # expand around the storm signal (rather than
+                                #  just unflagging what could be the peak and
                                 #  leaving the entry/exit flagged)
                                 final_storm_locs = expand_around_storms(storms, len(wind_data))
 
