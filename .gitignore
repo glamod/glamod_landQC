@@ -6,4 +6,4 @@ _templates
 .vscode/
 .coverage
 logs/
-lotus_scripts/
+spice_scripts/
