@@ -1,16 +1,16 @@
 #!/bin/bash
 set -x
-#****************************************************************** 
+#******************************************************************
 # Script to process all the stations.  Runs through station list
-#   and submits each as a separate jobs to LOTUS
+#   and submits each as a separate jobs to SPICE
 #
 # CALL
 #    bash run_qc.bash STAGE WAIT CLOBBER
-#    
+#
 #    STAGE = I [internal] or N [neighbour]
 #     WAIT = T [true] or F [false] # wait for upstream files to be ready
 #  CLOBBER = C [clobber] or S [skip] # overwrite or skip existing files
-#****************************************************************** 
+#******************************************************************
 
 STAGE=$1
 if [ "${STAGE}" != "I" ] && [ "${STAGE}" != "N" ]; then
@@ -42,7 +42,7 @@ fi
 WAIT_N_MINS=1
 cwd=$(pwd)
 
-SCRIPT_DIR=${cwd}/lotus_scripts/
+SCRIPT_DIR=${cwd}/spice_scripts/
 if [ ! -d "${SCRIPT_DIR}" ]; then
     mkdir "${SCRIPT_DIR}"
 fi
@@ -170,67 +170,67 @@ fi
 for stn in ${stn_ids}
 do
     echo "${stn}"
-    
-    # make the LOTUS script and submit
-    if [ "${STAGE}" == "I" ]; then
- 	    lotus_script="${SCRIPT_DIR}/lotus_internal_${stn}.bash"
-    elif  [ "${STAGE}" == "N" ]; then
- 	    lotus_script="${SCRIPT_DIR}/lotus_external_${stn}.bash"
-    fi
-    echo "#!/bin/bash -l" > "${lotus_script}"
-    # ICHEC settings
-    # echo "#SBATCH --partition=short-serial-4hr" >> "${lotus_script}"
-    # echo "#SBATCH --account=short4hr" >> "${lotus_script}"
-    # SPICE settings
-    echo "#SBATCH --qos=normal" >> "${lotus_script}"
 
-    echo "#SBATCH --job-name=QC_${stn}" >> "${lotus_script}"
-    echo "#SBATCH --output=${ROOTDIR}${LOG_DIR}/${stn}_${STAGE}.out" >> "${lotus_script}"
-    echo "#SBATCH --error=${ROOTDIR}${LOG_DIR}/${stn}_${STAGE}.err " >> "${lotus_script}"
-    
+    # make the SPICE script and submit
+    if [ "${STAGE}" == "I" ]; then
+ 	    spice_script="${SCRIPT_DIR}/spice_internal_${stn}.bash"
+    elif  [ "${STAGE}" == "N" ]; then
+ 	    spice_script="${SCRIPT_DIR}/spice_external_${stn}.bash"
+    fi
+    echo "#!/bin/bash -l" > "${spice_script}"
+    # ICHEC settings
+    # echo "#SBATCH --partition=short-serial-4hr" >> "${spice_script}"
+    # echo "#SBATCH --account=short4hr" >> "${spice_script}"
+    # SPICE settings
+    echo "#SBATCH --qos=normal" >> "${spice_script}"
+
+    echo "#SBATCH --job-name=QC_${stn}" >> "${spice_script}"
+    echo "#SBATCH --output=${ROOTDIR}${LOG_DIR}/${stn}_${STAGE}.out" >> "${spice_script}"
+    echo "#SBATCH --error=${ROOTDIR}${LOG_DIR}/${stn}_${STAGE}.err " >> "${spice_script}"
+
     if [ "${STAGE}" == "I" ]; then
         if [ "${stn:0:1}" == "U" ]; then
             # US stations take a long time
-            echo "#SBATCH --time=60:00" >> "${lotus_script}" # 60mins
-            echo "#SBATCH --mem=15000" >> "${lotus_script}"
+            echo "#SBATCH --time=60:00" >> "${spice_script}" # 60mins
+            echo "#SBATCH --mem=15000" >> "${spice_script}"
         elif [ "${stn:0:1}" == "G" ]; then
             # Some German stations take a long time
-            echo "#SBATCH --time=60:00" >> "${lotus_script}" # 60mins
-            echo "#SBATCH --mem=12000" >> "${lotus_script}"
+            echo "#SBATCH --time=60:00" >> "${spice_script}" # 60mins
+            echo "#SBATCH --mem=12000" >> "${spice_script}"
         else
-            echo "#SBATCH --time=30:00" >> "${lotus_script}" # 20mins
-            echo "#SBATCH --mem=8000" >> "${lotus_script}"
+            echo "#SBATCH --time=30:00" >> "${spice_script}" # 20mins
+            echo "#SBATCH --mem=8000" >> "${spice_script}"
         fi
     elif  [ "${STAGE}" == "N" ]; then
         if [ "${stn:0:1}" == "U" ]; then
             # US stations take lots of memory
-            echo "#SBATCH --time=20:00" >> "${lotus_script}" # 20mins
-            echo "#SBATCH --mem=30000" >> "${lotus_script}"
+            echo "#SBATCH --time=20:00" >> "${spice_script}" # 20mins
+            echo "#SBATCH --mem=30000" >> "${spice_script}"
         elif [ "${stn:0:1}" == "G" ]; then
             # Some German stations take lots of memory
-            echo "#SBATCH --time=20:00" >> "${lotus_script}" # 20mins
-            echo "#SBATCH --mem=30000" >> "${lotus_script}"
+            echo "#SBATCH --time=20:00" >> "${spice_script}" # 20mins
+            echo "#SBATCH --mem=30000" >> "${spice_script}"
         else
-            echo "#SBATCH --time=20:00" >> "${lotus_script}" # 20mins
-            echo "#SBATCH --mem=10000" >> "${lotus_script}"
+            echo "#SBATCH --time=20:00" >> "${spice_script}" # 20mins
+            echo "#SBATCH --mem=10000" >> "${spice_script}"
         fi
     fi
-    echo "" >> "${lotus_script}"
-    # echo "source ${VENVDIR}/bin/activate" >> "${lotus_script}"
-    echo "conda activate glamod_QC" >> "${lotus_script}"
-    echo "" >> "${lotus_script}"
+    echo "" >> "${spice_script}"
+    # echo "source ${VENVDIR}/bin/activate" >> "${spice_script}"
+    echo "conda activate glamod_QC" >> "${spice_script}"
+    echo "" >> "${spice_script}"
 
     if [ "${STAGE}" == "I" ]; then
-        echo "python -m intra_checks --restart_id ${stn} --end_id ${stn} --clobber --full" >> "${lotus_script}"
+        echo "python -m intra_checks --restart_id ${stn} --end_id ${stn} --clobber --full" >> "${spice_script}"
     elif  [ "${STAGE}" == "N" ]; then
-        echo "python -m inter_checks --restart_id ${stn} --end_id ${stn} --clobber --full" >> "${lotus_script}"
+        echo "python -m inter_checks --restart_id ${stn} --end_id ${stn} --clobber --full" >> "${spice_script}"
     fi
 
     # now check if we should submit it.
     # ensure don't overload the queue, max of e.g. 50
     n_jobs=$(squeue --user="${USER}" | wc -l)
     while [ "${n_jobs}" -gt "${MAX_N_JOBS}" ];
-    do        
+    do
         echo "sleeping for ${WAIT_N_MINS}min to clear queue"
         sleep "${WAIT_N_MINS}m"
         n_jobs=$(squeue --user="${USER}" | wc -l)
@@ -272,7 +272,7 @@ do
                 #                submit=true
             fi
         fi
-        
+
         # option to skip over if upstream missing through unexpected way
         if [ "${WAIT}" == "T" ]; then
             if [ ${submit} == false ]; then
@@ -286,7 +286,7 @@ do
                 submit=skip # to escape the loop as we will skip this file
             fi
         fi
-        
+
     done
 
     # if clear to submit
@@ -305,7 +305,7 @@ do
 
         # if overwrite
         if [ "${CLOBBER}" == "C" ]; then
-            sbatch "${lotus_script}"
+            sbatch "${spice_script}"
             sleep 1s # allow submission to occur before moving on
 
 	    # if not overwrite
@@ -327,12 +327,12 @@ do
 
                 else
 		            # no output, submit
-                    sbatch "${lotus_script}"
-                    sleep 1s # allow submission to occur before 
+                    sbatch "${spice_script}"
+                    sleep 1s # allow submission to occur before
                     # exit
 
                 fi
-                
+
             elif [ "${STAGE}" == "N" ]; then
 
                 if [ -f "${ROOTDIR}${QFF_DIR}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
@@ -349,8 +349,8 @@ do
 
                 else
 		            # no output, submit
-                    sbatch "${lotus_script}"
-                    sleep 1s # allow submission to occur before 
+                    sbatch "${spice_script}"
+                    sleep 1s # allow submission to occur before
 #                    exit
 
                 fi
@@ -371,7 +371,7 @@ n_jobs=$(squeue --user="${USER}" | wc -l)
 # deal with Slurm header in output
 let n_jobs=n_jobs-1
 while [ ${n_jobs} -ne 0 ];
-do        
+do
     echo "All submitted, waiting 5min for queue to clear"
     sleep 5m
     n_jobs=$(squeue --user="${USER}" | wc -l)
