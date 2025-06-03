@@ -3,7 +3,7 @@ Configuring the QC
 
 Configuration files handle the over-arching settings for the code,
 including setting the paths to the files and the statistics and
-thresholds to use.  The ``configuration.txt`` file contains::
+thresholds to use.  The ``configuration.txt`` file contains:
 
 .. code-block:: bash
 

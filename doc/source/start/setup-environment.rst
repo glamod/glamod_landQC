@@ -11,7 +11,7 @@ Setting up conda
 On AWS, you need to first install ``miniconda`` to allow access and creation
 of the ``conda`` executables. This should update your
 ``.bashrc`` file.  Run the following 4 commands, answering "yes" to any questions
-that arise.::
+that arise.:
 
 .. code:: console
 
@@ -26,20 +26,20 @@ give access to the tools.
 Building the Environment
 ------------------------
 
-If this is the first build, then you need to build the environment from the supplied ``environment.lock`` file.::
+If this is the first build, then you need to build the environment from the supplied ``environment.lock`` file.:
 
 .. code:: console
 
     conda create --name glamod_QC --file environment.lock
 
 
-This can take a while.  Once that has completed, you can load the environment with ::
+This can take a while.  Once that has completed, you can load the environment with:
 
 .. code:: console
 
     conda activate glamod_QC
 
-And to deactivate::
+And to deactivate:
 
 .. code:: console
 

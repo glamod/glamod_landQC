@@ -25,7 +25,7 @@ switches for these scripts, and all are called in the same way.
         * ``T`` / ``F`` to wait (True) or not (False) for upstream files to be present
         * ``C`` / ``S`` to overwrite (Clobber) or keep (Skip) existing output files.
 
-        So an example run for the internal checks::
+        So an example run for the internal checks:
 
         .. code:: console
 
@@ -41,7 +41,7 @@ switches for these scripts, and all are called in the same way.
         * ``T`` / ``F`` to wait (True) or not (False) for upstream files to be present
         * ``C`` / ``S`` to overwrite (Clobber) or keep (Skip) existing output files.
 
-        So an example run for the internal checks::
+        So an example run for the internal checks:
 
         .. code:: console
 
@@ -58,7 +58,7 @@ switches for these scripts, and all are called in the same way.
         * ``T`` / ``F`` to wait (True) or not (False) for upstream files to be present
         * ``C`` / ``S`` to overwrite (Clobber) or keep (Skip) existing output files.
 
-        So an example run for the internal checks::
+        So an example run for the internal checks:
 
         .. code:: console
 

@@ -1,7 +1,7 @@
 Building the documentation
 ==========================
 
-To build this Sphinx documentation to include all the doc-strings from the scripts into a pretty html file::
+To build this Sphinx documentation to include all the doc-strings from the scripts into a pretty html file:
 
 .. code:: console
 
