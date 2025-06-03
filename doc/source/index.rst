@@ -25,62 +25,14 @@ scratch.
 
 
 
+.. toctree::
+   :maxdepth: 1
+
+   start/index
+   howto/index
 
 
 
-
-
-Processing Files
-----------------
-
-There is a quick bash script which currently is the quickest and easiest to run the system but the longer term intention is that Rose/Cylc will perform this in due course.
-
-On Kay
-^^^^^^
-The ``run_qc_taskfarm.bash`` runs both stages of the QC process by submitting batches of stations through to the Kay cluster on ICHEC using the taskfarm facility.  There are three character switches for this script:
-
-* ``I`` / ``N`` to run the Internal or Neighbour checks
-* ``T`` / ``F`` to wait (True) or not (False) for upstream files to be present
-* ``C`` / ``S`` to overwrite (Clobber) or keep (Skip) existing output files.
-
-So an example run for the internal checks::
-
-  bash run_qc_taskfarm.bash I F C
-
-
-On Bastion
-^^^^^^^^^^
-
-The ``run_qc_parallel.bash`` runs both stages of the QC process by
-submitting batches of stations through to the Bastion CPU cluster
-using the ``parallel`` facility.  There are three character switches for this script:
-
-* ``I`` / ``N`` to run the Internal or Neighbour checks
-* ``T`` / ``F`` to wait (True) or not (False) for upstream files to be present
-* ``C`` / ``S`` to overwrite (Clobber) or keep (Skip) existing output files.
-
-So an example run for the internal checks::
-
-  bash run_qc_parallel.bash I F C
-
-General notes
-^^^^^^^^^^^^^
-
-The waiting option presumes that the mff files will be produced in the sequence they are listed in the station list (see the configuration file).  If a file is not present, the script will sleep until it appears.  This allows the QC process to start before the mingle+merge processes have completed.  Finally, you can choose whether to overwrite existing output files, or to skip the processing step if they already exists.  There is helptext for these switches as part of the script.
-
-Once completed, this script also runs a checking process to provide
-some summary information of the processing run, with station counts
-and locations.  This can be called separately as
-``check_if_processed.bash`` using the ``I`` / ``N`` switches. There is
-also a set of maps which can be produced, to show the flagging rates
-and counts for each station for each test.  The Kay job for this is
-submitted via the ``plot_scripts_slurm.bash`` /
-``plot_scripts_parallel.bash`` script using the ``sbatch`` or
-``parallel`` command.  There is also a script
-``metadata_scripts_slurm.bash`` / ``metadata_scripts_parallel.bash``
-which produces some of the metadata files to support the output data.
-
-The python scripts called by ``run_qc_taskfarm.bash`` / ``run_qc_parallel.bash`` have their own options which can be set (see below).  For the moment, the one which allows stored values and thresholds from a previous run to be used (rather than calculated afresh) is not active.  This option was written with the near-real-time updates in mind, however has never been tested on e.g. a "diff" file.  To turn this on, you would need to edit the section of the bash script which generates the job.
 
 
 Individual scripts

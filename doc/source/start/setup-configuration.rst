@@ -5,7 +5,8 @@ Configuration files handle the over-arching settings for the code,
 including setting the paths to the files and the statistics and
 thresholds to use.  The ``configuration.txt`` file contains::
 
-.. code:: console
+.. code-block:: bash
+
     [PATHS]
     mff = /ichec/work/glamod/merge/
     mff_version = files/

@@ -17,3 +17,4 @@ Work through these steps **in order** if you are setting up for the first time
     clone-repo
     setup-environment
     setup-configuration
+    running-qc

@@ -13,12 +13,12 @@ of the ``conda`` executables. This should update your
 ``.bashrc`` file.  Run the following 4 commands, answering "yes" to any questions
 that arise.::
 
-.. code_block:: bash
+.. code:: console
 
-    mkdir -p ~/miniconda3
-    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
-    bash ~/miniconda3/miniconda.sh -u -p ~/miniconda3
-    rm ~/miniconda3/miniconda.sh
+   mkdir -p ~/miniconda3
+   wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
+   bash ~/miniconda3/miniconda.sh -u -p ~/miniconda3
+   rm ~/miniconda3/miniconda.sh
 
 You will then need to open a new terminal (or log out and back in again) to
 give access to the tools.
@@ -28,24 +28,20 @@ Building the Environment
 
 If this is the first build, then you need to build the environment from the supplied ``environment.lock`` file.::
 
-.. tab-set::
+.. code:: console
 
-    .. tab-item:: lock
-
-        .. code:: bash
-
-            conda create --name glamod_QC --file environment.lock
+    conda create --name glamod_QC --file environment.lock
 
 
 This can take a while.  Once that has completed, you can load the environment with ::
 
-.. code:: bash
+.. code:: console
 
     conda activate glamod_QC
 
 And to deactivate::
 
-.. code:: bash
+.. code:: console
 
     conda deactivate
 

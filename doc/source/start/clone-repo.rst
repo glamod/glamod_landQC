@@ -18,7 +18,7 @@ local machine in a desired location.
 
         .. code:: console
 
-            git clone hhttps://github.com/glamod/glamod_landQC.git
+            git clone https://github.com/glamod/glamod_landQC.git
 
 
 Once cloned, remember to ``cd`` into the directory.
