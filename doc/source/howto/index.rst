@@ -7,11 +7,9 @@ How-To Guides
     :doc:`Getting Started<../start/index>` section at least once and are already setup.
 
 
-Local Development
------------------
-
 .. toctree::
     :maxdepth: 1
 
     build-documentation
     update-environment
+    run-interactively
