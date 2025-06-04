@@ -9,9 +9,10 @@ import numpy as np
 import setup
 import datetime as dt
 import csv
+import subprocess
 import logging
 logger = logging.getLogger(__name__)
-        
+
 from qc_utils import Station, populate_station, MDI, QC_TESTS
 
 #************************************************************************
@@ -21,7 +22,7 @@ def count_skip_rows(infile: str) -> list:
     but in unexpected lines (!=0).  Return these line numbers as list (zero-indexed)
 
     :param infile str: file to process
-    
+
     :returns: list of line numbers
     """
     skip_rows = []
@@ -46,7 +47,7 @@ def read_psv(infile: str, separator: str) -> pd.DataFrame:
 
     :param str infile: location and name of infile (without extension)
     :param str separator: separating character (e.g. ",", "|")
- 
+
     :returns: df - DataFrame
     '''
 
@@ -107,10 +108,10 @@ def read(infile:str) -> pd.DataFrame:
 def calculate_datetimes(station_df: pd.DataFrame) -> pd.Series:
     """
     Convert the separate Y-M-D H-M values into datetime objects
-    
+
     :param pd.DataFrame station_df: dataframe for the station record
 
-    :returns: pd.Series of datetime64 values    
+    :returns: pd.Series of datetime64 values
     """
 
     try:
@@ -154,7 +155,7 @@ def read_station(stationfile: str, station: Station,
 
     :returns: station & station_df
     """
-   
+
     #*************************
     # read MFF
     try:
@@ -194,6 +195,32 @@ def write_psv(outfile: str, df: pd.DataFrame, separator: str) -> None:
 
     return # write_psv
 
+
+def integrity_check(infile: str) -> bool:
+    """Test integrity of a Gzip file
+
+    Parameters
+    ----------
+    infile : str
+        File path to test integrity of gzip file
+
+    Returns
+    -------
+    bool
+        Boolean indicator whether infile is valid gzip.
+    """
+
+    proc = subprocess.run(["gzip", "-t", infile],
+                    capture_output=True,)
+
+    result = proc.returncode
+
+    if result == 0:
+        return True
+    else:
+        return False
+
+
 #************************************************************************
 def write(outfile: str, df: pd.DataFrame, formatters: dict = {}) -> None:
     """
@@ -213,6 +240,10 @@ def write(outfile: str, df: pd.DataFrame, formatters: dict = {}) -> None:
 
     # for .psv
     write_psv(outfile, df, "|")
+
+    if not integrity_check(outfile):
+        logging.warning(f"Invalid Gzip file {outfile}")
+
     return # write
 
 #************************************************************************
@@ -267,7 +298,7 @@ def write_error(station: Station, message: str, error: str = "", diagnostics:boo
     """
     Write out quick failure message for station
 
-    :param Station station: met. station 
+    :param Station station: met. station
     :param str message: message to store
     :param str error: error output from stacktrace
     :param bool diagnostics: turn on diagnostic output
