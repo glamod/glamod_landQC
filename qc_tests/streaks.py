@@ -1,13 +1,15 @@
 """
 Repeated Streaks Check
-^^^^^^^^^^^^^^^^^^^^^^
+======================
 
-   Checks for replication of 
+   Checks for replication of:
+
      1. checks for consecutive repeating values
               [get_repeating_streak_threshold(), repeating_value()]
      2. checks if one year has more repeating streaks than expected
               [get_excess_streak_threshold(), excess_repeating_value()]
-     3. checks for repeats at a given hour across a number of days [Not yet implemented]
+     3. checks for repeats at a given hour across a number of days
+              [Not yet implemented]
      4. checks for repeats for whole days - sequences of days where all values repeat
               [repeating_day() - used to set thresholds and apply flagging]
 
@@ -87,7 +89,7 @@ def prepare_obs_var(obs_var: utils.Meteorological_Variable,
                     wind_speed: utils.Meteorological_Variable | None = None)\
                     -> utils.Meteorological_Variable:
     """
-    For all these checks make a copy of the observational variable so 
+    For all these checks make a copy of the observational variable so
     masks can be applied without impacting other tests
 
     And optionally for wind speed and direction, mask out calm periods
@@ -141,7 +143,7 @@ def get_repeating_streak_threshold(obs_var: utils.Meteorological_Variable,
         # In Humidity, looking only for streaks (in DPD) are == 0, so have filtered into a
         #    set of locations where this criterion is met.
         # So for this test, could search in location space _or_ in value space.
-        #    The latter means that in the utils.prepare_data_repeating_streak() 
+        #    The latter means that in the utils.prepare_data_repeating_streak()
         #    routine the differences are 0, the former pre-identifies locations where a difference
         #    is a value (either specified as per humidity, or using first differences == 0)
         #    and hence the locational difference is 1, i.e. adjacent locations identified.
@@ -266,9 +268,9 @@ def repeating_value(obs_var: utils.Meteorological_Variable, times: np.ndarray,
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
- 
+
     this_var = prepare_obs_var(obs_var, wind_speed=wind_speed)
- 
+
     flags = np.array(["" for i in range(this_var.data.shape[0])])
     compressed_flags = np.array(["" for i in range(this_var.data.compressed().shape[0])])
     masked_times = np.ma.array(times, mask=obs_var.data.mask)
@@ -285,7 +287,7 @@ def repeating_value(obs_var: utils.Meteorological_Variable, times: np.ndarray,
     if threshold == utils.MDI:
         # No threshold obtainable, no need to continue the test
         return
-    
+
     # Only process further if there is enough data.
     #   Need at least 2 observations to get a streak, so return if 1 or 0.
     if len(this_var.data.compressed()) < 2:
@@ -319,7 +321,7 @@ def repeating_value(obs_var: utils.Meteorological_Variable, times: np.ndarray,
 
 #************************************************************************
 def excess_repeating_value(obs_var: utils.Meteorological_Variable, times: np.ndarray,
-                    config_dict: dict, 
+                    config_dict: dict,
                     wind_speed: utils.Meteorological_Variable | None = None,
                     plots: bool = False, diagnostics: bool = False) -> None:
     """
@@ -335,13 +337,13 @@ def excess_repeating_value(obs_var: utils.Meteorological_Variable, times: np.nda
     :param MetVar wind_speed: need speeds to mask calm periods in wind_directions
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
-    
+
     """
     years = np.array([t.year for t in times])
     if plots:
         # Needed for plotting only
         masked_times = np.ma.array(times, mask=obs_var.data.mask)
-    
+
     this_var = prepare_obs_var(obs_var, wind_speed=wind_speed)
 
     # use mask rather than compress immediately, to ensure indexing works
@@ -417,7 +419,7 @@ def repeating_day(obs_var: utils.Meteorological_Variable, station: utils.Station
     """
     Find and flag instances where there are streaks of days which repeat exactly.
     This is possible for certain variables in certain synoptic setups, so again
-    find a threshold and flag those above.  Only looking for repeats which are  
+    find a threshold and flag those above.  Only looking for repeats which are
     adjacent, identical days separated by other data are not identified.
 
     :param MetVar obs_var: meteorological variable object
@@ -430,7 +432,7 @@ def repeating_day(obs_var: utils.Meteorological_Variable, station: utils.Station
 
     # any complete repeat of 24hs (as long as not "straight streak")
 
-    set_flags = not determine_threshold    
+    set_flags = not determine_threshold
 
     if set_flags:
         flags = np.array(["" for _ in obs_var.data])
@@ -496,10 +498,10 @@ def repeating_day(obs_var: utils.Meteorological_Variable, station: utils.Station
                 # make copies for next loop
                 previous_day_data = np.ma.copy(this_day_data)
                 previous_day_locs = np.ma.copy(this_day_locs)
-                
+
     # Calculate and save the threshold.
     if determine_threshold:
-        threshold = utils.get_critical_values(all_lengths, binwidth=1, 
+        threshold = utils.get_critical_values(all_lengths, binwidth=1,
                                 plots=plots,title=obs_var.name.capitalize(),
                                 xlabel="Streaks of repeating days")
 
@@ -514,7 +516,7 @@ def repeating_day(obs_var: utils.Meteorological_Variable, station: utils.Station
         obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
         logger.info(f"Repeated Day streaks {obs_var.name}")
-        logger.info(f"   Cumulative number of flags set: {len(np.nonzero(flags != '')[0])}")        
+        logger.info(f"   Cumulative number of flags set: {len(np.nonzero(flags != '')[0])}")
 
     # repeating_day
 
@@ -577,12 +579,12 @@ def rsc(station: utils.Station, var_list: list, config_dict: dict,
                             plots=plots, diagnostics=diagnostics)
 
         # Now run the routines to apply the thresholds and set flags
-            
+
         # Simple streaks of repeated values
         repeating_value(obs_var, station.times, config_dict, wind_speed=wind_speed,
                         plots=plots, diagnostics=diagnostics)
-        
-        # more short streaks than reasonable            
+
+        # more short streaks than reasonable
         excess_repeating_value(obs_var, station.times, config_dict, wind_speed=wind_speed,
                                 plots=plots, diagnostics=diagnostics)
 

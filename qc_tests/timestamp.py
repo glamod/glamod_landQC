@@ -1,6 +1,6 @@
 """
 Timestamp Check
-^^^^^^^^^^^^^^^
+===============
 
 Checks for instances of more than one reading at the same time, with different values
 """
