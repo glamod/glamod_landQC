@@ -13,4 +13,6 @@ being flagged in an individual station.
 
 .. automodule:: intra_checks
 
+.. automodule:: find_neighbours
+
 .. automodule:: inter_checks

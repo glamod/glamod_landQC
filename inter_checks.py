@@ -11,6 +11,10 @@ inter_checks.py invoked by typing::
 
   python inter_checks.py --restart_id --end_id [--full] [--plots] [--diagnostics] [--test] [--clobber]
 
+with an example call being of the form::
+
+  python inter_checks.py --restart_id AAI0000TNCA --end_id AAI0000TNCA --full --clobber
+
 Input arguments:
 
 --restart_id        First station to process

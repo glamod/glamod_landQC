@@ -11,6 +11,10 @@ intra_checks.py invoked by typing::
 
   python intra_checks.py --restart_id --end_id [--full] [--plots] [--diagnostics] [--test] [--clobber]
 
+with an example call being of the form::
+
+  python intra_checks.py --restart_id AAI0000TNCA --end_id AAI0000TNCA --full --clobber
+
 Input arguments:
 
 --restart_id        First station to process
@@ -28,9 +32,11 @@ Input arguments:
 
 --clobber           Overwrite output files if already existing.  If not set, will skip if output exists
 
-.. note:: When selecting ``--plots`` option, do take care, as each selected QC-check will show every plot
-that the routine is set up to do.  You may want to select a single test or do some further editing
-to ensure that the features and functionality you're trying to investigate are shown easily
+.. note::
+
+    When selecting ``--plots`` option, do take care, as each selected QC-check will show every plot
+    that the routine is set up to do.  You may want to select a single test or do some further editing
+    to ensure that the features and functionality you're trying to investigate are shown easily.
 
 '''
 #************************************************************************
