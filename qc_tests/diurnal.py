@@ -1,6 +1,6 @@
 """
 Diurnal Cycle Checks
-^^^^^^^^^^^^^^^^^^^^^^^^^
+====================
 
 Check whether diurnal cycle is consistent across the record
 """
@@ -57,7 +57,7 @@ def quartile_check(minutes: np.ndarray) -> bool:
     # version 2 - find number in each bin and reduce to 1/0
     # checked with assert statement 2020-06-19
     quartile_has_data = np.zeros(4)
-            
+
     quartile_has_data[0] = np.where(np.logical_and(minutes >= 0, minutes < 6*60 ))[0].shape[0]
     quartile_has_data[1] = np.where(np.logical_and(minutes >= 6*60, minutes < 12*60 ))[0].shape[0]
     quartile_has_data[2] = np.where(np.logical_and(minutes >= 12*60, minutes < 18*60 ))[0].shape[0]
@@ -65,7 +65,7 @@ def quartile_check(minutes: np.ndarray) -> bool:
 
     # binary-ise
     quartile_has_data[quartile_has_data > 0] = 1
-    
+
     if quartile_has_data.sum() >= 3:
         return True
 
@@ -95,13 +95,13 @@ def find_fit(this_day: np.ndarray, this_day_mins: np.ndarray) -> tuple[int, int]
     # for h in range(24):
     #     differences[h] = np.ma.sum(np.abs(this_day - scaled_sine[this_day_mins]))
     #     scaled_sine = np.roll(scaled_sine, 60)
-        
+
     # best_fit = np.argmin(differences)
 
     # version 2 - pre-built set of SINE_CURVEs shifted by 1hr, then just scaled
     scaled_sine = (SINES * diurnal_range) + np.ma.min(this_day)
     tiled_day = np.tile(this_day, (24, 1))
-    
+
     differences = np.ma.sum(np.abs(tiled_day - scaled_sine[:, this_day_mins]), axis=1)
     best_fit = np.argmin(differences)
 
@@ -110,7 +110,7 @@ def find_fit(this_day: np.ndarray, this_day_mins: np.ndarray) -> tuple[int, int]
     # roll, so best fit is in the middle
     differences = np.roll(differences, (11 - best_fit))
 
-    # head up the sides (out of the well of the minimum) 
+    # head up the sides (out of the well of the minimum)
     #     and get the spread once greater than critical
     """
      |
@@ -169,7 +169,7 @@ def get_daily_offset(station: utils.Station, locs: np.ndarray, obs_var: utils.Me
     # further restrictions (range>=5K, at least in 3 of 4 quarters of the day etc)
     if len(this_day.compressed()) > OBS_PER_DAY:
         if np.ma.max(this_day) - np.ma.min(this_day) > DAILY_RANGE:
-            
+
             these_times = station.times[locs] - station.times[locs].iloc[0]
             this_day_mins = (these_times.to_numpy()/np.timedelta64(1, "m")).astype(int)
             if quartile_check(this_day_mins):
@@ -212,7 +212,7 @@ def prepare_data(station: utils.Station, obs_var: utils.Meteorological_Variable)
                 # and move on to the next day
                 d += 1
 
-    return best_fit_diurnal, best_fit_uncertainty # prepare_data 
+    return best_fit_diurnal, best_fit_uncertainty # prepare_data
 
 #************************************************************************
 def find_offset(obs_var: utils.Meteorological_Variable, station: utils.Station, config_dict: dict, plots: bool = False, diagnostics: bool = False) -> tuple[np.ndarray, np.ndarray]:
@@ -251,13 +251,13 @@ def find_offset(obs_var: utils.Meteorological_Variable, station: utils.Station, 
     for h in range(6):
         if best_fits[h] != MISSING:
             '''Store lowest uncertainty best fit as first guess'''
-            if diurnal_peak == MISSING: 
+            if diurnal_peak == MISSING:
                 diurnal_peak = best_fits[h]
                 hours = np.roll(hours, 11-int(diurnal_peak))
                 hour_matches[11-(h+1):11+(h+2)] = 1
                 number_estimates += 1
 
-            # get spread of uncertainty, and +1 to this range 
+            # get spread of uncertainty, and +1 to this range
             centre, = np.where(hours == best_fits[h])
 
             if (centre[0] - (h + 1)) >= 0:
@@ -328,9 +328,9 @@ def diurnal_cycle_check(obs_var: utils.Meteorological_Variable, station: utils.S
             if fit != MISSING:
                 min_range = 11 - uncertainty
                 max_range = 11 + uncertainty
-                
+
                 offset_loc, = np.where(hours == fit)
-                
+
                 # find where the best fit falls outside the range for this particular day
                 if offset_loc < min_range or offset_loc > max_range:
                     potentially_spurious[d] = 1
@@ -338,8 +338,8 @@ def diurnal_cycle_check(obs_var: utils.Meteorological_Variable, station: utils.S
                     potentially_spurious[d] = 0
 
         # now check there are sufficient issues in running 30 day periods
-        """Any periods>30 days where the diurnal cycle deviates from the expected 
-        phase by more than this uncertainty, without three consecutive good or missing days 
+        """Any periods>30 days where the diurnal cycle deviates from the expected
+        phase by more than this uncertainty, without three consecutive good or missing days
         or six consecutive days consisting of a mix of only good or missing values, a
         re deemed dubious and the entire period of data (including all non-temperature elements) is flagged"""
 
@@ -373,7 +373,7 @@ def diurnal_cycle_check(obs_var: utils.Meteorological_Variable, station: utils.S
                     n_good = 0
                     n_miss = 0
                     n_not_bad = 0
-                    total_points = 0 
+                    total_points = 0
                     total_not_miss = 0
 
                 # and deal with this point

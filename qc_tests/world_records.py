@@ -1,6 +1,6 @@
 """
 World Records Check
-^^^^^^^^^^^^^^^^^^^
+===================
 
 Check for exceedence of world records
 
@@ -41,11 +41,11 @@ S_X = {"africa" : 1083.3, "asia" : 1083.3, "samerica" : 1083.3, "namerica" : 108
 S_N = {"africa" : 870., "asia" : 870., "samerica" : 870., "namerica" : 870., "europe" : 870.,
        "oceania" : 870., "antarctica" : 870., "row" : 870.}
 
-# 
+#
 maxes = {"temperature" : T_X, "dew_point_temperature" : D_X, "wind_speed" : W_X, "sea_level_pressure" : S_X}
 mins = {"temperature" : T_N, "dew_point_temperature" : D_N, "wind_speed" : W_N, "sea_level_pressure" : S_N}
 
-  
+
 
 #************************************************************************
 def record_check(obs_var: utils.Meteorological_Variable, continent: str,
@@ -62,7 +62,7 @@ def record_check(obs_var: utils.Meteorological_Variable, continent: str,
     """
     assert isinstance(obs_var, utils.Meteorological_Variable)
     assert isinstance(continent, str)
-    
+
     flags = np.array(["" for i in range(obs_var.data.shape[0])])
 
     if continent in ["africa", "asia", "samerica", "namerica", "europe", "oceania", "antarctica", "row"]:
@@ -101,9 +101,9 @@ def wrc(station: utils.Station, var_list: list, full: bool = False,
 
         obs_var = getattr(station, var)
 
-        flags = record_check(obs_var, 
-                             station.continent, 
-                             plots=plots, 
+        flags = record_check(obs_var,
+                             station.continent,
+                             plots=plots,
                              diagnostics=diagnostics
         )
 

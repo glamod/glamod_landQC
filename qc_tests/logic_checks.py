@@ -1,6 +1,6 @@
 """
 Logic Checks
-^^^^^^^^^^^^
+============
 
 Check for illogical values as outlined in json file
 """
@@ -43,7 +43,7 @@ def logic_check(obs_var: utils.Meteorological_Variable, plots: bool = False,
 
     if len(bad_locs) > 0:
 
-        # are more than a certain fraction bad 
+        # are more than a certain fraction bad
         #    (pervasive issues only as limits are within World Records)
 
         if (bad_locs.shape[0] / obs_var.data.compressed().shape[0]) > BAD_THRESHOLD: # 99.5% good, 0.5% bad
@@ -56,7 +56,7 @@ def logic_check(obs_var: utils.Meteorological_Variable, plots: bool = False,
             logger.info(f"   Number of issues found: {len(bad_locs)}")
             logger.info("   No flags set as proportion small enough")
 
-    return flags # logic_check 
+    return flags # logic_check
 
 #************************************************************************
 def write_logic_error(station: utils.Station, message: str, diagnostics: bool = False) -> None:
@@ -133,7 +133,7 @@ def lc(station: utils.Station, var_list: list, full: bool = False,
         write_logic_error(station, f"Bad end time: {station.times[-1]}", diagnostics=diagnostics)
         logger.warning(f"Bad end time: {station.times[-1]}")
         return_code = -1
-    
+
     # For Release 7 had some discontinuities in the times, with a repeated chunk
     #  Time stamp went from 2023/5/31/21:00 to 2023/1/1/00:00
     time_differences = np.diff(station.times.dt.to_pydatetime())

@@ -1,6 +1,6 @@
 """
 Timestamp Check
-^^^^^^^^^^^^^^^
+===============
 
 Checks for instances of more than one reading at the same time, with different values
 """
@@ -47,7 +47,7 @@ def plot_multiple(times: np.ndarray, obs_var: utils.Meteorological_Variable, sta
 def identify_multiple_values(obs_var: utils.Meteorological_Variable, times: np.ndarray,
                              config_dict: dict, plots: bool = False, diagnostics: bool = False) -> None:
     """
-    Use config_dict to read in critical values, and then assess to find 
+    Use config_dict to read in critical values, and then assess to find
 
     :param MetVar obs_var: meteorological variable object
     :param array times: array of times (usually in minutes)
@@ -79,7 +79,7 @@ def identify_multiple_values(obs_var: utils.Meteorological_Variable, times: np.n
             compressed_flags[multiple_obs_at_time[suspect_locs]] = "T"
             compressed_flags[multiple_obs_at_time[suspect_locs]+1] = "T"
         else:
-            # Observations have the _same_ value, so add information flag onl
+            # Observations have the _same_ value, so add information flag only
             compressed_flags[multiple_obs_at_time] = "2"
             compressed_flags[multiple_obs_at_time+1] = "2"
 

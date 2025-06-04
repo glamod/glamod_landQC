@@ -1,6 +1,6 @@
 """
 Humidity Cross Checks
-^^^^^^^^^^^^^^^^^^^^^
+=====================
 
 1. Check and flag instances of super saturation
 2. Check and flag instances of dew point depression
@@ -57,7 +57,7 @@ def get_repeating_dpd_threshold(temperatures: utils.Meteorological_Variable,
             # ensuring that threshold is stored as a float, not an np.array.
             CD_dpd = {"DPD" : float(threshold)}
             config_dict["HUMIDITY"] = CD_dpd
-            
+
     else:
         # store high value so threshold never reached (MDI already negative)
         try:
@@ -70,7 +70,7 @@ def get_repeating_dpd_threshold(temperatures: utils.Meteorological_Variable,
 
 #*********************************************
 def plot_humidities(T: utils.Meteorological_Variable,
-                    D: utils.Meteorological_Variable, 
+                    D: utils.Meteorological_Variable,
                     times: np.ndarray,
                     bad: int) -> None:
     '''
@@ -272,7 +272,7 @@ def hcc(station: utils.Station, config_dict: dict,
     dew_point_depression_streak(station.times, temperatures, dewpoints, config_dict, plots=plots, diagnostics=diagnostics)
 
     # dew point cut-offs (HadISD) not run
-    #  greater chance of removing good observations 
+    #  greater chance of removing good observations
     #  18 July 2019 RJHD
 
     return # hcc

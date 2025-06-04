@@ -7,3 +7,4 @@ _templates
 .coverage
 logs/
 spice_scripts/
+doc/build

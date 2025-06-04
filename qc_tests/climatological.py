@@ -1,6 +1,6 @@
 """
 Climatological Outlier Check
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+============================
 
 Check for observations which fall outside the climatologically expected range.
 A low pass filter reduces the effect of long-term changes.
@@ -58,7 +58,7 @@ def low_pass_filter(normed_anomalies: np.ndarray, station: utils.Station,
 
     all_years = np.unique(station.years)
     for year in range(all_years.shape[0]):
-        
+
         if year == 0:
             monthly_range = np.arange(0, 3)[:all_years.shape[0]]
             filter_range = np.arange(2, 5)[:all_years.shape[0]]
@@ -239,7 +239,7 @@ def find_month_thresholds(obs_var: utils.Meteorological_Variable, station: utils
             except KeyError:
                 CD_uthresh = {f"{month}-uthresh" : upper_threshold}
                 config_dict[f"CLIMATOLOGICAL-{obs_var.name}"] = CD_uthresh
-    
+
             config_dict[f"CLIMATOLOGICAL-{obs_var.name}"][f"{month}-lthresh"] = lower_threshold
 
     return # find_month_thresholds

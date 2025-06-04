@@ -1,6 +1,6 @@
 """
 Spike Check
-^^^^^^^^^^^
+===========
 
 Checks for short (<=3) observations which are far above/below their immediate neighbours.
 """
@@ -114,7 +114,7 @@ def retreive_critical_values(unique_diffs: np.ndarray, config_dict: dict, name: 
     :param dict config_dict: the dictionary (hopefully) holding the values
     :param str name: the variable in question
 
-    :returns: dict    
+    :returns: dict
     """
     # Read in the dictionary
     critical_values = {}
@@ -134,7 +134,7 @@ def retreive_critical_values(unique_diffs: np.ndarray, config_dict: dict, name: 
 def assess_potential_spike(time_diffs: np.ndarray, value_diffs: np.ndarray,
                            possible_in_spike: int, critical_values: dict) -> tuple[bool, int]:
     """
-    Check if the jump up is the beginning of a spike (so, look for a large enough jump down within 
+    Check if the jump up is the beginning of a spike (so, look for a large enough jump down within
     the permitted time frame).
 
     :param array time_diffs: time differences to look at
@@ -215,7 +215,7 @@ def assess_inside_spike(time_diffs: np.ndarray, value_diffs: np.ndarray,
         # check if any differences are greater than 1/2 critical value for time diff
 
         if np.abs(value_diffs[possible_in_spike + within]) > within_critical_value/2.:
-            is_spike = False 
+            is_spike = False
 
         within += 1
 
@@ -310,7 +310,7 @@ def identify_spikes(obs_var: utils.Meteorological_Variable, times: np.ndarray, c
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
-    
+
     # get the first differences
     value_diffs, time_diffs, unique_diffs = generate_differences(times, obs_var.data)
 
@@ -342,7 +342,7 @@ def identify_spikes(obs_var: utils.Meteorological_Variable, times: np.ndarray, c
             # no critical value for this time difference
             continue # to next loop
 
-        # TODO - sort spikes at very beginning or very end of sequence, 
+        # TODO - sort spikes at very beginning or very end of sequence,
         #    when don't have a departure from/return to a normal level
 
         # assess identified potential spikes
@@ -382,7 +382,7 @@ def identify_spikes(obs_var: utils.Meteorological_Variable, times: np.ndarray, c
 
 
 #************************************************************************
-def sc(station: utils.Meteorological_Variable, var_list: list, config_dict: dict, 
+def sc(station: utils.Meteorological_Variable, var_list: list, config_dict: dict,
        full: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Run through the variables and pass to the Spike Check
