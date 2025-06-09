@@ -209,9 +209,9 @@ def integrity_check(infile: str) -> bool:
     bool
         Boolean indicator whether infile is valid gzip.
     """
-
-    proc = subprocess.run(["gzip", "-t", infile],
-                    capture_output=True, shell=True)  # nosec
+    args = ["gzip", "-t", infile]
+    proc = subprocess.run(args,
+                    capture_output=True, shell=False)  # nosec
 
     result = proc.returncode
 
