@@ -9,7 +9,7 @@ import numpy as np
 import setup
 import datetime as dt
 import csv
-from subprocess import run as subprocess_run
+import subprocess
 import shlex
 import logging
 logger = logging.getLogger(__name__)
@@ -211,9 +211,9 @@ def integrity_check(infile: str) -> bool:
     bool
         Boolean indicator whether infile is valid gzip.
     """
-    args = ["gzip", "-t", shlex.quote(infile)]
-    proc = subprocess_run(args,
-                    capture_output=True, shell=False)  # nosec
+
+    # using shlex to ensure safe usage of subprocess
+    proc = subprocess.run(shlex.split(shlex.quote(f"gzip -t {infile}")), capture_output=True, shell=False)
 
     result = proc.returncode
 
