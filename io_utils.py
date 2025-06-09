@@ -211,7 +211,7 @@ def integrity_check(infile: str) -> bool:
     """
 
     proc = subprocess.run(["gzip", "-t", infile],
-                    capture_output=True,)
+                    capture_output=True, shell=True)  # nosec
 
     result = proc.returncode
 
