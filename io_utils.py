@@ -9,7 +9,8 @@ import numpy as np
 import setup
 import datetime as dt
 import csv
-import subprocess
+from subprocess import run as subprocess_run
+import shlex
 import logging
 logger = logging.getLogger(__name__)
 
@@ -196,6 +197,7 @@ def write_psv(outfile: str, df: pd.DataFrame, separator: str) -> None:
     return # write_psv
 
 
+#************************************************************************
 def integrity_check(infile: str) -> bool:
     """Test integrity of a Gzip file
 
@@ -209,8 +211,8 @@ def integrity_check(infile: str) -> bool:
     bool
         Boolean indicator whether infile is valid gzip.
     """
-    args = ["gzip", "-t", infile]
-    proc = subprocess.run(args,
+    args = ["gzip", "-t", shlex.quote(infile)]
+    proc = subprocess_run(args,
                     capture_output=True, shell=False)  # nosec
 
     result = proc.returncode
