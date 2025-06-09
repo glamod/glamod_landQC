@@ -213,14 +213,18 @@ def integrity_check(infile: str) -> bool:
     """
 
     # using shlex to ensure safe usage of subprocess
-    proc = subprocess.run(shlex.split(shlex.quote(f"gzip -t {infile}")), capture_output=True, shell=False)
-
-    result = proc.returncode
-
-    if result == 0:
+    try:
+        subprocess.run(["gzip", "-t", shlex.split(shlex.quote(infile))],
+                       text=True, check=True, shell=False)
         return True
-    else:
+
+    except subprocess.CalledProcessError as e:
+        # Error raised if non-zero exit code
+        print(f"Validation failed on {infile}")
+        print(f"  {e.cmd}")
+        print(f"  {e.stderr}")
         return False
+
 
 
 #************************************************************************
