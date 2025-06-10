@@ -95,8 +95,8 @@ OUT_COMPRESSION = config.get("FILES", "out_compression")
 if OUT_COMPRESSION == "None":
     OUT_COMPRESSION = ""
 # for cross-timescale checks
-# DAILY_DIR = 
-# MONTHLY_DIR = 
+# DAILY_DIR =
+# MONTHLY_DIR =
 
 #*********************************************
 # read in parameter list
@@ -137,10 +137,11 @@ DTYPE_DICT["Source_ID"] = str
 if __name__ == "__main__":
 
     # if called as stand alone, then clean out the errors from a previous run
+    print("Removing errors from previous runs")
     if len(os.listdir(SUBDAILY_ERROR_DIR)) != 0:
         for this_file in os.listdir(SUBDAILY_ERROR_DIR):
             os.remove(os.path.join(SUBDAILY_ERROR_DIR, this_file))
-        
+
 
 #*********************************************
 # END

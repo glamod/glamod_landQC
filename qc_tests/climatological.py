@@ -361,8 +361,3 @@ def coc(station: utils.Station, var_list: list, config_dict: dict, full: bool = 
 
     return # coc
 
-#************************************************************************
-if __name__ == "__main__":
-
-    print("checking for climatological outliers")
-#************************************************************************

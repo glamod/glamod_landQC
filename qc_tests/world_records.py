@@ -111,8 +111,3 @@ def wrc(station: utils.Station, var_list: list, full: bool = False,
 
     return # wrc
 
-#************************************************************************
-if __name__ == "__main__":
-
-    print("checking for exceedence of world records")
-#************************************************************************

@@ -133,8 +133,3 @@ def hfr(station: utils.Station, var_list: list, full: bool = False, plots: bool 
     # For synergistically flagged, just count once, so this return is correct.
     return len(vars_set) # hfr
 
-#************************************************************************
-if __name__ == "__main__":
-
-    print("checking for high flagging rates")
-#************************************************************************

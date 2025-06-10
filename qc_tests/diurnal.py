@@ -442,8 +442,3 @@ def dcc(station: utils.Station, config_dict: dict, full: bool = False, plots: bo
 
     return # dgc
 
-#************************************************************************
-if __name__ == "__main__":
-
-    print("checking diurnal cycle")
-#************************************************************************

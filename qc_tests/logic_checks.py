@@ -160,8 +160,3 @@ def lc(station: utils.Station, var_list: list, full: bool = False,
 
     return return_code # lc
 
-#************************************************************************
-if __name__ == "__main__":
-
-    print("checking for illogical values")
-#************************************************************************

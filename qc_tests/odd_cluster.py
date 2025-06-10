@@ -158,8 +158,3 @@ def occ(station: utils.Station, var_list: list, config_file: str, full: bool = F
 
     return # dgc
 
-#************************************************************************
-if __name__ == "__main__":
-
-    print("checking gaps in distributions")
-#************************************************************************

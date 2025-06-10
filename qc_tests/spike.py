@@ -406,9 +406,3 @@ def sc(station: utils.Meteorological_Variable, var_list: list, config_dict: dict
 
     return  # sc
 
-
-#************************************************************************
-if __name__ == "__main__":
-
-    print("checking for short period spikes")
-#************************************************************************

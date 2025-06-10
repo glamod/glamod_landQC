@@ -231,8 +231,3 @@ def fvc(station: utils.Station, var_list: list, config_dict: dict, full: bool = 
 
     return # fvc
 
-#************************************************************************
-if __name__ == "__main__":
-
-    print("checking frequent values")
-#************************************************************************
