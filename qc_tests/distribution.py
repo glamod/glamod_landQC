@@ -1,6 +1,6 @@
 """
 Distributional Gap Checks
-^^^^^^^^^^^^^^^^^^^^^^^^^
+=========================
 
 1. Check distribution of monthly values and look for assymmetry
 2. Check distribution of all observations and look for distinct populations

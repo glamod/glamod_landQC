@@ -1,6 +1,6 @@
 """
 Pressure Cross Checks
-^^^^^^^^^^^^^^^^^^^^^
+=====================
 
 Check for observations where difference between station and sea level pressure
 falls outside of the expected range.
@@ -61,7 +61,7 @@ def plot_pressure_distribution(difference: np.ndarray, vmin: int=-1, vmax:int=1)
     '''
     Plot distribution and include the upper and lower thresholds
 
-    :param array difference: values to form histogram from 
+    :param array difference: values to form histogram from
     :param int vmin: lower locations for vertical line
     :param int vmax: upper locations for vertical line
     '''
@@ -114,7 +114,7 @@ def identify_values(sealp: utils.Meteorological_Variable,
             # Make new entry for Pressure
             CD_average = {"average" : average}
             config_dict["PRESSURE"] = CD_average
-            
+
         config_dict["PRESSURE"]["spread"] = spread
 
     return # identify_values
@@ -151,7 +151,7 @@ def pressure_offset(sealp: utils.Meteorological_Variable,
             identify_values(sealp, stnlp, config_dict, plots=plots, diagnostics=diagnostics)
             average = float(config_dict["PRESSURE"]["average"])
             spread = float(config_dict["PRESSURE"]["spread"])
-            
+
 
         if np.abs(np.ma.mean(difference) - np.ma.median(difference)) > THRESHOLD*spread:
             logger.warning("Large difference between mean and median")
@@ -219,7 +219,7 @@ def calc_slp(stnlp: np.ndarray, elevation: float, temperature: np.ndarray) -> np
 
     factor = (1. - ((0.0065*elevation) / ((filled_temperature+273.15) + (0.0065*elevation))))
 
-    sealp = stnlp * (factor ** -5.257)    
+    sealp = stnlp * (factor ** -5.257)
 
     return sealp # calc_slp
 
@@ -230,7 +230,7 @@ def adjust_existing_flag_locs(var: utils.Meteorological_Variable,
     """
     There may be flags already set by previous part of test
     Find these locations, and adjust new flags to these aren't added again
-    
+
     :param MetVar var: the variable object
     :param array flags: the flag array
 
@@ -253,7 +253,7 @@ def pressure_theory(sealp: utils.Meteorological_Variable,
                     times: np.ndarray, elevation: int,
                     plots: bool=False, diagnostics: bool=False) -> None:
     """
-    Flag locations where difference between recorded and calculated sea-level pressure 
+    Flag locations where difference between recorded and calculated sea-level pressure
     falls outside of bounds
 
     :param MetVar sealp: sea level pressure object
@@ -286,7 +286,7 @@ def pressure_theory(sealp: utils.Meteorological_Variable,
             if plots:
                 for bad in bad_locs:
                     plot_pressure_timeseries(sealp, stnlp, times, bad)
-                
+
         # flag both as not sure immediately where the issue lies
         stnlp.flags = utils.insert_flags(stnlp.flags, adjust_existing_flag_locs(stnlp, flags))
         sealp.flags = utils.insert_flags(sealp.flags, adjust_existing_flag_locs(sealp, flags))

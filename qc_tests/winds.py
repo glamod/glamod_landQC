@@ -1,6 +1,6 @@
 """
 Wind Cross Checks
-^^^^^^^^^^^^^^^^^^^^^
+=================
 
 Cross checks on speed and direction.
 """
@@ -19,7 +19,7 @@ import qc_utils as utils
 def logical_checks(speed: utils.Meteorological_Variable, direction: utils.Meteorological_Variable,
                    fix: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
     """
-    Select occurrences of wind speed and direction which are 
+    Select occurrences of wind speed and direction which are
     logically inconsistent with measuring practices.
 
     From Table 2 - DeGaetano, JOAT, 14, 308-317, 1997

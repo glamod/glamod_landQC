@@ -1,13 +1,14 @@
 """
 Precision Cross Checks
-^^^^^^^^^^^^^^^^^^^^^^
+======================
 
 Check paired metrics for timestamps where the precision of one is different
 to the other.  For example, if dewpoint is to single degree, but temperatures
 are to 0.1C, then this affects the humidity checks.
 
 Paired metrics (Primary/Secondary):
-  Temperature - Dewpoint temperature
+
+  - Temperature / Dewpoint-temperature
 
 """
 import numpy as np
@@ -63,7 +64,7 @@ def precision_cross_check(station: utils.Station, primary: utils.Meteorological_
     """
 
     flags = np.array(["" for i in range(primary.data.shape[0])])
-  
+
     # work through on a monthly basis
     for year in np.unique(station.years):
         for month in range(1, 13):
@@ -121,7 +122,7 @@ def pcc(station: utils.Station, config_dict: dict, full: bool = False,
     dewpoints = getattr(station, "dew_point_temperature")
 
     precision_cross_check(station, temperatures, dewpoints, plots=plots, diagnostics=diagnostics)
-    
+
     # other pairs will appear here
 
     return # pcc

@@ -1,9 +1,19 @@
 '''
 Inter station checks (between station records)
+==============================================
+
+This script calls the individual QC check routines for the buddy checks on each station in turn.
+You can pass a single station by setting the ``--restart_id`` and ``-end_id`` to
+equal the same station ID, do a range by giving different IDs, or run all
+stations in the station list by leaving empty.
 
 inter_checks.py invoked by typing::
 
   python inter_checks.py --restart_id --end_id [--full] [--plots] [--diagnostics] [--test] [--clobber]
+
+with an example call being of the form::
+
+  python inter_checks.py --restart_id AAI0000TNCA --end_id AAI0000TNCA --full --clobber
 
 Input arguments:
 
@@ -42,7 +52,7 @@ def read_neighbours(restart_id: str = "", end_id: str = "") -> np.ndarray:
 
     :param str restart_id: which station to start on
     :param str end_id: which station to end on
-   
+
     :returns: array - [station, neighbours, distances]
     """
 
@@ -146,7 +156,7 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
 
         #*************************
         # TODO: refine neighbours [quadrants, correlation?]
-        
+
         if test in ["all", "outlier"]:
             if diagnostics: print("N", dt.datetime.now()-startT)
             qc_tests.neighbour_outlier.noc(target_station, initial_neighbours, \
@@ -175,12 +185,12 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
             logging.info(f"{target_station.id} withheld as too high flagging")
             io.write(os.path.join(setup.SUBDAILY_BAD_DIR, f"{target_station_id:11s}.qff{setup.OUT_COMPRESSION}"),
                      target_station_df, formatters={"Latitude" : "{:7.4f}", "Longitude" : "{:7.4f}", "Month": "{:02d}", "Day": "{:02d}", "Hour" : "{:02d}", "Minute" : "{:02d}"})
-                                                            
+
         else:
             io.write(os.path.join(setup.SUBDAILY_OUT_DIR, f"{target_station_id:11s}.qff{setup.OUT_COMPRESSION}"),
                      target_station_df, formatters={"Latitude" : "{:7.4f}", "Longitude" : "{:7.4f}", "Month": "{:02d}", "Day": "{:02d}", "Hour" : "{:02d}", "Minute" : "{:02d}"})
 
-            
+
         #*************************
         # Output flagging summary file
         io.flag_write(os.path.join(setup.SUBDAILY_FLAG_DIR, f"{target_station_id:11s}.flg"), target_station_df, diagnostics=diagnostics)
