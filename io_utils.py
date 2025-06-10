@@ -213,7 +213,8 @@ def integrity_check(infile: str) -> bool:
     """
     # using shlex to ensure safe usage of subprocess
     try:
-        proc = subprocess.run(shlex.split(f"gzip -t {shlex.quote(infile)}"),
+        cmd = shlex.split(f"gzip -t {shlex.quote(infile)}")
+        proc = subprocess.run(cmd,
                               capture_output=True, text=True, check=True, shell=False)
         logging.info(f"{proc.stdout}")
         return True

@@ -5,7 +5,7 @@ import os
 import numpy as np
 import datetime as dt
 import pandas as pd
-import subprocess
+from subprocess import CalledProcessError, CompletedProcess
 import pytest
 from unittest.mock import call, patch, Mock
 
@@ -195,7 +195,7 @@ def test_write_psv(tmp_path) -> None:
 def test_integrity_check_fail(run_mock: Mock,
                               logging_mock: Mock) -> None:
 
-    run_mock.side_effect = subprocess.CalledProcessError(returncode=1,
+    run_mock.side_effect = CalledProcessError(returncode=1,
                                                          cmd="gzip -t dummy_file.psv",
                                                          stderr="error text")
 
@@ -213,7 +213,7 @@ def test_integrity_check_fail(run_mock: Mock,
 def test_integrity_check_pass(run_mock: Mock,
                               logging_mock: Mock) -> None:
 
-    run_mock.return_value(subprocess.CompletedProcess(["gzip", "-t", "dummy_file.psv"],
+    run_mock.return_value(CompletedProcess(["gzip", "-t", "dummy_file.psv"],
                                                       returncode=0,
                                                       stdout="output",
                                                       stderr=None))
