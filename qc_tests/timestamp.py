@@ -122,9 +122,3 @@ def tsc(station: utils.Station, var_list: list, config_dict: dict, full: bool = 
 
     return  # tsc
 
-
-#************************************************************************
-if __name__ == "__main__":
-
-    print("checking for more than one value at a single timestamp")
-#************************************************************************

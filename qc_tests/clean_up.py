@@ -91,8 +91,3 @@ def mcu(station: utils.Station, var_list: list, full: bool = False,
 
     return # wrc
 
-#************************************************************************
-if __name__ == "__main__":
-
-    print("removing remaining obs from highly flagged months")
-#************************************************************************

@@ -108,9 +108,3 @@ def wcc(station: utils.Station, config_dict: dict, fix: bool = False,
     logical_checks(speed, direction, fix=fix, plots=plots, diagnostics=diagnostics)
 
     return # pcc
-
-#************************************************************************
-if __name__ == "__main__":
-
-    print("wind cross checks")
-#************************************************************************

@@ -386,8 +386,3 @@ def noc(target_station: utils.Station, initial_neighbours: np.ndarray, var_list:
 
     # noc
 
-#************************************************************************
-if __name__ == "__main__":
-
-    print("checking for outliers compared to neighbours")
-#************************************************************************

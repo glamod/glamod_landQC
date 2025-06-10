@@ -604,8 +604,3 @@ def rsc(station: utils.Station, var_list: list, config_dict: dict,
 
     # rsc
 
-#************************************************************************
-if __name__ == "__main__":
-
-    print("checking repeated streaks")
-#************************************************************************

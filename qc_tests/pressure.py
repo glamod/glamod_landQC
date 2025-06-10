@@ -328,8 +328,3 @@ def pcc(station: utils.Station, config_dict: dict, full: bool = False,
     return # pcc
 
 
-#************************************************************************
-if __name__ == "__main__":
-
-    print("pressure cross checks")
-#************************************************************************
