@@ -395,16 +395,25 @@ def diurnal_cycle_check(obs_var: utils.Meteorological_Variable, station: utils.S
 
         # run through all days
         # find zero point of day counter in data preparation part
-        day_counter_start = dt.datetime(np.unique(station.years)[0], np.unique(station.months)[0], np.unique(station.days)[0])
+        day_counter_start = dt.datetime(np.unique(station.years)[0],
+                                        np.unique(station.months)[0],
+                                        np.unique(station.days)[0])
 
         # find the bad days in the times array
-        for day in bad_locs:
-
+        for day, bad in enumerate(bad_locs):
+            if bad == 0:
+                # good days don't need processing
+                continue
             this_day = day_counter_start + dt.timedelta(days=int(day))
 
-            locs, = np.where(np.logical_and.reduce((station.years == this_day.year, station.months == this_day.month, station.days == this_day.day)))
+            locs, = np.where(np.logical_and.reduce((station.years == this_day.year,
+                                                    station.months == this_day.month,
+                                                    station.days == this_day.day)))
 
-            flags[locs] = "U"
+            # only set flag on where there's data
+            data_locs, = np.where(obs_var.data[locs].mask == False)
+
+            flags[locs[data_locs]] = "U"
 
         # append flags to object
         obs_var.flags = utils.insert_flags(obs_var.flags, flags)
