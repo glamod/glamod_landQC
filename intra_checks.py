@@ -152,6 +152,11 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
             io.write_error(station, "Error in input file", error=str(e))
             print("")
             continue
+        except RuntimeError as e:
+            # missing header in the raw file
+            io.write_error(station, "Error in input file - missing header", error=str(e))
+            print("")
+            continue
 
         # some may have no data (for whatever reason)
         if station.times.shape[0] == 0:
