@@ -11,6 +11,7 @@ import datetime as dt
 import csv
 import subprocess
 import shlex
+import warnings
 import logging
 logger = logging.getLogger(__name__)
 
@@ -51,7 +52,7 @@ def read_psv(infile: str, separator: str) -> pd.DataFrame:
 
     :returns: df - DataFrame
     '''
-
+    warnings.filterwarnings("error", category=pd.errors.DtypeWarning)
     try:
         df = pd.read_csv(infile, sep=separator, compression="infer",
                          dtype=setup.DTYPE_DICT, na_values="Null", quoting=3, index_col=False)
@@ -80,6 +81,10 @@ def read_psv(infile: str, separator: str) -> pd.DataFrame:
         logger.warning(f"End of File Error (gzip): {str(e)}")
         print(str(e))
         raise EOFError(str(e))
+    except pd.errors.DtypeWarning as e:
+        logger.warning(f"Dtype error - likely header row missing: {str(e)}")
+        print(str(e))
+        raise RuntimeError
 
     # Number of columns at August 2023, or after adding flag columns
     assert len(df.columns) in [238, 238+len(setup.obs_var_list)]
@@ -101,6 +106,10 @@ def read(infile:str) -> pd.DataFrame:
         df = read_psv(infile, "|")
     else:
         raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), infile)
+
+    # check there was a header row
+    if df.columns[0] != "Station_ID":
+        raise RuntimeError(f"Missing header row in {infile}")
 
     return df # read
 
@@ -164,6 +173,9 @@ def read_station(stationfile: str, station: Station,
     except FileNotFoundError:
         logger.warning(f"Missing station file {stationfile}")
         raise FileNotFoundError
+    except RuntimeError:
+        logger.warning(f"Missing header row in {stationfile}")
+        raise RuntimeError
 
     # calculate datetime series
     datetimes = calculate_datetimes(station_df)
