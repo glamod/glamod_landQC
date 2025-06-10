@@ -5,8 +5,9 @@ import os
 import numpy as np
 import datetime as dt
 import pandas as pd
+from subprocess import CalledProcessError, CompletedProcess
 import pytest
-from unittest.mock import patch, Mock
+from unittest.mock import call, patch, Mock
 
 import io_utils
 import qc_utils
@@ -92,7 +93,7 @@ def test_calculate_datetimes() -> None:
             "Day" : [3, 4],
             "Hour" : [5, 6],
             "Minute" : [7, 8]}
-    
+
     df = pd.DataFrame(data)
 
     datetimes = io_utils.calculate_datetimes(df)
@@ -108,7 +109,7 @@ def test_calculate_datetimes_error() -> None:
             "Day" : [3, 30],
             "Hour" : [5, 6],
             "Minute" : [7, 8]}
-    
+
     df = pd.DataFrame(data)
 
     with pytest.raises(ValueError) as emsg:
@@ -124,7 +125,7 @@ def test_convert_wind_flags() -> None:
             "Day" : [10, 11, 12, 13, 14],
             "wind_direction_Measurement_Code" : ["C-Calm", "V-Variable", "C-Calm", "Dummy", ""],
             "wind_direction" : [999, 999, 0, 90, 180]}
-    
+
     df = pd.DataFrame(data)
 
     # set directions to NaN if C-Calm or V-Variable _and_ value = 999
@@ -143,7 +144,7 @@ def test_read_station() -> None:
 
     infile = os.path.join(os.path.dirname(__file__),
                           "example_data", "AJM00037898.qff")
-    
+
     station = qc_utils.Station("AJM00037898", 39.6500, 46.5330, 1099.0)
 
     station, station_df = io_utils.read_station(infile, station)
@@ -163,9 +164,9 @@ def test_read_station_error() -> None:
     # unreachable file
     infile = os.path.join(os.path.dirname(__file__),
                           "example_data", "AJM000DUMMY.mff")
-    
+
     station = qc_utils.Station("AJM000DUMMY", 39.6500, 46.5330, 1099.0)
-    
+
     with pytest.raises(FileNotFoundError):
         station, _ = io_utils.read_station(infile, station)
 
@@ -188,10 +189,42 @@ def test_write_psv(tmp_path) -> None:
     assert written_frame[0] == "|".join([key for key, _ in data.items()]) + "\n"
     assert written_frame[1] == "|".join([f"{vals[0]}" for _, vals in data.items()]) + "\n"
     assert written_frame[2] == "|".join([f"{vals[1]}" for _, vals in data.items()]) + "\n"
-  
+
+@patch("io_utils.logging")
+@patch("io_utils.subprocess.run")
+def test_integrity_check_fail(run_mock: Mock,
+                              logging_mock: Mock) -> None:
+
+    run_mock.side_effect = CalledProcessError(returncode=1,
+                                                         cmd="gzip -t dummy_file.psv",
+                                                         stderr="error text")
+
+    result = io_utils.integrity_check("dummy_file.psv")
+
+    assert not result  # (i.e. False)
+    calls = [call("Validation failed on dummy_file.psv"),
+             call("  gzip -t dummy_file.psv"),
+             call("  error text")]
+    logging_mock.info.assert_has_calls(calls)
+
+
+@patch("io_utils.logging")
+@patch("io_utils.subprocess.run")
+def test_integrity_check_pass(run_mock: Mock,
+                              logging_mock: Mock) -> None:
+
+    run_mock.return_value(CompletedProcess(["gzip", "-t", "dummy_file.psv"],
+                                                      returncode=0,
+                                                      stdout="output",
+                                                      stderr=None))
+
+    result = io_utils.integrity_check("dummy_file.psv")
+
+    assert result  # (i.e. True)
+
 
 def test_write(tmp_path) -> None:
-        
+
     outfile = os.path.join(tmp_path, "dummy_file.psv")
 
     data = {"ID" : ["dummy", "dummy"],
@@ -211,7 +244,7 @@ def test_write(tmp_path) -> None:
 
 
 def test_write_formatters(tmp_path) -> None:
-        
+
     outfile = os.path.join(tmp_path, "dummy_file.psv")
 
     data = {"ID" : ["dummy", "dummy"],
@@ -250,14 +283,14 @@ def test_flag_write(setup_mock: Mock,
                            "example_data",
                            "Example_flag_file.flg"), "r") as infile:
         expected_message = infile.readlines()
-   
+
     np.testing.assert_array_equal(written_message, expected_message)
 
-            
+
 @patch("io_utils.setup")
 def test_write_error(setup_mock: Mock,
                      tmp_path) -> None:
-    
+
     station = qc_utils.Station("DMY01234567", 50, 50, 50)
     setup_mock.DATESTAMP = "DUMMYDATE"
     setup_mock.SUBDAILY_ERROR_DIR = tmp_path
@@ -273,7 +306,7 @@ def test_write_error(setup_mock: Mock,
 @patch("io_utils.setup")
 def test_write_error_append(setup_mock: Mock,
                      tmp_path) -> None:
-    
+
     station = qc_utils.Station("DMY01234567", 50, 50, 50)
     setup_mock.SUBDAILY_ERROR_DIR = tmp_path
 
