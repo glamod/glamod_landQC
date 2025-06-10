@@ -211,10 +211,9 @@ def integrity_check(infile: str) -> bool:
     bool
         Boolean indicator whether infile is valid gzip.
     """
-
     # using shlex to ensure safe usage of subprocess
     try:
-        proc = subprocess.run(["gzip", "-t", shlex.split(shlex.quote(infile))],
+        proc = subprocess.run(shlex.split(f"gzip -t {shlex.quote(infile)}"),
                               capture_output=True, text=True, check=True, shell=False)
         logging.info(f"{proc.stdout}")
         return True
