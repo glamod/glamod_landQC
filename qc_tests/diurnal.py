@@ -20,15 +20,28 @@ DAILY_RANGE = 5
 THRESHOLD = 0.33
 MISSING = -99
 
-# sine curve spanning y=0 to y=1 . Working in minutes since 00:00
-SINE_CURVE = (np.sin(2.*np.pi* np.arange((24*60), dtype=(np.float64)) / (24.*60.)) + 1.)/2.
+#************************************************************************
+def make_sines() -> np.ndarray:
+    """
+    Return a sine curve spanning y=0 to y=1 . Working in minutes since 00:00
 
-# build up an array of 24 sine curves, each one offset by 1hr from previous
-sine = np.copy(SINE_CURVE)
-SINES = np.zeros((24, SINE_CURVE.shape[0]))
-for h in range(24):
-    SINES[h] = sine
-    sine = np.roll(sine, 60)
+    Returns
+    -------
+    np.ndarray
+        Sine curve for 1440min between 0 & 1
+    """
+
+    points = np.arange((24*60), dtype=(np.float64)) / (24.*60.)
+    sine_curve = (np.sin(2. * np.pi * points) + 1.)/2.
+
+    # build up an array of 24 sine curves, each one offset by 1hr from previous
+    sine = np.copy(sine_curve)
+    all_sines = np.zeros((24, sine_curve.shape[0]))
+    for h in range(24):
+        all_sines[h] = sine
+        sine = np.roll(sine, 60)
+
+    return all_sines
 
 
 #************************************************************************
@@ -42,26 +55,14 @@ def quartile_check(minutes: np.ndarray) -> bool:
 
     quartile_has_data = np.zeros(4)
 
-    # # version 1 - check each minute and assign
-    # for minute in minutes:
-
-    #     if minute >= 0 and minute < 6*60:
-    #         quartile_has_data[0] = 1
-    #     elif minute >= 6*60 and minute < 12*60:
-    #         quartile_has_data[1] = 1
-    #     elif minute >= 12*60 and minute < 18*60:
-    #         quartile_has_data[2] = 1
-    #     elif minute >= 18*60 and minute < 24*60:
-    #         quartile_has_data[3] = 1
-
-    # version 2 - find number in each bin and reduce to 1/0
-    # checked with assert statement 2020-06-19
-    quartile_has_data = np.zeros(4)
-
-    quartile_has_data[0] = np.where(np.logical_and(minutes >= 0, minutes < 6*60 ))[0].shape[0]
-    quartile_has_data[1] = np.where(np.logical_and(minutes >= 6*60, minutes < 12*60 ))[0].shape[0]
-    quartile_has_data[2] = np.where(np.logical_and(minutes >= 12*60, minutes < 18*60 ))[0].shape[0]
-    quartile_has_data[3] = np.where(np.logical_and(minutes >= 18*60, minutes < 24*60 ))[0].shape[0]
+    quartile_has_data[0] = np.where(np.logical_and(minutes >= 0,
+                                                   minutes < 6*60 ))[0].shape[0]
+    quartile_has_data[1] = np.where(np.logical_and(minutes >= 6*60,
+                                                   minutes < 12*60 ))[0].shape[0]
+    quartile_has_data[2] = np.where(np.logical_and(minutes >= 12*60,
+                                                   minutes < 18*60 ))[0].shape[0]
+    quartile_has_data[3] = np.where(np.logical_and(minutes >= 18*60,
+                                                   minutes < 24*60 ))[0].shape[0]
 
     # binary-ise
     quartile_has_data[quartile_has_data > 0] = 1
@@ -72,85 +73,135 @@ def quartile_check(minutes: np.ndarray) -> bool:
     else:
         return False # quartile_check
 
+
 #************************************************************************
-def find_fit(this_day: np.ndarray, this_day_mins: np.ndarray) -> tuple[int, int]:
+def make_scaled_sine(maximum: float,
+                     minimum: float) -> np.ndarray:
+    """Return sine curve scaled to diurnal range and offset by minmum T
+
+    Parameters
+    ----------
+    maximum : float
+        Diurnal maximum
+    minimum : float
+        Diurnal minimum
+
+    Returns
+    -------
+    np.ndarray
+        Scaled sine curve for 1440 minutes in a day
     """
-    Find the best fit of a theoretical sine curve to the data
+    return (make_sines() * (maximum-minimum)) + minimum
+
+
+#************************************************************************
+def find_differences(this_day: np.ndarray,
+                     this_day_minutes: np.ndarray) -> np.ndarray:
+    """Find differences for each offset hour.
+
+    Parameters
+    ----------
+    this_day : np.ndarray
+        Day of temperature obs
+    this_day_minutes : np.ndarray
+        Minutes in day with valid obs
+
+    Returns
+    -------
+    np.ndarray
+        Total of differences at each offset
+    """
+    # a set of sine curves, each one shifted by 1hr from previous
+    scaled_sine = make_scaled_sine(np.ma.max(this_day),
+                                   np.ma.min(this_day))
+
+    # repeat day 24 times, stacked
+    tiled_day = np.tile(this_day, (24, 1))
+
+    # subtract, and then sum squared differences
+    differences = np.ma.sum((
+        tiled_day - scaled_sine[:, this_day_minutes]
+        )**2, axis=1)
+
+    return differences
+
+
+#************************************************************************
+def find_uncertainty(differences: np.ndarray, best_fit: int) -> int:
+    """Find the uncertainty around the best fit diurnal
+
+    Parameters
+    ----------
+    differences : np.ndarray
+        Array of the differences of theoretical sines to data,
+        one for each hr shift of 24
+    best_fit : int
+        Location of minimum difference
+
+    Returns
+    -------
+    int
+        Size of uncertainty in best fit as determined by
+        threshold [0.33] of total range of differences
+    """
+
+    # now to get uncertainties on this best fit shift
+    critical_value = np.ma.min(differences) +\
+        ((np.ma.max(differences) - np.ma.min(differences))*THRESHOLD)
+
+    # roll, so best fit is in the middle
+    differences = np.roll(differences, (11 - best_fit))
+
+    """
+     |                           uncertainty
+     |                            |------|
+     |             ----
+ D   |   *  *  *    |                                  *  *  *
+ i   |            * | *                          *  *
+ f   |              |    *                    *
+ f   |        0.66  |       *              *
+ s   |--------------------------------------------------------
+     |        0.33  |          *        *
+     |              |
+     |             ----           *  *  <---- Min Diff
+     |_______________________________________________________
+                              HOURS
+    """
+
+
+    # find where below critical, add 1 to max offset
+    locs, = np.where(differences < critical_value)
+    uncertainty = 1+ np.max([11-locs[0],locs[-1]-11])
+
+    return uncertainty
+
+#************************************************************************
+def find_fit_and_uncertainty(this_day: np.ndarray,
+                             this_day_minutes: np.ndarray) -> tuple[int, int]:
+    """
+    Find the best fit of a theoretical sine curve to the data.
+    Shift theoretical sine curve by hours and getting smallest offset
+    Unlikely to be able to use information on a smaller scale than hours
+    even though the data is per minutes.
 
     :param array this_day: data for day that have obs
-    :param array this_day_mins: minutes for day which have obs [index 0-1439]
+    :param array this_day_minutes: minutes for day which have obs [index 0-1439]
 
     :returns: best_fit, uncertainty
     """
 
-    diurnal_range = np.ma.max(this_day) - np.ma.min(this_day)
+    differences = find_differences(this_day, this_day_minutes)
 
-    # # version 1 - single SINE_CURVE, scaled, and shifted within for loop
-    # scaled_sine = (SINE_CURVE * diurnal_range) + np.ma.min(this_day)
-
-    # # find difference for each successive hour shift
-    # #    data is in minutes, but only shifting hours as unlikely to resolve
-    # #    the cycle any more finely than this.....???
-    # differences = np.zeros(24)
-    # for h in range(24):
-    #     differences[h] = np.ma.sum(np.abs(this_day - scaled_sine[this_day_mins]))
-    #     scaled_sine = np.roll(scaled_sine, 60)
-
-    # best_fit = np.argmin(differences)
-
-    # version 2 - pre-built set of SINE_CURVEs shifted by 1hr, then just scaled
-    scaled_sine = (SINES * diurnal_range) + np.ma.min(this_day)
-    tiled_day = np.tile(this_day, (24, 1))
-
-    differences = np.ma.sum(np.abs(tiled_day - scaled_sine[:, this_day_mins]), axis=1)
+    # location of the best fit
     best_fit = np.argmin(differences)
 
-    # now to get uncertainties on this best fit shift
-    critical_value = np.ma.min(differences) + ((np.ma.max(differences) - np.ma.min(differences))*THRESHOLD)
-    # roll, so best fit is in the middle
-    differences = np.roll(differences, (11 - best_fit))
-
-    # head up the sides (out of the well of the minimum)
-    #     and get the spread once greater than critical
-    """
-     |
-     |                             uncertainty
-     |                            |-----------|
-     |
- D   |   *  *  *                                      *  *  *
- i   |            *  *                          *  *
- f   |                  *                    *
- f   |                     *              *
- s   |
-     |                        *        *
-     |
-     |
-     |                           *  *  <---- Min Diff
-     |
-     |
-     |
-     |
-     |_________________________________________________________________
-                              HOURS
-    """
-
-    # # version 1 - walk up the sides until both above critical
-    # uncertainty = 1 # hours
-    # while uncertainty < 11: # i.e. undefined
-    #     if differences[11-uncertainty] > critical_value and\
-    #        differences[11+uncertainty] > critical_value:
-    #         break
-    #     uncertainty += 1
-
-    # version 2 - find where below critical, add 1 to max offset
-    locs, = np.where(differences < critical_value)
-    uncertainty = 1+ np.max([11-locs[0],locs[-1]-11])
-    # tested using assert statement 2020-06-19
+    uncertainty = find_uncertainty(differences, best_fit)
 
     return best_fit, uncertainty
 
 #************************************************************************
-def get_daily_offset(station: utils.Station, locs: np.ndarray, obs_var: utils.Meteorological_Variable) -> tuple[int, int]:
+def get_daily_offset(station: utils.Station, locs: np.ndarray,
+                     obs_var: utils.Meteorological_Variable) -> tuple[int, int]:
     """
     Extract data for a single 24h period, and pass to offset finder
 
@@ -172,13 +223,16 @@ def get_daily_offset(station: utils.Station, locs: np.ndarray, obs_var: utils.Me
 
             these_times = station.times[locs] - station.times[locs].iloc[0]
             this_day_mins = (these_times.to_numpy()/np.timedelta64(1, "m")).astype(int)
+            print(this_day_mins)
             if quartile_check(this_day_mins):
-                best_fit, uncertainty = find_fit(this_day, this_day_mins)
+                best_fit, uncertainty = find_fit_and_uncertainty(this_day,
+                                                                 this_day_mins)
 
     return best_fit, uncertainty # get_daily_offset
 
 #************************************************************************
-def prepare_data(station: utils.Station, obs_var: utils.Meteorological_Variable) -> tuple[np.ndarray, np.ndarray]:
+def prepare_data(station: utils.Station,
+                 obs_var: utils.Meteorological_Variable) -> tuple[np.ndarray, np.ndarray]:
     """
     For each 24h period, find diurnal cycle offset and uncertainty
 
@@ -342,6 +396,7 @@ def diurnal_cycle_check(obs_var: utils.Meteorological_Variable, station: utils.S
         phase by more than this uncertainty, without three consecutive good or missing days
         or six consecutive days consisting of a mix of only good or missing values, a
         re deemed dubious and the entire period of data (including all non-temperature elements) is flagged"""
+        # here only temperature elements are flagged
 
         n_good = 0
         n_miss = 0
