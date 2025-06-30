@@ -13,6 +13,28 @@ import qc_utils as utils
 
 MAX_SPIKE_LENGTH = 3
 
+# Up to
+TIME_DIFF_RANGES = np.array([[1, 5],  # 4
+                             [6, 10],  # 5
+                             [11, 15],  # 5
+                             [16, 20],  # 10
+                             [21, 30],  # 10
+                             [31, 45],  # 15
+                             [46, 60],  # 15
+                             [61, 90],  # 30
+                             [91, 120],  # 30  [total of 2h so far]
+                             [121, 180],  # 60 (1h)
+                             [181, 300],  # 120 (2h)
+                             [301, 540],  # 240 (4h)
+                             [541, 900],  # 360 (6h) [total of 15h so far]
+                             [901, 1440],  # 540 (9h) [total of 1d so far]
+                             [1441, 2160],  # 12h
+                             [2161, 2880],  # 12h [total of 2d so far]
+                             [2880, 4320],  # 24h [total of 3d]
+                             [4320, 7200],  # 48h [total of 5d]
+                             ])
+
+
 #*********************************************
 def plot_spike(times: np.ndarray, obs_var: utils.Meteorological_Variable,
                spike_start: int, spike_length: int) -> None:
@@ -67,17 +89,19 @@ def calculate_critical_values(obs_var: utils.Meteorological_Variable, times: np.
     # generate the first difference metrics
     value_diffs, time_diffs, unique_diffs = generate_differences(times, obs_var.data)
 
+    if 0 in unique_diffs:
+        # Not a spike or jump, but 2 values at the same time.
+        #  should be zero value difference, so fitting histogram not going to work
+        #  handled in separate test
+        logger.warning("Spike Check - zero time difference between two timestamps. Check")
+        return
+
+
     # Now go through each unique time difference to calculate critical values
-    for t_diff in unique_diffs:
+    for (lower, upper) in TIME_DIFF_RANGES:
 
-        if t_diff == 0:
-            # not a spike or jump, but 2 values at the same time.
-            #  should be zero value difference, so fitting histogram not going to work
-            #  handled in separate test
-            logger.warning("Spike Check - zero time difference between two timestamps. Check")
-            continue
-
-        locs, = np.where(time_diffs == t_diff)
+        locs, = np.where(np.logical_and(time_diffs >= lower,
+                                        time_diffs <= upper))
 
         first_differences = value_diffs[locs]
 
@@ -88,29 +112,28 @@ def calculate_critical_values(obs_var: utils.Meteorological_Variable, times: np.
             c_value = utils.get_critical_values(first_differences.compressed(), binmin=0, binwidth=0.5,
                                                 plots=plots, diagnostics=diagnostics,
                                                 xlabel="First differences",
-                                                title=f"Spike - {obs_var.name.capitalize()} - {t_diff}m")
+                                                title=f"Spike - {obs_var.name.capitalize()}: {lower}-{upper}min")
 
             # write out the thresholds...
             try:
-                config_dict[f"SPIKE-{obs_var.name}"][t_diff] = float(c_value)
+                config_dict[f"SPIKE-{obs_var.name}"][f"{lower}-{upper}"] = float(c_value)
             except KeyError:
-                CD_diff = {t_diff : float(c_value)}
+                CD_diff = {f"{lower}-{upper}" : float(c_value)}
                 config_dict[f"SPIKE-{obs_var.name}"] = CD_diff
 
-            logger.debug(f"   Time Difference: {t_diff} minutes")
+            logger.debug(f"   Time Difference: {lower}-{upper} minutes")
             logger.debug(f"      Number of obs: {len(first_differences.compressed())}, threshold: {c_value}")
 
         else:
-            logger.debug(f"   Time Difference: {t_diff} minutes")
+            logger.debug(f"   Time Difference: {lower}-{upper} minutes")
             logger.debug(f"      Number of obs insufficient: {len(first_differences.compressed())} < {utils.DATA_COUNT_THRESHOLD}")
 
 
 #************************************************************************
-def retreive_critical_values(unique_diffs: np.ndarray, config_dict: dict, name: str) -> dict:
+def retreive_critical_values(config_dict: dict, name: str) -> dict:
     """
     Read the config dictionary to pull out the critical values
 
-    :param array unique_diffs: the set of first (temporal) differences
     :param dict config_dict: the dictionary (hopefully) holding the values
     :param str name: the variable in question
 
@@ -119,10 +142,10 @@ def retreive_critical_values(unique_diffs: np.ndarray, config_dict: dict, name: 
     # Read in the dictionary
     critical_values = {}
 
-    for t_diff in unique_diffs:
+    for (lower, upper) in TIME_DIFF_RANGES:
         try:
-            c_value = config_dict[f"SPIKE-{name}"][t_diff]
-            critical_values[t_diff] = float(c_value)
+            c_value = config_dict[f"SPIKE-{name}"][f"{lower}-{upper}"]
+            critical_values[f"{lower}-{upper}"] = float(c_value)
         except KeyError:
             # no critical value for this time difference
             pass
@@ -315,29 +338,27 @@ def identify_spikes(obs_var: utils.Meteorological_Variable, times: np.ndarray, c
     value_diffs, time_diffs, unique_diffs = generate_differences(times, obs_var.data)
 
     # retrieve the critical values
-    critical_values = retreive_critical_values(unique_diffs, config_dict, obs_var.name)
+    critical_values = retreive_critical_values(config_dict, obs_var.name)
 
     # if none have been read, give an option to calculate in case that was the reason for none
     if len(critical_values) == 0:
         calculate_critical_values(obs_var, times, config_dict, plots=plots, diagnostics=diagnostics)
-        critical_values = retreive_critical_values(unique_diffs, config_dict, obs_var.name)
+        critical_values = retreive_critical_values(config_dict, obs_var.name)
 
     # pre select for each time difference that can be testedlen
-    for t_diff in unique_diffs:
-
-        if t_diff == 0:
-            # not a spike or jump, but 2 values at the same time.
-            #  should be zero value difference, so fitting histogram not going to work
-            #  handled in separate test
-            continue
+    for (lower, upper) in TIME_DIFF_RANGES:
 
         # new blank flag array (redone for each difference)
         compressed_flags = np.array(["" for i in range(value_diffs.shape[0])])
 
         # select the locations above critical value and with the relevant time difference
         try:
-            potential_spike_locs, = np.nonzero(np.logical_and((np.abs(value_diffs) > critical_values[t_diff]),
-                                              (time_diffs == t_diff)))
+            potential_spike_locs, = np.nonzero(
+                np.logical_and((np.abs(value_diffs) > critical_values[f"{lower}-{upper}"]),
+                                np.logical_and((time_diffs >= lower),
+                                               (time_diffs <= upper))
+                                )
+                )
         except:
             # no critical value for this time difference
             continue # to next loop
@@ -375,7 +396,7 @@ def identify_spikes(obs_var: utils.Meteorological_Variable, times: np.ndarray, c
         obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
         logger.info(f"Spike {obs_var.name}")
-        logger.info(f"   Time Difference: {t_diff} minutes")
+        logger.info(f"   Time Difference: {lower}-{upper} minutes")
         logger.info(f"      Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
     return # identify_spikes
