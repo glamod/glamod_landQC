@@ -218,12 +218,11 @@ def get_daily_offset(station: utils.Station, locs: np.ndarray,
     this_day = obs_var.data[locs]
 
     # further restrictions (range>=5K, at least in 3 of 4 quarters of the day etc)
-    if len(this_day.compressed()) > OBS_PER_DAY:
+    if len(this_day.compressed()) >= OBS_PER_DAY:
         if np.ma.max(this_day) - np.ma.min(this_day) > DAILY_RANGE:
 
             these_times = station.times[locs] - station.times[locs].iloc[0]
             this_day_mins = (these_times.to_numpy()/np.timedelta64(1, "m")).astype(int)
-            print(this_day_mins)
             if quartile_check(this_day_mins):
                 best_fit, uncertainty = find_fit_and_uncertainty(this_day,
                                                                  this_day_mins)
@@ -235,6 +234,7 @@ def prepare_data(station: utils.Station,
                  obs_var: utils.Meteorological_Variable) -> tuple[np.ndarray, np.ndarray]:
     """
     For each 24h period, find diurnal cycle offset and uncertainty
+    (uses all possible days between start and end, not just those with data)
 
     :param Station station: station object for the station
     :param MetVar obs_var: Meteorological variable object
@@ -243,12 +243,14 @@ def prepare_data(station: utils.Station,
     """
 
     ndays = dt.date(station.times.iloc[-1].year + 1, 1, 1) - dt.date(station.times.iloc[0].year, 1, 1)
-    best_fit_diurnal = np.ones(ndays.days + 1).astype(int)
-    best_fit_uncertainty = np.zeros(ndays.days + 1).astype(int)
+    best_fit_diurnal = np.ones(ndays.days).astype(int) * MISSING
+    best_fit_uncertainty = np.zeros(ndays.days).astype(int)
     d = 0
+
+    #   bug - if short record, and whole years missing, then counters will be offset.
     for year in np.unique(station.years):
         for month in np.unique(station.months):
-            for day in np.unique(station.days):
+            for day in np.arange(1, 32):
                 try:
                     # if Datetime doesn't throw an error, then valid date
                     _ = dt.datetime(year, month, day)
@@ -256,17 +258,56 @@ def prepare_data(station: utils.Station,
                     # not a valid day (e.g. Leap years, short months etc)
                     continue
 
-                locs, = np.where(np.logical_and.reduce((station.years == year, station.months == month, station.days == day)))
+                locs, = np.where(np.logical_and.reduce((station.years == year,
+                                                        station.months == month,
+                                                        station.days == day)))
 
-                if len(locs) > OBS_PER_DAY:
+                if len(locs) >= OBS_PER_DAY:
                     # at least have the option of enough data
-                    best_fit_diurnal[d], best_fit_uncertainty[d] = get_daily_offset(station, locs, obs_var)
+                    best_fit_diurnal[d], best_fit_uncertainty[d] = get_daily_offset(station,
+                                                                                    locs,
+                                                                                    obs_var)
                 else:
                     best_fit_diurnal[d], best_fit_uncertainty[d] = MISSING, MISSING
                 # and move on to the next day
                 d += 1
 
     return best_fit_diurnal, best_fit_uncertainty # prepare_data
+
+
+#************************************************************************
+def find_best_fit(best_fit_diurnal: np.ndarray,
+                  best_fit_uncertainty: np.ndarray) -> np.ndarray:
+    """_summary_
+
+    Parameters
+    ----------
+    best_fit_diurnal : np.ndarray
+        location of centre of diurnal cycle for each day in record
+    best_fit_uncertainty : np.ndarray
+        uncertainty of centre of diurnal cycle for each day in record
+
+    Returns
+    -------
+    np.ndarray
+        Array, length 6 of the median offset for each uncertainty size
+    """
+
+    assert len(best_fit_diurnal) == len(best_fit_uncertainty)
+
+    # done complete record, have best fit for each day
+    # now to find best overall fit.
+    #    find median offset for each uncertainty range from 1 to 6 hours
+    best_fits = MISSING*np.ones(6).astype(int)
+    for h in range(6):
+        locs, = np.where(best_fit_uncertainty == h+1)
+
+        if len(locs) >= utils.DATA_COUNT_THRESHOLD:
+            # locs are daily, so at least 120 days for each uncertainty bin
+            best_fits[h] = np.median(best_fit_diurnal[locs])
+
+    return best_fits
+
 
 #************************************************************************
 def find_offset(obs_var: utils.Meteorological_Variable, station: utils.Station, config_dict: dict, plots: bool = False, diagnostics: bool = False) -> tuple[np.ndarray, np.ndarray]:
@@ -285,12 +326,7 @@ def find_offset(obs_var: utils.Meteorological_Variable, station: utils.Station, 
     # done complete record, have best fit for each day
     # now to find best overall fit.
     #    find median offset for each uncertainty range from 1 to 6 hours
-    best_fits = MISSING*np.ones(6).astype(int)
-    for h in range(6):
-        locs, = np.where(best_fit_uncertainty == h+1)
-
-        if len(locs) >= utils.DATA_COUNT_THRESHOLD:
-            best_fits[h] = np.median(best_fit_diurnal[locs])
+    best_fits = find_best_fit(best_fit_diurnal, best_fit_uncertainty)
 
     # now go through each of the 6hrs of uncertainty and see if the range
     # of the best fit +/- uncertainty overlap across them.

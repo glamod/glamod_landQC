@@ -2,6 +2,8 @@
 Contains tests for diurnal.py
 """
 import numpy as np
+import datetime as dt
+import pandas as pd
 import pytest
 from unittest.mock import call, patch, Mock
 
@@ -9,6 +11,22 @@ import diurnal
 
 import common
 import qc_utils as utils
+
+
+def _setup_station(indata: np.ma.array,
+                   intimes: np.ndarray | None = None) -> utils.Station:
+
+    # set up the data
+    indata.mask = np.zeros(len(indata))
+
+    # make MetVars
+    temperature = common.example_test_variable("temperature", indata)
+
+    # make Station
+    station = common.example_test_station(temperature, intimes)
+
+    return station
+
 
 def test_make_sines() -> None:
     """Test that stacked sine curves created correctly"""
@@ -61,7 +79,7 @@ def test_find_differences() -> None:
     minutes = np.array([0, 360, 720, 1080])
 
     result = diurnal.find_differences(day_data, minutes)
-    print(result)
+
     # test first entry is minimum and close to zero
     assert np.min(result) == result[0]
     np.testing.assert_almost_equal(np.min(result), 0)
@@ -94,25 +112,12 @@ def test_find_fit_and_uncertainty() -> None:
     day_data = np.array([0, 1, 0, -1])
     minutes = np.array([0, 360, 720, 1080])
 
-    fit, unc = diurnal.find_fit_and_uncertainty(day_data, minutes)
+    fit, _ = diurnal.find_fit_and_uncertainty(day_data, minutes)
 
     # in total phase with constructed sine
     assert fit == 0
     # uncertainty tested elsewhere
 
-
-def _setup_station(indata: np.ma.array) -> utils.Station:
-
-    # set up the data
-    indata.mask = np.zeros(len(indata))
-
-    # make MetVars
-    temperature = common.example_test_variable("temperature", indata)
-
-    # make Station
-    station = common.example_test_station(temperature)
-
-    return station
 
 @patch("diurnal.find_fit_and_uncertainty")
 def test_get_daily_offset(find_fit_mock: Mock) -> None:
@@ -140,3 +145,55 @@ def test_get_daily_offset(find_fit_mock: Mock) -> None:
     np.testing.assert_array_equal(find_fit_mock.call_args[0][1], expected_mins)
 
 
+def test_prepare_data() -> None:
+    """Test finding diurnal fit and uncertainty for all days in series"""
+
+    # note, uses all possible days, not just days with data
+
+    # set up test data - 3 days worth
+    indata = np.ma.zeros(72)
+    indata[:] = utils.MDI
+
+    # first day - full sine
+    # second day - no data
+    # third day - just 4 points
+    indata[:24] = (np.sin(2. * np.pi * (np.arange(24)/24.)) + 1.)/2.
+    gappy = np.array([48, 54, 60, 66])
+    indata[gappy] = [0, 1, 0, -1]
+
+    start_dt = dt.datetime(2000, 1, 1, 0, 0)
+    intimes = pd.to_datetime(pd.DataFrame([start_dt + dt.timedelta(hours=i)\
+                               for i in range(72)])[0])
+
+    # filter
+    intimes = intimes[indata != utils.MDI].reset_index(drop=True)
+    indata = 10*indata[indata != utils.MDI]
+
+    dummy_station = _setup_station(indata=indata, intimes=intimes)
+    obs_var = dummy_station.temperature
+
+    fit, unc = diurnal.prepare_data(dummy_station, obs_var)
+
+    assert len(fit) == len(unc) == 366  # 200 is a leap year.
+    # second day has no (i.e. insufficient) obs
+    np.testing.assert_array_equal(fit[:3], np.array([0, -99, 0]))
+    # not testing uncertainties - dealt with elsewhere.
+
+
+def test_find_best_fit() -> None:
+    """Test routine which finds best fit for each uncertainty"""
+
+    uncs = np.array([1, 2, 3, 4, 5, 6])
+    uncs = np.tile(uncs, 120)
+
+    fits = np.array([11, 12, 13, 14, 15, 16,
+                     21, 22, 23, 24, 25, 26,
+                     31, 32, 33, 34, 35, 36])
+    fits = np.tile(fits, 40)
+
+    result = diurnal.find_best_fit(fits, uncs)
+
+    # should get the median
+    expected = np.array([21, 22, 23, 24, 25, 26])
+
+    np.testing.assert_array_equal(result, expected)
