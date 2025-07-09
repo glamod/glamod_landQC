@@ -93,7 +93,7 @@ def test_retreive_critical_values(name: str, expected: dict) -> None:
 
     config_dict = {"SPIKE-temps" : {"46-75" : 1.0, "106-150" : 2.0}}
 
-    values = spike.retreive_critical_values(config_dict, name)
+    values = spike.retrieve_critical_values(config_dict, name)
 
     assert values == expected
 

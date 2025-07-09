@@ -31,7 +31,7 @@ TIME_DIFF_RANGES = np.array([[1, 15],  # 15
                              [2191, 2910],  # 12h [includes 2880/48h/2d data]
                              [2911, 4350],  # 24h [includes 3600/36h/3d data]
                              [4351, 7230],  # 48h [includes 7200/120h/5d data]
-                             ])
+                             [7231, None]])  # open ended upper bin
 
 
 #*********************************************
@@ -99,8 +99,11 @@ def calculate_critical_values(obs_var: utils.Meteorological_Variable, times: np.
     # Now go through each unique time difference to calculate critical values
     for (lower, upper) in TIME_DIFF_RANGES:
 
-        locs, = np.where(np.logical_and(time_diffs >= lower,
-                                        time_diffs <= upper))
+        if upper is not None:
+            locs, = np.where(np.logical_and(time_diffs >= lower,
+                                            time_diffs <= upper))
+        else:
+            locs, = np.nonzero(time_diffs >= lower)
 
         first_differences = value_diffs[locs]
 
@@ -129,7 +132,7 @@ def calculate_critical_values(obs_var: utils.Meteorological_Variable, times: np.
 
 
 #************************************************************************
-def retreive_critical_values(config_dict: dict, name: str) -> dict:
+def retrieve_critical_values(config_dict: dict, name: str) -> dict:
     """
     Read the config dictionary to pull out the critical values
 
@@ -246,8 +249,8 @@ def assess_inside_spike(time_diffs: np.ndarray, value_diffs: np.ndarray,
 
 #************************************************************************
 def assess_outside_spike(time_diffs: np.ndarray, value_diffs: np.ndarray,
-                        possible_in_spike: int, critical_values: dict,
-                        is_spike: bool, spike_len: int) -> tuple[bool, int]:
+                         possible_in_spike: int, critical_values: dict,
+                         is_spike: bool, spike_len: int) -> tuple[bool, int]:
     """
     Check if points outside the spike don't vary too much (low noise).
     Using "side" to act as parameter for the timestamps before/after the spike
@@ -337,12 +340,12 @@ def identify_spikes(obs_var: utils.Meteorological_Variable, times: np.ndarray, c
     value_diffs, time_diffs, unique_diffs = generate_differences(times, obs_var.data)
 
     # retrieve the critical values
-    critical_values = retreive_critical_values(config_dict, obs_var.name)
+    critical_values = retrieve_critical_values(config_dict, obs_var.name)
 
     # if none have been read, give an option to calculate in case that was the reason for none
     if len(critical_values) == 0:
         calculate_critical_values(obs_var, times, config_dict, plots=plots, diagnostics=diagnostics)
-        critical_values = retreive_critical_values(config_dict, obs_var.name)
+        critical_values = retrieve_critical_values(config_dict, obs_var.name)
 
     # pre select for each time difference that can be testedlen
     for (lower, upper) in TIME_DIFF_RANGES:
