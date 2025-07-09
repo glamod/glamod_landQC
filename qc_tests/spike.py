@@ -13,25 +13,24 @@ import qc_utils as utils
 
 MAX_SPIKE_LENGTH = 3
 
-# Up to
-TIME_DIFF_RANGES = np.array([[1, 5],  # 4
-                             [6, 10],  # 5
-                             [11, 15],  # 5
-                             [16, 20],  # 10
-                             [21, 30],  # 10
-                             [31, 45],  # 15
-                             [46, 60],  # 15
-                             [61, 90],  # 30
-                             [91, 120],  # 30  [total of 2h so far]
-                             [121, 180],  # 60 (1h)
-                             [181, 300],  # 120 (2h)
-                             [301, 540],  # 240 (4h)
-                             [541, 900],  # 360 (6h) [total of 15h so far]
-                             [901, 1440],  # 540 (9h) [total of 1d so far]
-                             [1441, 2160],  # 12h
-                             [2161, 2880],  # 12h [total of 2d so far]
-                             [2880, 4320],  # 24h [total of 3d]
-                             [4320, 7200],  # 48h [total of 5d]
+# Setting bins so they span the standard reporting hours
+#   so rather than e.g. 31-60, 61-90 and a top-of-hour report 1min
+#   late ends up in a different bin, bracket standard hourly periods
+TIME_DIFF_RANGES = np.array([[1, 15],  # 15
+                             [16, 45],  # 30
+                             [46, 75],  # 30 [includes 60min/1h data]
+                             [76, 105],  # 30
+                             [106, 150],  # 45 [includes 120min/2h data]
+                             [151, 210],  # 60 [includes 180min/3h data]
+                             [211, 270],  # 60 [includes 240min/4h data]
+                             [271, 390],  # 120 (2h) [includes 360min/6h data]
+                             [391, 630],  # 240 (4h)
+                             [631, 990],  # 360 (6h)
+                             [991, 1470],  # 480 (8h) [includes 1440/24h data]
+                             [1471, 2190],  # 12h
+                             [2191, 2910],  # 12h [includes 2880/48h/2d data]
+                             [2911, 4350],  # 24h [includes 3600/36h/3d data]
+                             [4351, 7230],  # 48h [includes 7200/120h/5d data]
                              ])
 
 

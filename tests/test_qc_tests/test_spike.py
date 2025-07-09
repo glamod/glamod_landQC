@@ -21,7 +21,7 @@ def _set_up_data() -> tuple[np.ndarray, np.ndarray, dict]:
     times = np.ma.arange(series_length) * 60 # minutes
     times.mask = values.mask
 
-    critical_values = {"46-60" : 5}
+    critical_values = {"46-75" : 5}
 
     return values, times, critical_values
 
@@ -35,8 +35,8 @@ def _set_up_masked_data() -> tuple[np.ndarray, np.ndarray, dict]:
     times = np.ma.arange(series_length) * 60 # minutes
     times.mask = values.mask
 
-    critical_values = {"46-60" : 5,
-                       "91-120" : 5}
+    critical_values = {"46-75" : 5,
+                       "106-150" : 5}
 
     return values, times, critical_values
 
@@ -83,15 +83,15 @@ def test_calculate_critical_values() -> None:
     spike.calculate_critical_values(temperature, times, config_dict)
 
     # qc_utils routine to be tested elsewhere
-    assert config_dict["SPIKE-temperature"] == {"46-60" : 8.0}
+    assert config_dict["SPIKE-temperature"] == {"46-75" : 8.0}
 
 
 @pytest.mark.parametrize("name, expected",
-                         [("temps", {"46-60" : 1.0, "91-120" : 2.0}),
+                         [("temps", {"46-75" : 1.0, "106-150" : 2.0}),
                           ("dummy", {})])
 def test_retreive_critical_values(name: str, expected: dict) -> None:
 
-    config_dict = {"SPIKE-temps" : {"46-60" : 1.0, "91-120" : 2.0}}
+    config_dict = {"SPIKE-temps" : {"46-75" : 1.0, "106-150" : 2.0}}
 
     values = spike.retreive_critical_values(config_dict, name)
 
@@ -111,7 +111,7 @@ def test_assess_potential_spike_single(spike_points: np.ndarray,
     value_diffs = np.ma.diff(values.compressed())
     time_diffs = np.diff(times.compressed())
 
-    possible_spike, = np.nonzero(value_diffs > critical_values["46-60"])
+    possible_spike, = np.nonzero(value_diffs > critical_values["46-75"])
 
     is_spike, spike_len = spike.assess_potential_spike(time_diffs, value_diffs,
                                                          possible_spike[0], critical_values)
@@ -138,7 +138,7 @@ def test_assess_potential_spike_single_masked(spike_points: np.ndarray,
     value_diffs = np.ma.diff(values.compressed())
     time_diffs = np.diff(times.compressed())
 
-    possible_spike, = np.nonzero(value_diffs > critical_values["46-60"])
+    possible_spike, = np.nonzero(value_diffs > critical_values["46-75"])
 
     is_spike, spike_len = spike.assess_potential_spike(time_diffs, value_diffs,
                                                          possible_spike[0], critical_values)
@@ -165,7 +165,7 @@ def test_assess_inside_spike(spike_points: np.ndarray,
     value_diffs = np.ma.diff(values.compressed())
     time_diffs = np.diff(times.compressed())
 
-    possible_spike, = np.nonzero(value_diffs > critical_values["46-60"])
+    possible_spike, = np.nonzero(value_diffs > critical_values["46-75"])
 
     result_is_spike = spike.assess_inside_spike(time_diffs, value_diffs,
                                          possible_spike[0], critical_values,
@@ -194,7 +194,7 @@ def test_assess_inside_spike_masked(spike_points: np.ndarray,
     non_mask_locs, = np.nonzero(values.mask == False)
     spike_points = np.array([sp for sp in spike_points if sp in non_mask_locs])
 
-    possible_spike, = np.nonzero(value_diffs > critical_values["46-60"])
+    possible_spike, = np.nonzero(value_diffs > critical_values["46-75"])
 
     result_is_spike = spike.assess_inside_spike(time_diffs, value_diffs,
                                          possible_spike[0], critical_values,
@@ -218,7 +218,7 @@ def test_assess_outside_spike_before(spike_points: np.ndarray,
     value_diffs = np.ma.diff(values.compressed())
     time_diffs = np.diff(times.compressed())
 
-    possible_spike, = np.nonzero(value_diffs > critical_values["46-60"])
+    possible_spike, = np.nonzero(value_diffs > critical_values["46-75"])
 
     result_is_spike = spike.assess_outside_spike(time_diffs, value_diffs,
                                          possible_spike[0], critical_values,
@@ -245,7 +245,7 @@ def test_assess_outside_spike_before_masked(spike_points: np.ndarray,
     value_diffs = np.ma.diff(values.compressed())
     time_diffs = np.diff(times.compressed())
 
-    possible_spike, = np.nonzero(value_diffs > critical_values["46-60"])
+    possible_spike, = np.nonzero(value_diffs > critical_values["46-75"])
 
     result_is_spike = spike.assess_outside_spike(time_diffs, value_diffs,
                                          possible_spike[0], critical_values,
@@ -269,7 +269,7 @@ def test_assess_outside_spike_after(spike_points: np.ndarray,
     value_diffs = np.ma.diff(values.compressed())
     time_diffs = np.diff(times.compressed())
 
-    possible_spike, = np.nonzero(value_diffs > critical_values["46-60"])
+    possible_spike, = np.nonzero(value_diffs > critical_values["46-75"])
 
     result_is_spike = spike.assess_outside_spike(time_diffs, value_diffs,
                                          possible_spike[0], critical_values,
@@ -295,7 +295,7 @@ def test_assess_outside_spike_after_masked(spike_points: np.ndarray,
     value_diffs = np.ma.diff(values.compressed())
     time_diffs = np.diff(times.compressed())
 
-    possible_spike, = np.nonzero(value_diffs > critical_values["46-60"])
+    possible_spike, = np.nonzero(value_diffs > critical_values["46-75"])
 
     result_is_spike = spike.assess_outside_spike(time_diffs, value_diffs,
                                          possible_spike[0], critical_values,
