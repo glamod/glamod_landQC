@@ -70,10 +70,13 @@ def test_read(read_psv_mock: Mock) -> None:
     infile = os.path.join(os.path.dirname(__file__),
                           "example_data", "AJM00037843.qff")
 
+    read_psv_mock.return_value = pd.DataFrame([["AJM00037843", "SABIRABAD", 1979],
+                                               ["AJM00037843", "SABIRABAD", 1979]],
+                                              columns=["Station_ID", "Station_name", "Year"])
+
     _ = io_utils.read(infile)
 
     read_psv_mock.assert_called_once_with(infile, "|")
-
 
 
 def test_read_oserror() -> None:
