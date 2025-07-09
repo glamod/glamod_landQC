@@ -358,7 +358,7 @@ def gcv_calculate_binmax(indata: np.ndarray, binmin: float, binwidth: float) -> 
 def gcv_zeros_in_central_section(histogram: np.ndarray, inner_n: int) -> int:
     """
     Helper routine for get_critical_values() ["gcv"] to determine if, for a distribution
-    with multiple peaks, the central section is sufficiently big.  When fitting a x^-1 line
+    with multiple peaks, the central section is sufficiently big.  When fitting a -x line
     in get_critical_values(), this may not work as intended if many of the bins close to x=0 have
     y=0.  This routine counts the number of zero-valued bins within the inner_n bins.
 
@@ -390,7 +390,7 @@ def gcv_zeros_in_central_section(histogram: np.ndarray, inner_n: int) -> int:
 #*********************************************
 def gcv_linear_fit_to_log_histogram(histogram: np.array, bins: np.array) -> np.array:
     """
-    Take the log10 of the histogram values, and fit a linear x^-1 line
+    Take the log10 of the histogram values, and fit a linear -x line (10^-x in reality)
 
     :param array histogram: the histogram values to fit
     :param array bins: the histogram bins
@@ -418,7 +418,8 @@ def get_critical_values(indata: np.ndarray, binmin: float = 0, binwidth: float =
                         line_label: str = "", xlabel: str = "", title: str = "") -> float:
 
     """
-    Plot histogram on log-y scale and fit 1/x decay curve to set threshold
+    Plot histogram on log-y scale and fit -x line (equivalent to
+    exp(-x) decay curve) to set threshold
 
     :param array indata: input data to bin up
     :param float binmin: minimum bin value
@@ -493,6 +494,7 @@ def get_critical_values(indata: np.ndarray, binmin: float = 0, binwidth: float =
         try:
             fit_below_point1, = np.argwhere(fit_curve < -1)[0]
             # find first empty bin after that
+            # TODO: think about using 2 empty bins?
             first_zero_bin, = np.argwhere(full_hist[fit_below_point1:] == 0)[0]
             threshold = binwidth * (binmin + fit_below_point1 + first_zero_bin)
             if isinstance(threshold, np.integer):
