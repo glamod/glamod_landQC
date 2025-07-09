@@ -432,16 +432,17 @@ def get_critical_values(indata: np.ndarray, binmin: float = 0, binwidth: float =
     :returns:
        float critical value
     """
-
-    if len(set(indata)) == 1:
-        # All data at a single value, so set threshold above this
-        threshold = max(indata) + binwidth
-        return threshold
-
-    elif len(indata) == 0:
+    if len(indata) == 0:
         # If no data, return 0+binwidth as the threshold to ensure a positive value
         threshold = 0+binwidth
         return threshold
+
+    # for spike, need absolute values
+    default_threshold = np.max(np.abs(indata)) + binwidth
+
+    if len(set(indata)) == 1:
+        # Single datapoint, so set threshold above this
+        return default_threshold
 
     # Or there is data to process, let's go
     # set up the bins and make a histogram.  Use Absolute values
@@ -450,8 +451,8 @@ def get_critical_values(indata: np.ndarray, binmin: float = 0, binwidth: float =
     full_hist, full_edges = np.histogram(np.abs(indata), bins=bins)
 
     if len(full_hist) <= 1:
-        threshold = max(indata) + binwidth
-        return threshold
+        # single bin, so just take the max of the data
+        return default_threshold
 
     # Check if the first 5(10) bins have sufficient data
     n_zeros = gcv_zeros_in_central_section(full_hist, 5)
@@ -463,18 +464,20 @@ def get_critical_values(indata: np.ndarray, binmin: float = 0, binwidth: float =
             if n_zeros >= 6:
                 # Extended central bit is mainly zeros
                 # can't continue, set threshold to exceed data
-                threshold = max(indata) + binwidth
-                return threshold
+                return default_threshold
         else:
             # Extended central bit is mainly zeros
             # can't continue, set threshold to exceed data
-            threshold = max(indata) + binwidth
-            return threshold
+            return default_threshold
 
     # Use this central section for fitting
     #  Avoids risk of secondary populations in the distribution affecting the fit
-    edges = full_edges[:10]
-    central_hist = full_hist[:10]
+    #  Allow for well behaved (i.e. without zero value bins) distributions
+    #    and take distance to the first zero bin, or 10, whichever larger
+    first_zero_bin, = np.argwhere(full_hist[0:] == 0)[0]
+    central = np.max([10, first_zero_bin])
+    edges = full_edges[:central]
+    central_hist = full_hist[:central]
 
     # Remove zeros (turn into infs in log-space)
     goods, = np.nonzero(central_hist != 0)
@@ -503,12 +506,12 @@ def get_critical_values(indata: np.ndarray, binmin: float = 0, binwidth: float =
             # Too shallow a decay - use default maximum.  Retains all data
             #   If there were a value much higher, then because a negative
             #   slope the above snippet should run, rather than this one.
-            threshold = max(indata) + binwidth
+            threshold = default_threshold
 
     else:
         # Positive slope - likely malformed distribution.  Retains all data
         #    The test won't work well given the fit, so just take the data max.
-        threshold = max(indata) + binwidth
+        threshold = default_threshold
 
     if plots:
         plot_log_distribution(full_edges, full_hist, fit_curve, threshold, line_label, xlabel, title)
@@ -546,7 +549,7 @@ def plot_log_distribution(edges: np.ndarray, hist: np.ndarray, fit: np.ndarray, 
     plt.ylim([0.01, max(plot_hist)*3])
     plt.xlim([0, max(edges)])
 
-    plt.axvline(threshold, c='r', label=f"threshold = {threshold}")
+    plt.axvline(threshold, c='r', label=f"threshold = {threshold:.2f}")
 
     plt.legend(loc="upper right")
     plt.title(title)
