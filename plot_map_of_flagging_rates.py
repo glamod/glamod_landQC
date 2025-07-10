@@ -14,16 +14,16 @@ import setup
 
 
 TESTS_FOR_VARS = {"temperature": ["All", "C", "D", "E", "F", "H", "K", "L", "N", "T",
-                                  "S", "U", "V", "W", "d", "o", "x", "y",],
+                                  "S", "U", "V", "W", "d", "o", "x", "y", "2",],
                   "dew_point_temperature": ['All', 'C', 'D', 'E', 'F', 'H', 'K', 'L', 'N', 'S',
-                                            'T', 'V', 'W', 'd', 'h', 'n', 'o', 'x', 'y'],
+                                            'T', 'V', 'W', 'd', 'h', 'n', 'o', 'x', 'y', "2",],
                   "sea_level_pressure" : ['All', 'D', 'E', 'F', 'H', 'K', 'L', 'N', 'S',
-                                          'T', 'V', 'W', 'd', 'o', 'p', 'x', 'y'],
+                                          'T', 'V', 'W', 'd', 'o', 'p', 'x', 'y', "2",],
                   "station_level_pressure" : ['All', 'D', 'E', 'F', 'H', 'K', 'L', 'N',
-                                              'S', 'T', 'V', 'd', 'o', 'p', 'x', 'y'],
+                                              'S', 'T', 'V', 'd', 'o', 'p', 'x', 'y', "2",],
                   "wind_speed" : ['All', 'E', 'H', 'K', 'L', 'N', 'S', 'T', 'V',
-                                  'W', 'o', 'w', 'x', 'y'],
-                  "wind_direction" : ['All', 'E', 'H', 'K', 'L', 'w', 'x', 'y', "1"]}
+                                  'W', 'o', 'w', 'x', 'y', "2",],
+                  "wind_direction" : ['All', 'E', 'H', 'K', 'L', 'w', 'x', 'y', "1", "2",]}
 
 UNITS = {"" : "%", "_counts" : "cts"}
 

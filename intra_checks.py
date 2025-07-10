@@ -1,9 +1,19 @@
 '''
 Intra station checks (within station record)
+============================================
+
+This script calls the individual QC check routines on each station in turn.
+You can pass a single station by setting the ``--restart_id`` and ``-end_id`` to
+equal the same station ID, do a range by giving different IDs, or run all
+stations in the station list by leaving empty.
 
 intra_checks.py invoked by typing::
 
   python intra_checks.py --restart_id --end_id [--full] [--plots] [--diagnostics] [--test] [--clobber]
+
+with an example call being of the form::
+
+  python intra_checks.py --restart_id AAI0000TNCA --end_id AAI0000TNCA --full --clobber
 
 Input arguments:
 
@@ -21,6 +31,13 @@ Input arguments:
                      frequent/humidity/odd_cluster/pressure/spike/streaks/timestamp/variance/winds/world_records/precision]
 
 --clobber           Overwrite output files if already existing.  If not set, will skip if output exists
+
+.. note::
+
+    When selecting ``--plots`` option, do take care, as each selected QC-check will show every plot
+    that the routine is set up to do.  You may want to select a single test or do some further editing
+    to ensure that the features and functionality you're trying to investigate are shown easily.
+
 '''
 #************************************************************************
 import os
@@ -83,8 +100,8 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
         else:
             if diagnostics: print(f"Overwriting output for {station_id}")
         startT = dt.datetime.now()
-        
-        #*************************                    
+
+        #*************************
         # set up logging
         logfile = os.path.join(setup.SUBDAILY_LOG_DIR, f"{station_id}_internal_checks.log")
         if os.path.exists(logfile):
@@ -111,10 +128,10 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
             except FileNotFoundError:
                 config_dict = {}
             except JSONDecodeError:
-                # empty file    
+                # empty file
                 print("STOP - JSON error")
                 return
-    
+
 
         #*************************
         # set up the stations
@@ -133,6 +150,11 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
         except ValueError as e:
             # some issue in the raw file
             io.write_error(station, "Error in input file", error=str(e))
+            print("")
+            continue
+        except RuntimeError as e:
+            # missing header in the raw file
+            io.write_error(station, "Error in input file - missing header", error=str(e))
             print("")
             continue
 
@@ -177,7 +199,7 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
             if diagnostics: print("L", dt.datetime.now()-startT)
             good_metadata = qc_tests.logic_checks.lc(station, ["temperature",
                                                                "dew_point_temperature",
-                                                               "station_level_pressure", 
+                                                               "station_level_pressure",
                                                                 "sea_level_pressure",
                                                                 "wind_speed",
                                                                 "wind_direction"],
@@ -292,7 +314,7 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
         #         # rename the column
         #         variable = station_df.columns[c-1]
         #         station_df = station_df.rename(columns={column : "{}_Source_ID".format(variable)})
-                
+
 
         # write in the flag information
         for var in setup.obs_var_list:
@@ -302,7 +324,7 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
 
         # Some wind direction information is "fixed" to match DeGeatano conventions
         # TODO - move from obs_var into station_df if we decide to
-       
+
 
         #*************************
         # Output of QFF

@@ -1,6 +1,6 @@
 """
 Odd Cluster Checks
-^^^^^^^^^^^^^^^^^^
+==================
 
 Find isolated data (single points and small runs)
 """
@@ -92,7 +92,7 @@ def flag_clusters(obs_var: utils.Meteorological_Variable, station: utils.Station
         if ce == 0:
             # check if cluster at start of series (long gap after a first few points)
             cluster_length = station.times.iloc[cluster_end]-station.times.iloc[0]
-            
+
             if cluster_length.asm8/np.timedelta64(1, "h") < MAX_LENGTH_TIME:
                 # could be a cluster
                 if len(flags[:cluster_end+1]) < MAX_LENGTH_OBS:
@@ -119,7 +119,7 @@ def flag_clusters(obs_var: utils.Meteorological_Variable, station: utils.Station
             # As end of the sequence there's no end to calculate the time-diff for
             # check if cluster at end of series (long gap before last few points)
             cluster_length = station.times.iloc[-1] - station.times.iloc[cluster_end+1] # add one to find cluster start!
- 
+
             if cluster_length.asm8/np.timedelta64(1, "h") < MAX_LENGTH_TIME:
                 # could be a cluster
                 if len(flags[cluster_end+1:]) < MAX_LENGTH_OBS:
@@ -143,7 +143,7 @@ def occ(station: utils.Station, var_list: list, config_file: str, full: bool = F
 
     :param Station station: Station Object for the station
     :param list var_list: list of variables to test
-    :param str configfile: string for configuration file (unused at the moment)
+    :param str config_file: string for configuration file (unused at the moment)
     :param bool full: run a full update (unused at the moment)
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
@@ -158,8 +158,3 @@ def occ(station: utils.Station, var_list: list, config_file: str, full: bool = F
 
     return # dgc
 
-#************************************************************************
-if __name__ == "__main__":
-
-    print("checking gaps in distributions")
-#************************************************************************

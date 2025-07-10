@@ -1,6 +1,6 @@
 """
 Pressure Cross Checks
-^^^^^^^^^^^^^^^^^^^^^
+=====================
 
 Check for observations where difference between station and sea level pressure
 falls outside of the expected range.

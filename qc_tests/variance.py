@@ -1,6 +1,6 @@
 """
 Excess Variance Checks
-^^^^^^^^^^^^^^^^^^^^^^
+======================
 
 Checks for months with higher/lower variance than expected
 
@@ -76,7 +76,7 @@ def prepare_data(obs_var: utils.Meteorological_Variable, station: utils.Station,
     variances.mask = np.ones(all_years.shape[0])
     for y, year in enumerate(all_years):
 
-        ymlocs, = np.where(np.logical_and(station.months == month, station.years == year)) 
+        ymlocs, = np.where(np.logical_and(station.months == month, station.years == year))
         this_year = normed_anomalies[ymlocs]
 
         # HadISD used M.A.D.
@@ -116,7 +116,7 @@ def find_thresholds(obs_var: utils.Meteorological_Variable, station: utils.Stati
         except KeyError:
             CD_average = {f"{month}-average" : average_variance}
             config_dict[f"VARIANCE-{obs_var.name}"] = CD_average
-            
+
         config_dict[f"VARIANCE-{obs_var.name}"][f"{month}-spread"] = variance_spread
 
     return # find_thresholds
@@ -304,8 +304,3 @@ def evc(station: utils.Station, var_list: list, config_dict: dict, full: bool = 
 
     return # evc
 
-#************************************************************************
-if __name__ == "__main__":
-
-    print("checking excess variance")
-#************************************************************************

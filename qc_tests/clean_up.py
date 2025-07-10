@@ -1,8 +1,8 @@
 """
 Clean Up Months
-^^^^^^^^^^^^^^^
+===============
 
-Flag whole months if large proportions already flagged, 
+Flag whole months if large proportions already flagged,
 or if only a few observations left [not active].
 """
 #************************************************************************
@@ -69,7 +69,7 @@ def clean_up(obs_var: utils.Meteorological_Variable, station: utils.Station,
     return new_flags # clean_up
 
 #************************************************************************
-def mcu(station: utils.Meteorological_Variable, var_list: list, full: bool = False,
+def mcu(station: utils.Station, var_list: list, full: bool = False,
         plots: bool = False, diagnostics: bool = False) -> None:
     """
     Run through the variables and pass to monthly clean up
@@ -77,7 +77,7 @@ def mcu(station: utils.Meteorological_Variable, var_list: list, full: bool = Fal
     :param Station station: Station Object for the station
     :param list var_list: list of variables to test
     :param bool full: run a full update (unused here)
-    :param book plots: turn on plots
+    :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
 
@@ -91,8 +91,3 @@ def mcu(station: utils.Meteorological_Variable, var_list: list, full: bool = Fal
 
     return # wrc
 
-#************************************************************************
-if __name__ == "__main__":
-
-    print("removing remaining obs from highly flagged months")
-#************************************************************************

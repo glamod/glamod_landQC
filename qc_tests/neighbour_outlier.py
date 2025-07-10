@@ -1,9 +1,9 @@
 '''
 Neighbour Outlier Check
-^^^^^^^^^^^^^^^^^^^^^^^
+=======================
 
 Check for timestamps where difference to sufficient fraction of neighbours is
-sufficiently high
+sufficiently high.
 '''
 #************************************************************************
 import os
@@ -49,7 +49,7 @@ def plot_neighbour_flags(times: np.ndarray, flagged_time: int,
 
     for buddy in buddies:
         plt.plot(times[pad_start: pad_end], buddy[pad_start: pad_end], c='0.5', ls="-", marker=".")
-        
+
     plt.plot(times[flagged_time], target.data[flagged_time], 'r*', ms=10, zorder=10)
 
     plt.ylabel(target.name.capitalize())
@@ -63,13 +63,13 @@ def read_in_buddies(target_station: utils.Station, initial_neighbours: np.ndarra
     """
     Read in the buddy data for the neighbours, and store in dictionary
 
-    :param Station target_station: station to run on 
+    :param Station target_station: station to run on
     :param array initial_neighbours: input neighbours (ID, distance) pairs
     :param bool diagnostics: print extra material to screen
     :param bool plots: create plots from each test
 
     :returns: dict of the buddy objects
-    
+
     """
     # Get dataframe of all sations
     station_list = utils.get_station_list()
@@ -122,7 +122,7 @@ def read_in_buddy_data(target_station: utils.Station, initial_neighbours: np.nda
     """
     Read in the buddy data for the neighbours for specified variable
 
-    :param Station target_station: station to run on 
+    :param Station target_station: station to run on
     :param array initial_neighbours: input neighbours (ID, distance) pairs
     :param dict all_buddies: container of all the buddy objects, indexed by ID
     :param str variable: obs variable being run on
@@ -130,9 +130,9 @@ def read_in_buddy_data(target_station: utils.Station, initial_neighbours: np.nda
     :param bool plots: create plots from each test
 
     :returns: array of the buddy data [first line corresponds to target, so empty]
-    
+
     """
-     
+
     #*************************
     # read in in the neighbour (buddy) data
     all_buddy_data = np.ma.zeros([len(initial_neighbours[:, 0]), len(target_station.times)])
@@ -163,7 +163,7 @@ def read_in_buddy_data(target_station: utils.Station, initial_neighbours: np.nda
             buddy_var = getattr(buddy, variable)
 
             # apply flags
-            flag_locs, = np.nonzero(buddy_var.flags != "") 
+            flag_locs, = np.nonzero(buddy_var.flags != "")
             buddy_var.data.mask[flag_locs] = True
 
         except KeyError as e:
@@ -176,7 +176,7 @@ def read_in_buddy_data(target_station: utils.Station, initial_neighbours: np.nda
             continue
         # match the timestamps of target_station and copy over
         # TODO: use pandas routine: target_station.times.isin(buddy.times)
-        match = np.in1d(target_station.times, buddy.times) 
+        match = np.in1d(target_station.times, buddy.times)
         match_back = np.in1d(buddy.times, target_station.times)
 
         if True in match and True in match_back:
@@ -196,11 +196,11 @@ def read_in_buddy_data(target_station: utils.Station, initial_neighbours: np.nda
 def calculate_data_spread(target_station: utils.Station,
                           differences: np.ma.MaskedArray) -> np.ndarray:
     """
-    Find spread of differences on monthly basis (with minimum value)  
+    Find spread of differences on monthly basis (with minimum value)
 
-    :param Station target_station: station to run on    
+    :param Station target_station: station to run on
     :param np.ma.MaskedArray differences: array of differences of buddy data to target data
-    
+
     :returns: np.ndarray of the spread of the differences
     """
 
@@ -232,13 +232,13 @@ def adjust_pressure_for_tropical_storms(dubious: np.ma.MaskedArray, initial_neig
     """
     For pressure variables look for tropical storm passages, where large differences
     of station under the "eye" to neighbours are real and expected.
-    
+
     :param np.ma.MaskedArray dubious: locations where differences are greater than expected
     :param array initial_neighbours: input neighbours (ID, distance) pairs
     :param array differences: array of differences between target and neighbours
     :param array spreads: array of the spread of the differences
 
-    :returns: np.ndarray of locations where target values are dubious given the neighbours  
+    :returns: np.ndarray of locations where target values are dubious given the neighbours
     """
     # select on distance
     distant, = np.where(initial_neighbours[:, 1].astype(int) > DISTANT_NEIGHBOURS)
@@ -256,7 +256,7 @@ def adjust_pressure_for_tropical_storms(dubious: np.ma.MaskedArray, initial_neig
             neg, = np.where(negative[0] == dn)
 
             # by default, flag all dubious values greater difference than expected
-            dubious[dist_neigh, positive[1][pos]] = 1               
+            dubious[dist_neigh, positive[1][pos]] = 1
             dubious[dist_neigh, negative[1][neg]] = 1
 
             # but if there are negative ones, then if these dominate,
@@ -279,14 +279,14 @@ def adjust_pressure_for_tropical_storms(dubious: np.ma.MaskedArray, initial_neig
 
 #************************************************************************
 def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.ndarray,
-                      all_buddies: dict, variable: utils.Meteorological_Variable, 
+                      all_buddies: dict, variable: utils.Meteorological_Variable,
                       diagnostics: bool = False,
                       plots: bool = False, full: bool = False) -> None:
     """
     Works on a single station and variable.  Reads in neighbour's data,
     finds locations where sufficent are sufficiently different.
 
-    :param Station target_station: station to run on 
+    :param Station target_station: station to run on
     :param array initial_neighbours: input neighbours (ID, distance) pairs
     :param dict all_buddies: container for all the buddy objects, indexed by ID
     :param str variable: obs variable being run on
@@ -386,8 +386,3 @@ def noc(target_station: utils.Station, initial_neighbours: np.ndarray, var_list:
 
     # noc
 
-#************************************************************************
-if __name__ == "__main__":
-
-    print("checking for outliers compared to neighbours")
-#************************************************************************

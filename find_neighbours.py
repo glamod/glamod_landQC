@@ -1,5 +1,9 @@
 '''
-Find the neighbours for each station and store in file.
+Find Neighbours
+===============
+
+Find the neighbours for each station and store in file.  Needs to be run before the neighbour
+checks (``inter_checks.py``) and then each time the station list is updated.
 
 find_neighbours.py invoked by typing::
 
@@ -49,7 +53,7 @@ def get_cartesian(latitudes: np.ndarray, longitudes: np.ndarray) -> np.ndarray:
             Array of dimension (M, 3) representing M locations in 3D space with spatial dimensions [x, y, z] on the
             surface of a unit sphere corresponding to the latitude, longitude pairs in polar2d.
     """
-    polar2d_coords = np.vstack((latitudes, longitudes)).T 
+    polar2d_coords = np.vstack((latitudes, longitudes)).T
 
     cartesian_coords = polar2d_to_cartesian(polar2d_coords)
 
@@ -68,7 +72,7 @@ def compute_corange_matrix(cartesian_coords_a: np.ndarray, cartesian_coords_b: n
             surface of a unit sphere corresponding to the latitude, longitude pairs in polar2d.
     Returns:
         An (M*N, M*N) array of great circle distances between all locations.
-    """      
+    """
 
     # Compute cross distance matrix
     coranges = cross_distance(cartesian_coords_a, locations_b=cartesian_coords_b, R=DEFAULT_SPHERICAL_EARTH_RADIUS / 1000.)
@@ -79,7 +83,7 @@ def compute_corange_matrix(cartesian_coords_a: np.ndarray, cartesian_coords_b: n
 def get_neighbours(station_list_a: pd.DataFrame, station_list_b: pd.DataFrame = None,
                    diagnostics: bool = False, plots: bool = False, full: bool = False) -> np.ndarray:
     """
-    Find the neighbour indices and distances for the list supplied 
+    Find the neighbour indices and distances for the list supplied
 
     :param dataframe station_list_a: id, latitude, longitude, elevation and name.
     :param dataframe station_list_b: id, latitude, longitude, elevation and name [None].
@@ -112,7 +116,7 @@ def get_neighbours(station_list_a: pd.DataFrame, station_list_b: pd.DataFrame = 
         elev_b = station_list_b.elevation
     else:
         elev_b = np.copy(station_list_a.elevation)
-    elev_a, elev_b = np.meshgrid(elev_a, elev_b) 
+    elev_a, elev_b = np.meshgrid(elev_a, elev_b)
     vertical_separations = np.abs(elev_a - elev_b).T # transpose to match shape of distances
 
     if diagnostics:
@@ -124,22 +128,22 @@ def get_neighbours(station_list_a: pd.DataFrame, station_list_b: pd.DataFrame = 
         match_distance, = np.where(target <= utils.MAX_NEIGHBOUR_DISTANCE)
         match_elevation, = np.where(vertical_separations[t] <= utils.MAX_NEIGHBOUR_VERTICAL_SEP)
         matches = np.intersect1d(match_distance, match_elevation)
-        
+
         if len(matches) > 0:
             # have some neighbours
 
             current_neighbours = neighbours[t, :, :]
-            
+
             # append to 2-d array
             new_neighbours = np.array((matches, target[matches])).T
-            current_neighbours = np.append(current_neighbours, new_neighbours, axis=0) 
+            current_neighbours = np.append(current_neighbours, new_neighbours, axis=0)
 
             # sort on distances, and store closest N
             sort_order = np.argsort(current_neighbours[:, 1])
 
-            # overwrite.        
-            neighbours[t, :, :] = current_neighbours[sort_order[:utils.MAX_N_NEIGHBOURS]]            
-               
+            # overwrite.
+            neighbours[t, :, :] = current_neighbours[sort_order[:utils.MAX_N_NEIGHBOURS]]
+
     return neighbours # get_neighbours
 
 #************************************************************************
@@ -191,10 +195,10 @@ def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False, plot
                 # sort on distances, and store closest N
                 sort_order = np.argsort(this_station[:, 1])
 
-                # overwrite.        
+                # overwrite.
                 these_station_neighbours[sn] = this_station[sort_order]
 
-        # write back into neighbour array 
+        # write back into neighbour array
         neighbours[sub_arr1.index.start : sub_arr1.index.stop] = these_station_neighbours[:, :utils.MAX_N_NEIGHBOURS, :]
 
     # so this only needs running once per update, write out and store the neighbours
@@ -204,10 +208,10 @@ def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False, plot
 
         # each station
         for st, station in enumerate(neighbours):
-            """In cases where stations with lat=0 and lon=0 is pervasive, there could be 
+            """In cases where stations with lat=0 and lon=0 is pervasive, there could be
             more than MAX_N_NEIGHBOURS with zero distance.  Hence the sorting by distance
             won't necessarily end up with the target station at the first index location.
-            These stations will be withheld by the logic checks, so no buddy checks will 
+            These stations will be withheld by the logic checks, so no buddy checks will
             be run.  Hence, can manually overwrite the first entry to ensure the writing works."""
 
             if station_list.latitude[st] == 0 and station_list.longitude[st] == 0:
@@ -235,7 +239,7 @@ def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False, plot
                     outstring = f"{outstring:s} {station_list.id[neighb[0]]:<11s} {neighb[1]:8d}"
                 else:
                     outstring = f"{outstring:s} {'-':>11s} {neighb[1]:8d}"
-                    
+
 #            input("stop")
 
             outfile.write(f"{outstring}\n")
@@ -267,4 +271,4 @@ if __name__ == "__main__":
                plots=args.plots,
                full=args.full)
 
-    
+

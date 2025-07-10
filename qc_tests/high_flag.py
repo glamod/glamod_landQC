@@ -1,11 +1,11 @@
 """
 High Flag Rate Check
-^^^^^^^^^^^^^^^^^^^^
+====================
 
-Check for high flagging rates in each obs variable.  Indicate to 
+Check for high flagging rates in each obs variable.  Indicate to
 withhold station if in more than one.
 
-This is for the whole timeseries of data, whereas clean_up.py assesses monthly
+This is for the whole timeseries of data, whereas ``clean_up.py`` assesses monthly
 
 For the pressure and wind synergistic variables, if one has these flags set,
 then the other will be set too.
@@ -133,8 +133,3 @@ def hfr(station: utils.Station, var_list: list, full: bool = False, plots: bool 
     # For synergistically flagged, just count once, so this return is correct.
     return len(vars_set) # hfr
 
-#************************************************************************
-if __name__ == "__main__":
-
-    print("checking for high flagging rates")
-#************************************************************************

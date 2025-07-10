@@ -42,5 +42,7 @@ temperature : y : 0.0
 temperature : y_counts : 0
 temperature : 1 : 0.0
 temperature : 1_counts : 0
+temperature : 2 : 0.0
+temperature : 2_counts : 0
 temperature : All : 0.8
 temperature : All_counts : 4

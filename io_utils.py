@@ -9,9 +9,12 @@ import numpy as np
 import setup
 import datetime as dt
 import csv
+import subprocess
+import shlex
+import warnings
 import logging
 logger = logging.getLogger(__name__)
-        
+
 from qc_utils import Station, populate_station, MDI, QC_TESTS
 
 #************************************************************************
@@ -21,7 +24,7 @@ def count_skip_rows(infile: str) -> list:
     but in unexpected lines (!=0).  Return these line numbers as list (zero-indexed)
 
     :param infile str: file to process
-    
+
     :returns: list of line numbers
     """
     skip_rows = []
@@ -46,10 +49,10 @@ def read_psv(infile: str, separator: str) -> pd.DataFrame:
 
     :param str infile: location and name of infile (without extension)
     :param str separator: separating character (e.g. ",", "|")
- 
+
     :returns: df - DataFrame
     '''
-
+    warnings.filterwarnings("error", category=pd.errors.DtypeWarning)
     try:
         df = pd.read_csv(infile, sep=separator, compression="infer",
                          dtype=setup.DTYPE_DICT, na_values="Null", quoting=3, index_col=False)
@@ -78,6 +81,10 @@ def read_psv(infile: str, separator: str) -> pd.DataFrame:
         logger.warning(f"End of File Error (gzip): {str(e)}")
         print(str(e))
         raise EOFError(str(e))
+    except pd.errors.DtypeWarning as e:
+        logger.warning(f"Dtype error - likely header row missing: {str(e)}")
+        print(str(e))
+        raise RuntimeError
 
     # Number of columns at August 2023, or after adding flag columns
     assert len(df.columns) in [238, 238+len(setup.obs_var_list)]
@@ -100,6 +107,10 @@ def read(infile:str) -> pd.DataFrame:
     else:
         raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), infile)
 
+    # check there was a header row
+    if df.columns[0] != "Station_ID":
+        raise RuntimeError(f"Missing header row in {infile}")
+
     return df # read
 
 
@@ -107,10 +118,10 @@ def read(infile:str) -> pd.DataFrame:
 def calculate_datetimes(station_df: pd.DataFrame) -> pd.Series:
     """
     Convert the separate Y-M-D H-M values into datetime objects
-    
+
     :param pd.DataFrame station_df: dataframe for the station record
 
-    :returns: pd.Series of datetime64 values    
+    :returns: pd.Series of datetime64 values
     """
 
     try:
@@ -154,7 +165,7 @@ def read_station(stationfile: str, station: Station,
 
     :returns: station & station_df
     """
-   
+
     #*************************
     # read MFF
     try:
@@ -162,6 +173,9 @@ def read_station(stationfile: str, station: Station,
     except FileNotFoundError:
         logger.warning(f"Missing station file {stationfile}")
         raise FileNotFoundError
+    except RuntimeError:
+        logger.warning(f"Missing header row in {stationfile}")
+        raise RuntimeError
 
     # calculate datetime series
     datetimes = calculate_datetimes(station_df)
@@ -194,6 +208,38 @@ def write_psv(outfile: str, df: pd.DataFrame, separator: str) -> None:
 
     return # write_psv
 
+
+#************************************************************************
+def integrity_check(infile: str) -> bool:
+    """Test integrity of a Gzip file
+
+    Parameters
+    ----------
+    infile : str
+        File path to test integrity of gzip file
+
+    Returns
+    -------
+    bool
+        Boolean indicator whether infile is valid gzip.
+    """
+    # using shlex to ensure safe usage of subprocess
+    try:
+        cmd = shlex.split(f"gzip -t {shlex.quote(infile)}")
+        proc = subprocess.run(cmd,
+                              capture_output=True, text=True, check=True, shell=False)
+        logging.info(f"{proc.stdout}")
+        return True
+
+    except subprocess.CalledProcessError as e:
+        # Error raised if non-zero exit code
+        logging.info(f"Validation failed on {infile}")
+        logging.info(f"  {e.cmd}")
+        logging.info(f"  {e.stderr}")
+        return False
+
+
+
 #************************************************************************
 def write(outfile: str, df: pd.DataFrame, formatters: dict = {}) -> None:
     """
@@ -213,6 +259,10 @@ def write(outfile: str, df: pd.DataFrame, formatters: dict = {}) -> None:
 
     # for .psv
     write_psv(outfile, df, "|")
+
+    if not integrity_check(outfile):
+        logging.warning(f"Invalid Gzip file {outfile}")
+
     return # write
 
 #************************************************************************
@@ -264,8 +314,7 @@ def flag_write(outfilename: str, df: pd.DataFrame, diagnostics: bool = False) ->
                 if flagged.shape[0] == 0:
                     print(f"{var} - 0")
                 else:
-                    print(f"{var} - {100*flagged.shape[0]/np.ma.count(this_var_data)}")
-
+                    print(f"{var} - {100*flagged.shape[0]/np.ma.count(this_var_data):.1f}%")
 
     return # flag_write
 
@@ -274,7 +323,7 @@ def write_error(station: Station, message: str, error: str = "", diagnostics:boo
     """
     Write out quick failure message for station
 
-    :param Station station: met. station 
+    :param Station station: met. station
     :param str message: message to store
     :param str error: error output from stacktrace
     :param bool diagnostics: turn on diagnostic output

@@ -45,6 +45,7 @@ if [ ! -d "${SCRIPT_DIR}" ]; then
     mkdir "${SCRIPT_DIR}"
 fi
 
+
 #**************************************
 # Set functions
 function write_and_submit_bastion_script {
@@ -58,7 +59,8 @@ function write_and_submit_bastion_script {
     screen -r "qc_${batch}" -X stuff $'conda activate glamod_QC \n'
 
     # run the parallel script in this detached screen
-    screen -r "qc_${batch}" -X stuff $"parallel --jobs ${N_JOBS} < ${parallel_script} "
+    screen -r "qc_${batch}" -X stuff $"parallel --jobs ${N_JOBS} < ${parallel_script} 
+"
 
 
 } # write_and_submit_bastion_script
@@ -90,6 +92,7 @@ ROOTDIR="$(grep "root " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 # extract remaining locations
 MFF_DIR="$(grep "mff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 MFF_VER="$(grep "mff_version " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
+MFF_ZIP="$(grep "in_compression " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 PROC_DIR="$(grep "proc " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 QFF_DIR="$(grep "qff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 QFF_ZIP="$(grep "out_compression " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
@@ -137,15 +140,15 @@ stn_ids=$(awk -F" " '{print $1}' "${station_list_file}")
 #**************************************
 echo "Check all upstream stations present"
 missing_file="${ROOTDIR}${CONFIG_DIR}${VERSION}missing_${STAGE}.txt"
-if [ -e ${missing_file} ]; then
-    rm ${missing_file}
+if [ -e "${missing_file}" ]; then
+    rm "${missing_file}"
 fi
-touch ${missing_file}
+touch "${missing_file}"
 for stn in ${stn_ids}
 do
     processed=false
     if [ "${STAGE}" == "I" ]; then
-        if [ -f "${MFF_DIR}${MFF_VER}${stn}.mff" ]; then
+        if [ -f "${MFF_DIR}${MFF_VER}${stn}.mff${MFF_ZIP}" ]; then
             processed=true
         fi
     elif [ "${STAGE}" == "N" ]; then
@@ -161,7 +164,7 @@ do
     fi
 
     if [ ${processed} == false ]; then
-        echo "${stn}" >> ${missing_file}
+        echo "${stn}" >> "${missing_file}"
     fi
 
 done
@@ -210,7 +213,7 @@ do
     do
     # check if upstream data files are present
 	if [ "${STAGE}" == "I" ]; then
-        if [ -f "${MFF_DIR}${MFF_VER}${stn}.mff" ]; then
+        if [ -f "${MFF_DIR}${MFF_VER}${stn}.mff${MFF_ZIP}" ]; then
 		    submit=true
         fi
 	elif [ "${STAGE}" == "N" ]; then
@@ -346,7 +349,7 @@ done
 # and submit the final batch of stations.
 write_and_submit_bastion_script "${parallel_script}" "${batch}"
 
-exit
+
 #**************************************
 # and print summary
 n_jobs=$(squeue --user="${USER}" | wc -l)

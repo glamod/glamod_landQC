@@ -1,6 +1,6 @@
 """
 Frequent Value Check
-^^^^^^^^^^^^^^^^^^^^
+====================
 
 Check for observation values which occur much more frequently than expected.
 """
@@ -51,9 +51,9 @@ def identify_values(obs_var: utils.Meteorological_Variable, station: utils.Stati
         resolution = utils.reporting_accuracy(month_data)
 
         if resolution <= 0.5:
-            bins = utils.create_bins(month_data, 0.5, obs_var.name) 
+            bins = utils.create_bins(month_data, 0.5, obs_var.name)
         else:
-            bins = utils.create_bins(month_data, 1.0, obs_var.name) 
+            bins = utils.create_bins(month_data, 1.0, obs_var.name)
 
         hist, bin_edges = np.histogram(month_data, bins)
 
@@ -127,7 +127,7 @@ def frequent_values(obs_var: utils.Meteorological_Variable, station: utils.Stati
             identify_values(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
             width = float(config_dict[f"FREQUENT-{obs_var.name}"]["width"])
             suspect_bins = config_dict[f"FREQUENT-{obs_var.name}"][f"{month}"]
- 
+
         # skip on if nothing to find
         if len(suspect_bins) == 0:
             continue
@@ -148,9 +148,9 @@ def frequent_values(obs_var: utils.Meteorological_Variable, station: utils.Stati
             resolution = utils.reporting_accuracy(month_data)
 
             if resolution <= 0.5:
-                bins = utils.create_bins(month_data, 0.5, obs_var.name) 
+                bins = utils.create_bins(month_data, 0.5, obs_var.name)
             else:
-                bins = utils.create_bins(month_data, 1.0, obs_var.name) 
+                bins = utils.create_bins(month_data, 1.0, obs_var.name)
             hist, bin_edges = np.histogram(month_data, bins)
 
             # Scan through the histogram
@@ -231,8 +231,3 @@ def fvc(station: utils.Station, var_list: list, config_dict: dict, full: bool = 
 
     return # fvc
 
-#************************************************************************
-if __name__ == "__main__":
-
-    print("checking frequent values")
-#************************************************************************
