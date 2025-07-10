@@ -56,6 +56,50 @@ def plot_pressure_timeseries(sealp: utils.Meteorological_Variable,
     return # plot_pressure_timeseries
 
 
+#************************************************************************
+def pressure_logic(sealp: utils.Meteorological_Variable,
+                   stnlp: utils.Meteorological_Variable,
+                   times: np.ndarray, elevation: float,
+                   plots: bool=False, diagnostics: bool=False) -> None:
+
+    """
+    Flag locations where difference between station and sea-level pressure
+    is inconsistent with station elevation
+
+    :param MetVar sealp: sea level pressure object
+    :param MetVar stnlp: station level pressure object
+    :param array times: datetime array
+    :param float elevation: station elevation
+    :param bool plots: turn on plots
+    :param bool diagnostics: turn on diagnostic output
+    """
+
+    flags = np.array(["" for i in range(sealp.data.shape[0])])
+
+    # if below sea level, station pressure should be larger than SLP
+    if elevation < 0:
+        locs, = np.ma.where(sealp.data > stnlp.data)
+    elif elevation > 0:
+        locs, = np.ma.where(sealp.data < stnlp.data)
+
+    if len(locs) != 0 :
+        logger.info(f"Pressure {stnlp.name}")
+
+        flags[locs] = "p"
+        logger.info(f"   Sea & station pressure inconsistent with elevation {len(locs)}")
+        if plots:
+            for bad in locs:
+                plot_pressure_timeseries(sealp, stnlp, times, bad)
+
+    # flag both pressures
+    stnlp.flags = utils.insert_flags(stnlp.flags, flags)
+    sealp.flags = utils.insert_flags(sealp.flags, flags)
+
+    logger.info(f"Pressure {stnlp.name}")
+    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
+
+    return # pressure_logic
+
 #*********************************************
 def plot_pressure_distribution(difference: np.ndarray,
                                title: str,
@@ -63,7 +107,7 @@ def plot_pressure_distribution(difference: np.ndarray,
     '''
     Plot distribution and include the upper and lower thresholds
 
-    :param array difference: values to form histogram from 
+    :param array difference: values to form histogram from
     :param str title: label for plot
     :param int vmin: lower locations for vertical line
     :param int vmax: upper locations for vertical line
@@ -79,7 +123,8 @@ def plot_pressure_distribution(difference: np.ndarray,
     plt.axvline(x=vmin, ls="--", c="r")
     plt.axvline(x=vmax, ls="--", c="r")
     plt.xlim([bins[0] - 1, bins[-1] + 1])
-    plt.ylabel("Observations")
+    plt.ylabel("Observations (logscale)")
+    plt.yscale("log")
     plt.xlabel("Difference (hPa)")
     plt.title(title)
     plt.show()
@@ -119,7 +164,7 @@ def identify_values(sealp: utils.Meteorological_Variable,
             # Make new entry for Pressure
             CD_average = {"average" : average}
             config_dict["PRESSURE"] = CD_average
-            
+
         config_dict["PRESSURE"]["spread"] = spread
 
     return # identify_values
@@ -158,7 +203,7 @@ def pressure_offset(sealp: utils.Meteorological_Variable,
             identify_values(sealp, stnlp, config_dict, plots=plots, diagnostics=diagnostics)
             average = float(config_dict["PRESSURE"]["average"])
             spread = float(config_dict["PRESSURE"]["spread"])
-            
+
 
         if np.abs(np.ma.mean(difference) - np.ma.median(difference)) > THRESHOLD*spread:
             logger.warning("Large difference between mean and median")
@@ -227,7 +272,7 @@ def calc_slp(stnlp: np.ndarray, elevation: float, temperature: np.ndarray) -> np
 
     factor = (1. - ((0.0065*elevation) / ((filled_temperature+273.15) + (0.0065*elevation))))
 
-    sealp = stnlp * (factor ** -5.257)    
+    sealp = stnlp * (factor ** -5.257)
 
     return sealp # calc_slp
 
@@ -238,7 +283,7 @@ def adjust_existing_flag_locs(var: utils.Meteorological_Variable,
     """
     There may be flags already set by previous part of test
     Find these locations, and adjust new flags to these aren't added again
-    
+
     :param MetVar var: the variable object
     :param array flags: the flag array
 
@@ -261,7 +306,7 @@ def pressure_theory(sealp: utils.Meteorological_Variable,
                     times: np.ndarray, elevation: int,
                     plots: bool=False, diagnostics: bool=False) -> None:
     """
-    Flag locations where difference between recorded and calculated sea-level pressure 
+    Flag locations where difference between recorded and calculated sea-level pressure
     falls outside of bounds
 
     :param MetVar sealp: sea level pressure object
@@ -295,7 +340,7 @@ def pressure_theory(sealp: utils.Meteorological_Variable,
             if plots:
                 for bad in bad_locs:
                     plot_pressure_timeseries(sealp, stnlp, times, bad)
-                
+
         # flag both as not sure immediately where the issue lies
         stnlp.flags = utils.insert_flags(stnlp.flags, adjust_existing_flag_locs(stnlp, flags))
         sealp.flags = utils.insert_flags(sealp.flags, adjust_existing_flag_locs(sealp, flags))
@@ -322,9 +367,14 @@ def pcc(station: utils.Station, config_dict: dict, full: bool = False,
     sealp = getattr(station, "sea_level_pressure")
     stnlp = getattr(station, "station_level_pressure")
 
+    pressure_logic(sealp, stnlp, station.times, station.elev,
+                   plots=plots, diagnostics=diagnostics)
+
     if full:
-        identify_values(sealp, stnlp, config_dict, plots=plots, diagnostics=diagnostics)
-    pressure_offset(sealp, stnlp, station.times, config_dict, plots=plots, diagnostics=diagnostics)
+        identify_values(sealp, stnlp, config_dict, plots=plots,
+                        diagnostics=diagnostics)
+    pressure_offset(sealp, stnlp, station.times, config_dict,
+                    plots=plots, diagnostics=diagnostics)
 
     temperature = getattr(station, "temperature")
     if str(station.elev)[:4] in ["-999", "9999"]:
@@ -332,7 +382,8 @@ def pcc(station: utils.Station, config_dict: dict, full: bool = False,
         logger.warning(f"Station Elevation missing ({station.elev}m)")
         logger.warning("   Theoretical SLP/StnLP cross check not run.")
     else:
-        pressure_theory(sealp, stnlp, temperature, station.times, station.elev, plots=plots, diagnostics=diagnostics)
+        pressure_theory(sealp, stnlp, temperature, station.times,
+                        station.elev, plots=plots, diagnostics=diagnostics)
 
     return # pcc
 
