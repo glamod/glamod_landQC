@@ -301,14 +301,20 @@ def flag_write(outfilename: str, df: pd.DataFrame, diagnostics: bool = False) ->
             if np.ma.count(this_var_data) == 0:
                 outfile.write(f"{var} : All : 0\n")
             else:
-                outfile.write(f"{var} : All : {flagged.shape[0]/np.ma.count(this_var_data)}\n")
+                if flagged.shape[0] == 0:
+                    outfile.write(f"{var} : All : 0")
+                else:
+                    outfile.write(f"{var} : All : {flagged.shape[0]/np.ma.count(this_var_data)}\n")
 
             outfile.write(f"{var} : All_counts : {flagged.shape[0]}\n")
 
             logging.info(f"{var} - {flagged.shape[0]}")
             if diagnostics:
                 print(f"{var} - {flagged.shape[0]}")
-                print(f"{var} - {100*flagged.shape[0]/np.ma.count(this_var_data):.1f}%")
+                if flagged.shape[0] == 0:
+                    print(f"{var} - 0")
+                else:
+                    print(f"{var} - {100*flagged.shape[0]/np.ma.count(this_var_data):.1f}%")
 
     return # flag_write
 

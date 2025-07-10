@@ -12,6 +12,62 @@ import common
 
 # not testing plots
 
+def test_pressure_logic_above_msl():
+    elevation = 40
+
+    # Set up data, variables & station
+    test_data = 1000 + np.arange(6)
+    sealp = common.example_test_variable("sea_level_pressure",
+                                         test_data)
+    sealp.flags = np.array(["" for i in test_data])
+
+    test_data -= 10 # offset for positive elevation
+    test_data[4] += 20  # and make the wrong value
+    stnlp = common.example_test_variable("station_level_pressure",
+                                         test_data)
+    stnlp.flags = np.array(["" for i in test_data])
+
+    start_dt = dt.datetime(2000, 1, 1, 0, 0)
+    times = np.array([start_dt + dt.timedelta(hours=i)\
+                      for i in range(len(sealp.data))])
+
+    pressure.pressure_logic(sealp, stnlp, times, elevation)
+
+    expected_flags = np.array(["" for i in test_data])
+    expected_flags[4] = "p"
+
+    np.testing.assert_array_equal(stnlp.flags, expected_flags)
+    np.testing.assert_array_equal(sealp.flags, expected_flags)
+
+
+def test_pressure_logic_below_msl():
+    elevation = -40
+
+    # Set up data, variables & station
+    test_data = 1000 + np.arange(6)
+    sealp = common.example_test_variable("sea_level_pressure",
+                                         test_data)
+    sealp.flags = np.array(["" for i in test_data])
+
+    test_data += 10 # offset for positive elevation
+    test_data[4] -= 20  # and make the wrong value
+    stnlp = common.example_test_variable("station_level_pressure",
+                                         test_data)
+    stnlp.flags = np.array(["" for i in test_data])
+
+    start_dt = dt.datetime(2000, 1, 1, 0, 0)
+    times = np.array([start_dt + dt.timedelta(hours=i)\
+                      for i in range(len(sealp.data))])
+
+    pressure.pressure_logic(sealp, stnlp, times, elevation)
+
+    expected_flags = np.array(["" for i in test_data])
+    expected_flags[4] = "p"
+
+    np.testing.assert_array_equal(stnlp.flags, expected_flags)
+    np.testing.assert_array_equal(sealp.flags, expected_flags)
+
+
 def test_identify_values():
 
     # Set up data, variables &c
@@ -26,7 +82,7 @@ def test_identify_values():
 
     stnlp = common.example_test_variable("station_level_pressure",
                                          test_data)
-    
+
     config_dict = {}
     pressure.identify_values(sealp, stnlp, config_dict)
 
@@ -47,11 +103,11 @@ def test_pressure_offset_low():
     test_data[:10] -= 30
     stnlp = common.example_test_variable("station_level_pressure",
                                          test_data)
-    
+
     start_dt = dt.datetime(2000, 1, 1, 0, 0)
     times = np.array([start_dt + dt.timedelta(hours=i)\
                       for i in range(len(sealp.data))])
-    
+
     config_dict = {"PRESSURE": {"average": 1, "spread": 1}}
 
     pressure.pressure_offset(sealp, stnlp, times, config_dict)
@@ -73,11 +129,11 @@ def test_pressure_offset_high():
     test_data[:10] += 30
     stnlp = common.example_test_variable("station_level_pressure",
                                          test_data)
-    
+
     start_dt = dt.datetime(2000, 1, 1, 0, 0)
     times = np.array([start_dt + dt.timedelta(hours=i)\
                       for i in range(len(sealp.data))])
-    
+
     config_dict = {"PRESSURE": {"average": 1, "spread": 1}}
 
     pressure.pressure_offset(sealp, stnlp, times, config_dict)
@@ -98,11 +154,11 @@ def test_pressure_offset_bad_population():
     test_data[:50] += 30
     stnlp = common.example_test_variable("station_level_pressure",
                                          test_data)
-    
+
     start_dt = dt.datetime(2000, 1, 1, 0, 0)
     times = np.array([start_dt + dt.timedelta(hours=i)\
                       for i in range(len(sealp.data))])
-    
+
     config_dict = {"PRESSURE": {"average": 1, "spread": 1}}
 
     pressure.pressure_offset(sealp, stnlp, times, config_dict)
@@ -127,18 +183,18 @@ def test_pressure_offset_no_config():
     expected_flags[-20:] = "p"
     stnlp = common.example_test_variable("station_level_pressure",
                                          test_data)
-    
+
     start_dt = dt.datetime(2000, 1, 1, 0, 0)
     times = np.array([start_dt + dt.timedelta(hours=i)\
                       for i in range(len(sealp.data))])
-    
+
     config_dict = {"PRESSURE": {}}
 
     pressure.pressure_offset(sealp, stnlp, times, config_dict, diagnostics=True)
 
     assert config_dict["PRESSURE"] == {"average": 0, "spread": 1}
     np.testing.assert_array_equal(stnlp.flags, expected_flags)
-   
+
 
 
 def test_calc_slp_0m():
@@ -180,18 +236,18 @@ def test_adjust_existing_flag_locs():
     test_data[:2] = -99
     sealp = common.example_test_variable("sea_level_pressure",
                                          test_data, mdi=-99)
-    
+
     # first two entries have flags
     sealp.flags = np.array(["" for _ in test_data])
     sealp.flags[-2:] = "p"
 
     # wanting to set flags on all entries
     set_flags = np.array(["p" for _ in test_data])
-    
+
     # so expect to have none set on first two entries of adjusted array
     expected_flags = np.array(["p" for _ in test_data])
     expected_flags[-2:] = ""
-    
+
     new_flags = pressure.adjust_existing_flag_locs(sealp, set_flags)
 
     np.testing.assert_array_equal(new_flags, expected_flags)
@@ -260,13 +316,15 @@ def test_pressure_theory_0m():
     np.testing.assert_array_equal(stnlp.flags, expected_flags)
     np.testing.assert_array_equal(sealp.flags, expected_flags)
 
-  
+
+@patch("pressure.pressure_logic")
 @patch("pressure.identify_values")
 @patch("pressure.pressure_offset")
 @patch("pressure.pressure_theory")
 def test_pcc(pressure_theory_mock: Mock,
              pressure_offset_mock: Mock,
-             identify_values_mock: Mock):
+             identify_values_mock: Mock,
+             pressure_logic_mock: Mock):
 
     # Set up data, variables & station
     test_data = np.arange(5)
@@ -294,14 +352,17 @@ def test_pcc(pressure_theory_mock: Mock,
     pressure_offset_mock.assert_called_once()
     pressure_theory_mock.assert_called_once()
     identify_values_mock.assert_called_once()
+    pressure_logic_mock.assert_called_once()
 
 
+@patch("pressure.pressure_logic")
 @patch("pressure.identify_values")
 @patch("pressure.pressure_offset")
 @patch("pressure.pressure_theory")
 def test_pcc_bad_elevation(pressure_theory_mock: Mock,
                            pressure_offset_mock: Mock,
-                           identify_values_mock: Mock):
+                           identify_values_mock: Mock,
+                           pressure_logic_mock: Mock):
 
     # Set up data, variables & station
     test_data = np.arange(5)
@@ -329,3 +390,4 @@ def test_pcc_bad_elevation(pressure_theory_mock: Mock,
     identify_values_mock.assert_called_once()
     pressure_offset_mock.assert_called_once()
     assert not pressure_theory_mock.called
+    assert not pressure_logic_mock.called
