@@ -367,7 +367,12 @@ def pcc(station: utils.Station, config_dict: dict, full: bool = False,
     sealp = getattr(station, "sea_level_pressure")
     stnlp = getattr(station, "station_level_pressure")
 
-    pressure_logic(sealp, stnlp, station.times, station.elev,
+    if str(station.elev)[:4] in ["-999", "9999"]:
+        # missing elevation, so can't run this check
+        logger.warning(f"Station Elevation missing ({station.elev}m)")
+        logger.warning("   SeaLP/StnLP logic check not run.")
+    else:
+        pressure_logic(sealp, stnlp, station.times, station.elev,
                    plots=plots, diagnostics=diagnostics)
 
     if full:
@@ -386,10 +391,3 @@ def pcc(station: utils.Station, config_dict: dict, full: bool = False,
                         station.elev, plots=plots, diagnostics=diagnostics)
 
     return # pcc
-
-
-#************************************************************************
-if __name__ == "__main__":
-
-    print("pressure cross checks")
-#************************************************************************
