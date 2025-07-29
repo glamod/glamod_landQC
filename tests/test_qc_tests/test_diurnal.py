@@ -145,7 +145,7 @@ def test_get_daily_offset(find_fit_mock: Mock) -> None:
     np.testing.assert_array_equal(find_fit_mock.call_args[0][1], expected_mins)
 
 
-def test_prepare_data() -> None:
+def test_get_all_daily_offsets() -> None:
     """Test finding diurnal fit and uncertainty for all days in series"""
 
     # note, uses all possible days, not just days with data
@@ -172,7 +172,7 @@ def test_prepare_data() -> None:
     dummy_station = _setup_station(indata=indata, intimes=intimes)
     obs_var = dummy_station.temperature
 
-    fit, unc = diurnal.prepare_data(dummy_station, obs_var)
+    fit, unc = diurnal.get_all_daily_offsets(dummy_station, obs_var)
 
     assert len(fit) == len(unc) == 366  # 200 is a leap year.
     # second day has no (i.e. insufficient) obs
@@ -183,7 +183,7 @@ def test_prepare_data() -> None:
 def test_find_best_fit() -> None:
     """Test routine which finds best fit for each uncertainty"""
 
-    uncs = np.array([1, 2, 3, 4, 5, 6])
+    uncs = np.arange(1, diurnal.MAX_UNCERTAINTY + 1)
     uncs = np.tile(uncs, 120)
 
     fits = np.array([11, 12, 13, 14, 15, 16,
@@ -197,3 +197,30 @@ def test_find_best_fit() -> None:
     expected = np.array([21, 22, 23, 24, 25, 26])
 
     np.testing.assert_array_equal(result, expected)
+
+
+
+#def test_find_offset() -> None:
+
+
+
+#def test_get_potentially_spurious() -> None:
+
+
+#def test_check_spurious() -> None:
+
+
+#def test_diurnal_cycle_check() -> None:
+
+
+@patch("diurnal.diurnal_cycle_check")
+def test_dcc(diurnal_checks_mock: Mock) -> None:
+
+    temperatures = common.example_test_variable("temperature", np.arange(5))
+    station = common.example_test_station(temperatures)
+
+    diurnal.dcc(station, {})
+
+    diurnal_checks_mock.assert_called_once()
+
+    return

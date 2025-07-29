@@ -3,6 +3,8 @@ Diurnal Cycle Checks
 ====================
 
 Check whether diurnal cycle is consistent across the record
+
+Works to hourly resolution, even if data are finer than that
 """
 #************************************************************************
 import datetime as dt
@@ -19,6 +21,7 @@ DAILY_RANGE = 5
 
 THRESHOLD = 0.33
 MISSING = -99
+MAX_UNCERTAINTY = 6
 
 #************************************************************************
 def make_sines() -> np.ndarray:
@@ -153,14 +156,13 @@ def find_uncertainty(differences: np.ndarray, best_fit: int) -> int:
     differences = np.roll(differences, (11 - best_fit))
 
     """
-     |                           uncertainty
-     |                            |------|
+     |
      |             ----
  D   |   *  *  *    |                                  *  *  *
  i   |            * | *                          *  *
- f   |              |    *                    *
- f   |        0.66  |       *              *
- s   |--------------------------------------------------------
+ f   |              |    *       uncertainty  *
+ f   |        0.66  |       *       |----| *
+ s   |---------------------------------------------------critical value
      |        0.33  |          *        *
      |              |
      |             ----           *  *  <---- Min Diff
@@ -171,7 +173,8 @@ def find_uncertainty(differences: np.ndarray, best_fit: int) -> int:
 
     # find where below critical, add 1 to max offset
     locs, = np.where(differences < critical_value)
-    uncertainty = 1+ np.max([11-locs[0],locs[-1]-11])
+    uncertainty = 1 + np.max([11 - locs[0],
+                              locs[-1] - 11])
 
     return uncertainty
 
@@ -229,9 +232,10 @@ def get_daily_offset(station: utils.Station, locs: np.ndarray,
 
     return best_fit, uncertainty # get_daily_offset
 
+
 #************************************************************************
-def prepare_data(station: utils.Station,
-                 obs_var: utils.Meteorological_Variable) -> tuple[np.ndarray, np.ndarray]:
+def get_all_daily_offsets(station: utils.Station,
+                          obs_var: utils.Meteorological_Variable) -> tuple[np.ndarray, np.ndarray]:
     """
     For each 24h period, find diurnal cycle offset and uncertainty
     (uses all possible days between start and end, not just those with data)
@@ -242,14 +246,20 @@ def prepare_data(station: utils.Station,
     :returns: best_fit, uncertainty - arrays
     """
 
-    ndays = dt.date(station.times.iloc[-1].year + 1, 1, 1) - dt.date(station.times.iloc[0].year, 1, 1)
+    ndays = dt.date(station.times.iloc[-1].year + 1, 1, 1) -\
+            dt.date(station.times.iloc[0].year, 1, 1)
     best_fit_diurnal = np.ones(ndays.days).astype(int) * MISSING
     best_fit_uncertainty = np.zeros(ndays.days).astype(int)
+
+    # day counter
     d = 0
 
-    #   bug - if short record, and whole years missing, then counters will be offset.
-    for year in np.unique(station.years):
-        for month in np.unique(station.months):
+    # although this is longer than using the unique years/months
+    #   by checking every calendar day,
+    #   there's less risk of misaligning the counters.
+    for year in np.arange(station.times.iloc[0].year,
+                          station.times.iloc[-1].year+1):
+        for month in np.arange(1, 13):
             for day in np.arange(1, 32):
                 try:
                     # if Datetime doesn't throw an error, then valid date
@@ -278,7 +288,9 @@ def prepare_data(station: utils.Station,
 #************************************************************************
 def find_best_fit(best_fit_diurnal: np.ndarray,
                   best_fit_uncertainty: np.ndarray) -> np.ndarray:
-    """_summary_
+    """
+    Have best fit & uncertainty for each day in the record
+    Now to find best overall fit and uncertainty
 
     Parameters
     ----------
@@ -290,45 +302,56 @@ def find_best_fit(best_fit_diurnal: np.ndarray,
     Returns
     -------
     np.ndarray
-        Array, length 6 of the median offset for each uncertainty size
+        Array of the median offset for each uncertainty size (default length = 6)
     """
 
     assert len(best_fit_diurnal) == len(best_fit_uncertainty)
 
-    # done complete record, have best fit for each day
-    # now to find best overall fit.
-    #    find median offset for each uncertainty range from 1 to 6 hours
-    best_fits = MISSING*np.ones(6).astype(int)
-    for h in range(6):
-        locs, = np.where(best_fit_uncertainty == h+1)
+    """
+       Start with the days which have the smallest uncertainty (+/-1h)
+       and find median offset, and work up to max uncertainty (default 6h)
+
+       If a well defined diurnal cycle, these should be relatively close!
+
+       Only search out to MAX_UNCERTAINTY (6).  If the cycle is more uncertain
+       than this, then leave as missing - as unlikely to be able to
+       find an agreed point for the record.
+    """
+
+    best_fits = MISSING * np.ones(MAX_UNCERTAINTY).astype(int)
+    for h in range(MAX_UNCERTAINTY):
+        locs, = np.where(best_fit_uncertainty == h + 1)
 
         if len(locs) >= utils.DATA_COUNT_THRESHOLD:
-            # locs are daily, so at least 120 days for each uncertainty bin
+            # Locs are daily, so at least 120 days for each uncertainty bin
             best_fits[h] = np.median(best_fit_diurnal[locs])
 
     return best_fits
 
 
 #************************************************************************
-def find_offset(obs_var: utils.Meteorological_Variable, station: utils.Station, config_dict: dict, plots: bool = False, diagnostics: bool = False) -> tuple[np.ndarray, np.ndarray]:
+def find_offset(obs_var: utils.Meteorological_Variable,
+                station: utils.Station, config_dict: dict,
+                plots: bool = False, diagnostics: bool = False) -> tuple[np.ndarray, np.ndarray]:
     """
-    Find the best offset for a sine curve to represent the cycle
+    Find the best offset for a sine curve to represent the cycle & write to config file
 
     :param MetVar obs_var: Meteorological Variable object
     :param Station station: Station Object for the station
     :param str config_dict: dictionary containing configuration info
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
+
     """
+    # Find best fit and uncertainty for each day in complete record
+    best_fit_diurnal, best_fit_uncertainty = get_all_daily_offsets(station, obs_var)
 
-    best_fit_diurnal, best_fit_uncertainty = prepare_data(station, obs_var)
-
-    # done complete record, have best fit for each day
-    # now to find best overall fit.
-    #    find median offset for each uncertainty range from 1 to 6 hours
+    # Now to find best overall fit.
+    #    Find median offset for each uncertainty range from 1 to 6 hours
+    #    If well defined cycle, then lowest uncertainty ones should all agree
     best_fits = find_best_fit(best_fit_diurnal, best_fit_uncertainty)
 
-    # now go through each of the 6hrs of uncertainty and see if the range
+    # now go through each of the 6 hrs of uncertainty and see if the range
     # of the best fit +/- uncertainty overlap across them.
     # if they do, it's a well defined cycle, if not, then there's a problem
 
@@ -338,7 +361,7 @@ def find_offset(obs_var: utils.Meteorological_Variable, station: utils.Station, 
     hour_matches = np.zeros(24)
     diurnal_peak = MISSING
     number_estimates = 0
-    for h in range(6):
+    for h in range(MAX_UNCERTAINTY):
         if best_fits[h] != MISSING:
             '''Store lowest uncertainty best fit as first guess'''
             if diurnal_peak == MISSING:
@@ -377,12 +400,130 @@ def find_offset(obs_var: utils.Meteorological_Variable, station: utils.Station, 
     CD_peak = {"peak" : int(diurnal_peak)}
     config_dict[f"DIURNAL-{obs_var.name}"] = CD_peak
 
-    return best_fit_diurnal, best_fit_uncertainty # find_offset
+    return  # find_offset
+
+
+def get_potentially_spurious_days(best_fit_diurnal: np.ndarray,
+                                  best_fit_uncertainty: np.ndarray,
+                                  diurnal_offset: int) -> np.ndarray:
+    """Identify days where their uncertainty doesn't overlap with the best-fit's
+
+    Parameters
+    ----------
+    best_fit_diurnal : np.ndarray
+        Array of the daily best fit diurnal cycle
+    best_fit_uncertainty : np.ndarray
+        Array of the uncertainty in the daily best fit diurnal cycle
+    diurnal_offset : int
+        Offset of diurnal cycle
+
+    Returns
+    -------
+    np.ndarray
+        Binary array of good and bad days
+    """
+
+    hours = np.arange(24)
+    hours = np.roll(hours, 11-int(diurnal_offset))
+
+    # find locations where the overall best fit does not match the daily fit
+    potentially_spurious = np.ones(best_fit_diurnal.shape[0])*MISSING
+
+    for d, (fit, uncertainty) in enumerate(zip(best_fit_diurnal, best_fit_uncertainty)):
+        if fit != MISSING:
+            min_range = 11 - uncertainty
+            max_range = 11 + uncertainty
+
+            offset_loc, = np.where(hours == fit)
+
+            # find where the best fit falls outside the range for this particular day
+            if offset_loc < min_range or offset_loc > max_range:
+                potentially_spurious[d] = 1
+            else:
+                potentially_spurious[d] = 0
+
+    return potentially_spurious
+
+
+def check_spurious(potentially_spurious: np.ndarray,
+                   best_fit_diurnal: np.ndarray) -> np.ndarray:
+    """
+    Now check there are sufficient issues in running 30 day periods
+
+    Any periods>30 days where the diurnal cycle deviates from the expected
+    phase by more than this uncertainty, without 3 consecutive good or missing days
+    or six consecutive days consisting of a mix of only good or missing values,
+    are deemed dubious and the entire period of data (temperature) is flagged
+
+    Parameters
+    ----------
+    potenially_spurious : np.ndarray
+        Binary array identifying days which have erronous diurnal cycle
+    best_fit_diurnal : np.ndarray
+        Array of the daily best fit diurnal cycle
+
+    Returns
+    -------
+    np.ndarray
+        Binary array of good and bad days matching consecutivity threshols
+    """
+
+    n_good = 0
+    n_miss = 0
+    n_not_bad = 0
+    total_points = 0
+    total_not_miss = 0
+    bad_locs = np.zeros(best_fit_diurnal.shape[0])
+
+    for d in range(best_fit_diurnal.shape[0]):
+
+        if potentially_spurious[d] == 1:
+            # if bad, just add one
+            n_good = 0
+            n_miss = 0
+            n_not_bad = 0
+            total_points += 1
+            total_not_miss += 1
+
+        else:
+            # find a non-bad value - so check previous run
+            #  if have reached limits on good/missing
+            if (n_good == 3) or (n_miss == 3) or (n_not_bad >= 6):
+                # sufficient good missing or not bad data
+                if total_points >= 30:
+                    # if have collected enough others, then set flag
+                    if float(total_not_miss)/total_points >= 0.5:
+                        bad_locs[d - total_points : d] = 1
+                # reset counters
+                n_good = 0
+                n_miss = 0
+                n_not_bad = 0
+                total_points = 0
+                total_not_miss = 0
+
+            # and deal with this point
+            total_points += 1
+            if potentially_spurious[d] == 0:
+                # if good
+                n_good += 1
+                n_not_bad += 1
+                if n_miss != 0:
+                    n_miss = 0
+                total_not_miss += 1
+
+            elif potentially_spurious[d] == -999:
+                # if missing data
+                n_miss += 1
+                n_not_bad += 1
+                if n_good != 0:
+                    n_good = 0
+
+    return bad_locs
+
 
 #************************************************************************
 def diurnal_cycle_check(obs_var: utils.Meteorological_Variable, station: utils.Station, config_dict: dict,
-                        plots: bool = False, diagnostics: bool = False, best_fit_diurnal: np.ndarray = None,
-                        best_fit_uncertainty: np.ndarray = None) -> None:
+                        plots: bool = False, diagnostics: bool = False) -> None:
     """
     Use offset to find days where cycle doesn't match
 
@@ -398,91 +539,19 @@ def diurnal_cycle_check(obs_var: utils.Meteorological_Variable, station: utils.S
         diurnal_offset = int(config_dict[f"DIURNAL-{obs_var.name}"]["peak"])
     except KeyError:
         print("Information missing in config dictionary")
-        best_fit_diurnal, best_fit_uncertainty = find_offset(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
+        find_offset(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
         diurnal_offset = int(config_dict[f"DIURNAL-{obs_var.name}"]["peak"])
-
-
-    hours = np.arange(24)
-    hours = np.roll(hours, 11-int(diurnal_offset))
 
 
     if diurnal_offset != MISSING:
 
-        if (best_fit_diurnal is None) and (best_fit_uncertainty is None):
-            best_fit_diurnal, best_fit_uncertainty = prepare_data(station, obs_var)
+        best_fit_diurnal, best_fit_uncertainty = get_all_daily_offsets(station, obs_var)
 
-        # find locations where the overall best fit does not match the daily fit
-        potentially_spurious = np.ones(best_fit_diurnal.shape[0])*MISSING
+        potentially_spurious = get_potentially_spurious_days(best_fit_diurnal,
+                                                             best_fit_uncertainty,
+                                                             diurnal_offset)
 
-        for d, (fit, uncertainty) in enumerate(zip(best_fit_diurnal, best_fit_uncertainty)):
-            if fit != MISSING:
-                min_range = 11 - uncertainty
-                max_range = 11 + uncertainty
-
-                offset_loc, = np.where(hours == fit)
-
-                # find where the best fit falls outside the range for this particular day
-                if offset_loc < min_range or offset_loc > max_range:
-                    potentially_spurious[d] = 1
-                else:
-                    potentially_spurious[d] = 0
-
-        # now check there are sufficient issues in running 30 day periods
-        """Any periods>30 days where the diurnal cycle deviates from the expected
-        phase by more than this uncertainty, without three consecutive good or missing days
-        or six consecutive days consisting of a mix of only good or missing values, a
-        re deemed dubious and the entire period of data (including all non-temperature elements) is flagged"""
-        # here only temperature elements are flagged
-
-        n_good = 0
-        n_miss = 0
-        n_not_bad = 0
-        total_points = 0
-        total_not_miss = 0
-        bad_locs = np.zeros(best_fit_diurnal.shape[0])
-
-        for d in range(best_fit_diurnal.shape[0]):
-
-            if potentially_spurious[d] == 1:
-                # if bad, just add one
-                n_good = 0
-                n_miss = 0
-                n_not_bad = 0
-                total_points += 1
-                total_not_miss += 1
-
-            else:
-                # find a non-bad value - so check previous run
-                #  if have reached limits on good/missing
-                if (n_good == 3) or (n_miss == 3) or (n_not_bad >= 6):
-                    # sufficient good missing or not bad data
-                    if total_points >= 30:
-                        # if have collected enough others, then set flag
-                        if float(total_not_miss)/total_points >= 0.5:
-                            bad_locs[d - total_points : d] = 1
-                    # reset counters
-                    n_good = 0
-                    n_miss = 0
-                    n_not_bad = 0
-                    total_points = 0
-                    total_not_miss = 0
-
-                # and deal with this point
-                total_points += 1
-                if potentially_spurious[d] == 0:
-                    # if good
-                    n_good += 1
-                    n_not_bad += 1
-                    if n_miss != 0:
-                        n_miss = 0
-                    total_not_miss += 1
-
-                elif potentially_spurious[d] == -999:
-                    # if missing data
-                    n_miss += 1
-                    n_not_bad += 1
-                    if n_good != 0:
-                        n_good = 0
+        bad_locs = check_spurious(potentially_spurious, best_fit_diurnal)
 
         # run through all days
         # find zero point of day counter in data preparation part
@@ -506,7 +575,7 @@ def diurnal_cycle_check(obs_var: utils.Meteorological_Variable, station: utils.S
 
             flags[locs[data_locs]] = "U"
 
-        # append flags to object
+        # append flags to object (temperature)
         obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
         logger.info(f"Diurnal Check {obs_var.name}")
@@ -533,12 +602,8 @@ def dcc(station: utils.Station, config_dict: dict, full: bool = False, plots: bo
     obs_var = getattr(station, "temperature")
 
     if full:
-        best_fit_diurnal, best_fit_uncertainty = find_offset(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
-        diurnal_cycle_check(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics, \
-                                best_fit_diurnal=best_fit_diurnal, best_fit_uncertainty=best_fit_uncertainty)
-
-    else:
-        diurnal_cycle_check(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
+        find_offset(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
+    diurnal_cycle_check(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
 
     return # dgc
 
