@@ -33,7 +33,7 @@ def count_skip_rows(infile: str) -> list:
         for r, row in enumerate(reader):
             if r == 0:
                 continue
-            if "Station_ID|Station_name" in row[0]:
+            if "STATION|Station_name" in row[0]:
                 logger.warning(f"Extra header row at line {r}")
                 skip_rows += [r]
 
@@ -108,7 +108,7 @@ def read(infile:str) -> pd.DataFrame:
         raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), infile)
 
     # check there was a header row
-    if df.columns[0] != "Station_ID":
+    if df.columns[0] != "STATION":
         raise RuntimeError(f"Missing header row in {infile}")
 
     return df # read

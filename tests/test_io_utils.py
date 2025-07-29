@@ -72,7 +72,7 @@ def test_read(read_psv_mock: Mock) -> None:
 
     read_psv_mock.return_value = pd.DataFrame([["AJM00037843", "SABIRABAD", 1979],
                                                ["AJM00037843", "SABIRABAD", 1979]],
-                                              columns=["Station_ID", "Station_name", "Year"])
+                                              columns=["STATION", "Station_name", "Year"])
 
     _ = io_utils.read(infile)
 
