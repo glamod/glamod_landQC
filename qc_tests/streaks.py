@@ -505,6 +505,10 @@ def repeating_day(obs_var: utils.Meteorological_Variable, station: utils.Station
                                 plots=plots,title=obs_var.name.capitalize(),
                                 xlabel="Streaks of repeating days")
 
+        if isinstance(threshold, np.integer):
+            # JSON encoder can't cope with np.int64 objects
+            threshold = int(threshold)
+
         try:
             config_dict[f"STREAK-{obs_var.name}"]["DayRepeat"] = threshold
         except KeyError:

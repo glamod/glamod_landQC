@@ -141,7 +141,7 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
 
         try:
             station, station_df = io.read_station(os.path.join(setup.SUBDAILY_MFF_DIR,
-                                                               "{:11s}.mff{}".format(station_id, setup.IN_COMPRESSION)), station)
+                                                               "{:11s}.psv{}".format(station_id, setup.IN_COMPRESSION)), station)
         except FileNotFoundError: # as e:
             # file missing, move on to next in sequence
             io.write_error(station, "File Missing")

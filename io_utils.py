@@ -47,7 +47,7 @@ def read_psv(infile: str, separator: str) -> pd.DataFrame:
 
     https://stackoverflow.com/questions/64302419/what-are-all-of-the-exceptions-that-pandas-read-csv-throw
 
-    :param str infile: location and name of infile (without extension)
+    :param str infile: location and name of infile
     :param str separator: separating character (e.g. ",", "|")
 
     :returns: df - DataFrame
@@ -87,7 +87,7 @@ def read_psv(infile: str, separator: str) -> pd.DataFrame:
         raise RuntimeError
 
     # Number of columns at August 2023, or after adding flag columns
-    assert len(df.columns) in [238, 238+len(setup.obs_var_list)]
+    assert len(df.columns) in [329, 329+len(setup.obs_var_list)]
 
     return df #  read_psv
 
@@ -96,8 +96,7 @@ def read(infile:str) -> pd.DataFrame:
     """
     Wrapper for read functions to allow remainder to be file format agnostic.
 
-    :param str infile: location and name of infile (without extension)
-    :param str extension: infile extension [mff]
+    :param str infile: location and name of infile
     :returns: df - DataFrame
     """
 

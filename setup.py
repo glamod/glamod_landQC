@@ -109,7 +109,7 @@ carry_thru_var_list = parameters["variables"]["not_process_vars"]
 DTYPE_DICT =  {}
 for var_list in (obs_var_list, carry_thru_var_list):
     for v, var in enumerate(var_list):
-        if var in ["REM", "remarks", "pressure_3hr_change"]:
+        if var in ["REM", "remarks", "pressure_3hr_change", "sky_condition"]:
             DTYPE_DICT[var] = str
         elif "pres_wx" in var:
             # catch all present weather codes (which may contain character info)
