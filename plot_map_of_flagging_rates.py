@@ -77,7 +77,7 @@ def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False) -> N
 
 #        if st > 10:
 #            break
-        
+
         print(f"{dt.datetime.now()} {station_id}")
 
         station = utils.Station(station_id, station_list.iloc[st].latitude, station_list.iloc[st].longitude, station_list.iloc[st].elevation)
@@ -93,7 +93,7 @@ def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False) -> N
         #*************************
         # read QFF
         # try:
-        #     station_df = io.read(os.path.join(setup.SUBDAILY_OUT_DIR, f"{station_id}.qff"))
+        #     station_df = io.read(os.path.join(setup.SUBDAILY_OUT_DIR, f"{station_id}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}"))
         # except IOError:
         #     print(f"Missing station {station_id}")
         #     continue
@@ -116,7 +116,7 @@ def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False) -> N
                 except KeyError:
                     setattr(obs_var, test, 0)
                     setattr(obs_var, f"{test}_counts", 0)
-                    
+
 
             # # for total, get number of clean obs and subtract
             # flagged, = np.where(flags != "")

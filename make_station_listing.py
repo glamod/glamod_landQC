@@ -18,7 +18,7 @@ def main() -> None:
     Main script.  Makes inventory and other metadata files
 
     """
-    
+
     # read in the station list
     station_list = utils.get_station_list()
 
@@ -29,8 +29,8 @@ def main() -> None:
     station_IDs = station_list.id
 
     begins = np.array(["99999999" for i in range(station_list.shape[0])])
-    ends = np.array(["99999999" for i in range(station_list.shape[0])])  
-    
+    ends = np.array(["99999999" for i in range(station_list.shape[0])])
+
     # now spin through each ID in the curtailed list
     for st, station_id in enumerate(station_IDs):
         print(f"{dt.datetime.now()} {station_id:11s} ({st+1}/{station_IDs.shape[0]})")
@@ -39,7 +39,9 @@ def main() -> None:
                                 station_list.longitude[st], station_list.elevation[st])
 
         try:
-            station, station_df = ioutils.read_station(os.path.join(setup.SUBDAILY_OUT_DIR, f"{station_id:11s}.qff{setup.OUT_COMPRESSION}"), station)
+            station, station_df = ioutils.read_station(os.path.join(setup.SUBDAILY_OUT_DIR,
+                                                                    f"{station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}"),
+                                                       station)
         except OSError as e:
             # file missing, move on to next in sequence
             print(f"{station}, File Missing, {str(e)}")
@@ -67,9 +69,9 @@ def main() -> None:
                            index=False, header=False, index_names=False,
                            formatters={"wmo": "{:5s}".format,
                                        "name": "{:<40s}".format}, na_rep="")
-    
+
     return
-    
+
 #************************************************************************
 if __name__ == "__main__":
 
