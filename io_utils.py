@@ -298,23 +298,18 @@ def flag_write(outfilename: str, df: pd.DataFrame, diagnostics: bool = False) ->
 
             # for total, get number of set flags (excluding fixable wind logical)
             flagged, = np.where(np.logical_and(flags != "", flags != "1"))
-            if np.ma.count(this_var_data) == 0:
-                outfile.write(f"{var} : All : 0\n")
-            else:
-                if flagged.shape[0] == 0:
-                    outfile.write(f"{var} : All : 0")
-                else:
-                    outfile.write(f"{var} : All : {flagged.shape[0]/np.ma.count(this_var_data)}\n")
 
+            if np.ma.count(this_var_data) == 0 or flagged.shape[0] == 0:
+                proportion_flagged = 0
+            else:
+                proportion_flagged = flagged.shape[0]/np.ma.count(this_var_data)
+
+            outfile.write(f"{var} : All : {proportion_flagged}\n")
             outfile.write(f"{var} : All_counts : {flagged.shape[0]}\n")
 
             logging.info(f"{var} - {flagged.shape[0]}")
             if diagnostics:
-                print(f"{var} - {flagged.shape[0]}")
-                if flagged.shape[0] == 0:
-                    print(f"{var} - 0")
-                else:
-                    print(f"{var} - {100*flagged.shape[0]/np.ma.count(this_var_data):.1f}%")
+                print(f"{var} - {flagged.shape[0]} [{100*proportion_flagged:.1f}%]")
 
     return # flag_write
 

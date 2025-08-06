@@ -115,12 +115,12 @@ def lc(station: utils.Station, var_list: list, full: bool = False,
     # Missing elevation acceptable - removed this for the moment (7 November 2019, RJHD)
     #       missing could be -999, -999.9, -999.999 or even 9999.0 etc hence using string comparison
     if (station.elev < -432.65 or station.elev > 8850.):
-        if str(station.elev)[:4] not in ["-999", "9999"]:
+        if str(station.elev)[:4] not in utils.ALLOWED_MISSING_ELEVATIONS:
             write_logic_error(station, f"Bad elevation: {station.elev}", diagnostics=diagnostics)
             logger.warning(f"Bad elevation: {station.elev}")
             return_code = -1
         else:
-            logger.warning(f"Elevation (but not flagged): {station.elev}")
+            logger.warning(f"Elevation missing (but not flagged): {station.elev}")
 
     if station.times.iloc[0] < dt.datetime(1700, 1, 1):
         # Pandas datetime limited to pd.Timestamp.min = Timestamp('1677-09-22 00:12:43.145225')

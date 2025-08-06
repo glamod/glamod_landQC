@@ -1,56 +1,33 @@
 """
 Contains tests for pressure.py
 """
+import pytest
 import numpy as np
 import datetime as dt
 from unittest.mock import patch, Mock
 
 import pressure
+import qc_utils
 
 import common
 
 
 # not testing plots
 
-def test_pressure_logic_above_msl():
-    elevation = 40
-
+@pytest.mark.parametrize("elevation, offset1, offset2",
+                         [(40, -10, 20),
+                          (-40, 10, -20),])
+def test_pressure_logic(elevation: int,
+                                  offset1: int,
+                                  offset2: int) -> None:
     # Set up data, variables & station
     test_data = 1000 + np.arange(6)
     sealp = common.example_test_variable("sea_level_pressure",
-                                         test_data)
+                            test_data)
     sealp.flags = np.array(["" for i in test_data])
 
-    test_data -= 10 # offset for positive elevation
-    test_data[4] += 20  # and make the wrong value
-    stnlp = common.example_test_variable("station_level_pressure",
-                                         test_data)
-    stnlp.flags = np.array(["" for i in test_data])
-
-    start_dt = dt.datetime(2000, 1, 1, 0, 0)
-    times = np.array([start_dt + dt.timedelta(hours=i)\
-                      for i in range(len(sealp.data))])
-
-    pressure.pressure_logic(sealp, stnlp, times, elevation)
-
-    expected_flags = np.array(["" for i in test_data])
-    expected_flags[4] = "p"
-
-    np.testing.assert_array_equal(stnlp.flags, expected_flags)
-    np.testing.assert_array_equal(sealp.flags, expected_flags)
-
-
-def test_pressure_logic_below_msl():
-    elevation = -40
-
-    # Set up data, variables & station
-    test_data = 1000 + np.arange(6)
-    sealp = common.example_test_variable("sea_level_pressure",
-                                         test_data)
-    sealp.flags = np.array(["" for i in test_data])
-
-    test_data += 10 # offset for positive elevation
-    test_data[4] -= 20  # and make the wrong value
+    test_data += offset1 # offset for positive elevation
+    test_data[4] += offset2  # and make the wrong value
     stnlp = common.example_test_variable("station_level_pressure",
                                          test_data)
     stnlp.flags = np.array(["" for i in test_data])

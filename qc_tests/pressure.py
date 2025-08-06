@@ -66,9 +66,9 @@ def pressure_logic(sealp: utils.Meteorological_Variable,
     Flag locations where difference between station and sea-level pressure
     is inconsistent with station elevation
 
-    :param MetVar sealp: sea level pressure object
-    :param MetVar stnlp: station level pressure object
-    :param array times: datetime array
+    :param MetVar sealp: sea level pressure object (with data attribute of 1-D array)
+    :param MetVar stnlp: station level pressure object (with data attribute of 1-D array)
+    :param array times: datetime array (corresponding to the Sea & Station pressure obs)
     :param float elevation: station elevation
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
@@ -76,11 +76,11 @@ def pressure_logic(sealp: utils.Meteorological_Variable,
 
     flags = np.array(["" for i in range(sealp.data.shape[0])])
 
-    # if below sea level, station pressure should be larger than SLP
+    # if below sea level, station pressure should be larger than SLP and vice-versa
     if elevation < 0:
-        locs, = np.ma.where(sealp.data > stnlp.data)
+        locs, = np.ma.nonzero(sealp.data > stnlp.data)
     elif elevation > 0:
-        locs, = np.ma.where(sealp.data < stnlp.data)
+        locs, = np.ma.nonzero(sealp.data < stnlp.data)
 
     if len(locs) != 0 :
         logger.info(f"Pressure {stnlp.name}")
@@ -96,9 +96,10 @@ def pressure_logic(sealp: utils.Meteorological_Variable,
     sealp.flags = utils.insert_flags(sealp.flags, flags)
 
     logger.info(f"Pressure {stnlp.name}")
-    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
+    logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
-    return # pressure_logic
+    return  # pressure_logic
+
 
 #*********************************************
 def plot_pressure_distribution(difference: np.ndarray,
@@ -242,7 +243,7 @@ def pressure_offset(sealp: utils.Meteorological_Variable,
             stnlp.flags = utils.insert_flags(stnlp.flags, flags)
 
     logger.info(f"Pressure {stnlp.name}")
-    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
+    logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
     return # pressure_offset
 
@@ -346,7 +347,7 @@ def pressure_theory(sealp: utils.Meteorological_Variable,
         sealp.flags = utils.insert_flags(sealp.flags, adjust_existing_flag_locs(sealp, flags))
 
     logger.info(f"Pressure {stnlp.name}")
-    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
+    logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
     return # pressure_theory
 
@@ -367,13 +368,13 @@ def pcc(station: utils.Station, config_dict: dict, full: bool = False,
     sealp = getattr(station, "sea_level_pressure")
     stnlp = getattr(station, "station_level_pressure")
 
-    if str(station.elev)[:4] in ["-999", "9999"]:
+    if str(station.elev)[:4] in utils.ALLOWED_MISSING_ELEVATIONS:
         # missing elevation, so can't run this check
         logger.warning(f"Station Elevation missing ({station.elev}m)")
         logger.warning("   SeaLP/StnLP logic check not run.")
     else:
         pressure_logic(sealp, stnlp, station.times, station.elev,
-                   plots=plots, diagnostics=diagnostics)
+                       plots=plots, diagnostics=diagnostics)
 
     if full:
         identify_values(sealp, stnlp, config_dict, plots=plots,
@@ -382,7 +383,7 @@ def pcc(station: utils.Station, config_dict: dict, full: bool = False,
                     plots=plots, diagnostics=diagnostics)
 
     temperature = getattr(station, "temperature")
-    if str(station.elev)[:4] in ["-999", "9999"]:
+    if str(station.elev)[:4] in utils.ALLOWED_MISSING_ELEVATIONS:
         # missing elevation, so can't run this check
         logger.warning(f"Station Elevation missing ({station.elev}m)")
         logger.warning("   Theoretical SLP/StnLP cross check not run.")
