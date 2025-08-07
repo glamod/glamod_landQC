@@ -7,7 +7,6 @@ import datetime as dt
 from unittest.mock import patch, Mock
 
 import pressure
-import qc_utils
 
 import common
 
@@ -18,8 +17,8 @@ import common
                          [(40, -10, 20),
                           (-40, 10, -20),])
 def test_pressure_logic(elevation: int,
-                                  offset1: int,
-                                  offset2: int) -> None:
+                        offset1: int,
+                        offset2: int) -> None:
     # Set up data, variables & station
     test_data = 1000 + np.arange(6)
     sealp = common.example_test_variable("sea_level_pressure",
@@ -228,6 +227,9 @@ def test_adjust_existing_flag_locs():
     new_flags = pressure.adjust_existing_flag_locs(sealp, set_flags)
 
     np.testing.assert_array_equal(new_flags, expected_flags)
+    # ensure that flag array not affected by routine
+    np.testing.assert_array_equal(set_flags,
+                                  np.array(["p" for _ in test_data]))
 
 
 def test_pressure_theory_nodata():

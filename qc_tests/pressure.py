@@ -60,6 +60,7 @@ def plot_pressure_timeseries(sealp: utils.Meteorological_Variable,
 def pressure_logic(sealp: utils.Meteorological_Variable,
                    stnlp: utils.Meteorological_Variable,
                    times: np.ndarray, elevation: float,
+                   rtol: float=1.e-4,
                    plots: bool=False, diagnostics: bool=False) -> None:
 
     """
@@ -70,17 +71,25 @@ def pressure_logic(sealp: utils.Meteorological_Variable,
     :param MetVar stnlp: station level pressure object (with data attribute of 1-D array)
     :param array times: datetime array (corresponding to the Sea & Station pressure obs)
     :param float elevation: station elevation
+    :param float rtol: relative tolerance (1.e-4)
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
 
     flags = np.array(["" for i in range(sealp.data.shape[0])])
 
-    # if below sea level, station pressure should be larger than SLP and vice-versa
+    # Tolerance - pressure values usually given to 1dp, so 0.1hPa = 1e-4
+    # TODO: use reporting accuracy to adjust the tolerance?
+
+    if elevation == 0:
+        # if at sea level, pressures should be equal (within tolerance)
+        locs = np.ma.nonzero(np.isclose(sealp.data, stnlp.data, rtol=rtol))
     if elevation < 0:
-        locs, = np.ma.nonzero(sealp.data > stnlp.data)
+        # if below sea level, station pressure should be larger than SLP
+        locs, = np.ma.nonzero(sealp.data > stnlp.data * (1+rtol))
     elif elevation > 0:
-        locs, = np.ma.nonzero(sealp.data < stnlp.data)
+        # if above sea level, station pressure should be smaller than SLP
+        locs, = np.ma.nonzero(sealp.data < stnlp.data * (1-rtol))
 
     if len(locs) != 0 :
         logger.info(f"Pressure {stnlp.name}")
@@ -280,7 +289,7 @@ def calc_slp(stnlp: np.ndarray, elevation: float, temperature: np.ndarray) -> np
 
 #************************************************************************
 def adjust_existing_flag_locs(var: utils.Meteorological_Variable,
-                            flags: np.ndarray) -> np.ndarray:
+                              flags: np.ndarray) -> np.ndarray:
     """
     There may be flags already set by previous part of test
     Find these locations, and adjust new flags to these aren't added again
@@ -292,7 +301,7 @@ def adjust_existing_flag_locs(var: utils.Meteorological_Variable,
     """
 
     pre_exist = [i for i,item in enumerate(var.flags) if "p" in item]
-    new_flags = flags[:]
+    new_flags = np.copy(flags)
 
     # remove flags if "p" already in the existing flag so as not to duplicate
     new_flags[pre_exist] = ""
