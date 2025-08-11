@@ -83,21 +83,22 @@ def pressure_logic(sealp: utils.Meteorological_Variable,
 
     if elevation == 0:
         # if at sea level, pressures should be equal (within tolerance)
-        locs = np.ma.nonzero(np.isclose(sealp.data, stnlp.data, rtol=rtol))
+        #   Select those *not* close enough in value
+        bad_locs = np.ma.nonzero(~np.isclose(sealp.data, stnlp.data, rtol=rtol))
     if elevation < 0:
         # if below sea level, station pressure should be larger than SLP
-        locs, = np.ma.nonzero(sealp.data > stnlp.data * (1+rtol))
+        bad_locs, = np.ma.nonzero(sealp.data > stnlp.data * (1+rtol))
     elif elevation > 0:
         # if above sea level, station pressure should be smaller than SLP
-        locs, = np.ma.nonzero(sealp.data < stnlp.data * (1-rtol))
+        bad_locs, = np.ma.nonzero(sealp.data < stnlp.data * (1-rtol))
 
-    if len(locs) != 0 :
+    if len(bad_locs) != 0 :
         logger.info(f"Pressure {stnlp.name}")
 
-        flags[locs] = "p"
-        logger.info(f"   Sea & station pressure inconsistent with elevation {len(locs)}")
+        flags[bad_locs] = "p"
+        logger.info(f"   Sea & station pressure inconsistent with elevation {len(bad_locs)}")
         if plots:
-            for bad in locs:
+            for bad in bad_locs:
                 plot_pressure_timeseries(sealp, stnlp, times, bad)
 
     # flag both pressures

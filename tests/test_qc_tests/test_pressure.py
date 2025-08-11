@@ -13,20 +13,23 @@ import common
 
 # not testing plots
 
-@pytest.mark.parametrize("elevation, offset1, offset2",
+@pytest.mark.parametrize("elevation, stnlp_adjust_good, stnlp_adjust_bad",
                          [(40, -10, 20),
-                          (-40, 10, -20),])
+                          (-40, 10, -20),
+                          (0, 0, 1),
+                          (0, 0.1, 1),  # offset is within tolerance
+                          ])
 def test_pressure_logic(elevation: int,
-                        offset1: int,
-                        offset2: int) -> None:
+                        stnlp_adjust_good: int,
+                        stnlp_adjust_bad: int) -> None:
     # Set up data, variables & station
-    test_data = 1000 + np.arange(6)
+    test_data = 1000. + np.arange(6)
     sealp = common.example_test_variable("sea_level_pressure",
                             test_data)
     sealp.flags = np.array(["" for i in test_data])
 
-    test_data += offset1 # offset for positive elevation
-    test_data[4] += offset2  # and make the wrong value
+    test_data += stnlp_adjust_good # offset for positive elevation
+    test_data[4] += stnlp_adjust_bad  # and make the wrong value
     stnlp = common.example_test_variable("station_level_pressure",
                                          test_data)
     stnlp.flags = np.array(["" for i in test_data])
