@@ -5,7 +5,7 @@ import numpy as np
 import datetime as dt
 import pandas as pd
 import pytest
-from unittest.mock import call, patch, Mock
+from unittest.mock import patch, Mock
 
 import diurnal
 

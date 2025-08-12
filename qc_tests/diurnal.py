@@ -379,7 +379,7 @@ def find_offset(obs_var: utils.Meteorological_Variable,
     # of the best fit +/- uncertainty overlap across them.
     # if they do, it's a well defined cycle, if not, then there's a problem
 
-    '''Build up range of cycles incl, uncertainty to find where best of best located'''
+    # Build up range of cycles incl, uncertainty to find where best of best located
 
     hours = np.arange(24)
     hour_matches = np.zeros(24)
@@ -387,7 +387,7 @@ def find_offset(obs_var: utils.Meteorological_Variable,
     number_estimates = 0
     for h in range(MAX_UNCERTAINTY):
         if best_fits[h] != MISSING:
-            '''Store lowest uncertainty best fit as first guess'''
+            # Store lowest uncertainty best fit as first guess
             if diurnal_peak == MISSING:
                 diurnal_peak = best_fits[h]
                 # and roll the hours to centralise the range
@@ -411,8 +411,8 @@ def find_offset(obs_var: utils.Meteorological_Variable,
             number_estimates += 1
 
 
-    '''If value at lowest uncertainty *not* found in all others,
-        then see what value is found by all others '''
+    # If value at lowest uncertainty *not* found in all others,
+    #     then see what value is found by all others
     if hour_matches[11] != number_estimates:  # central estimate at 12 o'clock
         all_match, = np.where(hour_matches == number_estimates)
 
@@ -426,7 +426,7 @@ def find_offset(obs_var: utils.Meteorological_Variable,
             diurnal_peak = MISSING
             logger.warning("Good fit to diurnal cycle not found")
 
-    '''Now have value for best fit diurnal offset'''
+    # Now have value for best fit diurnal offset
     CD_peak = {"peak" : int(diurnal_peak)}
     config_dict[f"DIURNAL-{obs_var.name}"] = CD_peak
 
