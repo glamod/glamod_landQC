@@ -350,6 +350,7 @@ def find_offset(obs_var: utils.Meteorological_Variable,
     #    Find median offset for each uncertainty range from 1 to 6 hours
     #    If well defined cycle, then lowest uncertainty ones should all agree
     best_fits = find_best_fit(best_fit_diurnal, best_fit_uncertainty)
+    assert len(best_fits) == MAX_UNCERTAINTY
 
     # now go through each of the 6 hrs of uncertainty and see if the range
     # of the best fit +/- uncertainty overlap across them.
@@ -366,11 +367,12 @@ def find_offset(obs_var: utils.Meteorological_Variable,
             '''Store lowest uncertainty best fit as first guess'''
             if diurnal_peak == MISSING:
                 diurnal_peak = best_fits[h]
+                # and roll the hours to centralise the range
                 hours = np.roll(hours, 11-int(diurnal_peak))
                 hour_matches[11-(h+1):11+(h+2)] = 1
                 number_estimates += 1
 
-            # get spread of uncertainty, and +1 to this range
+            # else, get spread of uncertainty, and +1 to this range
             centre, = np.where(hours == best_fits[h])
 
             if (centre[0] - (h + 1)) >= 0:
@@ -385,13 +387,18 @@ def find_offset(obs_var: utils.Meteorological_Variable,
 
             number_estimates += 1
 
-    '''If value at lowest uncertainty not found in all others, then see what value is found by all others '''
+
+    '''If value at lowest uncertainty *not* found in all others,
+        then see what value is found by all others '''
     if hour_matches[11] != number_estimates:  # central estimate at 12 o'clock
         all_match, = np.where(hour_matches == number_estimates)
 
         # if one is, then use it
-        if len(all_match) > 0:
+        if len(all_match) == 1:
             diurnal_peak = all_match[0]
+        elif len(all_match) > 1:
+            # if more than one, take the central one
+            diurnal_peak = all_match[int(len(all_match)/2)]
         else:
             diurnal_peak = MISSING
             logger.warning("Good fit to diurnal cycle not found")
@@ -445,8 +452,7 @@ def get_potentially_spurious_days(best_fit_diurnal: np.ndarray,
     return potentially_spurious
 
 
-def check_spurious(potentially_spurious: np.ndarray,
-                   best_fit_diurnal: np.ndarray) -> np.ndarray:
+def check_spurious(potentially_spurious: np.ndarray) -> np.ndarray:
     """
     Now check there are sufficient issues in running 30 day periods
 
@@ -459,8 +465,7 @@ def check_spurious(potentially_spurious: np.ndarray,
     ----------
     potenially_spurious : np.ndarray
         Binary array identifying days which have erronous diurnal cycle
-    best_fit_diurnal : np.ndarray
-        Array of the daily best fit diurnal cycle
+
 
     Returns
     -------
@@ -468,55 +473,58 @@ def check_spurious(potentially_spurious: np.ndarray,
         Binary array of good and bad days matching consecutivity threshols
     """
 
-    n_good = 0
-    n_miss = 0
-    n_not_bad = 0
-    total_points = 0
-    total_not_miss = 0
-    bad_locs = np.zeros(best_fit_diurnal.shape[0])
+    n_good = 0  # good days (diurnal cycle in range)
+    n_miss = 0  # missing days (insufficient data to calculate diurnal cycle)
+    n_not_bad = 0  # consecutive combined good + missing
+    total_days = 0  # total days
+    total_not_miss = 0  # total non-missing days
+    bad_locs = np.zeros(potentially_spurious.shape[0])
 
-    for d in range(best_fit_diurnal.shape[0]):
+    for d, day in enumerate(potentially_spurious):
 
-        if potentially_spurious[d] == 1:
-            # if bad, just add one
+        if day == 1:
+            # if spurious diurnal cycle, just add one
             n_good = 0
             n_miss = 0
-            n_not_bad = 0
-            total_points += 1
+            n_not_bad = 1
+            total_days += 1
             total_not_miss += 1
 
         else:
-            # find a non-bad value - so check previous run
-            #  if have reached limits on good/missing
-            if (n_good == 3) or (n_miss == 3) or (n_not_bad >= 6):
-                # sufficient good missing or not bad data
-                if total_points >= 30:
-                    # if have collected enough others, then set flag
-                    if float(total_not_miss)/total_points >= 0.5:
-                        bad_locs[d - total_points : d] = 1
-                # reset counters
-                n_good = 0
-                n_miss = 0
-                n_not_bad = 0
-                total_points = 0
-                total_not_miss = 0
-
-            # and deal with this point
-            total_points += 1
-            if potentially_spurious[d] == 0:
+            # good diurnal cycle, increment appropriate consecutive counters
+            total_days += 1
+            if day == 0:
                 # if good
                 n_good += 1
                 n_not_bad += 1
                 if n_miss != 0:
+                    # reset consecutive missing
                     n_miss = 0
                 total_not_miss += 1
 
-            elif potentially_spurious[d] == -999:
+            elif day == MISSING:
                 # if missing data
                 n_miss += 1
                 n_not_bad += 1
                 if n_good != 0:
+                    # reset consecutive good
                     n_good = 0
+
+            # and check previous run
+            #  if have reached limits on good/missing
+            if (n_good == 3) or (n_miss == 3) or (n_not_bad >= 6):
+                 # sufficient good missing or not bad data to break the chain
+                if total_days >= 30:
+                    # if have collected enough others, then set flag
+                    if float(total_not_miss)/total_days >= 0.5:
+                        bad_locs[d - (total_days - 1) : d - (n_good+n_miss-1)] = 1
+
+                # reset counters
+                n_good = 0
+                n_miss = 0
+                n_not_bad = 0
+                total_days = 0
+                total_not_miss = 0
 
     return bad_locs
 
@@ -551,7 +559,7 @@ def diurnal_cycle_check(obs_var: utils.Meteorological_Variable, station: utils.S
                                                              best_fit_uncertainty,
                                                              diurnal_offset)
 
-        bad_locs = check_spurious(potentially_spurious, best_fit_diurnal)
+        bad_locs = check_spurious(potentially_spurious)
 
         # run through all days
         # find zero point of day counter in data preparation part

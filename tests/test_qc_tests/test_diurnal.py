@@ -199,15 +199,103 @@ def test_find_best_fit() -> None:
     np.testing.assert_array_equal(result, expected)
 
 
+@patch("diurnal.get_all_daily_offsets")
+@patch("diurnal.find_best_fit")
+def test_find_offset(find_best_fit_mock: Mock,
+                     daily_offsets_mock: Mock) -> None:
+    """Test finding of overall cycle centre"""
 
-#def test_find_offset() -> None:
+    # daily best fits and uncertainties
+    daily_offsets_mock.return_value = (np.array([9, 10, 11, 10, 10, 10, 10]),
+                                       np.array([2, 2, 2, 3, 4, 5, 6]))
+
+    # best fit for each *uncertainty* value
+    find_best_fit_mock.return_value = np.array([-99, 10, 10, 10 ,10, 10])
+
+
+    # set up other inputs
+    indata = np.ma.arange(10)
+    start_dt = dt.datetime(2000, 1, 1, 0, 0)
+    intimes = pd.to_datetime(pd.DataFrame([start_dt + dt.timedelta(hours=i)\
+                               for i in range(10)])[0])
+
+    dummy_station = _setup_station(indata=indata, intimes=intimes)
+    obs_var = dummy_station.temperature
+    config_dict = {}
+    diurnal.find_offset(obs_var, dummy_station, config_dict)
+
+    assert config_dict[f"DIURNAL-{obs_var.name}"]["peak"] == 10
+
+
+def test_get_potentially_spurious() -> None:
+    """Test selection of days where fit and uncertainty does not include overall fit"""
+    best_fit_diurnal = np.array([10, 10, 6, 10, 13, 10, 10])
+    best_fit_uncertainty = np.array([2, 2, 2, 3, 3, 3, 3])
+    diurnal_offset = 9
+    # should highlight where fit +/- uncertainty does not include offset
+
+    result = diurnal.get_potentially_spurious_days(best_fit_diurnal,
+                                                   best_fit_uncertainty,
+                                                   diurnal_offset)
+
+    np.testing.assert_array_equal(result,
+                                  np.array([0, 0, 1, 0, 1, 0, 0]))
 
 
 
-#def test_get_potentially_spurious() -> None:
+def test_check_spurious_simple() -> None:
+    """Test that selection of runs of bad cycles are correct"""
+    potentially_spurious = np.ones(50)
+    potentially_spurious[30:] = 0
+
+    result = diurnal.check_spurious(potentially_spurious)
+
+    expected = np.zeros(50)
+    expected[:30] = 1
+
+    np.testing.assert_array_equal(result, expected)
 
 
-#def test_check_spurious() -> None:
+def test_check_spurious_harder1() -> None:
+    """Test that selection of runs of bad cycles are correct"""
+    potentially_spurious = np.ones(50)
+    potentially_spurious[40:] = 0
+    potentially_spurious[np.array([10, 20, 30])] = 0
+
+    result = diurnal.check_spurious(potentially_spurious)
+
+    expected = np.zeros(50)
+    expected[:40] = 1
+
+    np.testing.assert_array_equal(result, expected)
+
+
+def test_check_spurious_harder2() -> None:
+    """Test that selection of runs of bad cycles are correct"""
+    potentially_spurious = np.ones(50)
+    potentially_spurious[40:] = 0
+    potentially_spurious[np.array([10, 11])] = 0
+    potentially_spurious[np.array([21, 22])] = diurnal.MISSING
+
+    result = diurnal.check_spurious(potentially_spurious)
+
+    expected = np.zeros(50)
+    expected[:40] = 1
+
+    np.testing.assert_array_equal(result, expected)
+
+
+def test_check_spurious_harder3() -> None:
+    """Test that selection of runs of bad cycles are correct"""
+    potentially_spurious = np.ones(50)
+    potentially_spurious[40:] = 0
+    potentially_spurious[np.array([20, 21, 22])] = 0
+
+    result = diurnal.check_spurious(potentially_spurious)
+
+    expected = np.zeros(50)
+
+    np.testing.assert_array_equal(result, expected)
 
 
 #def test_diurnal_cycle_check() -> None:
