@@ -148,6 +148,7 @@ def read(infile:str) -> pd.DataFrame:
             df = read_psv(infile, "|")
         else:
             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), infile)
+
     elif setup.IN_FORMAT in ("pqt", "parquet"):
         if os.path.exists(infile):
             df = read_pqt(infile)

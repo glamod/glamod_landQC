@@ -1,5 +1,5 @@
 """
-Contains tests for convert_to_parquet.py
+Contains tests for convert_to_yearly_parquet.py
 """
 import os
 import glob
@@ -13,8 +13,8 @@ EXAMPLE_FILES = glob.glob(os.path.join(os.path.dirname(__file__),
                            "example_data", "*.qff"))
 
 @pytest.mark.parametrize("compression", ("", ".gz", ".zip"))
-@patch("convert_to_parquet.setup")
-@patch("convert_to_parquet.os")
+@patch("convert_to_yearly_parquet.setup")
+@patch("convert_to_yearly_parquet.os")
 def test_get_files(os_mock: Mock,
                    setup_mock: Mock,
                    compression: str) -> None:
@@ -40,7 +40,7 @@ def test_get_files(os_mock: Mock,
         assert qff_files == ["test5.qff.zip", "test6.qff.zip"]
 
 
-@patch("convert_to_parquet.setup")
+@patch("convert_to_yearly_parquet.setup")
 def test_process_files(setup_mock: Mock) -> None:
 
     # Only testing unzipped files, so that these are more easily checked
@@ -61,8 +61,8 @@ def test_process_files(setup_mock: Mock) -> None:
     assert yearly_data[1985][0].shape[0] == 40
 
 
-@patch("convert_to_parquet.pd")
-@patch("convert_to_parquet.setup")
+@patch("convert_to_yearly_parquet.pd")
+@patch("convert_to_yearly_parquet.setup")
 def test_process_files_error(setup_mock: Mock,
                              pd_mock: Mock) -> None:
 
@@ -86,7 +86,7 @@ def test_process_files_error(setup_mock: Mock,
 
 
 
-@patch("convert_to_parquet.setup")
+@patch("convert_to_yearly_parquet.setup")
 def test_write_pqt(setup_mock: Mock,
                    tmp_path) -> None:
 
@@ -115,9 +115,9 @@ def test_write_pqt(setup_mock: Mock,
     assert written_df.shape == (40, 244)
 
 
-@patch("convert_to_parquet.write_pqt")
-@patch("convert_to_parquet.process_files")
-@patch("convert_to_parquet.get_files")
+@patch("convert_to_yearly_parquet.write_pqt")
+@patch("convert_to_yearly_parquet.process_files")
+@patch("convert_to_yearly_parquet.get_files")
 def test_main(get_files_mock: Mock,
               process_files_mock: Mock,
               write_pqt_mock: Mock) -> None:

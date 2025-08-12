@@ -93,16 +93,22 @@ E.g.
 ^^^^^^^^^^^^^^^^^^
 
 When happy the new environment is fit for purpose, create a new lock file
-(overwrite the old one in the repository).
+(overwrite the old one in the repository).  Using ``-e`` rather than ``--explict``
+as don't want full urls given systems these environments are built on.
 
 
 .. code:: console
 
     conda activate glamod_QC_dev
-    conda list --explicit > environment.lock
+    conda list -e > environment.lock
+    conda export --no-build > environment.yml
+    conda export --no-build --from-history > environment-from-history.yml
 
 
-Create a PR for the new ``environment.yml`` and ``environment.lock`` files!
+You may need to check and update the environment name in the ``.lock`` file and
+also remove the prefix if it contains sensitive information (e.g. user names and paths)
+
+Create a PR for the new ``environment.yml``, ``environment-from-history.yml`` and ``environment.lock`` files!
 
 
 6. Clean up
