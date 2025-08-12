@@ -145,6 +145,26 @@ def test_get_daily_offset(find_fit_mock: Mock) -> None:
     np.testing.assert_array_equal(find_fit_mock.call_args[0][1], expected_mins)
 
 
+def test_get_start_end_ndays() -> None:
+    """Test return of start, end and ndays"""
+
+    ndata = 72
+    indata = np.ma.arange(ndata)
+    start_dt = dt.datetime(2000, 3, 5, 0, 0)
+    intimes = pd.to_datetime(pd.DataFrame([start_dt + dt.timedelta(hours=i)\
+                               for i in range(ndata)])[0])
+
+    dummy_station = _setup_station(indata=indata, intimes=intimes)
+
+    start, end, ndays = diurnal.get_start_end_ndays(dummy_station)
+
+    # despite data starting through a year, the day counter set up
+    #   uses complete years
+    assert start == dt.date(2000, 1, 1)
+    assert end == dt.date(2001, 1, 1)
+    assert ndays == 366  # is leap
+
+
 def test_get_all_daily_offsets() -> None:
     """Test finding diurnal fit and uncertainty for all days in series"""
 
@@ -298,7 +318,41 @@ def test_check_spurious_harder3() -> None:
     np.testing.assert_array_equal(result, expected)
 
 
-#def test_diurnal_cycle_check() -> None:
+@patch("diurnal.get_all_daily_offsets")
+@patch("diurnal.get_potentially_spurious_days")
+@patch("diurnal.check_spurious")
+def test_diurnal_cycle_check(check_spurious_mock: Mock,
+                             potentially_spurious_mock: Mock,
+                             daily_offsets_mock: Mock) -> None:
+    """Test calling and flag assignment"""
+    # set up dummy returns
+    daily_offsets_mock.return_value = (None, None)
+    potentially_spurious_mock.return_value = None
+
+    # set up data and dictionary
+    ndata = 10
+    indata = np.ma.arange(ndata*24)
+    start_dt = dt.datetime(2000, 1, 1, 0, 0)
+    intimes = pd.to_datetime(pd.DataFrame([start_dt + dt.timedelta(hours=i)\
+                               for i in range(ndata*24)])[0])
+
+    dummy_station = _setup_station(indata=indata, intimes=intimes)
+    obs_var = dummy_station.temperature
+    config_dict = {}
+    config_dict[f"DIURNAL-{obs_var.name}"] = {"peak" : 10}
+
+    # set up bad locs
+    bad_locs = np.zeros(10)
+    bad_locs[2] = 1
+    check_spurious_mock.return_value = bad_locs
+
+    diurnal.diurnal_cycle_check(obs_var, dummy_station, config_dict)
+
+    expected = np.array(["" for i in range(obs_var.data.shape[0])])
+    expected[48:72] = "U"
+
+    np.testing.assert_array_equal(expected, obs_var.flags)
+
 
 
 @patch("diurnal.diurnal_cycle_check")

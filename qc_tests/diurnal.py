@@ -234,6 +234,30 @@ def get_daily_offset(station: utils.Station, locs: np.ndarray,
 
 
 #************************************************************************
+def get_start_end_ndays(station: utils.Station) -> tuple[dt.date, dt.date, int]:
+    """Standardising routine to return start and end dates for arrays defined
+    by number of days (also returned).
+
+    Parameters
+    ----------
+    station : utils.Station
+        Station object
+
+    Returns
+    -------
+    tuple[dt.date, dt.date, int]
+        Tuple of start, end and number of days used for day counter vs dates
+    """
+
+    start = dt.date(station.times.iloc[0].year, 1, 1)
+    end = dt.date(station.times.iloc[-1].year + 1, 1, 1)
+
+    ndays = end - start
+
+    return start, end, ndays.days
+
+
+#************************************************************************
 def get_all_daily_offsets(station: utils.Station,
                           obs_var: utils.Meteorological_Variable) -> tuple[np.ndarray, np.ndarray]:
     """
@@ -245,11 +269,10 @@ def get_all_daily_offsets(station: utils.Station,
 
     :returns: best_fit, uncertainty - arrays
     """
+    start, end, ndays = get_start_end_ndays(station)
 
-    ndays = dt.date(station.times.iloc[-1].year + 1, 1, 1) -\
-            dt.date(station.times.iloc[0].year, 1, 1)
-    best_fit_diurnal = np.ones(ndays.days).astype(int) * MISSING
-    best_fit_uncertainty = np.zeros(ndays.days).astype(int)
+    best_fit_diurnal = np.ones(ndays).astype(int) * MISSING
+    best_fit_uncertainty = np.zeros(ndays).astype(int)
 
     # day counter
     d = 0
@@ -257,8 +280,8 @@ def get_all_daily_offsets(station: utils.Station,
     # although this is longer than using the unique years/months
     #   by checking every calendar day,
     #   there's less risk of misaligning the counters.
-    for year in np.arange(station.times.iloc[0].year,
-                          station.times.iloc[-1].year+1):
+    for year in np.arange(start.year,
+                          end.year):
         for month in np.arange(1, 13):
             for day in np.arange(1, 32):
                 try:
@@ -530,7 +553,8 @@ def check_spurious(potentially_spurious: np.ndarray) -> np.ndarray:
 
 
 #************************************************************************
-def diurnal_cycle_check(obs_var: utils.Meteorological_Variable, station: utils.Station, config_dict: dict,
+def diurnal_cycle_check(obs_var: utils.Meteorological_Variable, station: utils.Station,
+                        config_dict: dict,
                         plots: bool = False, diagnostics: bool = False) -> None:
     """
     Use offset to find days where cycle doesn't match
@@ -563,9 +587,7 @@ def diurnal_cycle_check(obs_var: utils.Meteorological_Variable, station: utils.S
 
         # run through all days
         # find zero point of day counter in data preparation part
-        day_counter_start = dt.datetime(np.unique(station.years)[0],
-                                        np.unique(station.months)[0],
-                                        np.unique(station.days)[0])
+        day_counter_start, _, _ = get_start_end_ndays(station)
 
         # find the bad days in the times array
         for day, bad in enumerate(bad_locs):
@@ -574,9 +596,9 @@ def diurnal_cycle_check(obs_var: utils.Meteorological_Variable, station: utils.S
                 continue
             this_day = day_counter_start + dt.timedelta(days=int(day))
 
-            locs, = np.where(np.logical_and.reduce((station.years == this_day.year,
-                                                    station.months == this_day.month,
-                                                    station.days == this_day.day)))
+            locs, = np.nonzero(np.logical_and.reduce((station.years == this_day.year,
+                                                      station.months == this_day.month,
+                                                      station.days == this_day.day)))
 
             # only set flag on where there's data
             data_locs, = np.where(obs_var.data[locs].mask == False)
