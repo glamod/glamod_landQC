@@ -111,6 +111,16 @@ also remove the prefix if it contains sensitive information (e.g. user names and
 Create a PR for the new ``environment.yml``, ``environment-from-history.yml`` and ``environment.lock`` files!
 
 
+.. tip::
+
+    You could also update the old file used for the venv via
+
+    .. code:: bash
+
+        pip list --format=freeze > glamod_qc_venv_requirements.txt
+
+
+
 6. Clean up
 ^^^^^^^^^^^
 
