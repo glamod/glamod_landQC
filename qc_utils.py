@@ -56,6 +56,10 @@ QC_TESTS = {"C" : "Climatological",
 
 MDI = -1.e30
 FIRST_YEAR = 1700
+# Can have these values for station elevations which are allowed, but indicate missing
+#   information.  Blank entries also allowed, but others which do not make sense
+#   are caught by logic check.  Need to escape these for e.g. pressure checks
+ALLOWED_MISSING_ELEVATIONS = ["-999", "9999"]
 
 # These data are retained and processed by the QC tests.  All others are not.
 WIND_MEASUREMENT_CODES = ["", "N-Normal", "C-Calm", "V-Variable", "9-Missing"]
@@ -124,6 +128,7 @@ class Meteorological_Variable(object):
         self.mdi = mdi
         self.units = units
         self.dtype = dtype
+        self.data = None
 
 
     def __str__(self):
