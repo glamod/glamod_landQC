@@ -65,8 +65,11 @@ def test_read_psv_qff_fileerror() -> None:
 
 
 @patch("io_utils.read_psv")
-def test_read(read_psv_mock: Mock) -> None:
+@patch("io_utils.setup")
+def test_read_with_psv(setup_mock: Mock,
+                       read_psv_mock: Mock) -> None:
 
+    setup_mock.IN_FORMAT = "psv"
     infile = os.path.join(os.path.dirname(__file__),
                           "example_data", "AJM00037843.qff")
 
@@ -143,7 +146,11 @@ def test_convert_wind_flags() -> None:
 
     pd.testing.assert_frame_equal(df, expected_df)
 
-def test_read_station() -> None:
+
+@patch("io_utils.setup")
+def test_read_station(setup_mock: Mock) -> None:
+
+    setup_mock.IN_FORMAT = "psv"
 
     infile = os.path.join(os.path.dirname(__file__),
                           "example_data", "AJM00037898.qff")
@@ -193,6 +200,7 @@ def test_write_psv(tmp_path) -> None:
     assert written_frame[1] == "|".join([f"{vals[0]}" for _, vals in data.items()]) + "\n"
     assert written_frame[2] == "|".join([f"{vals[1]}" for _, vals in data.items()]) + "\n"
 
+
 @patch("io_utils.logging")
 @patch("io_utils.subprocess.run")
 def test_integrity_check_fail(run_mock: Mock,
@@ -226,8 +234,11 @@ def test_integrity_check_pass(run_mock: Mock,
     assert result  # (i.e. True)
 
 
-def test_write(tmp_path) -> None:
+@patch("io_utils.setup")
+def test_write_with_psv(setup_mock: Mock,
+                        tmp_path) -> None:
 
+    setup_mock.OUT_FORMAT = "psv"
     outfile = os.path.join(tmp_path, "dummy_file.psv")
 
     data = {"ID" : ["dummy", "dummy"],
@@ -246,8 +257,11 @@ def test_write(tmp_path) -> None:
     assert written_frame[2] == "|".join([f"{vals[1]}" for _, vals in data.items()]) + "\n"
 
 
-def test_write_formatters(tmp_path) -> None:
+@patch("io_utils.setup")
+def test_write_formatters_with_psv(setup_mock: Mock,
+                                   tmp_path) -> None:
 
+    setup_mock.OUT_FORMAT = "psv"
     outfile = os.path.join(tmp_path, "dummy_file.psv")
 
     data = {"ID" : ["dummy", "dummy"],
