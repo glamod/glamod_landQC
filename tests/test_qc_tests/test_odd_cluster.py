@@ -40,14 +40,14 @@ def _generate_expected_flags(data: np.array) -> np.array:
     return expected_flags
 
 
-def _setup_station(indata: np.array) -> utils.Station:
+def _setup_station(indata: np.ma.array) -> utils.Station:
 
     # set up the data
     indata.mask = np.zeros(len(indata))
 
     # make MetVars
     temperature = common.example_test_variable("temperature", indata)
-    
+
     # make Station
     station = common.example_test_station(temperature)
 
@@ -56,12 +56,12 @@ def _setup_station(indata: np.array) -> utils.Station:
 
 @patch("odd_cluster.logger")
 def test_flag_clusters_none(logger_mock: Mock) -> None:
- 
+
     temperature = common.example_test_variable("temperature", INDATA)
 
     # make Station
     station = common.example_test_station(temperature)
-  
+
     odd_cluster.flag_clusters(temperature, station)
 
     # if no clusters, then just call logger twice and exit
@@ -73,7 +73,7 @@ def test_flag_clusters_start() -> None:
     # cluster, then standard data
     oc_dt = dt.datetime(2000, 4, 1, 0, 0)
     oc_times = _generate_pd_times(len(OCDATA), oc_dt)
-    
+
     end_dt = dt.datetime(2000, 6, 1, 0, 0)
     end_times = _generate_pd_times(len(INDATA), end_dt)
 
@@ -81,10 +81,10 @@ def test_flag_clusters_start() -> None:
     all_data = np.append(OCDATA, INDATA)
 
     temperature = common.example_test_variable("temperature", all_data)
-    
+
     # make Station
     station = common.example_test_station(temperature, times=all_times)
-  
+
     odd_cluster.flag_clusters(temperature, station)
 
     expected_flags = _generate_expected_flags(all_data)
@@ -97,7 +97,7 @@ def test_flag_clusters_end() -> None:
     # standard data, then cluster
     start_dt = dt.datetime(2000, 4, 1, 0, 0)
     start_times = _generate_pd_times(len(INDATA), start_dt)
-    
+
     oc_dt = dt.datetime(2000, 6, 1, 0, 0)
     oc_times = _generate_pd_times(len(OCDATA), oc_dt)
 
@@ -105,10 +105,10 @@ def test_flag_clusters_end() -> None:
     all_data = np.append(INDATA, OCDATA)
 
     temperature = common.example_test_variable("temperature", all_data)
-    
+
     # make Station
     station = common.example_test_station(temperature, times=all_times)
-  
+
     odd_cluster.flag_clusters(temperature, station)
 
     expected_flags = _generate_expected_flags(all_data)
@@ -123,7 +123,7 @@ def test_flag_clusters_normal() -> None:
 
     oc_dt = dt.datetime(2000, 4, 1, 0, 0)
     oc_times = _generate_pd_times(len(OCDATA), oc_dt)
-    
+
     end_dt = dt.datetime(2000, 6, 1, 0, 0)
     end_times = _generate_pd_times(len(INDATA), end_dt)
 
@@ -132,10 +132,10 @@ def test_flag_clusters_normal() -> None:
     all_data = np.append(all_data, INDATA)
 
     temperature = common.example_test_variable("temperature", all_data)
-    
+
     # make Station
     station = common.example_test_station(temperature, times=all_times)
-  
+
     odd_cluster.flag_clusters(temperature, station)
 
     expected_flags = _generate_expected_flags(all_data)
