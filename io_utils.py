@@ -324,7 +324,7 @@ def write(outfile: str, df: pd.DataFrame, formatters: dict = {}) -> None:
     if setup.OUT_FORMAT in ("psv", "csv"):
         write_psv(outfile, df, "|")
 
-        if not integrity_check(outfile):
+        if setup.OUT_COMPRESSION == "gz" and not integrity_check(outfile):
             logging.warning(f"Invalid Gzip file {outfile}")
 
     elif setup.OUT_FORMAT in ("pqt", "parquet"):
