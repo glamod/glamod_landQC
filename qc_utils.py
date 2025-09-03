@@ -165,7 +165,8 @@ def get_station_list(restart_id: str = "", end_id: str = "") -> pd.DataFrame:
     """
 
     # process the station list
-    station_list = pd.read_fwf(setup.STATION_LIST, widths=(29, 9, 10, 7, 3, 40, 5),
+    # If station-ID has format "ID-START-END" then width is 29
+    station_list = pd.read_fwf(setup.STATION_LIST, widths=(11, 9, 10, 7, 3, 40, 5),
                                header=None, names=("id", "latitude", "longitude", "elevation", "state",
                                                    "name", "wmo"))
 

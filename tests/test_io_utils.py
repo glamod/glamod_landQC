@@ -35,8 +35,8 @@ def test_read_psv_mff() -> None:
 
     df = io_utils.read_psv(infile, separator)
 
-    assert len(df.columns) == 238
-    assert df.shape[0] == 2105 # checked manually, and rows ignore header lines
+    assert len(df.columns) == 329
+    assert df.shape[0] == 3107 # checked manually, and rows ignore header lines
 
 
 def test_read_psv_qff() -> None:
@@ -47,7 +47,7 @@ def test_read_psv_qff() -> None:
 
     df = io_utils.read_psv(infile, separator)
 
-    assert len(df.columns) == 238+len(setup.obs_var_list)
+    assert len(df.columns) == 329+len(setup.obs_var_list)
     assert df.shape[0] == 496 # checked manually, and rows ignore header
 
 
@@ -65,8 +65,11 @@ def test_read_psv_qff_fileerror() -> None:
 
 
 @patch("io_utils.read_psv")
-def test_read(read_psv_mock: Mock) -> None:
+@patch("io_utils.setup")
+def test_read_with_psv(setup_mock: Mock,
+                       read_psv_mock: Mock) -> None:
 
+    setup_mock.IN_FORMAT = "psv"
     infile = os.path.join(os.path.dirname(__file__),
                           "example_data", "AJM00037843.qff")
 
@@ -143,10 +146,18 @@ def test_convert_wind_flags() -> None:
 
     pd.testing.assert_frame_equal(df, expected_df)
 
+
+
 def test_read_station() -> None:
 
-    infile = os.path.join(os.path.dirname(__file__),
-                          "example_data", "AJM00037898.qff")
+    # Not ideal, but as setup is used to determine other
+    #   aspects, mocking this ended up with recursion errors
+    if setup.IN_FORMAT in ["psv", "csv"]:
+        infile = os.path.join(os.path.dirname(__file__),
+                            "example_data", "AJM00037898.qff")
+    elif setup.IN_FORMAT in ["pqt", "parquet"]:
+        infile = os.path.join(os.path.dirname(__file__),
+                            "example_data", "AJM00037898.pqt")
 
     station = qc_utils.Station("AJM00037898", 39.6500, 46.5330, 1099.0)
 
@@ -159,7 +170,7 @@ def test_read_station() -> None:
     assert station.hours[0] == 0
     assert station.times[0] == dt.datetime(1979, 8, 14, 0, 0)
 
-    assert station_df.shape == (143, 244)
+    assert station_df.shape == (144, 329+len(setup.obs_var_list))
 
 
 def test_read_station_error() -> None:
@@ -192,6 +203,7 @@ def test_write_psv(tmp_path) -> None:
     assert written_frame[0] == "|".join([key for key, _ in data.items()]) + "\n"
     assert written_frame[1] == "|".join([f"{vals[0]}" for _, vals in data.items()]) + "\n"
     assert written_frame[2] == "|".join([f"{vals[1]}" for _, vals in data.items()]) + "\n"
+
 
 @patch("io_utils.logging")
 @patch("io_utils.subprocess.run")
@@ -226,8 +238,11 @@ def test_integrity_check_pass(run_mock: Mock,
     assert result  # (i.e. True)
 
 
-def test_write(tmp_path) -> None:
+@patch("io_utils.setup")
+def test_write_with_psv(setup_mock: Mock,
+                        tmp_path) -> None:
 
+    setup_mock.OUT_FORMAT = "psv"
     outfile = os.path.join(tmp_path, "dummy_file.psv")
 
     data = {"ID" : ["dummy", "dummy"],
@@ -246,8 +261,11 @@ def test_write(tmp_path) -> None:
     assert written_frame[2] == "|".join([f"{vals[1]}" for _, vals in data.items()]) + "\n"
 
 
-def test_write_formatters(tmp_path) -> None:
+@patch("io_utils.setup")
+def test_write_formatters_with_psv(setup_mock: Mock,
+                                   tmp_path) -> None:
 
+    setup_mock.OUT_FORMAT = "psv"
     outfile = os.path.join(tmp_path, "dummy_file.psv")
 
     data = {"ID" : ["dummy", "dummy"],

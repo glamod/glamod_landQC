@@ -101,12 +101,12 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
 
         if not clobber:
             # wanting to skip if files exist
-            if os.path.exists(os.path.join(setup.SUBDAILY_BAD_DIR, f"{target_station_id:11s}.qff{setup.OUT_COMPRESSION}")):
-                print(os.path.join(setup.SUBDAILY_BAD_DIR, "f{target_station_id:11s}.qff{setup.OUT_COMPRESSION}") +
+            if os.path.exists(os.path.join(setup.SUBDAILY_BAD_DIR, f"{target_station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}")):
+                print(os.path.join(setup.SUBDAILY_BAD_DIR, "f{target_station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}") +
                       "exists and clobber kwarg not set, skipping to next station.")
                 continue
-            elif os.path.exists(os.path.join(setup.SUBDAILY_OUT_DIR, f"{target_station_id:11s}.qff{setup.OUT_COMPRESSION}")):
-                print(os.path.join(setup.SUBDAILY_OUT_DIR, f"{target_station_id:11s}.qff{setup.OUT_COMPRESSION}") +
+            elif os.path.exists(os.path.join(setup.SUBDAILY_OUT_DIR, f"{target_station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}")):
+                print(os.path.join(setup.SUBDAILY_OUT_DIR, f"{target_station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}") +
                       "exists and clobber kwarg not set, skipping to next station.")
                 continue
             else:
@@ -133,7 +133,7 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
 
         try:
             target_station, target_station_df = io.read_station(os.path.join(
-                setup.SUBDAILY_PROC_DIR, f"{target_station_id:11s}.qff{setup.OUT_COMPRESSION}"),
+                setup.SUBDAILY_PROC_DIR, f"{target_station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}"),
                                                                 target_station, read_flags=True)
         except FileNotFoundError:
             # file missing, move on to next in sequence
@@ -183,11 +183,11 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
             # high flagging rates in more than one variable.  Withholding station completely
             if diagnostics: print(f"{target_station.id} withheld as too high flagging")
             logging.info(f"{target_station.id} withheld as too high flagging")
-            io.write(os.path.join(setup.SUBDAILY_BAD_DIR, f"{target_station_id:11s}.qff{setup.OUT_COMPRESSION}"),
+            io.write(os.path.join(setup.SUBDAILY_BAD_DIR, f"{target_station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}"),
                      target_station_df, formatters={"Latitude" : "{:7.4f}", "Longitude" : "{:7.4f}", "Month": "{:02d}", "Day": "{:02d}", "Hour" : "{:02d}", "Minute" : "{:02d}"})
 
         else:
-            io.write(os.path.join(setup.SUBDAILY_OUT_DIR, f"{target_station_id:11s}.qff{setup.OUT_COMPRESSION}"),
+            io.write(os.path.join(setup.SUBDAILY_OUT_DIR, f"{target_station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}"),
                      target_station_df, formatters={"Latitude" : "{:7.4f}", "Longitude" : "{:7.4f}", "Month": "{:02d}", "Day": "{:02d}", "Hour" : "{:02d}", "Minute" : "{:02d}"})
 
 

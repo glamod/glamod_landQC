@@ -1,5 +1,5 @@
 """
-Contains tests for convert_to_parquet.py
+Contains tests for convert_to_yearly_parquet.py
 """
 import os
 import glob
@@ -7,14 +7,14 @@ import pandas as pd
 from unittest.mock import patch, Mock
 import pytest
 
-import convert_to_parquet
+import convert_to_yearly_parquet
 
 EXAMPLE_FILES = glob.glob(os.path.join(os.path.dirname(__file__),
                            "example_data", "*.qff"))
 
 @pytest.mark.parametrize("compression", ("", ".gz", ".zip"))
-@patch("convert_to_parquet.setup")
-@patch("convert_to_parquet.os")
+@patch("convert_to_yearly_parquet.setup")
+@patch("convert_to_yearly_parquet.os")
 def test_get_files(os_mock: Mock,
                    setup_mock: Mock,
                    compression: str) -> None:
@@ -29,7 +29,7 @@ def test_get_files(os_mock: Mock,
     setup_mock.OUT_COMPRESSION = compression
     setup_mock.SUBDAILY_OUT_DIR = "testdir/"
 
-    qff_files = convert_to_parquet.get_files()
+    qff_files = convert_to_yearly_parquet.get_files()
 
     # do manually
     if compression == "":
@@ -37,10 +37,10 @@ def test_get_files(os_mock: Mock,
     elif compression == ".gz":
         assert qff_files == ["test3.qff.gz", "test4.qff.gz"]
     elif compression == ".zip":
-        assert qff_files == ["test5.qff.zip", "test6.qff.zip"]    
-   
+        assert qff_files == ["test5.qff.zip", "test6.qff.zip"]
 
-@patch("convert_to_parquet.setup")
+
+@patch("convert_to_yearly_parquet.setup")
 def test_process_files(setup_mock: Mock) -> None:
 
     # Only testing unzipped files, so that these are more easily checked
@@ -48,7 +48,7 @@ def test_process_files(setup_mock: Mock) -> None:
     setup_mock.SUBDAILY_OUT_DIR = os.path.join(os.path.dirname(__file__),
                                                "example_data")
 
-    yearly_data = convert_to_parquet.process_files(EXAMPLE_FILES)
+    yearly_data = convert_to_yearly_parquet.process_files(EXAMPLE_FILES)
 
     # check keys are correct
     for key in yearly_data.keys():
@@ -57,19 +57,19 @@ def test_process_files(setup_mock: Mock) -> None:
     # check length of Dataframes for each key are correct
     for frame in yearly_data[1979]:
         # can't presume the order will always be the same
-        assert frame.shape[0] in (40, 143, 150, 358, 496)
+        assert frame.shape[0] in (40, 144, 150, 358, 496)
     assert yearly_data[1985][0].shape[0] == 40
 
 
-@patch("convert_to_parquet.pd")
-@patch("convert_to_parquet.setup")
+@patch("convert_to_yearly_parquet.pd")
+@patch("convert_to_yearly_parquet.setup")
 def test_process_files_error(setup_mock: Mock,
                              pd_mock: Mock) -> None:
 
     # Only testing unzipped files, so that these are more easily checked
     setup_mock.SUBDAILY_OUT_DIR = os.path.join(os.path.dirname(__file__),
                                                "example_data")
-    
+
     # Create a data frame which will trigger the error
     erroneous_df = pd.read_csv(os.path.join(os.path.dirname(__file__),
                                         "example_data", EXAMPLE_FILES[0]),
@@ -79,14 +79,14 @@ def test_process_files_error(setup_mock: Mock,
     pd_mock.read_csv.return_value = erroneous_df
 
     with pytest.raises(RuntimeError) as emsg:
-        _ = convert_to_parquet.process_files(EXAMPLE_FILES)
+        _ = convert_to_yearly_parquet.process_files(EXAMPLE_FILES)
 
     assert "Column 'Year' not found in" in str(emsg)
 
-  
 
 
-@patch("convert_to_parquet.setup")
+
+@patch("convert_to_yearly_parquet.setup")
 def test_write_pqt(setup_mock: Mock,
                    tmp_path) -> None:
 
@@ -98,8 +98,8 @@ def test_write_pqt(setup_mock: Mock,
     setup_mock.ROOT_DIR = tmp_path
     expected_outlocation = os.path.join(tmp_path, "pqt", setup_mock.DATESTAMP)
 
-    yearly_data = convert_to_parquet.process_files(EXAMPLE_FILES)
-    convert_to_parquet.write_pqt(yearly_data)
+    yearly_data = convert_to_yearly_parquet.process_files(EXAMPLE_FILES)
+    convert_to_yearly_parquet.write_pqt(yearly_data)
 
     # check correct number of files written
     assert len(os.listdir(expected_outlocation)) == 2
@@ -111,18 +111,18 @@ def test_write_pqt(setup_mock: Mock,
     written_df = pd.read_parquet(os.path.join(expected_outlocation,
                                               "qff_1985.parquet"),
                                  engine="pyarrow")
-    
+
     assert written_df.shape == (40, 244)
 
-    
-@patch("convert_to_parquet.write_pqt")
-@patch("convert_to_parquet.process_files")
-@patch("convert_to_parquet.get_files")
+
+@patch("convert_to_yearly_parquet.write_pqt")
+@patch("convert_to_yearly_parquet.process_files")
+@patch("convert_to_yearly_parquet.get_files")
 def test_main(get_files_mock: Mock,
               process_files_mock: Mock,
               write_pqt_mock: Mock) -> None:
-    
-    convert_to_parquet.main()
+
+    convert_to_yearly_parquet.main()
 
     # check all the calls are made as expected
     get_files_mock.assert_called_once()

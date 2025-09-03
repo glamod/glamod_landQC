@@ -32,8 +32,8 @@ def main(restart_id: str = "", end_id: str = "", clobber: bool = False) -> None:
     :param str end_id: which station to end on
     :param bool clobber: overwrite output file if exists
     """
-    
-    
+
+
     # write the headers
     with open(os.path.join(setup.SUBDAILY_METADATA_DIR, setup.INVENTORY), "w") as outfile:
 
@@ -46,7 +46,7 @@ def main(restart_id: str = "", end_id: str = "", clobber: bool = False) -> None:
         month_string = " ".join([f"{c:<6s}" for c in month_names])
         outfile.write(f"{'STATION':11s} {'YEAR':4s} {month_string:84s}\n")
         outfile.write("\n")
- 
+
 
 
         # read in the station list
@@ -61,7 +61,9 @@ def main(restart_id: str = "", end_id: str = "", clobber: bool = False) -> None:
             station = utils.Station(station_id, station_list.latitude[st], station_list.longitude[st], station_list.elevation[st])
 
             try:
-                station, station_df = ioutils.read_station(os.path.join(setup.SUBDAILY_OUT_DIR, f"{station_id:11s}.qff{setup.OUT_COMPRESSION}"), station)
+                station, station_df = ioutils.read_station(os.path.join(setup.SUBDAILY_OUT_DIR,
+                                                                        f"{station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}"),
+                                                           station)
             except OSError as e:
                 # file missing, move on to next in sequence
                 print(f"{station}, File Missing, {str(e)}")
@@ -99,7 +101,7 @@ def main(restart_id: str = "", end_id: str = "", clobber: bool = False) -> None:
             del(station)
 
     return
-                
+
 
 #************************************************************************
 if __name__ == "__main__":
