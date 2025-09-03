@@ -86,21 +86,25 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
 
         if not clobber:
             # wanting to skip if files exist
-            if os.path.exists(os.path.join(setup.SUBDAILY_BAD_DIR, "{:11s}{}{}".format(station_id,
-                                                                                       setup.OUT_SUFFIX,
-                                                                                       setup.OUT_COMPRESSION))):
+            if os.path.exists(os.path.join(setup.SUBDAILY_BAD_DIR,
+                                           "{:11s}{}{}".format(station_id,
+                                                               setup.OUT_SUFFIX,
+                                                               setup.OUT_COMPRESSION))):
                 print("{} exists and clobber kwarg not set, skipping to next station.".format(
-                    os.path.join(setup.SUBDAILY_BAD_DIR, "{:11s}{}{}".format(station_id,
-                                                                             setup.OUT_SUFFIX,
-                                                                             setup.OUT_COMPRESSION))))
+                    os.path.join(setup.SUBDAILY_BAD_DIR,
+                                 "{:11s}{}{}".format(station_id,
+                                                     setup.OUT_SUFFIX,
+                                                     setup.OUT_COMPRESSION))))
                 continue
-            elif os.path.exists(os.path.join(setup.SUBDAILY_PROC_DIR, "{:11s}{}{}".format(station_id,
-                                                                                          setup.OUT_SUFFIX,
-                                                                                          setup.OUT_COMPRESSION))):
+            elif os.path.exists(os.path.join(setup.SUBDAILY_PROC_DIR,
+                                             "{:11s}{}{}".format(station_id,
+                                                                 setup.OUT_SUFFIX,
+                                                                 setup.OUT_COMPRESSION))):
                 print("{} exists and clobber kwarg not set, skipping to next station.".format(
-                    os.path.join(setup.SUBDAILY_PROC_DIR, "{:11s}{}f{}".format(station_id,
-                                                                               setup.OUT_SUFFIX,
-                                                                               setup.OUT_COMPRESSION))))
+                    os.path.join(setup.SUBDAILY_PROC_DIR,
+                                 "{:11s}{}f{}".format(station_id,
+                                                      setup.OUT_SUFFIX,
+                                                      setup.OUT_COMPRESSION))))
                 continue
             else:
                 # files don't exists, pass
@@ -120,7 +124,8 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
 
         #*************************
         # set up & store config file to hold thresholds etc
-        config_file_name = os.path.join(setup.SUBDAILY_CONFIG_DIR, "{:11s}.json".format(station_id))
+        config_file_name = os.path.join(setup.SUBDAILY_CONFIG_DIR,
+                                        "{:11s}.json".format(station_id))
         if full:
             try:
                 # recreating, so remove completely
@@ -342,13 +347,17 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
         if hfr_vars_set > 1:
             # high flagging rates in more than one variable.  Withholding station completely
             logging.info(f"{station.id} withheld as too high flagging")
-            io.write(os.path.join(setup.SUBDAILY_BAD_DIR, "{:11s}{}{}".format(station_id,
-                                                                              setup.OUT_SUFFIX,
-                                                                              setup.OUT_COMPRESSION)), station_df)
+            io.write(os.path.join(setup.SUBDAILY_BAD_DIR,
+                                  "{:11s}{}{}".format(station_id,
+                                                      setup.OUT_SUFFIX,
+                                                      setup.OUT_COMPRESSION)),
+                     station_df)
         else:
-            io.write(os.path.join(setup.SUBDAILY_PROC_DIR, "{:11s}{}{}".format(station_id,
-                                                                               setup.OUT_SUFFIX,
-                                                                               setup.OUT_COMPRESSION)), station_df)
+            io.write(os.path.join(setup.SUBDAILY_PROC_DIR,
+                                  "{:11s}{}{}".format(station_id,
+                                                      setup.OUT_SUFFIX,
+                                                      setup.OUT_COMPRESSION)),
+                     station_df)
 
         #*************************
         # Output flagging summary file
