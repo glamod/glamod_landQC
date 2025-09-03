@@ -112,7 +112,7 @@ def test_write_pqt(setup_mock: Mock,
                                               "qff_1985.parquet"),
                                  engine="pyarrow")
 
-    assert written_df.shape == (40, 244)
+    assert written_df.shape == (40, 335)
 
 
 @patch("convert_to_yearly_parquet.write_pqt")
