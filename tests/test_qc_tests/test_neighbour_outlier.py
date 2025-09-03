@@ -30,7 +30,7 @@ def _make_target_and_buddy(start_dt: dt.datetime | None = None) -> tuple[qc_util
         times = None
     else:
         times = pd.to_datetime(pd.DataFrame([start_dt + dt.timedelta(hours=i)\
-                           for i in range(len(temperatures.data))])[0])        
+                           for i in range(len(temperatures.data))])[0])
 
     buddy_station = common.example_test_station(temperatures, times)
     buddy_station.id = "Buddy"
@@ -64,7 +64,7 @@ def test_read_in_buddies(read_station_mock: Mock,
     read_station_mock.return_value = (buddy_station , None)
 
     buddy_dict = neighbour_outlier.read_in_buddies(target_station, buddy_list)
- 
+
     # is buddy in the dictionary
     assert "Buddy" in buddy_dict.keys()
     # assert it is a Station with suitable values
@@ -89,7 +89,7 @@ def test_read_in_buddies_oserror(io_utils_mock: Mock,
     # Check error handling
     io_utils_mock.write_error.assert_called_once_with(target_station,
                                                 "File Missing (Buddy check): Buddy")
-    
+
 
 @patch("neighbour_outlier.utils.get_station_list")
 @patch("neighbour_outlier.io_utils")
@@ -125,7 +125,7 @@ def test_read_in_buddy_data() -> None:
                    "Buddy3" : buddy_station}
 
     # do the call
-    buddy_data = neighbour_outlier.read_in_buddy_data(target_station, buddy_list, 
+    buddy_data = neighbour_outlier.read_in_buddy_data(target_station, buddy_list,
                                                       all_buddies, "temperature")
 
     # first entry is blank (for self)
@@ -154,7 +154,7 @@ def test_read_in_buddy_data_offset(read_station_mock: Mock) -> None:
     assert len(buddy_data[0].compressed()) == 0
 
     # second should contain buddy data
-    np.testing.assert_array_equal(buddy_data[1], np.ma.array([None, None, 0, 1, 2, 3, 4, 5, 6, 7], 
+    np.testing.assert_array_equal(buddy_data[1], np.ma.array([None, None, 0, 1, 2, 3, 4, 5, 6, 7],
                                                               mask=[1, 1, 0, 0, 0, 0, 0, 0, 0, 0]))
 
 
@@ -172,7 +172,7 @@ def test_read_in_buddy_data_short(read_station_mock: Mock) -> None:
     # do the call
     buddy_data = neighbour_outlier.read_in_buddy_data(target_station, buddy_list,
                                                       all_buddies, "temperature")
- 
+
     # first entry is blank (for self)
     assert len(buddy_data[0].compressed()) == 0
 
@@ -186,7 +186,7 @@ def test_read_in_buddy_data_attributeerror(write_error_mock: Mock) -> None:
     target_station, buddy_station = _make_target_and_buddy()
     _, buddy_list = _make_station_and_buddy_list()
     all_buddies = {"Buddy" : buddy_station}
-    
+
 
     _ = neighbour_outlier.read_in_buddy_data(target_station, buddy_list,
                                              all_buddies, "dummy_var")
@@ -204,15 +204,15 @@ def test_calculate_data_spread() -> None:
     start_dt = dt.datetime(2000, 1, 1, 0, 0)
     # 4 hourly data so exceed min data count, but just for a single month and year
     times = pd.to_datetime(pd.DataFrame([start_dt + dt.timedelta(hours=4*i)\
-                           for i in range(len(temperatures.data))])[0]) 
+                           for i in range(len(temperatures.data))])[0])
     target_station = common.example_test_station(temperatures, times)
 
     # 4 buddies, range of differences but constant offset
     differences = np.ma.ones([4, 180])
     differences[:, 100:] *= 4
 
-    spread = neighbour_outlier.calculate_data_spread(target_station, differences)   
-    
+    spread = neighbour_outlier.calculate_data_spread(target_station, differences)
+
     # Just assessing that this month's value is correct
     np.testing.assert_array_equal(spread[0][0], qc_utils.spread(differences[0]))
 
@@ -225,15 +225,15 @@ def test_calculate_data_spread_short() -> None:
 
     # 4 hourly data so but insufficient length
     times = pd.to_datetime(pd.DataFrame([start_dt + dt.timedelta(hours=4*i)\
-                           for i in range(len(temperatures.data))])[0]) 
+                           for i in range(len(temperatures.data))])[0])
     target_station = common.example_test_station(temperatures, times)
 
     # 4 buddies, range of differences but constant offset
     differences = np.ma.ones([4, 100])
     differences[:, 50:] *= 4
 
-    spread = neighbour_outlier.calculate_data_spread(target_station, differences)   
-    
+    spread = neighbour_outlier.calculate_data_spread(target_station, differences)
+
     # Just assessing that the month's value is correct
     #   Short record, so MIN_SPREAD
     np.testing.assert_array_equal(spread[0][0], neighbour_outlier.MIN_SPREAD)
@@ -251,7 +251,7 @@ def test_adjust_pressure_for_tropical_storms_nearby() -> None:
     spreads = np.ma.ones([3, 120]) # min spread is 1 in this test case
     spreads[0] = 0 #  for target
 
-    dubious = np.ma.zeros(differences.shape)    
+    dubious = np.ma.zeros(differences.shape)
     dubious = neighbour_outlier.adjust_pressure_for_tropical_storms(dubious,
                                                                     buddy_list,
                                                                     differences,
@@ -278,7 +278,7 @@ def test_adjust_pressure_for_tropical_storms_none() -> None:
     spreads = np.ma.ones([5, 120]) # min spread is 1 in this test case
     spreads[0] = 0 #  for target
 
-    dubious = np.ma.zeros(differences.shape)    
+    dubious = np.ma.zeros(differences.shape)
     dubious = neighbour_outlier.adjust_pressure_for_tropical_storms(dubious,
                                                                     buddy_list,
                                                                     differences,
@@ -307,7 +307,7 @@ def test_adjust_pressure_for_tropical_storms() -> None:
     spreads = np.ma.ones([5, 120]) # min spread is 1 in this test case
     spreads[0] = 0 #  for target
 
-    dubious = np.ma.zeros(differences.shape)    
+    dubious = np.ma.zeros(differences.shape)
     dubious = neighbour_outlier.adjust_pressure_for_tropical_storms(dubious,
                                                                     buddy_list,
                                                                     differences,
@@ -328,7 +328,7 @@ def test_neighbour_outlier(read_buddy_data_mock: Mock) -> None:
                                     ["Buddy2", "120"],
                                     ["Buddy3", "120"],
                                     ["Buddy4", "80"]])
-    
+
     all_buddies = {"Buddy1" : qc_utils.Station("Buddy1", 45, 100 , 10),
                    "Buddy2" : qc_utils.Station("Buddy1", 45, 100 , 10),
                    "Buddy3" : qc_utils.Station("Buddy1", 45, 100 , 10),
@@ -340,7 +340,7 @@ def test_neighbour_outlier(read_buddy_data_mock: Mock) -> None:
     expected_flags = np.array(["" for i in range(temperatures.data.shape[0])])
 
     # Make the buddy data, initially the same as target, and then deviate
-    all_buddy_data = np.tile(np.ma.arange(140.), (5, 1)) 
+    all_buddy_data = np.tile(np.ma.arange(140.), (5, 1))
     all_buddy_data.mask = np.zeros(all_buddy_data.shape)
     all_buddy_data.mask[0, :] = True # target
     all_buddy_data[1:4, :] += 1. # simple offset
@@ -365,7 +365,7 @@ def test_neighbour_outlier_clean(read_buddy_data_mock: Mock) -> None:
                                     ["Buddy2", "120"],
                                     ["Buddy3", "120"],
                                     ["Buddy4", "120"]])
-    
+
     all_buddies = {"Buddy1" : qc_utils.Station("Buddy1", 45, 100 , 10),
                    "Buddy2" : qc_utils.Station("Buddy1", 45, 100 , 10),
                    "Buddy3" : qc_utils.Station("Buddy1", 45, 100 , 10),
@@ -377,7 +377,7 @@ def test_neighbour_outlier_clean(read_buddy_data_mock: Mock) -> None:
     expected_flags = np.array(["" for i in range(temperatures.data.shape[0])])
 
     # Make the buddy data, initially the same as target, and then deviate
-    all_buddy_data = np.tile(np.ma.arange(140.), (5, 1)) 
+    all_buddy_data = np.tile(np.ma.arange(140.), (5, 1))
     all_buddy_data.mask = np.zeros(all_buddy_data.shape)
     all_buddy_data.mask[0, :] = True # target
     all_buddy_data[1:2, :] += 1. # simple offset
@@ -452,21 +452,21 @@ def test_noc_example_data(setup_mock: Mock,
                                                    "longitude", "elevation"])
 
     target_station = qc_utils.Station("CHM00052353", 41.967, 100.883, 946.0)
-    target_station, _ = io_utils.read_station(os.path.join(EXAMPLE_FILES_PATH, "CHM00052353.qff"),
+    target_station, _ = io_utils.read_station(os.path.join(EXAMPLE_FILES_PATH, "CHM00052353.qff2"),
                                               target_station, read_flags=True)
-    
+
     initial_neighbours = np.array([["CHM00052353", 0],
                                   ["AJM00037843", 110],
                                   ["AJM00037849", 120],
                                   ["AJM00037898", 130],
                                   ["AMM00037874", 140]])
-    
+
     var_list = ["sea_level_pressure"]
 
     neighbour_outlier.noc(target_station, initial_neighbours, var_list, diagnostics=True)
 
     # Manually set bad values (positive) 1979/8/14 and negative 1979/8/15
-    locs, = np.nonzero(np.logical_and(np.logical_and(target_station.years == 1979, 
+    locs, = np.nonzero(np.logical_and(np.logical_and(target_station.years == 1979,
                                                      target_station.months == 8),
                                       target_station.days == 14))
     example_flags = np.array(["" for _ in target_station.times])
