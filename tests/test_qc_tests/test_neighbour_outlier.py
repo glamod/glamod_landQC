@@ -452,6 +452,7 @@ def test_noc_example_data(setup_mock: Mock,
                                                    "longitude", "elevation"])
 
     target_station = qc_utils.Station("CHM00052353", 41.967, 100.883, 946.0)
+    # TODO: update station filename/id/data after Release 8 [Sept 2025]
     target_station, _ = io_utils.read_station(os.path.join(EXAMPLE_FILES_PATH, "CHM00052353.qff2"),
                                               target_station, read_flags=True)
 

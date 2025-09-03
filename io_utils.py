@@ -52,6 +52,7 @@ def read_psv(infile: str, separator: str) -> pd.DataFrame:
 
     :returns: df - DataFrame
     '''
+    print(infile)
     warnings.filterwarnings("error", category=pd.errors.DtypeWarning)
     try:
         df = pd.read_csv(infile, sep=separator, compression="infer",
@@ -100,7 +101,7 @@ def read_pqt(infile: str) -> pd.DataFrame:
 
     :returns: df - DataFrame
     '''
-
+    print(infile)
     warnings.filterwarnings("error", category=pd.errors.DtypeWarning)
     try:
         df = pd.read_parquet(infile)
@@ -113,7 +114,7 @@ def read_pqt(infile: str) -> pd.DataFrame:
         print(str(e))
         # Presuming that there is an extra header line somewhere in the file
         # TODO: address if this comes up in testing
-
+        raise ValueError
     except pd.errors.ParserError as e:
         logger.warning(f"Parser Error: {str(e)}")
         print(str(e))
@@ -140,7 +141,7 @@ def read(infile:str) -> pd.DataFrame:
     :param str infile: location and name of infile
     :returns: df - DataFrame
     """
-    print(infile)
+
     # for .psv
     if setup.IN_FORMAT in ("psv", "csv"):
         # csv could be a legitmate format specifier, though must use pipe (|) as separator
@@ -160,6 +161,8 @@ def read(infile:str) -> pd.DataFrame:
         raise RuntimeError(f"Missing header row in {infile}")
 
     # TODO: use DATE column to check valid entries on all rows
+    #  Though, the existence of said column may mean that there are no bad-dates present
+    #  in the mingle from Rel 8 onwards [Sept 2025]
 
     return df # read
 
