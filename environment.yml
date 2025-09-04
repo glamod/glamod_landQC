@@ -1,6 +1,5 @@
 name: glamod_QC_dev
 channels:
-  - conda-mo-internal
   - conda-forge
 dependencies:
   - _libgcc_mutex=0.1
