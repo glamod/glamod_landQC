@@ -1,16 +1,16 @@
 #!/bin/bash
 #set -x
-#****************************************************************** 
+#******************************************************************
 # Script to process all the stations.  Runs through station list
 #   and submits each as a separate jobs on Bastion
 #
 # CALL
 #    bash run_qc.bash STAGE WAIT CLOBBER
-#    
+#
 #    STAGE = I [internal] or N [neighbour]
 #     WAIT = T [true] or F [false] # wait for upstream files to be ready
 #  CLOBBER = C [clobber] or S [skip] # overwrite or skip existing files
-#****************************************************************** 
+#******************************************************************
 
 #**************************************
 # manage the input arguments
@@ -59,7 +59,7 @@ function write_and_submit_bastion_script {
     screen -r "qc_${batch}" -X stuff $'conda activate glamod_QC \n'
 
     # run the parallel script in this detached screen
-    screen -r "qc_${batch}" -X stuff $"parallel --jobs ${N_JOBS} < ${parallel_script} 
+    screen -r "qc_${batch}" -X stuff $"parallel --jobs ${N_JOBS} < ${parallel_script}
 "
 
 
@@ -206,7 +206,7 @@ scnt=1
 for stn in ${stn_ids}
 do
     echo "${stn}"
-    
+
     # check target file exists (in case waiting on upstream process)
     submit=false
     while [ ${submit} == false ];
@@ -231,15 +231,15 @@ do
 #                submit=true
         fi
 	fi
-        
+
 	# option to skip over if upstream missing through unexpected way
-	if [ "${WAIT}" == "T" ]; then	    
+	if [ "${WAIT}" == "T" ]; then
         if [ ${submit} == false ]; then
 		    echo "upstream file ${stn} missing, sleeping 1m"
 		    sleep 1m
         fi
-	    
-	elif [ "${WAIT}" == "F" ]; then	    
+
+	elif [ "${WAIT}" == "F" ]; then
         if [ ${submit} == false ]; then
 		    echo "upstream file ${stn} missing, skipping"
 		    break
@@ -247,7 +247,7 @@ do
         fi
 	fi
     done
-    
+
     # Have upstream file indicator, so can now insert into script
     # make the Parallel script and submit
     if [ ${submit} == true ]; then
@@ -299,7 +299,7 @@ do
                     # increment station counter (don't for other elifs to reduce jobs)
                     let scnt=scnt+1
                 fi
- 
+
             elif [ "${STAGE}" == "N" ]; then
 
                 if [ -f "${ROOTDIR}${QFF_DIR}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
@@ -328,11 +328,11 @@ do
     else
 	    echo "${stn} not submitted, upstream file not available"
     fi # submit
-    
+
     # and write script to run this batch
     if [ ${scnt} -eq ${STATIONS_PER_BATCH} ]; then
 	    write_and_submit_bastion_script "${parallel_script}" "${batch}"
-	
+
 	    # and reset counters and scripts
 	    let batch=batch+1
 	    parallel_script="$(prepare_parallel_script "${batch}")"
@@ -344,7 +344,7 @@ do
 
     fi
 #    exit
-      
+
 done
 # and submit the final batch of stations.
 write_and_submit_bastion_script "${parallel_script}" "${batch}"
@@ -352,16 +352,16 @@ write_and_submit_bastion_script "${parallel_script}" "${batch}"
 
 #**************************************
 # and print summary
-n_jobs=$(squeue --user="${USER}" | wc -l)
+#n_jobs=$(squeue --user="${USER}" | wc -l)
 # deal with Slurm header in output
-let n_jobs=n_jobs-1
-while [ ${n_jobs} -ne 0 ];
-do        
-    echo "All submitted, waiting 5min for queue to clear"
-    sleep 5m
-    n_jobs=$(squeue --user="${USER}" | wc -l)
-    let n_jobs=n_jobs-1
-done
+#let n_jobs=n_jobs-1
+#while [ ${n_jobs} -ne 0 ];
+#do
+#    echo "All submitted, waiting 5min for queue to clear"
+#    sleep 5m
+#    n_jobs=$(squeue --user="${USER}" | wc -l)
+#    let n_jobs=n_jobs-1
+#done
 
 source check_if_processed.bash "${STAGE}"
 
