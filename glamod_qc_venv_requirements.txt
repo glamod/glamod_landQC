@@ -74,6 +74,7 @@ shapely==2.1.1
 six==1.17.0
 snowballstemmer==3.0.1
 Sphinx==8.2.3
+sphinx_design==0.6.1
 sphinx_rtd_theme==3.0.1
 sphinxcontrib-applehelp==2.0.0
 sphinxcontrib-devhelp==2.0.0
