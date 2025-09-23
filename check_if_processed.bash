@@ -28,11 +28,14 @@ ROOTDIR=$(grep "root " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
 # extract remaining locations
 MFF=$(grep "mff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
 MFF_VER=$(grep "mff_version " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
-PROC=$(grep "proc " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
-QFF=$(grep "qff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
+MFF_ZIP="$(grep "in_compression " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
+PROC_DIR=$(grep "proc " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
+QFF_DIR=$(grep "qff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
 QFF_ZIP="$(grep "out_compression " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 VERSION=$(grep "version " "${CONFIG_FILE}" | awk -F'= ' 'FNR == 2 {print $2}')
-ERR=${QFF%/}_errors/
+ERR_DIR="$(grep "errors " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
+IN_SUFFIX="$(grep "in_suffix " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
+OUT_SUFFIX="$(grep "out_suffix " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 
 # set up list of stations
 STATION_LIST=$(grep "station_list " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
@@ -55,22 +58,22 @@ do
 #    echo ${stn}
 
     if [ "${STAGE}" == "I" ]; then
-        process_dir=${ROOTDIR}${PROC}${VERSION}
+        process_dir=${ROOTDIR}${PROC_DIR}${VERSION}
     elif [ "${STAGE}" == "N" ]; then
-        process_dir=${ROOTDIR}${QFF}${VERSION}
+        process_dir=${ROOTDIR}${QFF_DIR}${VERSION}
     fi
-    withheld_dir=${ROOTDIR}${QFF}${VERSION}bad_stations
-    error_dir=${ROOTDIR}${ERR}${VERSION}
+    withheld_dir=${ROOTDIR}${QFF_DIR]}${VERSION}bad_stations
+    error_dir=${ROOTDIR}${ERR_DIR}${VERSION}
 
 
     if [ "${STAGE}" == "I" ]; then
-        if [ -f "${ROOTDIR}${PROC}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
+        if [ -f "${ROOTDIR}${PROC_DIR}${VERSION}${stn}${IN_SUFFIX}${MFF_ZIP}" ]; then
             # internal checks completed
             let processed=processed+1
-        elif [ -f "${ROOTDIR}${QFF}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
+        elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}${OUT_SUFFIX}${QFF_ZIP}" ]; then
             # internal checks led to station being withheld
             let withheld=withheld+1
-        elif [ -f "${ROOTDIR}${ERR}${VERSION}${stn}.err" ]; then
+        elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}.err" ]; then
             # internal checks led to station being withheld
             let errors=errors+1
         else
@@ -80,13 +83,13 @@ do
         fi
 
     elif [ "${STAGE}" == "N" ]; then
-        if [ -f "${ROOTDIR}${QFF}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
+        if [ -f "${ROOTDIR}${QFF_DIR}${VERSION}${stn}${IN_SUFFIX}${MFF_ZIP}" ]; then
             # external checks completed
             let processed=processed+1
-        elif [ -f "${ROOTDIR}${QFF}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
+        elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}${OUT_SUFFIX}${QFF_ZIP}" ]; then
             # internal checks led to station being withheld
             let withheld=withheld+1
-        elif [ -f "${ROOTDIR}${ERR}${VERSION}${stn}.err" ]; then
+        elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}.err" ]; then
             # internal checks led to station being withheld
             let errors=errors+1
         else
