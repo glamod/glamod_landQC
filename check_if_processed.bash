@@ -34,6 +34,7 @@ QFF_DIR=$(grep "qff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
 QFF_ZIP="$(grep "out_compression " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 VERSION=$(grep "version " "${CONFIG_FILE}" | awk -F'= ' 'FNR == 2 {print $2}')
 ERR_DIR="$(grep "errors " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
+CONFIG_DIR="$(grep "config " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 IN_SUFFIX="$(grep "in_suffix " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 OUT_SUFFIX="$(grep "out_suffix " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 
@@ -62,12 +63,12 @@ do
     elif [ "${STAGE}" == "N" ]; then
         process_dir=${ROOTDIR}${QFF_DIR}${VERSION}
     fi
-    withheld_dir=${ROOTDIR}${QFF_DIR]}${VERSION}bad_stations
+    withheld_dir=${ROOTDIR}${QFF_DIR}${VERSION}bad_stations
     error_dir=${ROOTDIR}${ERR_DIR}${VERSION}
 
 
     if [ "${STAGE}" == "I" ]; then
-        if [ -f "${ROOTDIR}${PROC_DIR}${VERSION}${stn}${IN_SUFFIX}${MFF_ZIP}" ]; then
+        if [ -f "${ROOTDIR}${PROC_DIR}${VERSION}${stn}${OUT_SUFFIX}${QFF_ZIP}" ]; then
             # internal checks completed
             let processed=processed+1
         elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}${OUT_SUFFIX}${QFF_ZIP}" ]; then
@@ -83,7 +84,7 @@ do
         fi
 
     elif [ "${STAGE}" == "N" ]; then
-        if [ -f "${ROOTDIR}${QFF_DIR}${VERSION}${stn}${IN_SUFFIX}${MFF_ZIP}" ]; then
+        if [ -f "${ROOTDIR}${QFF_DIR}${VERSION}${stn}${OUT_SUFFIX}${QFF_ZIP}" ]; then
             # external checks completed
             let processed=processed+1
         elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}${OUT_SUFFIX}${QFF_ZIP}" ]; then
@@ -115,7 +116,8 @@ echo "Total errors ${errors} ${error_dir}"
 let out_stations=processed+withheld+errors
 echo "Total output stations ${out_stations}"
 echo ""
-missing=$(wc missing.txt | awk -F' ' '{print $1}')
+missing_file="${ROOTDIR}${CONFIG_DIR}${VERSION}missing_${STAGE}.txt"
+missing=$(wc "${missing_file}" | awk -F' ' '{print $1}')
 echo "Upstream missing stations ${missing}"
 let unprocessed=unprocessed-missing
 echo "Unprocessed stations (job failures?) ${unprocessed}"
