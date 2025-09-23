@@ -184,11 +184,11 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
             if diagnostics: print(f"{target_station.id} withheld as too high flagging")
             logging.info(f"{target_station.id} withheld as too high flagging")
             io.write(os.path.join(setup.SUBDAILY_BAD_DIR, f"{target_station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}"),
-                     target_station_df, formatters={"Latitude" : "{:7.4f}", "Longitude" : "{:7.4f}", "Month": "{:02d}", "Day": "{:02d}", "Hour" : "{:02d}", "Minute" : "{:02d}"})
+                     target_station_df, formatters={"LATITUDE" : "{:7.4f}", "LONGITUDE" : "{:7.4f}", "Month": "{:02d}", "Day": "{:02d}", "Hour" : "{:02d}", "Minute" : "{:02d}"})
 
         else:
             io.write(os.path.join(setup.SUBDAILY_OUT_DIR, f"{target_station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}"),
-                     target_station_df, formatters={"Latitude" : "{:7.4f}", "Longitude" : "{:7.4f}", "Month": "{:02d}", "Day": "{:02d}", "Hour" : "{:02d}", "Minute" : "{:02d}"})
+                     target_station_df, formatters={"LATITUDE" : "{:7.4f}", "LONGITUDE" : "{:7.4f}", "Month": "{:02d}", "Day": "{:02d}", "Hour" : "{:02d}", "Minute" : "{:02d}"})
 
 
         #*************************
