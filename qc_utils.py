@@ -212,6 +212,32 @@ def insert_flags(qc_flags: np.ndarray, flags: np.ndarray) -> np.ndarray:
 
 
 #************************************************************************
+def get_measurement_code_mask(df: pd.DataFrame,
+                              measurement_codes: list) -> np.ndarray:
+
+    # Build up the mask
+    for c, code in enumerate(measurement_codes):
+        if code == "":
+            # Empty flags converted to NaNs on reading
+            code = float("NaN")
+            if c == 0:
+                mask = (df == code)
+            else:
+                mask = (df == code) | mask
+        else:
+            # Doing string comparison
+            if c == 0:
+                # Initialise
+                mask = (df.str.startswith(code))
+            else:
+                # Combine using Or symbol ("|")
+                #   e.g. if code = "N-Normal" or "C-Calm" or "" set True
+                mask = (df.str.startswith(code)) | mask
+
+    return mask
+
+
+#************************************************************************
 def populate_station(station: Station, df: pd.DataFrame, obs_var_list: list, read_flags: bool = False) -> None:
     """
     Convert Data Frame into internal station and obs_variable objects
@@ -236,25 +262,9 @@ def populate_station(station: Station, df: pd.DataFrame, obs_var_list: list, rea
         #  unaffected.
         if variable in ["wind_direction", "wind_speed"]:
             m_code = df[f"{variable}_Measurement_Code"]
+            measurement_codes = setup.WIND_MEASUREMENT_CODES[variable]
 
-            # Build up the mask
-            for c, code in enumerate(WIND_MEASUREMENT_CODES):
-                if code == "":
-                    # Empty flags converted to NaNs on reading
-                    code = float("NaN")
-                    if c == 0:
-                        mask = (m_code == code)
-                    else:
-                        mask = (m_code == code) | mask
-                else:
-                    # Doing string comparison
-                    if c == 0:
-                        # Initialise
-                        mask = (m_code.str.startswith(code))
-                    else:
-                        # Combine using or
-                        #   e.g. if code = "N-Normal" or "C-Calm" or "" set True
-                        mask = (m_code.str.startswith(code)) | mask
+            mask = get_measurement_code_mask(m_code, measurement_codes)
 
             # invert mask and set to missing
             indata[~mask] = MDI

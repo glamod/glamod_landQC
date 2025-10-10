@@ -2,6 +2,7 @@
 Contains tests for qc_utils.py
 """
 import numpy as np
+import pandas as pd
 import pytest
 from unittest.mock import patch, Mock
 
@@ -14,7 +15,7 @@ def test_gcv_zeros_in_central_section_nozeros() -> None:
     n_zeros = qc_utils.gcv_zeros_in_central_section(histogram, 10)
 
     assert n_zeros == 0
-    
+
 
 @pytest.mark.parametrize("length, inner_n", [(5, 5), (10, 10)])
 def test_gcv_zeros_in_central_section(length: int,
@@ -59,7 +60,7 @@ def test_get_critical_values_none() -> None:
 @pytest.mark.parametrize("length, n_zeros", [(5, 3), (10, 7)])
 def test_get_critical_values_many_zeros(length: int,
                                         n_zeros: int) -> None:
-    # testing both short (5) and longer (10) arrays with 
+    # testing both short (5) and longer (10) arrays with
     #   sufficient zeros to trigger an exit
     indata = np.arange(length)
     indata[:n_zeros] = 0
@@ -134,7 +135,7 @@ def test_prepare_data_repeating_streak_indices() -> None:
     # diff=1 to test that locations of DPD=0 are neighbouring
     lengths, grouped_diffs, streaks = qc_utils.prepare_data_repeating_streak(locs, diff=1)
 
-    # lengths which are passed into the fitting to 
+    # lengths which are passed into the fitting to
     np.testing.assert_array_equal(lengths, np.array([6, 4, 4, 3, 3, 3]))
     # grouped first differences
     np.testing.assert_array_equal(grouped_diffs, np.array([[10,  1],
@@ -168,7 +169,7 @@ def test_prepare_data_repeating_streak_values() -> None:
     # diff=0 for neighbouring values being identical
     lengths, _, streaks = qc_utils.prepare_data_repeating_streak(inarray, diff=0)
 
-    # lengths which are passed into the fitting to 
+    # lengths which are passed into the fitting to
     np.testing.assert_array_equal(lengths, np.fromiter(common.REPEATED_STREAK_STARTS_LENGTHS.values(),
                                                        dtype=int))
 
@@ -200,3 +201,13 @@ def test_gcv_calculate_binmax_large() -> None:
 
     assert binmax == 2000
 
+
+def test_get_measurement_code_mask() -> None:
+
+    test_codes = ["EXAMPLE"]  #  only this string will be permitted
+
+    df = pd.DataFrame({"flag": ["", "EXAMPLE", "EX"]})
+    expected = np.array([True, False, True])
+    mask = qc_utils.get_measurement_code_mask(df, test_codes)
+
+    np.testing.assert_array_equal(mask, expected)

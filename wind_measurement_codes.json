@@ -1,0 +1,20 @@
+{
+    "wind_speed":[
+        "",
+        "N",
+        "N-Normal",
+        "C",
+        "C-Calm",
+        "9",
+        "9-Missing"
+    ],
+    "wind_direction":[
+        "",
+        "N",
+        "N-Normal",
+        "C",
+        "C-Calm",
+        "9",
+        "9-Missing"
+    ]
+}
