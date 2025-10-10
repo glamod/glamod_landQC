@@ -262,7 +262,7 @@ def populate_station(station: Station, df: pd.DataFrame, obs_var_list: list, rea
         #  unaffected.
         if variable in ["wind_direction", "wind_speed"]:
             m_code = df[f"{variable}_Measurement_Code"]
-            measurement_codes = setup.WIND_MEASUREMENT_CODES[variable]
+            measurement_codes = setup.WIND_MEASUREMENT_CODES[variable]["retained"]
 
             mask = get_measurement_code_mask(m_code, measurement_codes)
 

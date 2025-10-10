@@ -197,13 +197,15 @@ def calculate_datetimes(station_df: pd.DataFrame) -> pd.Series:
 
 
 #************************************************************************
-def convert_wind_flags(station_df: pd.DataFrame) -> None:
+def convert_wind_flags(station_df: pd.DataFrame,
+                       variable_name: str = "wind_direction") -> None:
 
-    # explicitly remove any missing data indicators - wind direction only
-    for wind_flag in ["C-Calm", "V-Variable"]:
-        combined_mask = (station_df["wind_direction_Measurement_Code"] == wind_flag) &\
-                        (station_df["wind_direction"] == 999)
-        station_df.loc[combined_mask, "wind_direction"] = np.nan
+    # explicitly remove any missing data indicators - so far wind direction only
+
+    for flag in setup.WIND_MEASUREMENT_CODES[variable_name]["corrected"]:
+        combined_mask = (station_df[f"{variable_name}_Measurement_Code"] == flag) &\
+                        (station_df[variable_name] == 999)
+        station_df.loc[combined_mask, variable_name] = np.nan
 
 
 #************************************************************************
