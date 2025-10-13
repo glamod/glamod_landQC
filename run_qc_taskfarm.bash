@@ -1,15 +1,15 @@
 #!/bin/bash
 #set -x
-#****************************************************************** 
+#******************************************************************
 # Script to process all the stations.  Runs through station list
 #   and submits each as a separate jobs to KAY
 #
 # CALL
 #    bash run_qc.bash STAGE WAIT
-#    
+#
 #    STAGE = I [internal] or N [neighbour]
 #     WAIT = T [true] or F [false] # wait for upstream files to be ready
-#****************************************************************** 
+#******************************************************************
 
 #**************************************
 # manage the input arguments
@@ -72,7 +72,7 @@ function write_kay_script {
     echo "# activate python environment" >> "${kay_script}"
     echo "module load conda" >> "${kay_script}"
     echo "source activate glamod_QC" >> "${kay_script}"
-    
+
     echo "" >> "${kay_script}"
     echo "# go to scripts and set taskfarm running" >> "${kay_script}"
     echo "cd ${SCRIPT_DIR}" >> "${kay_script}"
@@ -91,12 +91,12 @@ function write_and_submit_kay_script {
     elif  [ "${STAGE}" == "N" ]; then
 	kay_script="${SCRIPT_DIR}/kay_external_${batch}.bash"
     fi
-    
+
     if [ -e "${kay_script}" ]; then
 	rm "${kay_script}"
     fi
     write_kay_script "${kay_script}" "${taskfarm_script}" "${batch}" "${email}"
-    
+
     sbatch < "${kay_script}"
 
 } # write_and_submit_kay_script
@@ -196,7 +196,7 @@ do
         elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
             # if station not processed/withheld, then has been processed, and won't appear
             processed=true
-        elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}.err" ]; then
+        elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}_int.err" ]; then
             # if station has had an error, then has been processed, and won't appear
             processed=true
         fi
@@ -214,7 +214,7 @@ if [ "${STAGE}" == "N" ]; then
     echo "Internal checks successful on ${n_processed_successfully} stations"
     n_processed_bad=$(eval ls "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/*.qff${QFF_ZIP}" | wc -l)
     echo "Internal checks withheld ${n_processed_bad} stations"
-    n_processed_err=$(eval ls "${ROOTDIR}${ERR_DIR}${VERSION}*err" | wc -l)
+    n_processed_err=$(eval ls "${ROOTDIR}${ERR_DIR}${VERSION}*int.err" | wc -l)
     echo "Internal checks had errors on ${n_processed_err} stations"
 fi
 
@@ -245,7 +245,7 @@ scnt=1
 for stn in ${stn_ids}
 do
     echo "${stn}"
-    
+
     # check target file exists (in case waiting on upstream process)
     submit=false
     while [ ${submit} == false ];
@@ -261,7 +261,7 @@ do
         elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
 		    # if station not processed, then no point submitting
 		    submit=false
-        elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}.err" ]; then
+        elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}_int.err" ]; then
 		    # if station has had an error, then no point in submitting
 		    submit=false
 #            else
@@ -270,15 +270,15 @@ do
 #                submit=true
         fi
 	fi
-        
+
 	# option to skip over if upstream missing through unexpected way
-	if [ "${WAIT}" == "T" ]; then	    
+	if [ "${WAIT}" == "T" ]; then
         if [ ${submit} == false ]; then
 		    echo "upstream file ${stn} missing, sleeping 1m"
 		    sleep 1m
         fi
-	    
-	elif [ "${WAIT}" == "F" ]; then	    
+
+	elif [ "${WAIT}" == "F" ]; then
         if [ ${submit} == false ]; then
 		    echo "upstream file ${stn} missing, skipping"
 		    break
@@ -286,7 +286,7 @@ do
         fi
 	fi
     done
-    
+
     # Have upstream file indicator, so can now insert into script
     # make the Taskfarm script and submit
     if [ ${submit} == true ]; then
@@ -324,7 +324,7 @@ do
                     # output exists
                     echo "${stn} already processed - bad station"
 
-                elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}.err" ]; then
+                elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}_int.err" ]; then
                     # output exists
                     echo "${stn} already processed - managed error"
 
@@ -334,7 +334,7 @@ do
 		            echo "python3 ${cwd}/intra_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics" >> "${taskfarm_script}"
 
                 fi
- 
+
             elif [ "${STAGE}" == "N" ]; then
 
                 if [ -f "${ROOTDIR}${QFF_DIR}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
@@ -345,7 +345,7 @@ do
                     # output exists
                     echo "${stn} already processed - bad station"
 
-                elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}.err" ]; then
+                elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}_ext.err" ]; then
                     # output exists
                     echo "${stn} already processed - managed error"
 
@@ -363,11 +363,11 @@ do
     else
 	    echo "${stn} not submitted, upstream file not available"
     fi # submit
-    
+
     # and write script to run this batch
     if [ ${scnt} -eq ${STATIONS_PER_BATCH} ]; then
 	write_and_submit_kay_script "${taskfarm_script}" "${batch}" "${email}"
-	
+
 	# and reset counters and scripts
 	let batch=batch+1
 	taskfarm_script="$(prepare_taskfarm_script "${batch}")"
@@ -379,7 +379,7 @@ do
 
     fi
 #    exit
-      
+
 done
 # and submit the final batch of stations.
 write_and_submit_kay_script "${taskfarm_script}" "${batch}"
@@ -391,7 +391,7 @@ n_jobs=$(squeue --user="${USER}" | wc -l)
 # deal with Slurm header in output
 let n_jobs=n_jobs-1
 while [ ${n_jobs} -ne 0 ];
-do        
+do
     echo "All submitted, waiting 5min for queue to clear"
     sleep 5m
     n_jobs=$(squeue --user="${USER}" | wc -l)
