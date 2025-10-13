@@ -16,7 +16,7 @@ import qc_utils as utils
 #************************************************************************
 
 #************************************************************************
-def logical_checks(speed: utils.Meteorological_Variable, direction: utils.Meteorological_Variable,
+def logical_checks(speed: utils.MeteorologicalVariable, direction: utils.MeteorologicalVariable,
                    fix: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Select occurrences of wind speed and direction which are

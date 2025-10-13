@@ -100,7 +100,7 @@ def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False) -> N
 
         for var in obs_var_list:
 
-            setattr(station, var, utils.Meteorological_Variable(f"{var}", utils.MDI, "", ""))
+            setattr(station, var, utils.MeteorologicalVariable(f"{var}", utils.MDI, "", ""))
             obs_var = getattr(station, var)
 
             # flags = station_df[f"{var}_QC_flag"].fillna("")

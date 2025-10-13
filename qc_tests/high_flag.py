@@ -45,7 +45,7 @@ def set_synergistic_flags(station: utils.Station, var: str) -> None:
     return # set_synergistic_flags
 
 #************************************************************************
-def high_flag_rate(obs_var: utils.Meteorological_Variable,
+def high_flag_rate(obs_var: utils.MeteorologicalVariable,
                    plots: bool = False, diagnostics: bool = False) -> tuple[np.ndarray, bool]:
     """
     Check for high flag rates, and remove any remaining observations.

@@ -34,9 +34,9 @@ def example_test_variable(name: str,
                           vardata: np.ndarray,
                           mdi: float = -1.e30,
                           units: str = "degrees C",
-                          dtype: tuple = (float)) -> utils.Meteorological_Variable:
+                          dtype: tuple = (float)) -> utils.MeteorologicalVariable:
 
-    variable = utils.Meteorological_Variable(name, mdi, units, dtype)
+    variable = utils.MeteorologicalVariable(name, mdi, units, dtype)
 
     variable.data = np.ma.masked_where(vardata == mdi, vardata)
     if len(variable.data.mask.shape) == 0:
@@ -51,7 +51,7 @@ def example_test_variable(name: str,
     return variable
 
 
-def example_test_station(variable: utils.Meteorological_Variable,
+def example_test_station(variable: utils.MeteorologicalVariable,
                          times: np.ndarray | None = None,
                          latitude: int = 45,
                          longitude: int = 100,
@@ -68,13 +68,13 @@ def example_test_station(variable: utils.Meteorological_Variable,
         start_dt = dt.datetime(2000, 1, 1, 0, 0)
         times = pd.to_datetime(pd.DataFrame([start_dt + dt.timedelta(hours=i)\
                                for i in range(len(variable.data))])[0])
-    
+
     station.times = times
     station.years = np.array(times.dt.year)
     station.months = np.array(times.dt.month)
     station.days = np.array(times.dt.day)
     station.hours = np.array(times.dt.hour)
-    
+
     return station
 
 

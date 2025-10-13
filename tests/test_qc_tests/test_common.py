@@ -12,7 +12,7 @@ def test_example_test_variable() -> None:
     result = common.example_test_variable("test",
                                           testdata)
 
-    assert isinstance(result, utils.Meteorological_Variable)
+    assert isinstance(result, utils.MeteorologicalVariable)
     np.testing.assert_array_equal(result.data, testdata)
 
 

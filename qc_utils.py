@@ -118,7 +118,7 @@ MIN_NEIGHBOURS = config.getint("NEIGHBOURS", "minimum_number")
 #*********************************************
 # Set up the Classes
 #*********************************************
-class Meteorological_Variable(object):
+class MeteorologicalVariable(object):
     '''
     Class for meteorological variable.  Initialised with metadata only
     '''
@@ -225,7 +225,7 @@ def populate_station(station: Station, df: pd.DataFrame, obs_var_list: list, rea
     for variable in obs_var_list:
 
         # make a variable
-        this_var = Meteorological_Variable(variable, MDI, UNIT_DICT[variable], (float))
+        this_var = MeteorologicalVariable(variable, MDI, UNIT_DICT[variable], (float))
 
         # store the data
         indata = df[variable].fillna(MDI).to_numpy()

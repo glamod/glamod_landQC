@@ -16,7 +16,7 @@ LOW_COUNT_THRESHOLD = 0
 HIGH_FLAGGING_THRESHOLD = 0.6
 
 #************************************************************************
-def clean_up(obs_var: utils.Meteorological_Variable, station: utils.Station,
+def clean_up(obs_var: utils.MeteorologicalVariable, station: utils.Station,
              low_counts: int = LOW_COUNT_THRESHOLD, high_flags: float = HIGH_FLAGGING_THRESHOLD,
              plots: bool = False, diagnostics:bool = False) -> np.ndarray:
     """

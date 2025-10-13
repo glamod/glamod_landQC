@@ -18,7 +18,7 @@ SPREAD_THRESHOLD = 8.
 MIN_VALUES = 30
 
 #************************************************************************
-def prepare_data(obs_var: utils.Meteorological_Variable, station: utils.Station, month:int, diagnostics: bool = False, winsorize: bool = True) -> np.ndarray:
+def prepare_data(obs_var: utils.MeteorologicalVariable, station: utils.Station, month:int, diagnostics: bool = False, winsorize: bool = True) -> np.ndarray:
     """
     Calculate the monthly variances
 
@@ -86,7 +86,7 @@ def prepare_data(obs_var: utils.Meteorological_Variable, station: utils.Station,
     return variances # prepare_data
 
 #************************************************************************
-def find_thresholds(obs_var: utils.Meteorological_Variable, station: utils.Station, config_dict: dict,
+def find_thresholds(obs_var: utils.MeteorologicalVariable, station: utils.Station, config_dict: dict,
                     plots: bool = False, diagnostics: bool = False, winsorize: bool = True) -> None:
     """
     Use distribution to identify threshold values.  Then also store in config dictionary.
@@ -122,7 +122,7 @@ def find_thresholds(obs_var: utils.Meteorological_Variable, station: utils.Stati
     return # find_thresholds
 
 #************************************************************************
-def variance_check(obs_var: utils.Meteorological_Variable, station: utils.Station, config_dict: dict, plots: bool = False, diagnostics: bool = False, winsorize: bool = True) -> None:
+def variance_check(obs_var: utils.MeteorologicalVariable, station: utils.Station, config_dict: dict, plots: bool = False, diagnostics: bool = False, winsorize: bool = True) -> None:
     """
     Use distribution to identify threshold values.  Then also store in config file.
 
