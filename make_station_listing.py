@@ -6,6 +6,7 @@
 import os
 import numpy as np
 import datetime as dt
+import gc
 
 import setup
 import qc_utils as utils
@@ -40,8 +41,8 @@ def main() -> None:
 
         try:
             station, station_df = ioutils.read_station(os.path.join(setup.SUBDAILY_OUT_DIR,
-                                                                    f"{station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}"),
-                                                       station)
+                                                           f"{station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}"),
+                                              station)
         except OSError as e:
             # file missing, move on to next in sequence
             print(f"{station}, File Missing, {str(e)}")
@@ -61,6 +62,11 @@ def main() -> None:
         else:
             begins[st] = dt.datetime.strftime(station.times.iloc[0], "%Y%m%d")
             ends[st] = dt.datetime.strftime(station.times.iloc[-1], "%Y%m%d")
+
+        # clear the memory
+        del station
+        del station_df
+        gc.collect()
 
     station_list["begins"] = begins
     station_list["ends"] = ends
