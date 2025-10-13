@@ -105,7 +105,7 @@ DATA_COUNT_THRESHOLD = config.getint("THRESHOLDS", "min_data_count")
 HIGH_FLAGGING = config.getfloat("THRESHOLDS", "high_flag_proportion")
 
 # read in logic check list
-LOGICFILE = os.path.join(os.path.dirname(__file__), config.get("FILES", "logic"))
+LOGICFILE = os.path.join(os.path.dirname(__file__), "configs", config.get("FILES", "logic"))
 
 #*********************************************
 # Neighbour Checks
@@ -999,7 +999,7 @@ def find_continent(country_code: str) -> str:
     # as maybe run from another directory, get the right path
     cwd = pathlib.Path(__file__).parent.absolute()
     # prepare look up
-    with open(f'{cwd}/iso_country_codes.json', 'r') as infile:
+    with open(f'{cwd}/configs/iso_country_codes.json', 'r') as infile:
         iso_codes = json.load(infile)
 
     concord = {}
