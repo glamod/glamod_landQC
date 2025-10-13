@@ -202,13 +202,23 @@ def test_gcv_calculate_binmax_large() -> None:
     assert binmax == 2000
 
 
-def test_get_measurement_code_mask() -> None:
+# the mask ("expected") is inverted before application
+@pytest.mark.parametrize("ds, expected", [(pd.Series([np.nan, "EXAMPLE", "EX"]),
+                                           np.array([True, True, False])),
+                                          (pd.Series([np.nan, np.nan, np.nan]),
+                                           np.array([True, True, True])),
+                                          (pd.Series(["EXAMPLE", "EXAMPLE", "EXAMPLE"]),
+                                           np.array([True, True, True])),
+                                          (pd.Series(["EX", "EX", "EX"]),
+                                           np.array([False, False, False])),
+                                          (pd.Series(["nan", np.nan, "EXAMPLE", "EX"]),
+                                           np.array([False, True, True, False]))                                          ])
+def test_get_measurement_code_mask(ds: pd.Series,
+                                   expected: np.ndarray) -> None:
 
-    test_codes = ["EXAMPLE"]  #  only this string will be permitted
-
-    df = pd.Series(["NaN", "EXAMPLE", "EX"])
-    #  mask is inverted before application
-    expected = np.array([False, True, False])
-    mask = qc_utils.get_measurement_code_mask(df, test_codes)
+    test_codes = ["", "EXAMPLE"]  #  only these strings will be permitted
+    mask = qc_utils.get_measurement_code_mask(ds, test_codes)
 
     np.testing.assert_array_equal(mask, expected)
+
+

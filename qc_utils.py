@@ -220,20 +220,22 @@ def get_measurement_code_mask(ds: pd.Series,
 
         if code == "":
             # Empty flags converted to NaNs on reading
-            code = float("NaN")
             if c == 0:
-                mask = (ds == code)
+                mask = (ds.isna())
             else:
-                mask = (ds == code) | mask
+                mask = (ds.isna()) | mask
         else:
-            # Doing string comparison
+            # Doing string comparison, but need to exclude NaNs
+            #   Need to convert to string before assessing (np.nan -> "nan")
+            #   But test for NaNs separately, so that a string starting "nan"
+            #   could be used in the future
             if c == 0:
                 # Initialise
-                mask = (ds.str.startswith(code))
+                mask = (~ds.isna() & ds.astype(str).str.startswith(code))
             else:
                 # Combine using Or symbol ("|")
                 #   e.g. if code = "N-Normal" or "C-Calm" or "" set True
-                mask = (ds.str.startswith(code)) | mask
+                mask = (~ds.isna() & ds.astype(str).str.startswith(code)) | mask
 
     return mask
 
