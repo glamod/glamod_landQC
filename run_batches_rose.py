@@ -20,6 +20,7 @@ Input arguments:
 #************************************************************************
 import argparse
 import numpy as np
+import random
 
 # internal utils
 import qc_utils as utils
@@ -39,6 +40,14 @@ def process_batches(batch: int, total: int) -> tuple[str, str]:
 
     # get the most recent station list
     station_list = utils.get_station_list(restart_id="", end_id="")
+
+    # and shuffle with a repeatable sequence for a given list of stations
+    # so that long/large stations (USA etc) aren't all in the same batches
+    order = np.arange(station_list.shape[0])
+    PSEUDO_RANDOM_SEED=500
+    random.Random(PSEUDO_RANDOM_SEED).shuffle(order)
+    station_list[order]
+
     station_IDs = station_list.id
 
     # find indices in suitable spacing

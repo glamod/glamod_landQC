@@ -1,15 +1,15 @@
 #!/bin/bash
 #set -x
-#****************************************************************** 
+#******************************************************************
 # Script to process all the stations.  Runs through station list
 #   and submits each as a separate jobs to KAY
 #
 # CALL
 #    bash run_qc.bash STAGE WAIT
-#    
+#
 #    STAGE = I [internal] or N [neighbour]
 #     WAIT = T [true] or F [false] # wait for upstream files to be ready
-#****************************************************************** 
+#******************************************************************
 
 #**************************************
 # manage the input arguments
@@ -72,7 +72,7 @@ function write_kay_script {
     echo "# activate python environment" >> "${kay_script}"
     echo "module load conda" >> "${kay_script}"
     echo "source activate glamod_QC" >> "${kay_script}"
-    
+
     echo "" >> "${kay_script}"
     echo "# go to scripts and set taskfarm running" >> "${kay_script}"
     echo "cd ${SCRIPT_DIR}" >> "${kay_script}"
@@ -91,12 +91,12 @@ function write_and_submit_kay_script {
     elif  [ "${STAGE}" == "N" ]; then
 	kay_script="${SCRIPT_DIR}/kay_external_${batch}.bash"
     fi
-    
+
     if [ -e "${kay_script}" ]; then
 	rm "${kay_script}"
     fi
     write_kay_script "${kay_script}" "${taskfarm_script}" "${batch}" "${email}"
-    
+
     sbatch < "${kay_script}"
 
 } # write_and_submit_kay_script
@@ -240,12 +240,16 @@ batch=1
 taskfarm_script="$(prepare_taskfarm_script "${batch}")"
 
 #**************************************
-# spin through each in turn, creating a job
+# Spin through each in turn, creating a job
+# Mix up the stations, so that not all the big/long ones (USA etc)
+#   Are in the same jobs
+shuffled_stns=$(shuf -e ${stn_ids})
+
 scnt=1
-for stn in ${stn_ids}
+for stn in ${shuffled_stns}
 do
     echo "${stn}"
-    
+
     # check target file exists (in case waiting on upstream process)
     submit=false
     while [ ${submit} == false ];
@@ -270,15 +274,15 @@ do
 #                submit=true
         fi
 	fi
-        
+
 	# option to skip over if upstream missing through unexpected way
-	if [ "${WAIT}" == "T" ]; then	    
+	if [ "${WAIT}" == "T" ]; then
         if [ ${submit} == false ]; then
 		    echo "upstream file ${stn} missing, sleeping 1m"
 		    sleep 1m
         fi
-	    
-	elif [ "${WAIT}" == "F" ]; then	    
+
+	elif [ "${WAIT}" == "F" ]; then
         if [ ${submit} == false ]; then
 		    echo "upstream file ${stn} missing, skipping"
 		    break
@@ -286,7 +290,7 @@ do
         fi
 	fi
     done
-    
+
     # Have upstream file indicator, so can now insert into script
     # make the Taskfarm script and submit
     if [ ${submit} == true ]; then
@@ -334,7 +338,7 @@ do
 		            echo "python3 ${cwd}/intra_checks.py --restart_id ${stn} --end_id ${stn} --full --diagnostics" >> "${taskfarm_script}"
 
                 fi
- 
+
             elif [ "${STAGE}" == "N" ]; then
 
                 if [ -f "${ROOTDIR}${QFF_DIR}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
@@ -363,11 +367,11 @@ do
     else
 	    echo "${stn} not submitted, upstream file not available"
     fi # submit
-    
+
     # and write script to run this batch
     if [ ${scnt} -eq ${STATIONS_PER_BATCH} ]; then
 	write_and_submit_kay_script "${taskfarm_script}" "${batch}" "${email}"
-	
+
 	# and reset counters and scripts
 	let batch=batch+1
 	taskfarm_script="$(prepare_taskfarm_script "${batch}")"
@@ -379,7 +383,7 @@ do
 
     fi
 #    exit
-      
+
 done
 # and submit the final batch of stations.
 write_and_submit_kay_script "${taskfarm_script}" "${batch}"
@@ -391,7 +395,7 @@ n_jobs=$(squeue --user="${USER}" | wc -l)
 # deal with Slurm header in output
 let n_jobs=n_jobs-1
 while [ ${n_jobs} -ne 0 ];
-do        
+do
     echo "All submitted, waiting 5min for queue to clear"
     sleep 5m
     n_jobs=$(squeue --user="${USER}" | wc -l)

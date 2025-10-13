@@ -171,6 +171,7 @@ do
 
 done
 
+# print summary of the internal checks before running buddy checks
 if [ "${STAGE}" == "N" ]; then
     echo "${ROOTDIR}${PROC_DIR}${VERSION}*${OUT_SUFFIX}${QFF_ZIP}"
     n_processed_successfully=$(eval ls "${ROOTDIR}${PROC_DIR}${VERSION}" | wc -l)
@@ -203,9 +204,14 @@ batch=1
 parallel_script="$(prepare_parallel_script "${batch}")"
 
 #**************************************
-# spin through each in turn, creating a job
+# Spin through each in turn, creating a job
+# Mix up the stations, so that not all the big/long ones (USA etc)
+#   Are in the same jobs
+
+shuffled_stns=$(shuf -e ${stn_ids})
+
 scnt=1
-for stn in ${stn_ids}
+for stn in ${shuffled_stns}
 do
     echo "${stn}"
 

@@ -166,8 +166,12 @@ fi
 
 #**************************************
 # spin through each in turn, submitting a job
-# scnt=0
-for stn in ${stn_ids}
+# Mix up the stations, so that not all the big/long ones (USA etc)
+#   Are in the same jobs
+shuffled_stns=$(shuf -e ${stn_ids})
+
+scnt=0
+for stn in ${shuffled_stns}
 do
     echo "${stn}"
 
