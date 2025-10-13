@@ -1,16 +1,16 @@
 #!/bin/bash
 #set -x
-#****************************************************************** 
+#******************************************************************
 # Script to process all the stations.  Runs through station list
 #   and submits each as a separate jobs on Bastion
 #
 # CALL
 #    bash run_qc.bash STAGE WAIT CLOBBER
-#    
+#
 #    STAGE = I [internal] or N [neighbour]
 #     WAIT = T [true] or F [false] # wait for upstream files to be ready
 #  CLOBBER = C [clobber] or S [skip] # overwrite or skip existing files
-#****************************************************************** 
+#******************************************************************
 
 #**************************************
 # manage the input arguments
@@ -59,7 +59,7 @@ function write_and_submit_bastion_script {
     screen -r "qc_${batch}" -X stuff $'conda activate glamod_QC \n'
 
     # run the parallel script in this detached screen
-    screen -r "qc_${batch}" -X stuff $"parallel --jobs ${N_JOBS} < ${parallel_script} 
+    screen -r "qc_${batch}" -X stuff $"parallel --jobs ${N_JOBS} < ${parallel_script}
 "
 
 
@@ -100,6 +100,8 @@ VERSION="$(grep "version " "${CONFIG_FILE}" | awk -F'= ' 'FNR == 2 {print $2}')"
 ERR_DIR="$(grep "errors " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 LOG_DIR="$(grep "logs " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 CONFIG_DIR="$(grep "config " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
+IN_SUFFIX="$(grep "in_suffix " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
+OUT_SUFFIX="$(grep "out_suffix " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 if [ ! -d "${ROOTDIR}${LOG_DIR}" ]; then
     mkdir "${ROOTDIR}${LOG_DIR}"
 fi
@@ -148,13 +150,13 @@ for stn in ${stn_ids}
 do
     processed=false
     if [ "${STAGE}" == "I" ]; then
-        if [ -f "${MFF_DIR}${MFF_VER}${stn}.mff${MFF_ZIP}" ]; then
+        if [ -f "${MFF_DIR}${MFF_VER}${stn}${IN_SUFFIX}${MFF_ZIP}" ]; then
             processed=true
         fi
     elif [ "${STAGE}" == "N" ]; then
-        if [ -f "${ROOTDIR}${PROC_DIR}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
+        if [ -f "${ROOTDIR}${PROC_DIR}${VERSION}${stn}${OUT_SUFFIX}${QFF_ZIP}" ]; then
             processed=true
-        elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
+        elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}${OUT_SUFFIX}${QFF_ZIP}" ]; then
             # if station not processed/withheld, then has been processed, and won't appear
             processed=true
         elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}.err" ]; then
@@ -170,10 +172,10 @@ do
 done
 
 if [ "${STAGE}" == "N" ]; then
-    echo "${ROOTDIR}${PROC_DIR}${VERSION}*.qff${QFF_ZIP}"
+    echo "${ROOTDIR}${PROC_DIR}${VERSION}*${OUT_SUFFIX}${QFF_ZIP}"
     n_processed_successfully=$(eval ls "${ROOTDIR}${PROC_DIR}${VERSION}" | wc -l)
     echo "Internal checks successful on ${n_processed_successfully} stations"
-    n_processed_bad=$(eval ls "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/*.qff${QFF_ZIP}" | wc -l)
+    n_processed_bad=$(eval ls "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/*${OUT_SUFFIX}${QFF_ZIP}" | wc -l)
     echo "Internal checks withheld ${n_processed_bad} stations"
     n_processed_err=$(eval ls "${ROOTDIR}${ERR_DIR}${VERSION}*err" | wc -l)
     echo "Internal checks had errors on ${n_processed_err} stations"
@@ -206,20 +208,20 @@ scnt=1
 for stn in ${stn_ids}
 do
     echo "${stn}"
-    
+
     # check target file exists (in case waiting on upstream process)
     submit=false
     while [ ${submit} == false ];
     do
     # check if upstream data files are present
 	if [ "${STAGE}" == "I" ]; then
-        if [ -f "${MFF_DIR}${MFF_VER}${stn}.mff${MFF_ZIP}" ]; then
+        if [ -f "${MFF_DIR}${MFF_VER}${stn}${IN_SUFFIX}${MFF_ZIP}" ]; then
 		    submit=true
         fi
 	elif [ "${STAGE}" == "N" ]; then
-        if [ -f "${ROOTDIR}${PROC_DIR}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
+        if [ -f "${ROOTDIR}${PROC_DIR}${VERSION}${stn}${OUT_SUFFIX}${QFF_ZIP}" ]; then
 		    submit=true
-        elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
+        elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}${OUT_SUFFIX}${QFF_ZIP}" ]; then
 		    # if station not processed, then no point submitting
 		    submit=false
         elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}.err" ]; then
@@ -231,15 +233,15 @@ do
 #                submit=true
         fi
 	fi
-        
+
 	# option to skip over if upstream missing through unexpected way
-	if [ "${WAIT}" == "T" ]; then	    
+	if [ "${WAIT}" == "T" ]; then
         if [ ${submit} == false ]; then
 		    echo "upstream file ${stn} missing, sleeping 1m"
 		    sleep 1m
         fi
-	    
-	elif [ "${WAIT}" == "F" ]; then	    
+
+	elif [ "${WAIT}" == "F" ]; then
         if [ ${submit} == false ]; then
 		    echo "upstream file ${stn} missing, skipping"
 		    break
@@ -247,7 +249,7 @@ do
         fi
 	fi
     done
-    
+
     # Have upstream file indicator, so can now insert into script
     # make the Parallel script and submit
     if [ ${submit} == true ]; then
@@ -279,11 +281,11 @@ do
             # check if already processed before setting going
             if [ "${STAGE}" == "I" ]; then
 
-                if [ -f "${ROOTDIR}${PROC_DIR}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
+                if [ -f "${ROOTDIR}${PROC_DIR}${VERSION}${stn}${OUT_SUFFIX}${QFF_ZIP}" ]; then
                     # output exists
                     echo "${stn} already processed"
 
-                elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
+                elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}${OUT_SUFFIX}${QFF_ZIP}" ]; then
                     # output exists
                     echo "${stn} already processed - bad station"
 
@@ -299,14 +301,14 @@ do
                     # increment station counter (don't for other elifs to reduce jobs)
                     let scnt=scnt+1
                 fi
- 
+
             elif [ "${STAGE}" == "N" ]; then
 
-                if [ -f "${ROOTDIR}${QFF_DIR}${VERSION}${stn}.qff${QFF_ZIP}" ]; then
+                if [ -f "${ROOTDIR}${QFF_DIR}${VERSION}${stn}${OUT_SUFFIX}${QFF_ZIP}" ]; then
                     # output exists
                     echo "${stn} already processed"
 
-                elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
+                elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}${OUT_SUFFIX}${QFF_ZIP}" ]; then
                     # output exists
                     echo "${stn} already processed - bad station"
 
@@ -328,11 +330,11 @@ do
     else
 	    echo "${stn} not submitted, upstream file not available"
     fi # submit
-    
+
     # and write script to run this batch
     if [ ${scnt} -eq ${STATIONS_PER_BATCH} ]; then
 	    write_and_submit_bastion_script "${parallel_script}" "${batch}"
-	
+
 	    # and reset counters and scripts
 	    let batch=batch+1
 	    parallel_script="$(prepare_parallel_script "${batch}")"
@@ -344,7 +346,7 @@ do
 
     fi
 #    exit
-      
+
 done
 # and submit the final batch of stations.
 write_and_submit_bastion_script "${parallel_script}" "${batch}"
@@ -352,16 +354,16 @@ write_and_submit_bastion_script "${parallel_script}" "${batch}"
 
 #**************************************
 # and print summary
-n_jobs=$(squeue --user="${USER}" | wc -l)
+#n_jobs=$(squeue --user="${USER}" | wc -l)
 # deal with Slurm header in output
-let n_jobs=n_jobs-1
-while [ ${n_jobs} -ne 0 ];
-do        
-    echo "All submitted, waiting 5min for queue to clear"
-    sleep 5m
-    n_jobs=$(squeue --user="${USER}" | wc -l)
-    let n_jobs=n_jobs-1
-done
+#let n_jobs=n_jobs-1
+#while [ ${n_jobs} -ne 0 ];
+#do
+#    echo "All submitted, waiting 5min for queue to clear"
+#    sleep 5m
+#    n_jobs=$(squeue --user="${USER}" | wc -l)
+#    let n_jobs=n_jobs-1
+#done
 
 source check_if_processed.bash "${STAGE}"
 

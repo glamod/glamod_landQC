@@ -33,7 +33,7 @@ def count_skip_rows(infile: str) -> list:
         for r, row in enumerate(reader):
             if r == 0:
                 continue
-            if "Station_ID|Station_name" in row[0]:
+            if "STATION|Station_name" in row[0]:
                 logger.warning(f"Extra header row at line {r}")
                 skip_rows += [r]
 
@@ -47,11 +47,12 @@ def read_psv(infile: str, separator: str) -> pd.DataFrame:
 
     https://stackoverflow.com/questions/64302419/what-are-all-of-the-exceptions-that-pandas-read-csv-throw
 
-    :param str infile: location and name of infile (without extension)
+    :param str infile: location and name of infile
     :param str separator: separating character (e.g. ",", "|")
 
     :returns: df - DataFrame
     '''
+    print(infile)
     warnings.filterwarnings("error", category=pd.errors.DtypeWarning)
     try:
         df = pd.read_csv(infile, sep=separator, compression="infer",
@@ -86,30 +87,82 @@ def read_psv(infile: str, separator: str) -> pd.DataFrame:
         print(str(e))
         raise RuntimeError
 
-    # Number of columns at August 2023, or after adding flag columns
-    assert len(df.columns) in [238, 238+len(setup.obs_var_list)]
+    # Number of columns at August 2025, or after adding flag columns
+    assert len(df.columns) in [329, 329+len(setup.obs_var_list)]
 
-    return df #  read_psv
+    return df  # read_psv
+
+
+#************************************************************************
+def read_pqt(infile: str) -> pd.DataFrame:
+    '''
+
+    :param str infile: location and name of infile
+
+    :returns: df - DataFrame
+    '''
+    print(infile)
+    warnings.filterwarnings("error", category=pd.errors.DtypeWarning)
+    try:
+        df = pd.read_parquet(infile)
+    except FileNotFoundError as e:
+        logger.warning(f"pqt file not found: {str(e)}")
+        print(str(e))
+        raise FileNotFoundError(str(e))
+    except ValueError as e:
+        logger.warning(f"Error in pqt rows: {str(e)}")
+        print(str(e))
+        # Presuming that there is an extra header line somewhere in the file
+        # TODO: address if this comes up in testing
+        raise ValueError
+    except pd.errors.ParserError as e:
+        logger.warning(f"Parser Error: {str(e)}")
+        print(str(e))
+        raise pd.errors.ParserError(str(e))
+    except EOFError as e:
+        logger.warning(f"End of File Error (gzip): {str(e)}")
+        print(str(e))
+        raise EOFError(str(e))
+    except pd.errors.DtypeWarning as e:
+        logger.warning(f"Dtype error - likely header row missing: {str(e)}")
+        print(str(e))
+        raise RuntimeError
+
+    # Number of columns at August 2025, or after adding flag columns
+    assert len(df.columns) in [329, 329+len(setup.obs_var_list)]
+
+    return df  # read_pqt
 
 #************************************************************************
 def read(infile:str) -> pd.DataFrame:
     """
     Wrapper for read functions to allow remainder to be file format agnostic.
 
-    :param str infile: location and name of infile (without extension)
-    :param str extension: infile extension [mff]
+    :param str infile: location and name of infile
     :returns: df - DataFrame
     """
 
     # for .psv
-    if os.path.exists(infile):
-        df = read_psv(infile, "|")
-    else:
-        raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), infile)
+    if setup.IN_FORMAT in ("psv", "csv"):
+        # csv could be a legitmate format specifier, though must use pipe (|) as separator
+        if os.path.exists(infile):
+            df = read_psv(infile, "|")
+        else:
+            raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), infile)
+
+    elif setup.IN_FORMAT in ("pqt", "parquet"):
+        if os.path.exists(infile):
+            df = read_pqt(infile)
+        else:
+            raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), infile)
 
     # check there was a header row
-    if df.columns[0] != "Station_ID":
+    if df.columns[0] != "STATION":
         raise RuntimeError(f"Missing header row in {infile}")
+
+    # TODO: use DATE column to check valid entries on all rows
+    #  Though, the existence of said column may mean that there are no bad-dates present
+    #  in the mingle from Rel 8 onwards [Sept 2025]
 
     return df # read
 
@@ -206,8 +259,20 @@ def write_psv(outfile: str, df: pd.DataFrame, separator: str) -> None:
     '''
     df.to_csv(outfile, index=False, sep=separator, compression="infer")
 
-    return # write_psv
+    return  # write_psv
 
+
+#************************************************************************
+def write_pqt(outfile: str, df: pd.DataFrame) -> None:
+    '''
+    Write to parquet file
+
+    :param str outfile: location and name of outfile
+    :param DataFrame df: data frame to write
+    '''
+    df.to_parquet(outfile, index=False)
+
+    return  # write_pqt
 
 #************************************************************************
 def integrity_check(infile: str) -> bool:
@@ -257,13 +322,18 @@ def write(outfile: str, df: pd.DataFrame, formatters: dict = {}) -> None:
         # Latitude & Longitude = {:7.4f}
         # Monthy, Day, Hour, & Minute = {:0.2d}
 
+    print(outfile)
     # for .psv
-    write_psv(outfile, df, "|")
+    if setup.OUT_FORMAT in ("psv", "csv"):
+        write_psv(outfile, df, "|")
 
-    if not integrity_check(outfile):
-        logging.warning(f"Invalid Gzip file {outfile}")
+        if setup.OUT_COMPRESSION == "gz" and not integrity_check(outfile):
+            logging.warning(f"Invalid Gzip file {outfile}")
 
-    return # write
+    elif setup.OUT_FORMAT in ("pqt", "parquet"):
+        write_pqt(outfile, df)
+
+    return  # write
 
 #************************************************************************
 def flag_write(outfilename: str, df: pd.DataFrame, diagnostics: bool = False) -> None:

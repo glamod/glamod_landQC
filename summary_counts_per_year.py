@@ -3,7 +3,7 @@ Obtain summary of obs per year for all stations
 
 summary_counts_per_year.py invoked by typing::
 
-  python summary_counts_per_year.py --restart_id --end_id [--diagnostics] 
+  python summary_counts_per_year.py --restart_id --end_id [--diagnostics]
 
 Input arguments:
 
@@ -56,9 +56,9 @@ def get_summary(stage: str = "N", restart_id: str = "", end_id: str = "", diagno
 
         try:
             if stage == "I":
-                station, station_df = io.read_station(os.path.join(setup.SUBDAILY_PROC_DIR, f"{station_id:11s}.qff"), station)
+                station, station_df = io.read_station(os.path.join(setup.SUBDAILY_PROC_DIR, f"{station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}"), station)
             elif stage == "N":
-                station, station_df = io.read_station(os.path.join(setup.SUBDAILY_OUT_DIR, f"{station_id:11s}.qff"), station)
+                station, station_df = io.read_station(os.path.join(setup.SUBDAILY_OUT_DIR, f"{station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}"), station)
 
         except OSError: # as e:
             # file missing, move on to next in sequence
@@ -100,7 +100,7 @@ def get_summary(stage: str = "N", restart_id: str = "", end_id: str = "", diagno
 
     # now print
     with open("summary_counts.txt", "w") as outfile:
-        for key, value in sorted(yearly_counts.items(), key=lambda x: x[0]): 
+        for key, value in sorted(yearly_counts.items(), key=lambda x: x[0]):
             outfile.write(f"{key} : {value}\n")
 
     return # get_summary

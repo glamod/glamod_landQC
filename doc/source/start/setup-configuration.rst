@@ -28,7 +28,11 @@ thresholds to use.  The ``configuration.txt`` file contains:
     variables = obs_variables.json
     logic = logic_config.json
     in_compression =
+    in_format = psv
+    in_suffix = .psv
     out_compression = .gz
+    out_format = psv
+    out_suffix = .qff
     [STATISTICS]
     mean = False
     median = True
@@ -50,6 +54,14 @@ thresholds to use.  The ``configuration.txt`` file contains:
 The input ".mff" (merged file format) files are in ``mff`` and the relevant
 sub-directory ``mff_version``, so the combination of these
 two entries give the location of the mff files.
+
+The ``in_compression`` and ``out_compression`` gives any compression applied to the input
+or output files as an additional suffix (e.g. ``.gz`` or ``.zip`` [the ``.`` is necessary here]).
+The ``in_format`` and ``out_format`` entries give the format of the input (mff) and output (qff)
+files.  This can be in the form of ``psv`` [Pipe separated files (like csvs)] or ``pqt`` [Parquet files].
+Finally, the ``in_suffix`` and ``out_suffix`` gives the filename extension in case this differs
+from the format (e.g. use of ``mff`` or ``parquet``).
+
 
 The QC process produces a whole set of output files, the root directory of which
 is defined by ``root``.  The ``version`` sets the name of the subdirectory for each

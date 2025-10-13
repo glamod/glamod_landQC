@@ -88,15 +88,30 @@ STATION_LIST = config.get("FILES", "station_list")
 STATION_FULL_LIST = config.get("FILES", "station_full_list")
 INVENTORY = config.get("FILES", "inventory")
 
+# Check and set compression options
 IN_COMPRESSION = config.get("FILES", "in_compression")
 if IN_COMPRESSION == "None":
     IN_COMPRESSION = ""
 OUT_COMPRESSION = config.get("FILES", "out_compression")
 if OUT_COMPRESSION == "None":
     OUT_COMPRESSION = ""
-# for cross-timescale checks
-# DAILY_DIR =
-# MONTHLY_DIR =
+
+# Check and set file format options
+IN_FORMAT = config.get("FILES", "in_format")
+if IN_FORMAT not in ("csv", "psv", "pqt", "parquet"):
+    sys.exit("Error in `in_format` entry in config file")
+OUT_FORMAT = config.get("FILES", "out_format")
+if OUT_FORMAT not in ("csv", "psv", "pqt", "parquet"):
+    sys.exit("Error in `out_format` entry in config file")
+
+# Check and set file format options
+IN_SUFFIX = config.get("FILES", "in_suffix")
+if IN_SUFFIX not in (".mff", ".csv", ".psv", ".pqt", ".parquet"):
+    sys.exit("Error in `in_suffix` entry in config file")
+OUT_SUFFIX = config.get("FILES", "out_suffix")
+if OUT_SUFFIX not in (".qff", ".csv", ".psv", ".pqt", ".parquet"):
+    sys.exit("Error in `out_suffix` entry in config file")
+
 
 #*********************************************
 # read in parameter list
@@ -109,11 +124,16 @@ carry_thru_var_list = parameters["variables"]["not_process_vars"]
 DTYPE_DICT =  {}
 for var_list in (obs_var_list, carry_thru_var_list):
     for v, var in enumerate(var_list):
-        if var in ["remarks", "pressure_3hr_change"]:
+        if var in ["STATION", "Station_name", "DATE",
+                   "REM", "remarks",
+                   "pressure_3hr_change", "sky_condition"]:
             DTYPE_DICT[var] = str
         elif "pres_wx" in var:
             # catch all present weather codes (which may contain character info)
             DTYPE_DICT[var] = str
+        elif "baseht" in var:
+            # catch the baseheight entries before the sky_cover ones, as these are floats
+            DTYPE_DICT[var] = np.float64
         elif "sky_cover" in var:
             # catch all sky cover codes (which may contain character info)
             DTYPE_DICT[var] = str
