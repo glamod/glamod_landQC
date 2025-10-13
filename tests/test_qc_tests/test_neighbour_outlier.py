@@ -88,7 +88,8 @@ def test_read_in_buddies_oserror(io_utils_mock: Mock,
 
     # Check error handling
     io_utils_mock.write_error.assert_called_once_with(target_station,
-                                                "File Missing (Buddy check): Buddy")
+                                                "File Missing (Buddy check): Buddy",
+                                                stage="bud")
 
 
 @patch("neighbour_outlier.utils.get_station_list")
@@ -106,7 +107,8 @@ def test_read_in_buddies_valueerror(io_utils_mock: Mock,
     # Check error handling
     io_utils_mock.write_error.assert_called_once_with(target_station,
                                                 "Error in input file (Buddy check): Buddy",
-                                                error="error text")
+                                                error="error text",
+                                                stage="ext")
 
 
 def test_read_in_buddy_data() -> None:
@@ -194,7 +196,8 @@ def test_read_in_buddy_data_attributeerror(write_error_mock: Mock) -> None:
         # Check error handling
     write_error_mock.assert_called_once_with(target_station,
                                             "Variable Missing (Buddy check): dummy_var - Buddy",
-                                            error="'Station' object has no attribute 'dummy_var'")
+                                            error="'Station' object has no attribute 'dummy_var'",
+                                            stage="ext")
 
 
 def test_calculate_data_spread() -> None:

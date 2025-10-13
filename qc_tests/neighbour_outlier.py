@@ -104,11 +104,13 @@ def read_in_buddies(target_station: utils.Station, initial_neighbours: np.ndarra
 
         except OSError: # as e:
             # file missing, move on to next in sequence
-            io_utils.write_error(target_station, f"File Missing (Buddy check): {buddy_id}")
+            io_utils.write_error(target_station, f"File Missing (Buddy check): {buddy_id}",
+                                 stage="bud")
             continue
         except ValueError as e:
             # some issue in the raw file
-            io_utils.write_error(target_station, f"Error in input file (Buddy check): {buddy_id}", error=str(e))
+            io_utils.write_error(target_station, f"Error in input file (Buddy check): {buddy_id}",
+                                 error=str(e), stage="ext")
             continue
 
     logger.info("All buddies read in")
@@ -168,11 +170,13 @@ def read_in_buddy_data(target_station: utils.Station, initial_neighbours: np.nda
 
         except KeyError as e:
             # file missing, move on to next in sequence
-            io_utils.write_error(target_station, f"Entry Missing (Buddy check): {variable}) - {buddy_id}", error=str(e))
+            io_utils.write_error(target_station, f"Entry Missing (Buddy check): {variable}) - {buddy_id}",
+                                 error=str(e), stage="ext")
             continue
         except AttributeError as e:
             # file missing, move on to next in sequence
-            io_utils.write_error(target_station, f"Variable Missing (Buddy check): {variable} - {buddy_id}", error=str(e))
+            io_utils.write_error(target_station, f"Variable Missing (Buddy check): {variable} - {buddy_id}",
+                                 error=str(e), stage="ext")
             continue
         # match the timestamps of target_station and copy over
         # TODO: use pandas routine: target_station.times.isin(buddy.times)

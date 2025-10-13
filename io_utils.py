@@ -384,16 +384,19 @@ def flag_write(outfilename: str, df: pd.DataFrame, diagnostics: bool = False) ->
     return # flag_write
 
 #************************************************************************
-def write_error(station: Station, message: str, error: str = "", diagnostics:bool = False) -> None:
+def write_error(station: Station, message: str,
+                stage: str="int", error: str="", diagnostics:bool = False) -> None:
     """
     Write out quick failure message for station
 
     :param Station station: met. station
     :param str message: message to store
+    :param str stage: whether from intra [int] or inter [ext] station checks, or "bud" for
+                      buddy file missing
     :param str error: error output from stacktrace
     :param bool diagnostics: turn on diagnostic output
     """
-    outfilename = os.path.join(setup.SUBDAILY_ERROR_DIR, f"{station.id:11s}.err")
+    outfilename = os.path.join(setup.SUBDAILY_ERROR_DIR, f"{station.id:11s}_{stage}.err")
 
     # in case this file already exists, then append
     if os.path.exists(outfilename):
