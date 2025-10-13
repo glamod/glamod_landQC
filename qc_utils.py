@@ -188,7 +188,7 @@ def get_station_list(restart_id: str = "", end_id: str = "") -> pd.DataFrame:
                                                     "name", "wmo"))
     else:
         # Comma separated
-        station_list = pd.read_csv(setup.STATION_LIST,
+        station_list = pd.read_csv(setup.STATION_LIST, delim_whitespace=True,
                                 header=None, names=("id", "latitude", "longitude", "elevation", "name"))
 
     # fill empty entries (default NaN) with blank strings
