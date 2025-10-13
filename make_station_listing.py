@@ -5,6 +5,7 @@
 #*********************************************
 import numpy as np
 import datetime as dt
+import gc
 
 import setup
 import utils
@@ -60,6 +61,11 @@ def main() -> None:
         else:
             begins[st] = dt.datetime.strftime(station.times.iloc[0], "%Y%m%d")
             ends[st] = dt.datetime.strftime(station.times.iloc[-1], "%Y%m%d")
+
+        # clear the memory
+        del station
+        del station_df
+        gc.collect()
 
     station_list["begins"] = begins
     station_list["ends"] = ends
