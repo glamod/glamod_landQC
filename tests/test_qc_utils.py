@@ -206,8 +206,9 @@ def test_get_measurement_code_mask() -> None:
 
     test_codes = ["EXAMPLE"]  #  only this string will be permitted
 
-    df = pd.DataFrame({"flag": ["", "EXAMPLE", "EX"]})
-    expected = np.array([True, False, True])
+    df = pd.Series(["NaN", "EXAMPLE", "EX"])
+    #  mask is inverted before application
+    expected = np.array([False, True, False])
     mask = qc_utils.get_measurement_code_mask(df, test_codes)
 
     np.testing.assert_array_equal(mask, expected)

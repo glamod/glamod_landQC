@@ -212,27 +212,28 @@ def insert_flags(qc_flags: np.ndarray, flags: np.ndarray) -> np.ndarray:
 
 
 #************************************************************************
-def get_measurement_code_mask(df: pd.DataFrame,
+def get_measurement_code_mask(ds: pd.Series,
                               measurement_codes: list) -> np.ndarray:
 
     # Build up the mask
     for c, code in enumerate(measurement_codes):
+
         if code == "":
             # Empty flags converted to NaNs on reading
             code = float("NaN")
             if c == 0:
-                mask = (df == code)
+                mask = (ds == code)
             else:
-                mask = (df == code) | mask
+                mask = (ds == code) | mask
         else:
             # Doing string comparison
             if c == 0:
                 # Initialise
-                mask = (df.str.startswith(code))
+                mask = (ds.str.startswith(code))
             else:
                 # Combine using Or symbol ("|")
                 #   e.g. if code = "N-Normal" or "C-Calm" or "" set True
-                mask = (df.str.startswith(code)) | mask
+                mask = (ds.str.startswith(code)) | mask
 
     return mask
 
