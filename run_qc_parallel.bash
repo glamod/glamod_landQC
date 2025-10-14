@@ -208,7 +208,7 @@ parallel_script="$(prepare_parallel_script "${batch}")"
 # Mix up the stations, so that not all the big/long ones (USA etc)
 #   Are in the same jobs
 
-shuffled_stns=$(shuf -e ${stn_ids})
+shuffled_stns=$(shuf -e "${stn_ids}")
 
 scnt=1
 for stn in ${shuffled_stns}

@@ -46,7 +46,7 @@ def process_batches(batch: int, total: int) -> tuple[str, str]:
     order = np.arange(station_list.shape[0])
     PSEUDO_RANDOM_SEED=500
     random.Random(PSEUDO_RANDOM_SEED).shuffle(order)
-    station_list[order]
+    station_list=station_list[order]
 
     station_IDs = station_list.id
 
