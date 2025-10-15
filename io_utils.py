@@ -56,14 +56,14 @@ def read_psv(infile: str, separator: str) -> pd.DataFrame:
     warnings.filterwarnings("error", category=pd.errors.DtypeWarning)
     try:
         df = pd.read_csv(infile, sep=separator, compression="infer",
-                         dtype=setup.DTYPE_DICT, na_values="Null", quoting=3, index_col=False)
+                         dtype=setup.DTYPE_DICT, na_values=("Null", " "), quoting=3, index_col=False)
     except FileNotFoundError as e:
         logger.warning(f"psv file not found: {str(e)}")
         print(str(e))
         raise FileNotFoundError(str(e))
     except ValueError as e:
         logger.warning(f"Error in psv rows: {str(e)}")
-        print(str(e))
+        input(str(e))
         # Presuming that there is an extra header line somewhere in the file
 
         # Find location of the extra header line
@@ -71,7 +71,7 @@ def read_psv(infile: str, separator: str) -> pd.DataFrame:
 
         # Now re-read the file
         df = pd.read_csv(infile, sep=separator, compression="infer",
-                         dtype=setup.DTYPE_DICT, na_values="Null", quoting=3,
+                         dtype=setup.DTYPE_DICT, na_values=("Null", " "), quoting=3,
                          index_col=False, skiprows=skip_rows)
 
     except pd.errors.ParserError as e:
