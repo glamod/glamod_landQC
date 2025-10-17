@@ -153,7 +153,7 @@ DTYPE_DICT["Source_ID"] = str
 
 
 # get the wind measurement codes
-with open(os.path.join(os.path.dirname(__file__), "wind_measurement_codes.json"), 'r') as infile:
+with open(os.path.join(os.path.dirname(__file__), "configs", "wind_measurement_codes.json"), 'r') as infile:
     WIND_MEASUREMENT_CODES = json.load(infile)
 
 
