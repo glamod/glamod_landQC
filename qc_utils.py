@@ -168,19 +168,35 @@ def get_station_list(restart_id: str = "", end_id: str = "") -> pd.DataFrame:
 
     :returns: dataframe of station list
     """
+    # Test if station list fixed-width format or comma separated
+    #  [Initially supplied nonFWF format for Release 8 processing]
+    fwf = True
+    with open(setup.STATION_LIST, "r") as infile:
+        lines = infile.readlines()
+        for row in lines:
+            # The non FWF version had double quotes present around the station names
+            #    but was space separated, so can use that to determine if it's FWF or not
+            if row.find('"') != -1:
+                fwf = False
 
     # process the station list
-    # If station-ID has format "ID-START-END" then width is 29
-    station_list = pd.read_fwf(setup.STATION_LIST, widths=(11, 9, 10, 7, 3, 40, 5),
-                               header=None, names=("id", "latitude", "longitude", "elevation", "state",
-                                                   "name", "wmo"))
+    if fwf:
+        # Fixed width format
+        # If station-ID has format "ID-START-END" then width is 29
+        station_list = pd.read_fwf(setup.STATION_LIST, widths=(11, 9, 10, 7, 3, 40, 5),
+                                header=None, names=("id", "latitude", "longitude", "elevation", "state",
+                                                    "name", "wmo"))
+    else:
+        # Comma separated
+        station_list = pd.read_csv(setup.STATION_LIST, delim_whitespace=True,
+                                header=None, names=("id", "latitude", "longitude", "elevation", "name"))
+        # add extra columns (despite being empty) so these are available to later stages
+        #  use insert for "state" so that order of columns is the same
+        station_list.insert(4, "state", ["" for i in range(len(station_list))])
+        station_list["wmo"] = ["" for i in range(len(station_list))]
 
     # fill empty entries (default NaN) with blank strings
     station_list = station_list.fillna("")
-
-    # no longer necessary in November 2019 run, kept just in case
-#    station_list2 = pd.read_fwf(os.path.join(setup.SUBDAILY_ROOT_DIR, "ghcnh-stations-2add.txt"), widths=(11, 9, 10, 7, 35), header=None)
-#    station_list = station_list.append(station_list2, ignore_index=True)
 
     station_IDs = station_list.id
 

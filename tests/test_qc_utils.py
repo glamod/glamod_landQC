@@ -1,6 +1,7 @@
 """
 Contains tests for qc_utils.py
 """
+from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
@@ -8,6 +9,40 @@ from unittest.mock import patch, Mock
 
 import qc_utils
 import common
+
+example_stn_list = Path(__file__).parent / "example_data/station_list_fwf.txt"
+@patch("qc_utils.setup.STATION_LIST", example_stn_list)
+def test_get_station_list_fwf() -> None:
+    """Test reading of fixed-width format station list"""
+
+    df = qc_utils.get_station_list()
+
+    expected_columns = np.array(['id', 'latitude', 'longitude',
+                                 'elevation', 'state', 'name', 'wmo'])
+    np.testing.assert_array_equal(df.columns,
+                                  expected_columns)
+    assert df.shape == (4, 7)
+    assert df["id"].iloc[0] == "USW00094846"
+    assert df["name"].iloc[-1] == "MARQUETTE"
+    assert df["wmo"].iloc[-1] == 72743
+
+
+example_stn_list = Path(__file__).parent / "example_data/station_list_csv.txt"
+@patch("qc_utils.setup.STATION_LIST", example_stn_list)
+def test_get_station_list_csv() -> None:
+    """Test reading of "csv" format station list"""
+
+    df = qc_utils.get_station_list()
+
+    expected_columns = np.array(['id', 'latitude', 'longitude',
+                                 'elevation', 'state', 'name', 'wmo'])
+    np.testing.assert_array_equal(df.columns,
+                                  expected_columns)
+    assert df.shape == (4, 7)
+    assert df["id"].iloc[0] == "USW00094846"
+    assert df["name"].iloc[-1] == "MARQUETTE"
+    assert df["wmo"].iloc[-1] == ""
+
 
 def test_gcv_zeros_in_central_section_nozeros() -> None:
 
