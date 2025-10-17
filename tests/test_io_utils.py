@@ -40,6 +40,10 @@ def test_read_psv_mff() -> None:
     assert len(df.columns) == 329
     assert df.shape[0] == 3107 # checked manually, and rows ignore header lines
 
+    # and check the Null and space are being handled correctly
+    assert pd.isna(df["temperature"].iloc[0])
+    assert pd.isna(df["temperature"].iloc[1])
+
 
 def test_read_psv_qff() -> None:
 
