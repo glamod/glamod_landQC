@@ -214,6 +214,24 @@ def insert_flags(qc_flags: np.ndarray, flags: np.ndarray) -> np.ndarray:
 #************************************************************************
 def get_measurement_code_mask(ds: pd.Series,
                               measurement_codes: list) -> np.ndarray:
+    """
+    Build up a mask of data rows to ignore by using a list of permitted
+    measurement codes
+
+    Parameters
+    ----------
+    ds : pd.Series
+        Measurement Codes field from data frame for variable
+    measurement_codes : list
+        List of accepted codes
+
+    Returns
+    -------
+    np.ndarray
+        Boolean array of mask
+    """
+    assert isinstance(ds, pd.Series)
+    assert isinstance(measurement_codes, list)
 
     # Build up the mask
     for c, code in enumerate(measurement_codes):
