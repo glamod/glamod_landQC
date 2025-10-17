@@ -159,23 +159,23 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
                                                                                    setup.IN_COMPRESSION)), station)
         except FileNotFoundError: # as e:
             # file missing, move on to next in sequence
-            io.write_error(station, "File Missing")
+            io.write_error(station, "File Missing", stage="int")
             print("") # for on screen spacing of text
             continue
         except ValueError as e:
             # some issue in the raw file
-            io.write_error(station, "Error in input file", error=str(e))
+            io.write_error(station, "Error in input file", error=str(e), stage="int")
             print("")
             continue
         except RuntimeError as e:
             # missing header in the raw file
-            io.write_error(station, "Error in input file - missing header", error=str(e))
+            io.write_error(station, "Error in input file - missing header", error=str(e), stage="int")
             print("")
             continue
 
         # some may have no data (for whatever reason)
         if station.times.shape[0] == 0:
-            io.write_error(station, "No data in input file")
+            io.write_error(station, "No data in input file", stage="int")
             logging.warning(f"No data in input file for {station.id}")
             # and scoot onto next station
             print("")
