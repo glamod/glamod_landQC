@@ -12,13 +12,13 @@ function write_and_submit_bastion_script {
 
     # run the parallel script in this detached screen
     #  restrict to 1 job so that these are done in sequence
-    screen -r "metadata" -X stuff $"parallel --jobs 1 < ${parallel_script} "
+    screen -r "metadata" -X stuff $"parallel --jobs 1 < ${parallel_script}
+"
 
 
 } # write_and_submit_bastion_script
 
-cwd=$(pwd)
-SCRIPT_DIR=${cwd}/parallel_scripts/
+SCRIPT_DIR="$(pwd)/parallel_scripts/"
 parallel_script="${SCRIPT_DIR}/parallel_metadata.bash"
 
 if [ -e "${parallel_script}" ]; then
