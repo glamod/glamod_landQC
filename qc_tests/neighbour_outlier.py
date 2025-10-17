@@ -156,7 +156,7 @@ def read_in_buddy_data(target_station: utils.Station, initial_neighbours: np.nda
         #   Capture and move on, as KeyError below results in confusing message
         if buddy_id not in all_buddies.keys():
             io_utils.write_error(target_station, f"Entry Missing (Buddy check): {variable}) - {buddy_id}",
-                                 error=str(e), stage="bud")
+                                 stage="bud")
             if diagnostics:
                 print(f"  No entry for Buddy, file missing")
             continue
