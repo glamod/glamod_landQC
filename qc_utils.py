@@ -226,8 +226,8 @@ def get_measurement_code_mask(ds: pd.Series,
                 mask = (ds.isna()) | mask
         else:
             # Doing string comparison, but need to exclude NaNs
-            #   Need to convert to string before assessing (np.nan -> "nan")
-            #   But test for NaNs separately, so that a string starting "nan"
+            #   Need to convert to string before assessing (np.nan -> "nan") [using .astype(str)]
+            #   But test for NaNs separately [using .isna()], so that a string starting "nan"
             #   could be used in the future
             if c == 0:
                 # Initialise

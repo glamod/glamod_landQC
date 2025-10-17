@@ -215,8 +215,11 @@ def test_gcv_calculate_binmax_large() -> None:
                                            np.array([False, True, True, False]))                                          ])
 def test_get_measurement_code_mask(ds: pd.Series,
                                    expected: np.ndarray) -> None:
+    """Test that the mask is built correctly from the supplied measurement codes"""
 
-    test_codes = ["", "EXAMPLE"]  #  only these strings will be permitted
+    # Only these strings will be permitted.
+    #   "" is interpreted as NaN, and so np.nans are allowed
+    test_codes = ["", "EXAMPLE"]
     mask = qc_utils.get_measurement_code_mask(ds, test_codes)
 
     np.testing.assert_array_equal(mask, expected)
