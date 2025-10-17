@@ -212,6 +212,53 @@ def insert_flags(qc_flags: np.ndarray, flags: np.ndarray) -> np.ndarray:
 
 
 #************************************************************************
+def get_measurement_code_mask(ds: pd.Series,
+                              measurement_codes: list) -> np.ndarray:
+    """
+    Build up a mask of data rows to ignore by using a list of permitted
+    measurement codes
+
+    Parameters
+    ----------
+    ds : pd.Series
+        Measurement Codes field from data frame for variable
+    measurement_codes : list
+        List of accepted codes
+
+    Returns
+    -------
+    np.ndarray
+        Boolean array of mask
+    """
+    assert isinstance(ds, pd.Series)
+    assert isinstance(measurement_codes, list)
+
+    # Build up the mask
+    for c, code in enumerate(measurement_codes):
+
+        if code == "":
+            # Empty flags converted to NaNs on reading
+            if c == 0:
+                mask = (ds.isna())
+            else:
+                mask = (ds.isna()) | mask
+        else:
+            # Doing string comparison, but need to exclude NaNs
+            #   Need to convert to string before assessing (np.nan -> "nan") [using .astype(str)]
+            #   But test for NaNs separately [using .isna()], so that a string starting "nan"
+            #   could be used in the future
+            if c == 0:
+                # Initialise
+                mask = (~ds.isna() & ds.astype(str).str.startswith(code))
+            else:
+                # Combine using Or symbol ("|")
+                #   e.g. if code = "N-Normal" or "C-Calm" or "" set True
+                mask = (~ds.isna() & ds.astype(str).str.startswith(code)) | mask
+
+    return mask
+
+
+#************************************************************************
 def populate_station(station: Station, df: pd.DataFrame, obs_var_list: list, read_flags: bool = False) -> None:
     """
     Convert Data Frame into internal station and obs_variable objects
@@ -236,25 +283,9 @@ def populate_station(station: Station, df: pd.DataFrame, obs_var_list: list, rea
         #  unaffected.
         if variable in ["wind_direction", "wind_speed"]:
             m_code = df[f"{variable}_Measurement_Code"]
+            measurement_codes = setup.WIND_MEASUREMENT_CODES[variable]["retained"]
 
-            # Build up the mask
-            for c, code in enumerate(WIND_MEASUREMENT_CODES):
-                if code == "":
-                    # Empty flags converted to NaNs on reading
-                    code = float("NaN")
-                    if c == 0:
-                        mask = (m_code == code)
-                    else:
-                        mask = (m_code == code) | mask
-                else:
-                    # Doing string comparison
-                    if c == 0:
-                        # Initialise
-                        mask = (m_code.str.startswith(code))
-                    else:
-                        # Combine using or
-                        #   e.g. if code = "N-Normal" or "C-Calm" or "" set True
-                        mask = (m_code.str.startswith(code)) | mask
+            mask = get_measurement_code_mask(m_code, measurement_codes)
 
             # invert mask and set to missing
             indata[~mask] = MDI
