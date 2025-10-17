@@ -188,33 +188,48 @@ do
     echo "#SBATCH --output=${ROOTDIR}${LOG_DIR}/${stn}_${STAGE}.out" >> "${spice_script}"
     echo "#SBATCH --error=${ROOTDIR}${LOG_DIR}/${stn}_${STAGE}.err " >> "${spice_script}"
 
+    # Get station file size, to determine job requirements
     if [ "${STAGE}" == "I" ]; then
-        if [ "${stn:0:1}" == "U" ]; then
-            # US stations take a long time
-            echo "#SBATCH --time=60:00" >> "${spice_script}" # 60mins
-            echo "#SBATCH --mem=15000" >> "${spice_script}"
-        elif [ "${stn:0:1}" == "G" ]; then
-            # Some German stations take a long time
-            echo "#SBATCH --time=60:00" >> "${spice_script}" # 60mins
-            echo "#SBATCH --mem=12000" >> "${spice_script}"
-        else
-            echo "#SBATCH --time=30:00" >> "${spice_script}" # 20mins
-            echo "#SBATCH --mem=8000" >> "${spice_script}"
+        filesize=$(ls -l "${MFF_DIR}${MFF_VER}${stn}.mff${MFF_ZIP}" | awk '{print $5}')
+        if [ "${MFF_ZIP}" != "" ]; then
+            # Zipped, increase files by x10
+            (( filesize=filesize*10 ))
         fi
-    elif  [ "${STAGE}" == "N" ]; then
-        if [ "${stn:0:1}" == "U" ]; then
-            # US stations take lots of memory
-            echo "#SBATCH --time=20:00" >> "${spice_script}" # 20mins
-            echo "#SBATCH --mem=30000" >> "${spice_script}"
-        elif [ "${stn:0:1}" == "G" ]; then
-            # Some German stations take lots of memory
-            echo "#SBATCH --time=20:00" >> "${spice_script}" # 20mins
-            echo "#SBATCH --mem=30000" >> "${spice_script}"
+
+    elif [ "${STAGE}" ==  "N" ]; then
+        filesize=$(ls -l "${ROOTDIR}${PROC_DIR}${VERSION}${stn}.qff${QFF_ZIP}" | awk '{print $5}')
+        if [ "${QFF_ZIP}" != "" ]; then
+            # Zipped, increase files by x10
+            (( filesize=filesize*10 ))
+        fi
+
+    fi
+
+    upper_size="200000000"  # 200MiB
+    # Set the job values from the file size, appropriate to each stage of processing
+    if [ "${STAGE}" == "I" ]; then
+        if [ "${filesize}" -gt "${upper_size}" ]; then
+            length="60:00" # 60 mins
+            memory="15000" # 15 GB
         else
-            echo "#SBATCH --time=20:00" >> "${spice_script}" # 20mins
-            echo "#SBATCH --mem=10000" >> "${spice_script}"
+            length="30:00" # 30 mins
+            memory="8000"  # 8 GB
+        fi
+    elif [ "${STAGE}" == "N" ]; then
+        if [ "${filesize}" -gt "${upper_size}" ]; then
+            length="40:00" # 40 mins
+            memory="30000" # 30 GB
+        else
+            length="20:00" # 20 mins
+            memory="10000" # 10 GB
         fi
     fi
+
+    # and generate the script
+    echo "#SBATCH --time=${length}" >> "${spice_script}" # 20mins
+    echo "#SBATCH --mem=${memory}" >> "${spice_script}"
+
+
     echo "" >> "${spice_script}"
     # echo "source ${VENVDIR}/bin/activate" >> "${spice_script}"
     echo "conda activate glamod_QC" >> "${spice_script}"
