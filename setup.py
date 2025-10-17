@@ -116,7 +116,7 @@ if OUT_SUFFIX not in (".qff", ".csv", ".psv", ".pqt", ".parquet"):
 #*********************************************
 # read in parameter list
 VARFILE = config.get("FILES", "variables")
-with open(os.path.join(os.path.dirname(__file__), VARFILE), "r") as pf:
+with open(os.path.join(os.path.dirname(__file__), "configs", VARFILE), "r") as pf:
     parameters = json.load(pf)
 obs_var_list = parameters["variables"]["process_vars"]
 carry_thru_var_list = parameters["variables"]["not_process_vars"]
@@ -153,7 +153,7 @@ DTYPE_DICT["Source_ID"] = str
 
 
 # get the wind measurement codes
-with open(os.path.join(os.path.dirname(__file__), "wind_measurement_codes.json"), 'r') as infile:
+with open(os.path.join(os.path.dirname(__file__), "configs", "wind_measurement_codes.json"), 'r') as infile:
     WIND_MEASUREMENT_CODES = json.load(infile)
 
 
