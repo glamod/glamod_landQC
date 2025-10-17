@@ -81,7 +81,11 @@ Finally, you can choose whether to overwrite
 existing output files, or to skip the processing step if they already exists.  There
 is helptext for these switches as part of the script.
 
-Once completed, this script also runs a checking process to provide
+Some countries have many large stations, which therefore take a long time to process. So
+that these are not all clustered into the same jobs, the station lists are shuffled before
+jobs are submitted.
+
+Once completed, there is a checking process to provide
 some summary information of the processing run, with station counts
 and locations.  This can be called separately as
 ``check_if_processed.bash`` using the ``I`` / ``N`` switches.
