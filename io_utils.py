@@ -63,12 +63,11 @@ def read_psv(infile: str, separator: str) -> pd.DataFrame:
         raise FileNotFoundError(str(e))
     except ValueError as e:
         logger.warning(f"Error in psv rows: {str(e)}")
-        input(str(e))
+        print(str(e))
         # Presuming that there is an extra header line somewhere in the file
 
         # Find location of the extra header line
         skip_rows = count_skip_rows(infile)
-
         # Now re-read the file
         df = pd.read_csv(infile, sep=separator, compression="infer",
                          dtype=setup.DTYPE_DICT, na_values=("Null", " "), quoting=3,

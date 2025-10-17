@@ -33,6 +33,8 @@ def test_read_psv_mff() -> None:
                           "example_data", "AAI0000TNCA.mff")
     separator = "|"
 
+    # example file includes some Nulls and spaces in the data columns
+
     df = io_utils.read_psv(infile, separator)
 
     assert len(df.columns) == 329
