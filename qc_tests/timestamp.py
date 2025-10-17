@@ -13,7 +13,7 @@ import qc_utils as utils
 from qc_tests.spike import generate_differences
 #************************************************************************
 #*********************************************
-def plot_multiple(times: np.ndarray, obs_var: utils.Meteorological_Variable, start: int) -> None:
+def plot_multiple(times: np.ndarray, obs_var: utils.MeteorologicalVariable, start: int) -> None:
     '''
     Plot each instance of multiple values against surrounding data
 
@@ -44,7 +44,7 @@ def plot_multiple(times: np.ndarray, obs_var: utils.Meteorological_Variable, sta
     return # plot_spike
 
 #************************************************************************
-def identify_multiple_values(obs_var: utils.Meteorological_Variable, times: np.ndarray,
+def identify_multiple_values(obs_var: utils.MeteorologicalVariable, times: np.ndarray,
                              config_dict: dict, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Use config_dict to read in critical values, and then assess to find

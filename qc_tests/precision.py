@@ -19,8 +19,8 @@ import qc_utils as utils
 #************************************************************************
 
 #*********************************************
-def plot_flags(primary: utils. Meteorological_Variable,
-               secondary: utils.Meteorological_Variable,
+def plot_flags(primary: utils. MeteorologicalVariable,
+               secondary: utils.MeteorologicalVariable,
                times: np.ndarray, locations: np.ndarray) -> None:
     '''
     Plot each month of observations and the flags
@@ -50,8 +50,8 @@ def plot_flags(primary: utils. Meteorological_Variable,
 
 
 #************************************************************************
-def precision_cross_check(station: utils.Station, primary: utils.Meteorological_Variable,
-                          secondary: utils.Meteorological_Variable, plots: bool=False,
+def precision_cross_check(station: utils.Station, primary: utils.MeteorologicalVariable,
+                          secondary: utils.MeteorologicalVariable, plots: bool=False,
                           diagnostics: bool=False) -> None:
     """
     Flag locations where precision of secondary is different from primary

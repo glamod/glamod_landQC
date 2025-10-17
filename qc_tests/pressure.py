@@ -19,8 +19,8 @@ MIN_SPREAD = 1.0
 MAX_SPREAD = 5.0
 
 #*********************************************
-def plot_pressure_timeseries(sealp: utils.Meteorological_Variable,
-                             stnlp: utils.Meteorological_Variable,
+def plot_pressure_timeseries(sealp: utils.MeteorologicalVariable,
+                             stnlp: utils.MeteorologicalVariable,
                              times: np.ndarray, bad: int) -> None:
     '''
     Plot each observation of SLP or StnLP against surrounding data
@@ -57,8 +57,8 @@ def plot_pressure_timeseries(sealp: utils.Meteorological_Variable,
 
 
 #************************************************************************
-def pressure_logic(sealp: utils.Meteorological_Variable,
-                   stnlp: utils.Meteorological_Variable,
+def pressure_logic(sealp: utils.MeteorologicalVariable,
+                   stnlp: utils.MeteorologicalVariable,
                    times: np.ndarray, elevation: float,
                    rtol: float=1.e-4,
                    plots: bool=False, diagnostics: bool=False) -> None:
@@ -144,8 +144,8 @@ def plot_pressure_distribution(difference: np.ndarray,
 
 
 #************************************************************************
-def identify_values(sealp: utils.Meteorological_Variable,
-                    stnlp: utils.Meteorological_Variable,
+def identify_values(sealp: utils.MeteorologicalVariable,
+                    stnlp: utils.MeteorologicalVariable,
                     config_dict: dict,
                     plots: bool=False, diagnostics: bool=False) -> None:
     """
@@ -182,8 +182,8 @@ def identify_values(sealp: utils.Meteorological_Variable,
 
 
 #************************************************************************
-def pressure_offset(sealp: utils.Meteorological_Variable,
-                    stnlp: utils.Meteorological_Variable,
+def pressure_offset(sealp: utils.MeteorologicalVariable,
+                    stnlp: utils.MeteorologicalVariable,
                     times: np.ndarray, config_dict: dict,
                     plots: bool=False, diagnostics: bool=False) -> None:
 
@@ -289,7 +289,7 @@ def calc_slp(stnlp: np.ndarray, elevation: float, temperature: np.ndarray) -> np
 
 
 #************************************************************************
-def adjust_existing_flag_locs(var: utils.Meteorological_Variable,
+def adjust_existing_flag_locs(var: utils.MeteorologicalVariable,
                               flags: np.ndarray) -> np.ndarray:
     """
     There may be flags already set by previous part of test
@@ -311,9 +311,9 @@ def adjust_existing_flag_locs(var: utils.Meteorological_Variable,
 
 
 #************************************************************************
-def pressure_theory(sealp: utils.Meteorological_Variable,
-                    stnlp: utils.Meteorological_Variable,
-                    temperature: utils.Meteorological_Variable,
+def pressure_theory(sealp: utils.MeteorologicalVariable,
+                    stnlp: utils.MeteorologicalVariable,
+                    temperature: utils.MeteorologicalVariable,
                     times: np.ndarray, elevation: int,
                     plots: bool=False, diagnostics: bool=False) -> None:
     """

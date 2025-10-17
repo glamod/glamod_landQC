@@ -25,7 +25,7 @@ DISTANT_NEIGHBOURS = 100 # km
 
 #************************************************************************
 def plot_neighbour_flags(times: np.ndarray, flagged_time: int,
-                         target: utils.Meteorological_Variable, buddies: np.ndarray) -> None:
+                         target: utils.MeteorologicalVariable, buddies: np.ndarray) -> None:
     '''
     Plot each spike against surrounding data
 
@@ -119,7 +119,7 @@ def read_in_buddies(target_station: utils.Station, initial_neighbours: np.ndarra
 
 
 def read_in_buddy_data(target_station: utils.Station, initial_neighbours: np.ndarray,
-                       all_buddies: dict, variable: utils.Meteorological_Variable,
+                       all_buddies: dict, variable: utils.MeteorologicalVariable,
                        diagnostics: bool = False, plots: bool = False) -> np.ndarray:
     """
     Read in the buddy data for the neighbours for specified variable
@@ -285,7 +285,7 @@ def adjust_pressure_for_tropical_storms(dubious: np.ma.MaskedArray, initial_neig
 
 #************************************************************************
 def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.ndarray,
-                      all_buddies: dict, variable: utils.Meteorological_Variable,
+                      all_buddies: dict, variable: utils.MeteorologicalVariable,
                       diagnostics: bool = False,
                       plots: bool = False, full: bool = False) -> None:
     """

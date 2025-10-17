@@ -85,7 +85,7 @@ def low_pass_filter(normed_anomalies: np.ndarray, station: utils.Station,
     return normed_anomalies # low_pass_filter
 
 #************************************************************************
-def prepare_data(obs_var: utils.Meteorological_Variable, station: utils.Station,
+def prepare_data(obs_var: utils.MeteorologicalVariable, station: utils.Station,
                  month: int, diagnostics: bool = False, winsorize: bool = True) -> np.ma.array:
     """
     Prepare the data for the climatological check.  Makes anomalies and applies low-pass filter
@@ -162,7 +162,7 @@ def prepare_data(obs_var: utils.Meteorological_Variable, station: utils.Station,
         return anomalies # prepare_data
 
 #************************************************************************
-def find_month_thresholds(obs_var: utils.Meteorological_Variable, station: utils.Station,
+def find_month_thresholds(obs_var: utils.MeteorologicalVariable, station: utils.Station,
                           config_dict: dict, plots: bool = False, diagnostics: bool = False,
                           winsorize: bool = True) -> None:
     """
@@ -245,7 +245,7 @@ def find_month_thresholds(obs_var: utils.Meteorological_Variable, station: utils
     return # find_month_thresholds
 
 #************************************************************************
-def monthly_clim(obs_var: utils.Meteorological_Variable, station: utils.Station, config_dict: dict,
+def monthly_clim(obs_var: utils.MeteorologicalVariable, station: utils.Station, config_dict: dict,
                  logfile: str = "", plots: bool = False, diagnostics: bool = False, winsorize: bool = True):
     """
     Run through the variables and pass to the Distributional Gap Checks

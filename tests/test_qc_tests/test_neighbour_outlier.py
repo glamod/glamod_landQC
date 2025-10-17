@@ -18,8 +18,8 @@ EXAMPLE_FILES_PATH = os.path.join(os.path.dirname(__file__), "../", "example_dat
 # not testing plotting
 
 
-def _make_target_and_buddy(start_dt: dt.datetime | None = None) -> tuple[qc_utils.Meteorological_Variable,
-                                      qc_utils.Meteorological_Variable]:
+def _make_target_and_buddy(start_dt: dt.datetime | None = None) -> tuple[qc_utils.MeteorologicalVariable,
+                                      qc_utils.MeteorologicalVariable]:
 
     # set up variables and stations
     temperatures = common.example_test_variable("temperature", np.arange(10))
