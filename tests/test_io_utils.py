@@ -1,7 +1,7 @@
 """
 Contains tests for precision.py
 """
-import os
+from pathlib import Path
 import numpy as np
 import datetime as dt
 import pandas as pd
@@ -14,13 +14,11 @@ import utils
 import setup
 
 
-EXAMPLE_FILES = os.listdir(os.path.join(os.path.dirname(__file__),
-                           "example_data"))
+EXAMPLE_FILES = (Path(__file__).parent / "example_data").iterdir()
 
 def test_count_skip_rows() -> None:
 
-    infile = os.path.join(os.path.dirname(__file__),
-                          "example_data", "DUM00000001.mff")
+    infile = Path(__file__).parent / "example_data" / "DUM00000001.mff"
 
     result = io_utils.count_skip_rows(infile)
 
@@ -29,8 +27,7 @@ def test_count_skip_rows() -> None:
 
 def test_read_psv_mff() -> None:
 
-    infile = os.path.join(os.path.dirname(__file__),
-                          "example_data", "DUM00000001.mff")
+    infile = Path(__file__).parent / "example_data" / "DUM00000001.mff"
     separator = "|"
 
     # example file includes some Nulls and spaces in the data columns
@@ -47,8 +44,7 @@ def test_read_psv_mff() -> None:
 
 def test_read_psv_qff() -> None:
 
-    infile = os.path.join(os.path.dirname(__file__),
-                          "example_data", "DUM00000002.qff")
+    infile = Path(__file__).parent / "example_data" / "DUM00000002.qff"
     separator = "|"
 
     df = io_utils.read_psv(infile, separator)
@@ -59,13 +55,13 @@ def test_read_psv_qff() -> None:
 
 def test_read_psv_qff_fileerror() -> None:
 
-    infile = os.path.join(os.path.dirname(__file__),
-                          "example_data", "DUM00000002.qff")
+    # purposeful mistype
+    infile = Path(__file__).parent / "example_data" / "DUM00000002.qfff"
     separator = "|"
 
     # is a FileNotFoundError raised
     with pytest.raises(FileNotFoundError) as emsg:
-        _ = io_utils.read_psv(infile+"f", separator)
+        _ = io_utils.read_psv(infile, separator)
 
     assert "No such file or directory:" in str(emsg)
 
@@ -76,8 +72,7 @@ def test_read_with_psv(setup_mock: Mock,
                        read_psv_mock: Mock) -> None:
 
     setup_mock.IN_FORMAT = "psv"
-    infile = os.path.join(os.path.dirname(__file__),
-                          "example_data", "DUM00000002.qff")
+    infile = Path(__file__).parent / "example_data" / "DUM00000002.qff"
 
     read_psv_mock.return_value = pd.DataFrame([["DUM00000002", "SABIRABAD", 1979],
                                                ["DUM00000002", "SABIRABAD", 1979]],
@@ -90,12 +85,12 @@ def test_read_with_psv(setup_mock: Mock,
 
 def test_read_oserror() -> None:
 
-    infile = os.path.join(os.path.dirname(__file__),
-                          "example_data", "DUM00000002.qff")
+    # purposeful mistype
+    infile = Path(__file__).parent / "example_data" / "DUM00000002.qfff"
 
     # is a FileNotFoundError raised
     with pytest.raises(FileNotFoundError):
-        _ = io_utils.read(infile+"f")
+        _ = io_utils.read(infile)
 
 
 def test_calculate_datetimes() -> None:
@@ -159,11 +154,9 @@ def test_read_station() -> None:
     # Not ideal, but as setup is used to determine other
     #   aspects, mocking this ended up with recursion errors
     if setup.IN_FORMAT in ["psv", "csv"]:
-        infile = os.path.join(os.path.dirname(__file__),
-                            "example_data", "DUM00000004.qff")
+        infile = Path(__file__).parent / "example_data" / "DUM00000004.qff"
     elif setup.IN_FORMAT in ["pqt", "parquet"]:
-        infile = os.path.join(os.path.dirname(__file__),
-                            "example_data", "DUM00000004.pqt")
+        infile = Path(__file__).parent / "example_data" / "DUM00000004.pqt"
 
     station = utils.Station("DUM00000004", 39.6500, 46.5330, 1099.0)
 
@@ -182,8 +175,7 @@ def test_read_station() -> None:
 def test_read_station_error() -> None:
 
     # unreachable file
-    infile = os.path.join(os.path.dirname(__file__),
-                          "example_data", "DUM00000000.mff")
+    infile = Path(__file__).parent / "example_data" / "DUM00000000.mff"
 
     station = utils.Station("DUM00000000", 39.6500, 46.5330, 1099.0)
 
@@ -193,7 +185,7 @@ def test_read_station_error() -> None:
 
 def test_write_psv(tmp_path) -> None:
     separator   = "|"
-    outfile = os.path.join(tmp_path, "dummy_file.psv")
+    outfile = tmp_path / "dummy_file.psv"
 
     data = {"ID" : ["dummy", "dummy"],
             "Latitude" : [40.39, 40.39],
@@ -203,7 +195,7 @@ def test_write_psv(tmp_path) -> None:
 
     io_utils.write_psv(outfile, df, separator)
 
-    with open(os.path.join(tmp_path, "dummy_file.psv"), "r") as infile:
+    with open(tmp_path / "dummy_file.psv", "r") as infile:
         written_frame = infile.readlines()
 
     assert written_frame[0] == "|".join([key for key, _ in data.items()]) + "\n"
@@ -249,7 +241,7 @@ def test_write_with_psv(setup_mock: Mock,
                         tmp_path) -> None:
 
     setup_mock.OUT_FORMAT = "psv"
-    outfile = os.path.join(tmp_path, "dummy_file.psv")
+    outfile = tmp_path / "dummy_file.psv"
 
     data = {"ID" : ["dummy", "dummy"],
             "Latitude" : [40.39, 40.39],
@@ -259,7 +251,7 @@ def test_write_with_psv(setup_mock: Mock,
 
     io_utils.write(outfile, df)
 
-    with open(os.path.join(tmp_path, "dummy_file.psv"), "r") as infile:
+    with open(tmp_path / "dummy_file.psv", "r") as infile:
         written_frame = infile.readlines()
 
     assert written_frame[0] == "|".join([key for key, _ in data.items()]) + "\n"
@@ -272,7 +264,7 @@ def test_write_formatters_with_psv(setup_mock: Mock,
                                    tmp_path) -> None:
 
     setup_mock.OUT_FORMAT = "psv"
-    outfile = os.path.join(tmp_path, "dummy_file.psv")
+    outfile = tmp_path / "dummy_file.psv"
 
     data = {"ID" : ["dummy", "dummy"],
             "Latitude" : [40.39, 40.39],
@@ -282,7 +274,7 @@ def test_write_formatters_with_psv(setup_mock: Mock,
 
     io_utils.write(outfile, df, formatters={"Latitude" : "{:7.4f}", "Longitude" : "{:7.4f}"})
 
-    with open(os.path.join(tmp_path, "dummy_file.psv"), "r") as infile:
+    with open(tmp_path / "dummy_file.psv", "r") as infile:
         written_frame = infile.readlines()
 
     # in this case hard code the string to match
@@ -294,7 +286,7 @@ def test_write_formatters_with_psv(setup_mock: Mock,
 def test_flag_write(setup_mock: Mock,
                     tmp_path) -> None:
 
-    outfilename = os.path.join(tmp_path, "DMY01234567.flg")
+    outfilename = tmp_path / "DMY01234567.flg"
     setup_mock.obs_var_list = ["temperature"]
 
     data = {"temperature" : [1, 2, 3, 4, 5],
@@ -303,12 +295,11 @@ def test_flag_write(setup_mock: Mock,
 
     io_utils.flag_write(outfilename, df)
 
-    with open(os.path.join(tmp_path, "DMY01234567.flg"), "r") as infile:
+    with open(tmp_path / "DMY01234567.flg", "r") as infile:
         written_message = infile.readlines()
 
-    with open(os.path.join(os.path.dirname(__file__),
-                           "example_data",
-                           "Example_flag_file.flg"), "r") as infile:
+    with open(Path(__file__).parent / "example_data" /
+              "Example_flag_file.flg", "r") as infile:
         expected_message = infile.readlines()
 
     np.testing.assert_array_equal(written_message, expected_message)
@@ -324,7 +315,7 @@ def test_write_error(setup_mock: Mock,
 
     io_utils.write_error(station, "test message", stage="int")
 
-    with open(os.path.join(tmp_path, "DMY01234567_int.err"), "r") as infile:
+    with open(tmp_path / "DMY01234567_int.err", "r") as infile:
         written_message = infile.readlines()
 
     assert written_message[-1] == "test message\n"
@@ -338,12 +329,12 @@ def test_write_error_append(setup_mock: Mock,
     setup_mock.SUBDAILY_ERROR_DIR = tmp_path
 
     # create the file and check append step worked
-    with open(os.path.join(tmp_path, "DMY01234567.err"), "w") as outfile:
+    with open(tmp_path / "DMY01234567.err", "w") as outfile:
         outfile.write("Existing error message\n")
 
     io_utils.write_error(station, "test message")
 
-    with open(os.path.join(tmp_path, "DMY01234567.err"), "r") as infile:
+    with open(tmp_path / "DMY01234567.err", "r") as infile:
         written_message = infile.readlines()
 
     assert written_message[0] == "Existing error message\n"
