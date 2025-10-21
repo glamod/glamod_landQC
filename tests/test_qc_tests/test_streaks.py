@@ -9,6 +9,7 @@ import pytest
 from unittest.mock import patch, Mock
 
 import streaks
+import utils
 import qc_utils
 
 import common
@@ -37,15 +38,15 @@ EXCESS_STREAK_STARTS_LENGTHS = {100: 15,
 
 
 def _make_station(data: np.ndarray, name: str,
-                  times: np.ndarray | None = None) -> qc_utils.Station:
+                  times: np.ndarray | None = None) -> utils.Station:
     """
-    Create an example station 
+    Create an example station
 
     :param array data: data array (presumed temperatures)
     :param str name: name for variable
 
     :returns: Station
-    
+
     """
     obs_var = common.example_test_variable(name, data)
     station = common.example_test_station(obs_var, times)
@@ -61,7 +62,7 @@ def _make_simple_masked_data(stop: int, step: float) -> np.ma.MaskedArray:
     return data
 
 
-def _make_repeating_value_station(name: str) -> qc_utils.Station:
+def _make_repeating_value_station(name: str) -> utils.Station:
 
     # set up data
     data = _make_simple_masked_data(200, 0.1)
@@ -75,7 +76,7 @@ def _make_repeating_value_station(name: str) -> qc_utils.Station:
 
 
 @pytest.fixture()
-def station_for_rsc_logic() -> qc_utils.Station:
+def station_for_rsc_logic() -> utils.Station:
     return _make_station(_make_simple_masked_data(100, 1), "temperature")
 
 # not testing plotting
@@ -129,7 +130,7 @@ def test_get_repeating_streak_threshold_no_data() -> None:
     streaks.get_repeating_streak_threshold(this_var, config_dict)
 
     # assert that an entry created, but no value set
-    assert config_dict["STREAK-temperature"]["Straight"] == qc_utils.MDI
+    assert config_dict["STREAK-temperature"]["Straight"] == utils.MDI
 
 
 @patch("streaks.utils.get_critical_values")
@@ -138,7 +139,7 @@ def test_get_excess_streak_threshold(critical_values_mock: Mock) -> None:
     Testing that values passed to get_critical_values() are as expected.
 
     Generating streaky data for some of the years, and calculating the
-    proportion of obs therein without using the itertools.groupby() approach 
+    proportion of obs therein without using the itertools.groupby() approach
     in qc_utils.prepare_data_repeating_streak.
     """
     # definitions
@@ -215,7 +216,7 @@ def test_repeating_value_threshold_is_mdi() -> None:
 
     # set up dictionary, with value of MDI for the threshold, so no flags set
     config_dict = {}
-    CD_straight = {"Straight" : qc_utils.MDI}
+    CD_straight = {"Straight" : utils.MDI}
     config_dict["STREAK-temperature"] = CD_straight
 
     streaks.repeating_value(this_var, station.times, config_dict)
@@ -278,7 +279,7 @@ def test_excess_repeating_value():
     years = np.append(years, 2000*np.ones(data.shape[0]))
 
     # will only find streaks over a particular length
-    #  i.e. not long enough to be flagged themselves, but too many if all together 
+    #  i.e. not long enough to be flagged themselves, but too many if all together
     #       in a single year
     data = common.generate_streaky_data(data, EXCESS_STREAK_STARTS_LENGTHS)
     for start, length in EXCESS_STREAK_STARTS_LENGTHS.items():
@@ -300,7 +301,7 @@ def test_excess_repeating_value():
 
     # set up dictionary, with a threshold to trigger the test
     config_dict = {}
-    CD_excess = {"Excess" : 0.02}  
+    CD_excess = {"Excess" : 0.02}
     config_dict["STREAK-temperature"] = CD_excess
 
     streaks.excess_repeating_value(this_var, station.times, config_dict)
@@ -329,8 +330,8 @@ def test_repeating_day() -> None:
     # set up config_dict
     config_dict = {}
     CD_dayrepeat = {"DayRepeat" : 2}
-    config_dict[f"STREAK-{obs_var.name}"] = CD_dayrepeat    
-    
+    config_dict[f"STREAK-{obs_var.name}"] = CD_dayrepeat
+
     # make the call
     streaks.repeating_day(obs_var, station, config_dict, determine_threshold=False)
 
@@ -365,8 +366,8 @@ def test_repeating_day_multiple() -> None:
     # set up config_dict
     config_dict = {}
     CD_dayrepeat = {"DayRepeat" : 2}
-    config_dict[f"STREAK-{obs_var.name}"] = CD_dayrepeat    
-    
+    config_dict[f"STREAK-{obs_var.name}"] = CD_dayrepeat
+
     # make the call
     streaks.repeating_day(obs_var, station, config_dict, determine_threshold=False)
 
@@ -382,7 +383,7 @@ def test_repeating_day_multiple() -> None:
 def test_rsc_repeating(repeating_value_mock: Mock,
                        get_threshold_mock: Mock,
                        full: bool,
-                       station_for_rsc_logic: qc_utils.Station) -> None:
+                       station_for_rsc_logic: utils.Station) -> None:
 
     # checking logic of calling in rsc()
     streaks.rsc(station_for_rsc_logic, ["temperature"], {}, full=full)
@@ -401,7 +402,7 @@ def test_rsc_repeating(repeating_value_mock: Mock,
 def test_rsc_excess(excess_repeating_value_mock: Mock,
                     get_threshold_mock: Mock,
                     full: bool,
-                    station_for_rsc_logic: qc_utils.Station) -> None:
+                    station_for_rsc_logic: utils.Station) -> None:
 
     # checking logic of calling in rsc()
     streaks.rsc(station_for_rsc_logic, ["temperature"], {}, full=full)
@@ -412,13 +413,13 @@ def test_rsc_excess(excess_repeating_value_mock: Mock,
         get_threshold_mock.assert_called_once()
     else:
         get_threshold_mock.assert_not_called()
-    
+
 
 @pytest.mark.parametrize("full", [True, False])
 @patch("streaks.repeating_day")
 def test_rsc_day(repeating_day: Mock,
                  full: bool,
-                 station_for_rsc_logic: qc_utils.Station) -> None:
+                 station_for_rsc_logic: utils.Station) -> None:
 
     # checking logic of calling in rsc()
     streaks.rsc(station_for_rsc_logic, ["temperature"], {}, full=full)
@@ -429,4 +430,4 @@ def test_rsc_day(repeating_day: Mock,
         assert repeating_day.call_count == 3
     else:
         # 1 - on try/except for config_dict, 2 - on flagging
-        assert repeating_day.call_count == 2    
+        assert repeating_day.call_count == 2

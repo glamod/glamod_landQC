@@ -8,7 +8,7 @@ import pytest
 from unittest.mock import patch, Mock
 
 import precision
-import qc_utils
+import utils
 
 import common
 
@@ -16,7 +16,7 @@ import common
 all_flagged = np.array(["n" for _ in range(120)])
 none_flagged = np.array(["" for _ in range(120)])
 
-def _make_station(temps: np.ndarray, dewps: np.ndarray) -> qc_utils.Station:
+def _make_station(temps: np.ndarray, dewps: np.ndarray) -> utils.Station:
     """
     Create a station with two paired variables
 
@@ -24,7 +24,7 @@ def _make_station(temps: np.ndarray, dewps: np.ndarray) -> qc_utils.Station:
     :param array dewps: data array (presumed dewpoints)
 
     :returns: Station
-    
+
     """
     primary = common.example_test_variable("temperature", temps)
     secondary = common.example_test_variable("dew_point_temperature", dewps)
@@ -48,7 +48,7 @@ def test_precision_cross_check(t_divisor: int, d_divisor: int, expected: np.ndar
     temps.mask = np.zeros(temps.shape[0])
     dewps = np.ma.arange(0, length/d_divisor, 1/d_divisor)
     dewps.mask = np.zeros(dewps.shape[0])
- 
+
     station = _make_station(temps, dewps)
 
     precision.precision_cross_check(station,
@@ -62,12 +62,12 @@ def test_precision_cross_check_short_record():
 
     length = 100
     expected = np.array(["" for _ in range(length)])
- 
+
     temps = np.ma.arange(0, length/10, 1/10)
     temps.mask = np.zeros(temps.shape[0])
     dewps = np.ma.arange(0, length, 1)
     dewps.mask = np.zeros(dewps.shape[0])
-    
+
     station = _make_station(temps, dewps)
 
     precision.precision_cross_check(station,

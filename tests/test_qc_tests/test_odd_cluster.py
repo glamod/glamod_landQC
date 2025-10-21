@@ -9,7 +9,7 @@ from unittest.mock import patch, Mock
 import odd_cluster
 
 import common
-import qc_utils as utils
+import utils
 
 # not testing plotting
 

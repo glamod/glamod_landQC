@@ -82,7 +82,7 @@ def test_calculate_critical_values() -> None:
     config_dict = {}
     spike.calculate_critical_values(temperature, times, config_dict)
 
-    # qc_utils routine to be tested elsewhere
+    # utils routine to be tested elsewhere
     assert config_dict["SPIKE-temperature"] == {"46-75" : 8.0}
 
 

@@ -10,7 +10,7 @@ from unittest.mock import patch, Mock
 import diurnal
 
 import common
-import qc_utils as utils
+import utils
 
 
 def _setup_station(indata: np.ma.array,
