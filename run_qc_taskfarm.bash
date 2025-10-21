@@ -240,9 +240,13 @@ batch=1
 taskfarm_script="$(prepare_taskfarm_script "${batch}")"
 
 #**************************************
-# spin through each in turn, creating a job
+# Spin through each in turn, creating a job
+# Mix up the stations, so that not all the big/long ones (USA etc)
+#   Are in the same jobs
+shuffled_stns=$(echo "${stn_ids}" | xargs shuf -e)
+
 scnt=1
-for stn in ${stn_ids}
+for stn in ${shuffled_stns}
 do
     echo "${stn}"
 
