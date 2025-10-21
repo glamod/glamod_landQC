@@ -5,10 +5,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-from unittest.mock import patch, Mock
+from unittest.mock import patch
 
 import utils
-import common
 
 example_stn_list = Path(__file__).parent / "example_data/station_list_fwf.txt"
 @patch("utils.setup.STATION_LIST", example_stn_list)

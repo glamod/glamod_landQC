@@ -2,18 +2,13 @@
 '''
 qc_utils.py contains utility scripts to help with quality control tests
 '''
-import sys
 import os
 import configparser
 import json
 import pandas as pd
 import numpy as np
-import scipy.special
 import pathlib
-import itertools
 import logging
-
-from scipy.optimize import least_squares
 
 import setup
 
@@ -73,7 +68,7 @@ CONFIG_FILE = "./configuration.txt"
 
 if not os.path.exists(os.path.join(os.path.dirname(__file__), CONFIG_FILE)):
     print(f"Configuration file missing - {os.path.join(os.path.dirname(__file__), CONFIG_FILE)}")
-    sys.exit()
+    quit()
 else:
     CONFIG_FILE = os.path.join(os.path.dirname(__file__), CONFIG_FILE)
 
@@ -87,7 +82,7 @@ MEAN = config.getboolean("STATISTICS", "mean")
 MEDIAN = config.getboolean("STATISTICS", "median")
 if MEAN == MEDIAN:
     print("Configuration file STATISTICS entry malformed. One of mean or median only")
-    sys.exit
+    quit()
 
 
 # MAD = 0.8 SD
@@ -97,7 +92,7 @@ IQR = config.getboolean("STATISTICS", "iqr")
 MAD = config.getboolean("STATISTICS", "mad")
 if sum([STDEV, MAD, IQR]) >= 2:
     print("Configuration file STATISTICS entry malformed. One of stdev, iqr, median only")
-    sys.exit
+    quit()
 
 #*********************************************
 # Thresholds

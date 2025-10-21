@@ -40,7 +40,6 @@ import logging
 
 # internal utils
 import utils
-import qc_utils
 import io_utils as io
 import qc_tests
 import setup

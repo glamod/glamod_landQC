@@ -1,9 +1,7 @@
 """
 Contains tests for qc_utils.py
 """
-from pathlib import Path
 import numpy as np
-import pandas as pd
 import pytest
 from unittest.mock import patch, Mock
 

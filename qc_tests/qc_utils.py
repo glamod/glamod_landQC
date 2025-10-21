@@ -2,14 +2,9 @@
 '''
 qc_utils.py contains utility scripts to help with quality control tests
 '''
-import sys
-import os
-import configparser
-import json
 import pandas as pd
 import numpy as np
 import scipy.special
-import pathlib
 import itertools
 import logging
 
