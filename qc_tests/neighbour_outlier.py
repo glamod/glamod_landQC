@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 # internal utils
 import utils
-import qc_utils
+import qc_tests.qc_utils as qc_utils
 import io_utils
 import setup
 #************************************************************************

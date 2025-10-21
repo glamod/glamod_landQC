@@ -12,7 +12,7 @@ from scipy.stats import skew
 import logging
 logger = logging.getLogger(__name__)
 
-import qc_utils
+import qc_tests.qc_utils as qc_utils
 import utils
 #************************************************************************
 

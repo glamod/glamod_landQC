@@ -10,7 +10,7 @@ import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-import qc_utils
+import qc_tests.qc_utils as qc_utils
 import utils
 #************************************************************************
 STORM_THRESHOLD = 4

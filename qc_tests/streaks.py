@@ -23,7 +23,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 import utils
-import qc_utils
+import qc_tests.qc_utils as qc_utils
 
 MIN_STREAK_LENGTH_FOR_EXCESS_FREQUENCY = 10
 

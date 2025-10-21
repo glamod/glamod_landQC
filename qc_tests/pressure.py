@@ -10,7 +10,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 import utils
-import qc_utils
+import qc_tests.qc_utils as qc_utils
 #************************************************************************
 
 THRESHOLD = 4 # min spread of 1hPa, so only outside +/-4hPa flagged.

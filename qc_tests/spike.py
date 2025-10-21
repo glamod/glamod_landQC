@@ -9,7 +9,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 import utils
-import qc_utils
+import qc_tests.qc_utils as qc_utils
 #************************************************************************
 
 MAX_SPIKE_LENGTH = 3

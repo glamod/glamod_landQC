@@ -10,7 +10,6 @@ from unittest.mock import patch, Mock
 
 import streaks
 import utils
-import qc_utils  # used in patch
 
 import common
 
@@ -81,7 +80,7 @@ def station_for_rsc_logic() -> utils.Station:
 
 # not testing plotting
 
-@patch("qc_utils.reporting_accuracy")
+@patch("spike.qc_utils.reporting_accuracy")
 def test_mask_calms(reporting_mock: Mock) -> None:
 
     # 0.1 m/s resolution
