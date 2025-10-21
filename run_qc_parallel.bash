@@ -5,11 +5,12 @@
 #   and submits each as a separate jobs on Bastion
 #
 # CALL
-#    bash run_qc.bash STAGE WAIT CLOBBER
+#    bash run_qc.bash STAGE WAIT CLOBBER [SCREENEXIT]
 #
-#    STAGE = I [internal] or N [neighbour]
-#     WAIT = T [true] or F [false] # wait for upstream files to be ready
-#  CLOBBER = C [clobber] or S [skip] # overwrite or skip existing files
+#        STAGE = I [internal] or N [neighbour]
+#         WAIT = T [true] or F [false] # wait for upstream files to be ready
+#      CLOBBER = C [clobber] or S [skip] # overwrite or skip existing files
+# [SCREENEXIT] = E [Exit] or blank/anything else to remain attached [Optional]
 #******************************************************************
 
 #**************************************
@@ -29,14 +30,22 @@ if [ "${CLOBBER}" != "C" ] && [ "${CLOBBER}" != "S" ]; then
     echo "Please enter valid clobber option. C (clobber - overwrite existing outputs) or S (skip - keep existing outputs)"
     exit
 fi
-# remove all 3 positional characters
+SCREENEXIT=$4
+if [ "${SCREENEXIT}" == "E" ]; then
+    echo "Screen instances will exit after runs are complete"
+else
+    SCREENEXIT="A"   # set a value to enable later passing into function A-attached
+    echo "Screen instances will remain after runs are complete.  Remember to reattach and close manually"
+fi
+# remove all 4 positional characters
+shift
 shift
 shift
 shift
 
 #**************************************
 # other settings
-STATIONS_PER_BATCH=15000
+STATIONS_PER_BATCH=10000
 N_JOBS=10
 
 SCRIPT_DIR="$(pwd)/parallel_scripts/"
@@ -50,6 +59,7 @@ fi
 function write_and_submit_bastion_script {
     parallel_script=${1}
     batch=${2}
+    s_exit=${3}
 
     # generate a "screen" instance in detached mode
     screen -S "qc_${batch}" -d -m
@@ -58,7 +68,11 @@ function write_and_submit_bastion_script {
     screen -r "qc_${batch}" -X stuff $'conda activate glamod_QC \n'
 
     # run the parallel script in this detached screen
-    screen -r "qc_${batch}" -X stuff $"parallel --jobs ${N_JOBS} < ${parallel_script}"
+    screen -r "qc_${batch}" -X stuff $"parallel --jobs ${N_JOBS} < ${parallel_script} \n"
+
+    if [ "${s_exit}" == "E" ]; then
+        screen -r "qc_${batch}" -X stuff $'exit \n'
+    fi
 
 } # write_and_submit_bastion_script
 
@@ -335,7 +349,7 @@ do
 
     # and write script to run this batch
     if [ ${scnt} -eq ${STATIONS_PER_BATCH} ]; then
-	    write_and_submit_bastion_script "${parallel_script}" "${batch}"
+	    write_and_submit_bastion_script "${parallel_script}" "${batch}" "${SCREENEXIT}"
 
 	    # and reset counters and scripts
 	    (( batch=batch+1 ))
@@ -351,7 +365,6 @@ do
 
 done
 # and submit the final batch of stations.
-write_and_submit_bastion_script "${parallel_script}" "${batch}"
 
 
 echo "Once jobs are complete run:"
