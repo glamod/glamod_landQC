@@ -29,7 +29,15 @@ if [ "${CLOBBER}" != "C" ] && [ "${CLOBBER}" != "S" ]; then
     echo "Please enter valid clobber option. C (clobber - overwrite existing outputs) or S (skip - keep existing outputs)"
     exit
 fi
-# remove all 3 positional characters
+SCREENEXIT=$4
+if [ "${SCREENEXIT}" == "E" ]; then
+    echo "Screen instances will exit after runs are complete"
+else
+    SCREENEXIT="A"   # set a value to enable later passing into function A-attached
+    echo "Screen instances will remain after runs are complete.  Remember to reattach and close manually"
+fi
+# remove all 4 positional characters
+shift
 shift
 shift
 shift
@@ -50,6 +58,7 @@ fi
 function write_and_submit_bastion_script {
     parallel_script=${1}
     batch=${2}
+    s_exit=${3}
 
     # generate a "screen" instance in detached mode
     screen -S "qc_${batch}" -d -m
@@ -59,6 +68,10 @@ function write_and_submit_bastion_script {
 
     # run the parallel script in this detached screen
     screen -r "qc_${batch}" -X stuff $"parallel --jobs ${N_JOBS} < ${parallel_script}"
+
+    if [ "${s_exit}" == "E" ]; then
+        screen -r "qc_${batch}" -X stuff $"exit"
+    fi
 
 } # write_and_submit_bastion_script
 
@@ -336,7 +349,7 @@ do
 
     # and write script to run this batch
     if [ ${scnt} -eq ${STATIONS_PER_BATCH} ]; then
-	    write_and_submit_bastion_script "${parallel_script}" "${batch}"
+	    write_and_submit_bastion_script "${parallel_script}" "${batch}" "${SCREENEXIT}"
 
 	    # and reset counters and scripts
 	    (( batch=batch+1 ))
@@ -352,7 +365,6 @@ do
 
 done
 # and submit the final batch of stations.
-write_and_submit_bastion_script "${parallel_script}" "${batch}"
 
 
 echo "Once jobs are complete run:"
