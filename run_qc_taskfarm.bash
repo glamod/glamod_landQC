@@ -196,7 +196,7 @@ do
         elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
             # if station not processed/withheld, then has been processed, and won't appear
             processed=true
-        elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}.err" ]; then
+        elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}_int.err" ]; then
             # if station has had an error, then has been processed, and won't appear
             processed=true
         fi
@@ -214,7 +214,7 @@ if [ "${STAGE}" == "N" ]; then
     echo "Internal checks successful on ${n_processed_successfully} stations"
     n_processed_bad=$(eval ls "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/*.qff${QFF_ZIP}" | wc -l)
     echo "Internal checks withheld ${n_processed_bad} stations"
-    n_processed_err=$(eval ls "${ROOTDIR}${ERR_DIR}${VERSION}*err" | wc -l)
+    n_processed_err=$(eval ls "${ROOTDIR}${ERR_DIR}${VERSION}*int.err" | wc -l)
     echo "Internal checks had errors on ${n_processed_err} stations"
 fi
 
@@ -265,7 +265,7 @@ do
         elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}.qff${QFF_ZIP}" ]; then
 		    # if station not processed, then no point submitting
 		    submit=false
-        elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}.err" ]; then
+        elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}_int.err" ]; then
 		    # if station has had an error, then no point in submitting
 		    submit=false
 #            else
@@ -328,7 +328,7 @@ do
                     # output exists
                     echo "${stn} already processed - bad station"
 
-                elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}.err" ]; then
+                elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}_int.err" ]; then
                     # output exists
                     echo "${stn} already processed - managed error"
 
@@ -349,7 +349,7 @@ do
                     # output exists
                     echo "${stn} already processed - bad station"
 
-                elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}.err" ]; then
+                elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}_ext.err" ]; then
                     # output exists
                     echo "${stn} already processed - managed error"
 

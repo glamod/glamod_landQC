@@ -204,7 +204,7 @@ def find_fit_and_uncertainty(this_day: np.ndarray,
 
 #************************************************************************
 def get_daily_offset(station: utils.Station, locs: np.ndarray,
-                     obs_var: utils.Meteorological_Variable) -> tuple[int, int]:
+                     obs_var: utils.MeteorologicalVariable) -> tuple[int, int]:
     """
     Extract data for a single 24h period, and pass to offset finder
 
@@ -259,7 +259,7 @@ def get_start_end_ndays(station: utils.Station) -> tuple[dt.date, dt.date, int]:
 
 #************************************************************************
 def get_all_daily_offsets(station: utils.Station,
-                          obs_var: utils.Meteorological_Variable) -> tuple[np.ndarray, np.ndarray]:
+                          obs_var: utils.MeteorologicalVariable) -> tuple[np.ndarray, np.ndarray]:
     """
     For each 24h period, find diurnal cycle offset and uncertainty
     (uses all possible days between start and end, not just those with data)
@@ -353,7 +353,7 @@ def find_best_fit(best_fit_diurnal: np.ndarray,
 
 
 #************************************************************************
-def find_offset(obs_var: utils.Meteorological_Variable,
+def find_offset(obs_var: utils.MeteorologicalVariable,
                 station: utils.Station, config_dict: dict,
                 plots: bool = False, diagnostics: bool = False) -> tuple[np.ndarray, np.ndarray]:
     """
@@ -553,7 +553,7 @@ def check_spurious(potentially_spurious: np.ndarray) -> np.ndarray:
 
 
 #************************************************************************
-def diurnal_cycle_check(obs_var: utils.Meteorological_Variable, station: utils.Station,
+def diurnal_cycle_check(obs_var: utils.MeteorologicalVariable, station: utils.Station,
                         config_dict: dict,
                         plots: bool = False, diagnostics: bool = False) -> None:
     """

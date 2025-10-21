@@ -56,7 +56,7 @@ def read_psv(infile: str, separator: str) -> pd.DataFrame:
     warnings.filterwarnings("error", category=pd.errors.DtypeWarning)
     try:
         df = pd.read_csv(infile, sep=separator, compression="infer",
-                         dtype=setup.DTYPE_DICT, na_values="Null", quoting=3, index_col=False)
+                         dtype=setup.DTYPE_DICT, na_values=("Null", " "), quoting=3, index_col=False)
     except FileNotFoundError as e:
         logger.warning(f"psv file not found: {str(e)}")
         print(str(e))
@@ -68,10 +68,9 @@ def read_psv(infile: str, separator: str) -> pd.DataFrame:
 
         # Find location of the extra header line
         skip_rows = count_skip_rows(infile)
-
         # Now re-read the file
         df = pd.read_csv(infile, sep=separator, compression="infer",
-                         dtype=setup.DTYPE_DICT, na_values="Null", quoting=3,
+                         dtype=setup.DTYPE_DICT, na_values=("Null", " "), quoting=3,
                          index_col=False, skiprows=skip_rows)
 
     except pd.errors.ParserError as e:
@@ -197,13 +196,26 @@ def calculate_datetimes(station_df: pd.DataFrame) -> pd.Series:
 
 
 #************************************************************************
-def convert_wind_flags(station_df: pd.DataFrame) -> None:
+def convert_wind_flags(station_df: pd.DataFrame,
+                       variable_name: str = "wind_direction") -> None:
+    """Converts any missing data entries to NaNs
 
-    # explicitly remove any missing data indicators - wind direction only
-    for wind_flag in ["C-Calm", "V-Variable"]:
-        combined_mask = (station_df["wind_direction_Measurement_Code"] == wind_flag) &\
-                        (station_df["wind_direction"] == 999)
-        station_df.loc[combined_mask, "wind_direction"] = np.nan
+    Parameters
+    ----------
+    station_df : pd.DataFrame
+        Dataframe for whole station, changed in situ
+    variable_name : str, optional
+        Variable name to process, by default "wind_direction"
+    """
+    # allow for easy expansion to others in the future
+    missing_data_indicators = [999]
+
+    # explicitly remove any missing data indicators - so far wind direction only
+    for flag in setup.WIND_MEASUREMENT_CODES[variable_name]["corrected"]:
+        for mdi in missing_data_indicators:
+            combined_mask = (station_df[f"{variable_name}_Measurement_Code"] == flag) &\
+                            (station_df[variable_name] == mdi)
+            station_df.loc[combined_mask, variable_name] = np.nan
 
 
 #************************************************************************
@@ -384,16 +396,19 @@ def flag_write(outfilename: str, df: pd.DataFrame, diagnostics: bool = False) ->
     return # flag_write
 
 #************************************************************************
-def write_error(station: Station, message: str, error: str = "", diagnostics:bool = False) -> None:
+def write_error(station: Station, message: str,
+                stage: str="int", error: str="", diagnostics:bool = False) -> None:
     """
     Write out quick failure message for station
 
     :param Station station: met. station
     :param str message: message to store
+    :param str stage: whether from intra [int] or inter [ext] station checks, or "bud" for
+                      buddy file missing
     :param str error: error output from stacktrace
     :param bool diagnostics: turn on diagnostic output
     """
-    outfilename = os.path.join(setup.SUBDAILY_ERROR_DIR, f"{station.id:11s}.err")
+    outfilename = os.path.join(setup.SUBDAILY_ERROR_DIR, f"{station.id:11s}_{stage}.err")
 
     # in case this file already exists, then append
     if os.path.exists(outfilename):

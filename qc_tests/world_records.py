@@ -48,7 +48,7 @@ mins = {"temperature" : T_N, "dew_point_temperature" : D_N, "wind_speed" : W_N, 
 
 
 #************************************************************************
-def record_check(obs_var: utils.Meteorological_Variable, continent: str,
+def record_check(obs_var: utils.MeteorologicalVariable, continent: str,
                  plots: bool = False, diagnostics: bool = False) -> np.ndarray:
     """
     Check for exceedences of world record values
@@ -60,7 +60,7 @@ def record_check(obs_var: utils.Meteorological_Variable, continent: str,
 
     :returns: np.array of flags
     """
-    assert isinstance(obs_var, utils.Meteorological_Variable)
+    assert isinstance(obs_var, utils.MeteorologicalVariable)
     assert isinstance(continent, str)
 
     flags = np.array(["" for i in range(obs_var.data.shape[0])])

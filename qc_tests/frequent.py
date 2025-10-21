@@ -17,7 +17,7 @@ BIN_WIDTH = 1.0
 RATIO = 0.5
 
 #************************************************************************
-def identify_values(obs_var: utils.Meteorological_Variable, station: utils.Station, config_dict: dict,
+def identify_values(obs_var: utils.MeteorologicalVariable, station: utils.Station, config_dict: dict,
                     plots: bool = False, diagnostics: bool = False) -> None:
     """
     Use distribution to identify frequent values.  Then also store in config file.
@@ -100,7 +100,7 @@ def identify_values(obs_var: utils.Meteorological_Variable, station: utils.Stati
 
 
 #************************************************************************
-def frequent_values(obs_var: utils.Meteorological_Variable, station: utils.Station,
+def frequent_values(obs_var: utils.MeteorologicalVariable, station: utils.Station,
                     config_dict: dict, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Use config file to read frequent values.  Check each month to see if appear.

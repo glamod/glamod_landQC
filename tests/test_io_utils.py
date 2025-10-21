@@ -33,10 +33,16 @@ def test_read_psv_mff() -> None:
                           "example_data", "AAI0000TNCA.mff")
     separator = "|"
 
+    # example file includes some Nulls and spaces in the data columns
+
     df = io_utils.read_psv(infile, separator)
 
     assert len(df.columns) == 329
     assert df.shape[0] == 3107 # checked manually, and rows ignore header lines
+
+    # and check the Null and space are being handled correctly
+    assert pd.isna(df["temperature"].iloc[0])
+    assert pd.isna(df["temperature"].iloc[1])
 
 
 def test_read_psv_qff() -> None:
@@ -316,9 +322,9 @@ def test_write_error(setup_mock: Mock,
     setup_mock.DATESTAMP = "DUMMYDATE"
     setup_mock.SUBDAILY_ERROR_DIR = tmp_path
 
-    io_utils.write_error(station, "test message")
+    io_utils.write_error(station, "test message", stage="int")
 
-    with open(os.path.join(tmp_path, "DMY01234567.err"), "r") as infile:
+    with open(os.path.join(tmp_path, "DMY01234567_int.err"), "r") as infile:
         written_message = infile.readlines()
 
     assert written_message[-1] == "test message\n"

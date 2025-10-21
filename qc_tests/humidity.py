@@ -17,8 +17,8 @@ TOLERANCE = 1.e-10
 
 
 #************************************************************************
-def get_repeating_dpd_threshold(temperatures: utils.Meteorological_Variable,
-                                dewpoints: utils.Meteorological_Variable,
+def get_repeating_dpd_threshold(temperatures: utils.MeteorologicalVariable,
+                                dewpoints: utils.MeteorologicalVariable,
                                 config_dict: dict,
                                 plots: bool = False,
                                 diagnostics: bool = False) -> None:
@@ -69,8 +69,8 @@ def get_repeating_dpd_threshold(temperatures: utils.Meteorological_Variable,
     return # repeating_dpd_threshold
 
 #*********************************************
-def plot_humidities(T: utils.Meteorological_Variable,
-                    D: utils.Meteorological_Variable,
+def plot_humidities(T: utils.MeteorologicalVariable,
+                    D: utils.MeteorologicalVariable,
                     times: np.ndarray,
                     bad: int) -> None:
     '''
@@ -104,8 +104,8 @@ def plot_humidities(T: utils.Meteorological_Variable,
 
 #*********************************************
 def plot_humidity_streak(times: np.ndarray,
-                         T: utils.Meteorological_Variable,
-                         D: utils.Meteorological_Variable,
+                         T: utils.MeteorologicalVariable,
+                         D: utils.MeteorologicalVariable,
                          streak_start: int, streak_end: int) -> None:
     '''
     Plot each streak against surrounding data
@@ -141,8 +141,8 @@ def plot_humidity_streak(times: np.ndarray,
 
 #************************************************************************
 def super_saturation_check(station: utils.Station,
-                           temperatures: utils.Meteorological_Variable,
-                           dewpoints: utils.Meteorological_Variable,
+                           temperatures: utils.MeteorologicalVariable,
+                           dewpoints: utils.MeteorologicalVariable,
                            plots: bool = False, diagnostics: bool = False) -> None:
     """
     Flag locations where dewpoint is greater than air temperature
@@ -186,8 +186,8 @@ def super_saturation_check(station: utils.Station,
 
 #************************************************************************
 def dew_point_depression_streak(times: np.ndarray,
-                                temperatures: utils.Meteorological_Variable,
-                                dewpoints: utils.Meteorological_Variable,
+                                temperatures: utils.MeteorologicalVariable,
+                                dewpoints: utils.MeteorologicalVariable,
                                 config_dict: dict,
                                 plots: bool = False,
                                 diagnostics: bool = False) -> None:

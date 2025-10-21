@@ -35,7 +35,7 @@ TIME_DIFF_RANGES = np.array([[1, 15],  # 15
 
 
 #*********************************************
-def plot_spike(times: np.ndarray, obs_var: utils.Meteorological_Variable,
+def plot_spike(times: np.ndarray, obs_var: utils.MeteorologicalVariable,
                spike_start: int, spike_length: int) -> None:
     '''
     Plot each spike against surrounding data
@@ -74,7 +74,7 @@ def plot_spike(times: np.ndarray, obs_var: utils.Meteorological_Variable,
     return # plot_spike
 
 #************************************************************************
-def calculate_critical_values(obs_var: utils.Meteorological_Variable, times: np.ndarray,
+def calculate_critical_values(obs_var: utils.MeteorologicalVariable, times: np.ndarray,
                               config_dict: dict, plots: bool=False, diagnostics: bool=False) -> None:
     """
     Use distribution to determine critical values.  Then also store in config dictionary.
@@ -324,7 +324,7 @@ def generate_differences(times: np.ndarray,
 
 
 #************************************************************************
-def identify_spikes(obs_var: utils.Meteorological_Variable, times: np.ndarray, config_dict: dict,
+def identify_spikes(obs_var: utils.MeteorologicalVariable, times: np.ndarray, config_dict: dict,
                     plots: bool = False, diagnostics: bool = False) -> None:
     """
     Use config_dict to read in critical values, and then assess to find spikes
@@ -405,7 +405,7 @@ def identify_spikes(obs_var: utils.Meteorological_Variable, times: np.ndarray, c
 
 
 #************************************************************************
-def sc(station: utils.Meteorological_Variable, var_list: list, config_dict: dict,
+def sc(station: utils.MeteorologicalVariable, var_list: list, config_dict: dict,
        full: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Run through the variables and pass to the Spike Check

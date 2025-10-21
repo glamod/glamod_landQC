@@ -62,7 +62,7 @@ def plot_streak(times: np.ndarray, data: np.ndarray, units: str,
     # plot_streak
 
 
-def mask_calms(this_var: utils.Meteorological_Variable) -> None:
+def mask_calms(this_var: utils.MeteorologicalVariable) -> None:
     """
     Mask calm periods (wind speed == 0) as these can be a legitimate streak
     of repeating values.
@@ -85,9 +85,9 @@ def mask_calms(this_var: utils.Meteorological_Variable) -> None:
     # mask_calms
 
 
-def prepare_obs_var(obs_var: utils.Meteorological_Variable,
-                    wind_speed: utils.Meteorological_Variable | None = None)\
-                    -> utils.Meteorological_Variable:
+def prepare_obs_var(obs_var: utils.MeteorologicalVariable,
+                    wind_speed: utils.MeteorologicalVariable | None = None)\
+                    -> utils.MeteorologicalVariable:
     """
     For all these checks make a copy of the observational variable so
     masks can be applied without impacting other tests
@@ -114,9 +114,9 @@ def prepare_obs_var(obs_var: utils.Meteorological_Variable,
 
 
 #************************************************************************
-def get_repeating_streak_threshold(obs_var: utils.Meteorological_Variable,
+def get_repeating_streak_threshold(obs_var: utils.MeteorologicalVariable,
                                    config_dict: dict,
-                                   wind_speed: utils.Meteorological_Variable | None = None,
+                                   wind_speed: utils.MeteorologicalVariable | None = None,
                                    plots: bool = False,
                                    diagnostics: bool = False) -> None:
     """
@@ -178,9 +178,9 @@ def get_repeating_streak_threshold(obs_var: utils.Meteorological_Variable,
 
 
 #************************************************************************
-def get_excess_streak_threshold(obs_var: utils.Meteorological_Variable,
+def get_excess_streak_threshold(obs_var: utils.MeteorologicalVariable,
                                 years: np.ndarray, config_dict: dict,
-                                wind_speed: utils.Meteorological_Variable | None = None,
+                                wind_speed: utils.MeteorologicalVariable | None = None,
                                 plots: bool = False,
                                 diagnostics: bool = False) -> None:
     """
@@ -252,9 +252,9 @@ def get_excess_streak_threshold(obs_var: utils.Meteorological_Variable,
 
 
 #************************************************************************
-def repeating_value(obs_var: utils.Meteorological_Variable, times: np.ndarray,
+def repeating_value(obs_var: utils.MeteorologicalVariable, times: np.ndarray,
                     config_dict: dict,
-                    wind_speed: utils.Meteorological_Variable | None = None,
+                    wind_speed: utils.MeteorologicalVariable | None = None,
                     plots: bool = False, diagnostics: bool = False) -> None:
     """
     AKA straight streak
@@ -320,9 +320,9 @@ def repeating_value(obs_var: utils.Meteorological_Variable, times: np.ndarray,
 
 
 #************************************************************************
-def excess_repeating_value(obs_var: utils.Meteorological_Variable, times: np.ndarray,
+def excess_repeating_value(obs_var: utils.MeteorologicalVariable, times: np.ndarray,
                     config_dict: dict,
-                    wind_speed: utils.Meteorological_Variable | None = None,
+                    wind_speed: utils.MeteorologicalVariable | None = None,
                     plots: bool = False, diagnostics: bool = False) -> None:
     """
     Flag years where more than expected fraction of data occurs in streaks,
@@ -413,7 +413,7 @@ def excess_repeating_value(obs_var: utils.Meteorological_Variable, times: np.nda
 
 
 #************************************************************************
-def repeating_day(obs_var: utils.Meteorological_Variable, station: utils.Station,
+def repeating_day(obs_var: utils.MeteorologicalVariable, station: utils.Station,
                   config_dict: dict, determine_threshold: bool = False,
                   plots: bool = False, diagnostics: bool = False) -> None:
     """

@@ -105,7 +105,7 @@ DATA_COUNT_THRESHOLD = config.getint("THRESHOLDS", "min_data_count")
 HIGH_FLAGGING = config.getfloat("THRESHOLDS", "high_flag_proportion")
 
 # read in logic check list
-LOGICFILE = os.path.join(os.path.dirname(__file__), config.get("FILES", "logic"))
+LOGICFILE = os.path.join(os.path.dirname(__file__), "configs", config.get("FILES", "logic"))
 
 #*********************************************
 # Neighbour Checks
@@ -118,7 +118,7 @@ MIN_NEIGHBOURS = config.getint("NEIGHBOURS", "minimum_number")
 #*********************************************
 # Set up the Classes
 #*********************************************
-class Meteorological_Variable(object):
+class MeteorologicalVariable(object):
     '''
     Class for meteorological variable.  Initialised with metadata only
     '''
@@ -168,19 +168,35 @@ def get_station_list(restart_id: str = "", end_id: str = "") -> pd.DataFrame:
 
     :returns: dataframe of station list
     """
+    # Test if station list fixed-width format or comma separated
+    #  [Initially supplied nonFWF format for Release 8 processing]
+    fwf = True
+    with open(setup.STATION_LIST, "r") as infile:
+        lines = infile.readlines()
+        for row in lines:
+            # The non FWF version had double quotes present around the station names
+            #    but was space separated, so can use that to determine if it's FWF or not
+            if row.find('"') != -1:
+                fwf = False
 
     # process the station list
-    # If station-ID has format "ID-START-END" then width is 29
-    station_list = pd.read_fwf(setup.STATION_LIST, widths=(11, 9, 10, 7, 3, 40, 5),
-                               header=None, names=("id", "latitude", "longitude", "elevation", "state",
-                                                   "name", "wmo"))
+    if fwf:
+        # Fixed width format
+        # If station-ID has format "ID-START-END" then width is 29
+        station_list = pd.read_fwf(setup.STATION_LIST, widths=(11, 9, 10, 7, 3, 40, 5),
+                                header=None, names=("id", "latitude", "longitude", "elevation", "state",
+                                                    "name", "wmo"))
+    else:
+        # Comma separated
+        station_list = pd.read_csv(setup.STATION_LIST, delim_whitespace=True,
+                                header=None, names=("id", "latitude", "longitude", "elevation", "name"))
+        # add extra columns (despite being empty) so these are available to later stages
+        #  use insert for "state" so that order of columns is the same
+        station_list.insert(4, "state", ["" for i in range(len(station_list))])
+        station_list["wmo"] = ["" for i in range(len(station_list))]
 
     # fill empty entries (default NaN) with blank strings
     station_list = station_list.fillna("")
-
-    # no longer necessary in November 2019 run, kept just in case
-#    station_list2 = pd.read_fwf(os.path.join(setup.SUBDAILY_ROOT_DIR, "ghcnh-stations-2add.txt"), widths=(11, 9, 10, 7, 35), header=None)
-#    station_list = station_list.append(station_list2, ignore_index=True)
 
     station_IDs = station_list.id
 
@@ -212,6 +228,53 @@ def insert_flags(qc_flags: np.ndarray, flags: np.ndarray) -> np.ndarray:
 
 
 #************************************************************************
+def get_measurement_code_mask(ds: pd.Series,
+                              measurement_codes: list) -> np.ndarray:
+    """
+    Build up a mask of data rows to ignore by using a list of permitted
+    measurement codes
+
+    Parameters
+    ----------
+    ds : pd.Series
+        Measurement Codes field from data frame for variable
+    measurement_codes : list
+        List of accepted codes
+
+    Returns
+    -------
+    np.ndarray
+        Boolean array of mask
+    """
+    assert isinstance(ds, pd.Series)
+    assert isinstance(measurement_codes, list)
+
+    # Build up the mask
+    for c, code in enumerate(measurement_codes):
+
+        if code == "":
+            # Empty flags converted to NaNs on reading
+            if c == 0:
+                mask = (ds.isna())
+            else:
+                mask = (ds.isna()) | mask
+        else:
+            # Doing string comparison, but need to exclude NaNs
+            #   Need to convert to string before assessing (np.nan -> "nan") [using .astype(str)]
+            #   But test for NaNs separately [using .isna()], so that a string starting "nan"
+            #   could be used in the future
+            if c == 0:
+                # Initialise
+                mask = (~ds.isna() & ds.astype(str).str.startswith(code))
+            else:
+                # Combine using Or symbol ("|")
+                #   e.g. if code = "N-Normal" or "C-Calm" or "" set True
+                mask = (~ds.isna() & ds.astype(str).str.startswith(code)) | mask
+
+    return mask
+
+
+#************************************************************************
 def populate_station(station: Station, df: pd.DataFrame, obs_var_list: list, read_flags: bool = False) -> None:
     """
     Convert Data Frame into internal station and obs_variable objects
@@ -225,7 +288,7 @@ def populate_station(station: Station, df: pd.DataFrame, obs_var_list: list, rea
     for variable in obs_var_list:
 
         # make a variable
-        this_var = Meteorological_Variable(variable, MDI, UNIT_DICT[variable], (float))
+        this_var = MeteorologicalVariable(variable, MDI, UNIT_DICT[variable], (float))
 
         # store the data
         indata = df[variable].fillna(MDI).to_numpy()
@@ -236,25 +299,9 @@ def populate_station(station: Station, df: pd.DataFrame, obs_var_list: list, rea
         #  unaffected.
         if variable in ["wind_direction", "wind_speed"]:
             m_code = df[f"{variable}_Measurement_Code"]
+            measurement_codes = setup.WIND_MEASUREMENT_CODES[variable]["retained"]
 
-            # Build up the mask
-            for c, code in enumerate(WIND_MEASUREMENT_CODES):
-                if code == "":
-                    # Empty flags converted to NaNs on reading
-                    code = float("NaN")
-                    if c == 0:
-                        mask = (m_code == code)
-                    else:
-                        mask = (m_code == code) | mask
-                else:
-                    # Doing string comparison
-                    if c == 0:
-                        # Initialise
-                        mask = (m_code.str.startswith(code))
-                    else:
-                        # Combine using or
-                        #   e.g. if code = "N-Normal" or "C-Calm" or "" set True
-                        mask = (m_code.str.startswith(code)) | mask
+            mask = get_measurement_code_mask(m_code, measurement_codes)
 
             # invert mask and set to missing
             indata[~mask] = MDI
@@ -999,7 +1046,7 @@ def find_continent(country_code: str) -> str:
     # as maybe run from another directory, get the right path
     cwd = pathlib.Path(__file__).parent.absolute()
     # prepare look up
-    with open(f'{cwd}/iso_country_codes.json', 'r') as infile:
+    with open(f'{cwd}/configs/iso_country_codes.json', 'r') as infile:
         iso_codes = json.load(infile)
 
     concord = {}

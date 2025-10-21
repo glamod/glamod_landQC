@@ -24,7 +24,7 @@ MIN_SEPARATION = 28*24 # separated by Z days on either side from other data
 
 
 #*********************************************
-def plot_cluster(times: np.ndarray, obs_var: utils.Meteorological_Variable,
+def plot_cluster(times: np.ndarray, obs_var: utils.MeteorologicalVariable,
                  oc_start: int, oc_end: int) -> None:
     '''
     Plot each odd cluster highlighted against surrounding data
@@ -61,7 +61,7 @@ def plot_cluster(times: np.ndarray, obs_var: utils.Meteorological_Variable,
     return # plot_cluster
 
 #************************************************************************
-def flag_clusters(obs_var: utils.Meteorological_Variable, station: utils.Station,
+def flag_clusters(obs_var: utils.MeteorologicalVariable, station: utils.Station,
                   plots: bool = False, diagnostics: bool = False) -> None:
     """
     Go through the clusters of data and flag if meet requirements

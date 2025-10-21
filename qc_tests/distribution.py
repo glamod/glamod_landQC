@@ -24,7 +24,7 @@ LARGE_LIMIT = 5
 GAP_SIZE = 2
 FREQUENCY_THRESHOLD = 0.1
 #************************************************************************
-def prepare_monthly_data(obs_var: utils.Meteorological_Variable, station: utils.Station,
+def prepare_monthly_data(obs_var: utils.MeteorologicalVariable, station: utils.Station,
                          month: int, diagnostics: bool = False) -> None:
     """
     Extract monthly data and make average.
@@ -54,7 +54,7 @@ def prepare_monthly_data(obs_var: utils.Meteorological_Variable, station: utils.
 
 
 #************************************************************************
-def find_monthly_scaling(obs_var: utils.Meteorological_Variable, station: utils.Station,
+def find_monthly_scaling(obs_var: utils.MeteorologicalVariable, station: utils.Station,
                          config_dict: dict, diagnostics: bool = False) -> None:
     """
     Find scaling parameters for monthly values and store in config file
@@ -99,7 +99,7 @@ def find_monthly_scaling(obs_var: utils.Meteorological_Variable, station: utils.
     return # find_monthly_scaling
 
 #************************************************************************
-def monthly_gap(obs_var: utils.Meteorological_Variable, station: utils.Station, config_dict: dict,
+def monthly_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station, config_dict: dict,
                 plots: bool = False, diagnostics: bool = False) -> None:
     """
     Use distribution to identify assymetries.
@@ -207,7 +207,7 @@ def monthly_gap(obs_var: utils.Meteorological_Variable, station: utils.Station, 
     return # monthly_gap
 
 #************************************************************************
-def prepare_all_data(obs_var: utils.Meteorological_Variable, station: utils.Station, month: int,
+def prepare_all_data(obs_var: utils.MeteorologicalVariable, station: utils.Station, month: int,
                      config_dict: dict, full: bool = False, diagnostics: bool = False) -> np.ndarray:
     """
     Extract data for the month, make & store or read average and spread.
@@ -275,7 +275,7 @@ def prepare_all_data(obs_var: utils.Meteorological_Variable, station: utils.Stat
         return (all_month_data - climatology)/spread  # prepare_all_data
 
 #************************************************************************
-def find_thresholds(obs_var: utils.Meteorological_Variable, station: utils.Station,
+def find_thresholds(obs_var: utils.MeteorologicalVariable, station: utils.Station,
                     config_dict: dict, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Extract data for month and find thresholds in distribution and store.
@@ -382,7 +382,7 @@ def expand_around_storms(storms: np.ndarray, maximum: int, pad: int = 6) -> np.n
     return np.unique(storms) # expand_around_storms
 
 #************************************************************************
-def all_obs_gap(obs_var: utils.Meteorological_Variable, station: utils.Station,
+def all_obs_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
                 config_dict: dict, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Extract data for month and find secondary populations in distribution.
