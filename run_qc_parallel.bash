@@ -45,7 +45,7 @@ shift
 
 #**************************************
 # other settings
-STATIONS_PER_BATCH=15000
+STATIONS_PER_BATCH=10000
 N_JOBS=10
 
 SCRIPT_DIR="$(pwd)/parallel_scripts/"
@@ -68,10 +68,10 @@ function write_and_submit_bastion_script {
     screen -r "qc_${batch}" -X stuff $'conda activate glamod_QC \n'
 
     # run the parallel script in this detached screen
-    screen -r "qc_${batch}" -X stuff $"parallel --jobs ${N_JOBS} < ${parallel_script}"
+    screen -r "qc_${batch}" -X stuff $"parallel --jobs ${N_JOBS} < ${parallel_script} \n"
 
     if [ "${s_exit}" == "E" ]; then
-        screen -r "qc_${batch}" -X stuff $"exit"
+        screen -r "qc_${batch}" -X stuff $'exit \n'
     fi
 
 } # write_and_submit_bastion_script
