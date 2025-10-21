@@ -21,9 +21,9 @@ switches for these scripts, and all are called in the same way.
 
         Script Name: ``run_qc_taskfarm.bash``
 
-        * ``I`` / ``N`` to run the Internal or Neighbour checks
-        * ``T`` / ``F`` to wait (True) or not (False) for upstream files to be present
-        * ``C`` / ``S`` to overwrite (Clobber) or keep (Skip) existing output files.
+        * ``I`` / ``N`` to run the **I**nternal or **N**eighbour checks
+        * ``T`` / ``F`` to wait (**T**rue) or not (**F**alse) for upstream files to be present
+        * ``C`` / ``S`` to overwrite (**C**lobber) or keep (**S**kip) existing output files.
 
         So an example run for the internal checks:
 
@@ -31,7 +31,7 @@ switches for these scripts, and all are called in the same way.
 
             bash run_qc_taskfarm.bash I F C
 
-    .. tab-item:: Parallel (AWS)
+    .. tab-item:: Parallel (ICHEC-AWS)
 
         The script runs both stages of the QC process by
         submitting batches of stations through to the CPU cluster
@@ -39,15 +39,16 @@ switches for these scripts, and all are called in the same way.
 
         Script Name: ``run_qc_parallel.bash``
 
-        * ``I`` / ``N`` to run the Internal or Neighbour checks
-        * ``T`` / ``F`` to wait (True) or not (False) for upstream files to be present
-        * ``C`` / ``S`` to overwrite (Clobber) or keep (Skip) existing output files.
+        * ``I`` / ``N`` to run the **I**nternal or **N**eighbour checks
+        * ``T`` / ``F`` to wait (**T**rue) or not (**F**alse) for upstream files to be present
+        * ``C`` / ``S`` to overwrite (**C**lobber) or keep (**S**kip) existing output files.
+        * ``E``  to enable the screen instances to **E**xit.  This will also remove any output printed to screen for diagnostic purposes.
 
         So an example run for the internal checks:
 
         .. code:: console
 
-            bash run_qc_parallel.bash I F C
+            bash run_qc_parallel.bash I F C E
 
 
     .. tab-item:: SLURM (Spice)
@@ -58,9 +59,9 @@ switches for these scripts, and all are called in the same way.
 
         Script Name: ``run_qc_checks.bash``
 
-        * ``I`` / ``N`` to run the Internal or Neighbour checks
-        * ``T`` / ``F`` to wait (True) or not (False) for upstream files to be present
-        * ``C`` / ``S`` to overwrite (Clobber) or keep (Skip) existing output files.
+        * ``I`` / ``N`` to run the **I**nternal or **N**eighbour checks
+        * ``T`` / ``F`` to wait (**T**rue) or not (**F**alse) for upstream files to be present
+        * ``C`` / ``S`` to overwrite (**C**lobber) or keep (**S**kip) existing output files.
 
         So an example run for the internal checks:
 

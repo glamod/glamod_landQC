@@ -5,11 +5,12 @@
 #   and submits each as a separate jobs on Bastion
 #
 # CALL
-#    bash run_qc.bash STAGE WAIT CLOBBER
+#    bash run_qc.bash STAGE WAIT CLOBBER [SCREENEXIT]
 #
-#    STAGE = I [internal] or N [neighbour]
-#     WAIT = T [true] or F [false] # wait for upstream files to be ready
-#  CLOBBER = C [clobber] or S [skip] # overwrite or skip existing files
+#        STAGE = I [internal] or N [neighbour]
+#         WAIT = T [true] or F [false] # wait for upstream files to be ready
+#      CLOBBER = C [clobber] or S [skip] # overwrite or skip existing files
+# [SCREENEXIT] = E [Exit] or blank/anything else to remain attached [Optional]
 #******************************************************************
 
 #**************************************
