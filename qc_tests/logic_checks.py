@@ -5,7 +5,6 @@ Logic Checks
 Check for illogical values as outlined in json file
 """
 #************************************************************************
-import os
 import json
 import datetime as dt
 import numpy as np
@@ -68,7 +67,7 @@ def write_logic_error(station: utils.Station, message: str, diagnostics: bool = 
     :param bool diagnostics: turn on diagnostic output
     """
 
-    outfilename = os.path.join(setup.SUBDAILY_ERROR_DIR, f"{station.id}.err")
+    outfilename = setup.SUBDAILY_ERROR_DIR / f"{station.id}.err"
 
     with open(outfilename, "a") as outfile:
         outfile.write(dt.datetime.strftime(dt.datetime.now(), "%Y-%m-%d %H:%M") + "\n")

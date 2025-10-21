@@ -14,8 +14,7 @@ Input arguments:
 --diagnostics       [False] Verbose output
 
 '''
-#************************************************************************
-import os
+from pathlib import Path
 import datetime as dt
 import numpy as np
 
@@ -56,9 +55,9 @@ def get_summary(stage: str = "N", restart_id: str = "", end_id: str = "", diagno
 
         try:
             if stage == "I":
-                station, station_df = io.read_station(os.path.join(setup.SUBDAILY_PROC_DIR, f"{station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}"), station)
+                station, _ = io.read_station(setup.SUBDAILY_PROC_DIR / f"{station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}", station)
             elif stage == "N":
-                station, station_df = io.read_station(os.path.join(setup.SUBDAILY_OUT_DIR, f"{station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}"), station)
+                station, _ = io.read_station(setup.SUBDAILY_OUT_DIR / f"{station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}", station)
 
         except OSError: # as e:
             # file missing, move on to next in sequence

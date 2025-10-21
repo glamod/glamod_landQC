@@ -6,7 +6,6 @@ Check for timestamps where difference to sufficient fraction of neighbours is
 sufficiently high.
 '''
 #************************************************************************
-import os
 import numpy as np
 import logging
 logger = logging.getLogger(__name__)
@@ -96,8 +95,8 @@ def read_in_buddies(target_station: utils.Station, initial_neighbours: np.ndarra
                                 station_list.iloc[buddy_idx].elevation.values[0])
 
         try:
-            buddy, _ = io_utils.read_station(os.path.join(setup.SUBDAILY_PROC_DIR,
-                                              f"{buddy_id:11s}.qff{setup.OUT_COMPRESSION}"),
+            buddy, _ = io_utils.read_station(setup.SUBDAILY_PROC_DIR /
+                                              f"{buddy_id:11s}.qff{setup.OUT_COMPRESSION}",
                                               buddy, read_flags=True)
 
             # store in dictionary, so that can ensure correct look up

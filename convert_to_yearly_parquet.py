@@ -12,7 +12,6 @@ Input arguments:
 --clobber           Overwrite output files if already existing.  If not set, will skip if output exists
 '''
 #************************************************************************
-import os
 import pandas as pd
 import datetime as dt
 from collections import defaultdict
@@ -31,7 +30,7 @@ def get_files(diagnostics: bool = False) -> list:
     """
     file_extension = f'.qff{setup.OUT_COMPRESSION}'
 
-    qff_files = [f for f in os.listdir(setup.SUBDAILY_OUT_DIR) if f.endswith(file_extension)]
+    qff_files = [f for f in setup.SUBDAILY_OUT_DIR.iterdir() if f.endswith(file_extension)]
 
     if diagnostics:
         print(f"Found {len(qff_files)} files in {setup.SUBDAILY_OUT_DIR}")
@@ -52,7 +51,7 @@ def process_files(qff_files: list, diagnostics: bool = False) -> dict:
 
     # Process each file
     for qfc, qfile in enumerate(qff_files):
-        file_path = os.path.join(setup.SUBDAILY_OUT_DIR, qfile)
+        file_path = setup.SUBDAILY_OUT_DIR / qfile
 
         # Read the .qff.gz file treating all columns as strings initially
         if setup.OUT_COMPRESSION == ".gz":
@@ -90,10 +89,10 @@ def write_pqt(yearly_data: dict, diagnostics: bool = False) -> None:
 
     """
     # Define input and output directories
-    output_dir = os.path.join(setup.ROOT_DIR, "pqt", setup.DATESTAMP)
+    output_dir = setup.ROOT_DIR / "pqt" / setup.DATESTAMP
 
     # Ensure output directory exists
-    os.makedirs(output_dir, exist_ok=True)
+    output_dir.mkdir()
 
     # spin through each year
     for year, data_frames in yearly_data.items():
@@ -111,7 +110,7 @@ def write_pqt(yearly_data: dict, diagnostics: bool = False) -> None:
             #   https://stackoverflow.com/questions/72264991/pandas-to-parquet-fails-with-gzip
             #   So might as well use default rather than specifying.
             output_file = f"qff_{year}.parquet"
-            output_path = os.path.join(output_dir, output_file)
+            output_path = output_dir / output_file
 
             combined_df.to_parquet(output_path, index=False)
 

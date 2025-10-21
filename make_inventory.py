@@ -5,7 +5,6 @@
 #
 #*********************************************
 
-import os
 import numpy as np
 import datetime as dt
 import calendar
@@ -35,7 +34,7 @@ def main(restart_id: str = "", end_id: str = "", clobber: bool = False) -> None:
 
 
     # write the headers
-    with open(os.path.join(setup.SUBDAILY_METADATA_DIR, setup.INVENTORY), "w") as outfile:
+    with open(setup.INVENTORY, "w") as outfile:
 
         outfile.write("              *** GLOBAL HISTORICAL CLIMATE NETWORK HOURLY DATA INVENTORY ***\n")
         outfile.write("\n")
@@ -61,8 +60,8 @@ def main(restart_id: str = "", end_id: str = "", clobber: bool = False) -> None:
             station = utils.Station(station_id, station_list.latitude[st], station_list.longitude[st], station_list.elevation[st])
 
             try:
-                station, station_df = ioutils.read_station(os.path.join(setup.SUBDAILY_OUT_DIR,
-                                                                        f"{station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}"),
+                station, station_df = ioutils.read_station(setup.SUBDAILY_OUT_DIR /
+                                                           f"{station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}",
                                                            station)
             except OSError as e:
                 # file missing, move on to next in sequence

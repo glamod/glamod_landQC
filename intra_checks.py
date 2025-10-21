@@ -40,7 +40,6 @@ Input arguments:
 
 '''
 #************************************************************************
-import os
 import datetime as dt
 import numpy as np
 import logging
@@ -86,25 +85,17 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
 
         if not clobber:
             # wanting to skip if files exist
-            if os.path.exists(os.path.join(setup.SUBDAILY_BAD_DIR,
-                                           "{:11s}{}{}".format(station_id,
-                                                               setup.OUT_SUFFIX,
-                                                               setup.OUT_COMPRESSION))):
-                print("{} exists and clobber kwarg not set, skipping to next station.".format(
-                    os.path.join(setup.SUBDAILY_BAD_DIR,
-                                 "{:11s}{}{}".format(station_id,
-                                                     setup.OUT_SUFFIX,
-                                                     setup.OUT_COMPRESSION))))
-                continue
-            elif os.path.exists(os.path.join(setup.SUBDAILY_PROC_DIR,
-                                             "{:11s}{}{}".format(station_id,
+            bad_file = setup.SUBDAILY_BAD_DIR / "{:11s}{}{}".format(station_id,
+                                                                    setup.OUT_SUFFIX,
+                                                                    setup.OUT_COMPRESSION)
+            good_file = setup.SUBDAILY_PROC_DIR / "{:11s}{}{}".format(station_id,
                                                                  setup.OUT_SUFFIX,
-                                                                 setup.OUT_COMPRESSION))):
-                print("{} exists and clobber kwarg not set, skipping to next station.".format(
-                    os.path.join(setup.SUBDAILY_PROC_DIR,
-                                 "{:11s}{}f{}".format(station_id,
-                                                      setup.OUT_SUFFIX,
-                                                      setup.OUT_COMPRESSION))))
+                                                                 setup.OUT_COMPRESSION)
+            if bad_file.exists():
+                print(f"{bad_file} exists and clobber kwarg not set, skipping to next station.")
+                continue
+            elif good_file.exists():
+                print(f"{good_file} exists and clobber kwarg not set, skipping to next station.")
                 continue
             else:
                 # files don't exists, pass
@@ -115,21 +106,20 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
 
         #*************************
         # set up logging
-        logfile = os.path.join(setup.SUBDAILY_LOG_DIR, f"{station_id}_internal_checks.log")
-        if os.path.exists(logfile):
-            os.remove(logfile)
+        logfile = setup.SUBDAILY_LOG_DIR / f"{station_id}_internal_checks.log"
+        if logfile.exists():
+            logfile.unlink()
         logger = utils.custom_logger(logfile)
         logger.info(f"Internal Checks on {station_id}")
         logger.info("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
 
         #*************************
         # set up & store config file to hold thresholds etc
-        config_file_name = os.path.join(setup.SUBDAILY_CONFIG_DIR,
-                                        "{:11s}.json".format(station_id))
+        config_file_name = setup.SUBDAILY_CONFIG_DIR / "{:11s}.json".format(station_id)
         if full:
             try:
                 # recreating, so remove completely
-                os.remove(config_file_name)
+                config_file_name.unlink()
                 # JSON stores in dictionary, so create empty one
                 config_dict = {}
             except FileNotFoundError:
@@ -153,10 +143,10 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
             print(station)
 
         try:
-            station, station_df = io.read_station(os.path.join(setup.SUBDAILY_MFF_DIR,
-                                                               "{:11s}{}{}".format(station_id,
-                                                                                   setup.IN_SUFFIX,
-                                                                                   setup.IN_COMPRESSION)), station)
+            station, station_df = io.read_station(setup.SUBDAILY_MFF_DIR /
+                                                  "{:11s}{}{}".format(station_id,
+                                                                      setup.IN_SUFFIX,
+                                                                      setup.IN_COMPRESSION), station)
         except FileNotFoundError: # as e:
             # file missing, move on to next in sequence
             io.write_error(station, "File Missing", stage="int")
@@ -347,21 +337,22 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
         if hfr_vars_set > 1:
             # high flagging rates in more than one variable.  Withholding station completely
             logging.info(f"{station.id} withheld as too high flagging")
-            io.write(os.path.join(setup.SUBDAILY_BAD_DIR,
-                                  "{:11s}{}{}".format(station_id,
-                                                      setup.OUT_SUFFIX,
-                                                      setup.OUT_COMPRESSION)),
+            io.write(setup.SUBDAILY_BAD_DIR /
+                    "{:11s}{}{}".format(station_id,
+                                        setup.OUT_SUFFIX,
+                                        setup.OUT_COMPRESSION),
                      station_df)
         else:
-            io.write(os.path.join(setup.SUBDAILY_PROC_DIR,
-                                  "{:11s}{}{}".format(station_id,
-                                                      setup.OUT_SUFFIX,
-                                                      setup.OUT_COMPRESSION)),
+            io.write(setup.SUBDAILY_PROC_DIR /
+                    "{:11s}{}{}".format(station_id,
+                                        setup.OUT_SUFFIX,
+                                        setup.OUT_COMPRESSION),
                      station_df)
 
         #*************************
         # Output flagging summary file
-        io.flag_write(os.path.join(setup.SUBDAILY_FLAG_DIR, "{:11s}.flg".format(station_id)), station_df, diagnostics=diagnostics)
+        io.flag_write(setup.SUBDAILY_FLAG_DIR / "{:11s}.flg".format(station_id),
+                      station_df, diagnostics=diagnostics)
         print(" Files written\n")
 
         if diagnostics or plots:

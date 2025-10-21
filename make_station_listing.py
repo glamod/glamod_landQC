@@ -3,7 +3,6 @@
 #    dates for each station added
 #
 #*********************************************
-import os
 import numpy as np
 import datetime as dt
 
@@ -39,8 +38,8 @@ def main() -> None:
                                 station_list.longitude[st], station_list.elevation[st])
 
         try:
-            station, station_df = ioutils.read_station(os.path.join(setup.SUBDAILY_OUT_DIR,
-                                                                    f"{station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}"),
+            station, station_df = ioutils.read_station(setup.SUBDAILY_OUT_DIR /
+                                                       f"{station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}",
                                                        station)
         except OSError as e:
             # file missing, move on to next in sequence
@@ -65,7 +64,7 @@ def main() -> None:
     station_list["begins"] = begins
     station_list["ends"] = ends
 
-    station_list.to_string(os.path.join(setup.SUBDAILY_METADATA_DIR, setup.STATION_FULL_LIST),
+    station_list.to_string(setup.STATION_FULL_LIST,
                            index=False, header=False, index_names=False,
                            formatters={"wmo": "{:5s}".format,
                                        "name": "{:<40s}".format}, na_rep="")

@@ -5,7 +5,7 @@ initial_setup - contains settings and path information
 
 
 #*********************************************
-import os
+from pathlib import Path
 import configparser
 import sys
 import json
@@ -15,12 +15,10 @@ import numpy as np
 # Process Configuration file
 CONFIG_FILE = "./configuration.txt"
 
-if not os.path.exists(os.path.join(os.path.dirname(__file__), CONFIG_FILE)):
-    print(f"Configuration file missing - {os.path.join(os.path.dirname(__file__), CONFIG_FILE)}")
-    sys.exit()
-else:
-    CONFIG_FILE = os.path.join(os.path.dirname(__file__), CONFIG_FILE)
-
+CONFIG_FILE = Path(__file__).parent / CONFIG_FILE
+if not CONFIG_FILE.exists():
+    print(f"Configuration file missing - {CONFIG_FILE}")
+    quit()
 
 # read in configuration file
 config = configparser.ConfigParser()
@@ -30,63 +28,57 @@ config.read(CONFIG_FILE)
 # locations
 
 # source always the same - currently on GWS
-SUBDAILY_MINGLE_DIR = config.get("PATHS", "mff")
-SUBDAILY_MFF_DIR = os.path.join(SUBDAILY_MINGLE_DIR, config.get("PATHS", "mff_version"))
+SUBDAILY_MINGLE_DIR = Path(config.get("PATHS", "mff"))
+SUBDAILY_MFF_DIR = SUBDAILY_MINGLE_DIR / config.get("PATHS", "mff_version")
 
 # base dir to run on - GWS or scratch
-ROOT_DIR = config.get("PATHS", "root")
+ROOT_DIR = Path(config.get("PATHS", "root"))
 DATESTAMP = config.get("PATHS", "version")
 
 
 # set up suitable paths
 # processing space - for intermediate files, between mff and qff
-if not os.path.exists(os.path.join(ROOT_DIR, config.get("PATHS", "proc"))):
-    os.makedirs(os.path.join(ROOT_DIR, config.get("PATHS", "proc")))
+SUBDAILY_PROC_DIR = ROOT_DIR / config.get("PATHS", "proc") / DATESTAMP
+if not SUBDAILY_PROC_DIR.exists():
+    SUBDAILY_PROC_DIR.mkdir()
 
-SUBDAILY_PROC_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "proc"), DATESTAMP)
-if not os.path.exists(SUBDAILY_PROC_DIR):
-    os.makedirs(SUBDAILY_PROC_DIR)
-
-if not os.path.exists(os.path.join(ROOT_DIR, config.get("PATHS", "qff"))):
-    os.mkdir(os.path.join(ROOT_DIR, config.get("PATHS", "qff")))
-
-SUBDAILY_OUT_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "qff"), DATESTAMP)
-if not os.path.exists(SUBDAILY_OUT_DIR):
-    os.makedirs(SUBDAILY_OUT_DIR)
+SUBDAILY_OUT_DIR = ROOT_DIR / config.get("PATHS", "qff") / DATESTAMP
+if not SUBDAILY_OUT_DIR.exists():
+    SUBDAILY_OUT_DIR.mkdir()
 #    os.chmod(SUBDAILY_OUT_DIR, stat.S_IWGRP)
 
-SUBDAILY_BAD_DIR = os.path.join(SUBDAILY_OUT_DIR, "bad_stations") #  datestamp in Subdaily_out_dir
-if not os.path.exists(SUBDAILY_BAD_DIR):
-    os.makedirs(SUBDAILY_BAD_DIR)
+SUBDAILY_BAD_DIR = SUBDAILY_OUT_DIR / "bad_stations" #  datestamp in Subdaily_out_dir
+if not SUBDAILY_BAD_DIR.exists():
+    SUBDAILY_BAD_DIR.mkdir()
 
-SUBDAILY_CONFIG_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "config"), DATESTAMP)
-if not os.path.exists(SUBDAILY_CONFIG_DIR):
-    os.makedirs(SUBDAILY_CONFIG_DIR)
+SUBDAILY_CONFIG_DIR = ROOT_DIR / config.get("PATHS", "config") / DATESTAMP
+if not SUBDAILY_CONFIG_DIR.exists():
+    SUBDAILY_CONFIG_DIR.mkdir()
 
-SUBDAILY_IMAGE_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "images"), DATESTAMP)
-if not os.path.exists(SUBDAILY_IMAGE_DIR):
-    os.makedirs(SUBDAILY_IMAGE_DIR)
+SUBDAILY_IMAGE_DIR = ROOT_DIR / config.get("PATHS", "images") / DATESTAMP
+if not SUBDAILY_IMAGE_DIR.exists():
+    SUBDAILY_IMAGE_DIR.mkdir()
 
-SUBDAILY_FLAG_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "flags"), DATESTAMP)
-if not os.path.exists(SUBDAILY_FLAG_DIR):
-    os.makedirs(SUBDAILY_FLAG_DIR)
+SUBDAILY_FLAG_DIR = ROOT_DIR / config.get("PATHS", "flags") / DATESTAMP
+if not SUBDAILY_FLAG_DIR.exists():
+    SUBDAILY_FLAG_DIR.mkdir()
 
-SUBDAILY_LOG_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "logs"), DATESTAMP)
-if not os.path.exists(SUBDAILY_LOG_DIR):
-    os.makedirs(SUBDAILY_LOG_DIR)
+SUBDAILY_LOG_DIR = ROOT_DIR / config.get("PATHS", "logs") / DATESTAMP
+if not SUBDAILY_LOG_DIR.exists():
+    SUBDAILY_LOG_DIR.exists()
 
-SUBDAILY_ERROR_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "errors"), DATESTAMP)
-if not os.path.exists(SUBDAILY_ERROR_DIR):
-    os.makedirs(SUBDAILY_ERROR_DIR)
+SUBDAILY_ERROR_DIR = ROOT_DIR / config.get("PATHS", "errors") / DATESTAMP
+if not SUBDAILY_ERROR_DIR.exists():
+    SUBDAILY_ERROR_DIR.mkdir()
 
-SUBDAILY_METADATA_DIR = os.path.join(ROOT_DIR, config.get("PATHS", "metadata"), DATESTAMP)
-if not os.path.exists(SUBDAILY_METADATA_DIR):
-    os.makedirs(SUBDAILY_METADATA_DIR)
+SUBDAILY_METADATA_DIR = ROOT_DIR / config.get("PATHS", "metadata") / DATESTAMP
+if not SUBDAILY_METADATA_DIR.exists():
+    SUBDAILY_METADATA_DIR.mkdir()
 
 # name of station list
-STATION_LIST = config.get("FILES", "station_list")
-STATION_FULL_LIST = config.get("FILES", "station_full_list")
-INVENTORY = config.get("FILES", "inventory")
+STATION_LIST = Path(config.get("FILES", "station_list"))
+STATION_FULL_LIST = Path(config.get("FILES", "station_full_list"))
+INVENTORY = Path(config.get("FILES", "inventory"))
 
 # Check and set compression options
 IN_COMPRESSION = config.get("FILES", "in_compression")
@@ -116,7 +108,7 @@ if OUT_SUFFIX not in (".qff", ".csv", ".psv", ".pqt", ".parquet"):
 #*********************************************
 # read in parameter list
 VARFILE = config.get("FILES", "variables")
-with open(os.path.join(os.path.dirname(__file__), "configs", VARFILE), "r") as pf:
+with open(Path(__file__) / "configs" / VARFILE, "r") as pf:
     parameters = json.load(pf)
 obs_var_list = parameters["variables"]["process_vars"]
 carry_thru_var_list = parameters["variables"]["not_process_vars"]
@@ -153,7 +145,7 @@ DTYPE_DICT["Source_ID"] = str
 
 
 # get the wind measurement codes
-with open(os.path.join(os.path.dirname(__file__), "configs", "wind_measurement_codes.json"), 'r') as infile:
+with open(Path(__file__) / "configs" / "wind_measurement_codes.json", 'r') as infile:
     WIND_MEASUREMENT_CODES = json.load(infile)
 
 
@@ -163,9 +155,9 @@ if __name__ == "__main__":
 
     # if called as stand alone, then clean out the errors from a previous run
     print("Removing errors from previous runs")
-    if len(os.listdir(SUBDAILY_ERROR_DIR)) != 0:
-        for this_file in os.listdir(SUBDAILY_ERROR_DIR):
-            os.remove(os.path.join(SUBDAILY_ERROR_DIR, this_file))
+    if len(SUBDAILY_ERROR_DIR.iterdir()) != 0:
+        for this_file in SUBDAILY_ERROR_DIR.iterdir():
+            this_file.unlink()
 
 
 #*********************************************

@@ -23,8 +23,6 @@ Input arguments:
 
 '''
 
-import os.path
-
 DEFAULT_SPHERICAL_EARTH_RADIUS=6367470
 
 import numpy as np
@@ -204,7 +202,7 @@ def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False, plot
     # so this only needs running once per update, write out and store the neighbours
     if diagnostics:
         print("writing")
-    with open(os.path.join(SUBDAILY_CONFIG_DIR, utils.NEIGHBOUR_FILE), "w") as outfile:
+    with open(utils.NEIGHBOUR_FILE, "w") as outfile:
 
         # each station
         for st, station in enumerate(neighbours):

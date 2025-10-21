@@ -1,4 +1,3 @@
-import os
 import datetime as dt
 import numpy as np
 import pandas as pd
@@ -56,6 +55,7 @@ def read_stations() -> np.ndarray:
         print(f"{setup.STATION_LIST:s} does not exist.  Check download")
         raise OSError
 
+
     print(f"{len(station_IDs)} stations in full GHCNH")
 
     print(f"{len(all_stations)} stations with defined metadata")
@@ -112,7 +112,7 @@ def process_inventory(candidate_stations: list) -> list:
 
     # read in the inventory
     try:
-        inventory = np.genfromtxt(os.path.join(setup.SUBDAILY_METADATA_DIR, setup.INVENTORY),
+        inventory = np.genfromtxt(setup.SUBDAILY_METADATA_DIR / setup.INVENTORY,
                                   skip_header=8, dtype=str)
     except OSError:
         pass
@@ -363,7 +363,7 @@ def main() -> None:
     # parse text file into candidate list, with lat, lon, elev and time span limits applied
     all_stations = read_stations()
     plot_stations(all_stations,
-                  os.path.join(setup.SUBDAILY_IMAGE_DIR, f'ghcnh_station_distribution_{TODAY}.png'),
+                  setup.SUBDAILY_IMAGE_DIR / f'ghcnh_station_distribution_{TODAY}.png',
                   title="GHCNh Stations")
 
     # use inventory to further refine station list
@@ -371,10 +371,10 @@ def main() -> None:
 
     # plot distribution of stations
     plot_station_number_over_time(candidate_stations,
-                                  os.path.join(setup.SUBDAILY_IMAGE_DIR, f'ghcnh_station_number_{TODAY}'))
+                                  setup.SUBDAILY_IMAGE_DIR / f'ghcnh_station_number_{TODAY}')
 
     plot_gridded_map(candidate_stations,
-                     os.path.join(setup.SUBDAILY_IMAGE_DIR, f'ghcnh_gridded_station_distribution_{TODAY}.png'),
+                     setup.SUBDAILY_IMAGE_DIR / f'ghcnh_gridded_station_distribution_{TODAY}.png',
                      title="GHCNh Stations")
 
     # plot station numbers in all years
@@ -387,7 +387,7 @@ def main() -> None:
                 plot_list += [stn]
 
         plot_stations(plot_list,
-                      os.path.join(setup.SUBDAILY_IMAGE_DIR, f"ghcnh_station_number_in_{year}_{TODAY}.png"),
+                      setup.SUBDAILY_IMAGE_DIR / f"ghcnh_station_number_in_{year}_{TODAY}.png",
                       title=str(year)),
         print(year, len(plot_list))
 
