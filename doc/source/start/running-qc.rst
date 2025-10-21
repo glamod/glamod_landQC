@@ -21,9 +21,9 @@ switches for these scripts, and all are called in the same way.
 
         Script Name: ``run_qc_taskfarm.bash``
 
-        * ``I`` / ``N`` to run the **I**nternal or **N**eighbour checks
-        * ``T`` / ``F`` to wait (**T**rue) or not (**F**alse) for upstream files to be present
-        * ``C`` / ``S`` to overwrite (**C**lobber) or keep (**S**kip) existing output files.
+        * ``I`` / ``N`` to run the **I** nternal or **N** eighbour checks
+        * ``T`` / ``F`` to wait ( **T** rue) or not (**F** alse) for upstream files to be present
+        * ``C`` / ``S`` to overwrite ( **C** lobber) or keep ( **S** kip) existing output files.
 
         So an example run for the internal checks:
 
@@ -35,16 +35,17 @@ switches for these scripts, and all are called in the same way.
 
         The script runs both stages of the QC process by
         submitting batches of stations through to the CPU cluster
-        using the ``parallel`` facility.
+        using the ``parallel`` facility. This uses the Linux `screen`
+        utility to manage batches of stations.
 
         Script Name: ``run_qc_parallel.bash``
 
-        * ``I`` / ``N`` to run the **I**nternal or **N**eighbour checks
-        * ``T`` / ``F`` to wait (**T**rue) or not (**F**alse) for upstream files to be present
-        * ``C`` / ``S`` to overwrite (**C**lobber) or keep (**S**kip) existing output files.
-        * ``E``  to enable the screen instances to **E**xit.  This will also remove any output printed to screen for diagnostic purposes.
+        * ``I`` / ``N`` to run the **I** nternal or **N** eighbour checks
+        * ``T`` / ``F`` to wait ( **T** rue) or not ( **F** alse) for upstream files to be present
+        * ``C`` / ``S`` to overwrite ( **C** lobber) or keep ( **S** kip) existing output files.
+        * ``E``  [optional] to enable the screen instances to **E** xit.  This will also remove any output printed to screen for diagnostic purposes.
 
-        So an example run for the internal checks:
+        So an example run for the internal checks, where the `screen` instances exit after completion:
 
         .. code:: console
 
@@ -59,9 +60,9 @@ switches for these scripts, and all are called in the same way.
 
         Script Name: ``run_qc_checks.bash``
 
-        * ``I`` / ``N`` to run the **I**nternal or **N**eighbour checks
-        * ``T`` / ``F`` to wait (**T**rue) or not (**F**alse) for upstream files to be present
-        * ``C`` / ``S`` to overwrite (**C**lobber) or keep (**S**kip) existing output files.
+        * ``I`` / ``N`` to run the **I** nternal or **N** eighbour checks
+        * ``T`` / ``F`` to wait ( **T** rue) or not ( **F** alse) for upstream files to be present
+        * ``C`` / ``S`` to overwrite ( **C** lobber) or keep ( **S** kip) existing output files.
 
         So an example run for the internal checks:
 
