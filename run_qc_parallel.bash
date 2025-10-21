@@ -207,8 +207,7 @@ parallel_script="$(prepare_parallel_script "${batch}")"
 # Spin through each in turn, creating a job
 # Mix up the stations, so that not all the big/long ones (USA etc)
 #   Are in the same jobs
-
-shuffled_stns=$(echo "${stn_ids}" | xargs shuf -e)
+shuffled_stns=$(awk -F" " '{print $1}' "${station_list_file}" | shuf)
 
 scnt=1
 for stn in ${shuffled_stns}
