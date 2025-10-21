@@ -8,7 +8,8 @@ import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-import qc_utils as utils
+import utils
+import qc_utils
 #************************************************************************
 
 MAX_SPIKE_LENGTH = 3
@@ -111,7 +112,7 @@ def calculate_critical_values(obs_var: utils.MeteorologicalVariable, times: np.n
         if len(first_differences.compressed()) >= utils.DATA_COUNT_THRESHOLD:
 
             # fit decay curve to one-sided distribution
-            c_value = utils.get_critical_values(first_differences.compressed(), binmin=0, binwidth=0.5,
+            c_value = qc_utils.get_critical_values(first_differences.compressed(), binmin=0, binwidth=0.5,
                                                 plots=plots, diagnostics=diagnostics,
                                                 xlabel="First differences",
                                                 title=f"Spike - {obs_var.name.capitalize()}: {lower}-{upper}min")

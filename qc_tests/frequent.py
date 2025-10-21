@@ -9,7 +9,8 @@ import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-import qc_utils as utils
+import utils
+import qc_utils
 #************************************************************************
 
 ROLLING = 7
@@ -48,12 +49,12 @@ def identify_values(obs_var: utils.MeteorologicalVariable, station: utils.Statio
             continue
 
         # adjust bin widths according to reporting accuracy
-        resolution = utils.reporting_accuracy(month_data)
+        resolution = qc_utils.reporting_accuracy(month_data)
 
         if resolution <= 0.5:
-            bins = utils.create_bins(month_data, 0.5, obs_var.name)
+            bins = qc_utils.create_bins(month_data, 0.5, obs_var.name)
         else:
-            bins = utils.create_bins(month_data, 1.0, obs_var.name)
+            bins = qc_utils.create_bins(month_data, 1.0, obs_var.name)
 
         hist, bin_edges = np.histogram(month_data, bins)
 
@@ -145,12 +146,12 @@ def frequent_values(obs_var: utils.MeteorologicalVariable, station: utils.Statio
             month_flags = np.array(["" for i in range(month_data.shape[0])])
 
             # adjust bin widths according to reporting accuracy
-            resolution = utils.reporting_accuracy(month_data)
+            resolution = qc_utils.reporting_accuracy(month_data)
 
             if resolution <= 0.5:
-                bins = utils.create_bins(month_data, 0.5, obs_var.name)
+                bins = qc_utils.create_bins(month_data, 0.5, obs_var.name)
             else:
-                bins = utils.create_bins(month_data, 1.0, obs_var.name)
+                bins = qc_utils.create_bins(month_data, 1.0, obs_var.name)
             hist, bin_edges = np.histogram(month_data, bins)
 
             # Scan through the histogram

@@ -12,7 +12,7 @@ import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-import qc_utils as utils
+import utils
 
 #************************************************************************
 # TODO - move these into a config file?

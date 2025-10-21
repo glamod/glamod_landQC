@@ -12,7 +12,8 @@ from scipy.stats import skew
 import logging
 logger = logging.getLogger(__name__)
 
-import qc_utils as utils
+import qc_utils
+import utils
 #************************************************************************
 
 FREQUENCY_THRESHOLD = 0.1
@@ -123,7 +124,7 @@ def prepare_data(obs_var: utils.MeteorologicalVariable, station: utils.Station,
 
             if winsorize:
                 if len(hour_data.compressed()) > 10:
-                    hour_data = utils.winsorize(hour_data, 5)
+                    hour_data = qc_utils.winsorize(hour_data, 5)
 
             if len(hour_data) >= utils.DATA_COUNT_THRESHOLD:
                 hourly_clims[hour] = np.ma.mean(hour_data)
@@ -136,7 +137,7 @@ def prepare_data(obs_var: utils.MeteorologicalVariable, station: utils.Station,
         if len(anomalies[mlocs].compressed()) >= utils.DATA_COUNT_THRESHOLD:
 
             # for the month, normalise anomalies by spread
-            spread = utils.spread(anomalies[mlocs])
+            spread = qc_utils.spread(anomalies[mlocs])
             if spread < 1.5:
                 spread = 1.5
 
@@ -150,7 +151,7 @@ def prepare_data(obs_var: utils.MeteorologicalVariable, station: utils.Station,
                 ylocs, = np.where(station.years == year)
                 year_data = obs_var.data[ylocs]
 
-                monthly_anoms[y] = utils.average(year_data)
+                monthly_anoms[y] = qc_utils.average(year_data)
 
             lp_filtered_anomalies = low_pass_filter(normed_anomalies, station, monthly_anoms, month)
 
@@ -183,7 +184,7 @@ def find_month_thresholds(obs_var: utils.MeteorologicalVariable, station: utils.
 
         if len(normalised_anomalies.compressed()) >= utils.DATA_COUNT_THRESHOLD:
 
-            bins = utils.create_bins(normalised_anomalies, BIN_WIDTH, obs_var.name)
+            bins = qc_utils.create_bins(normalised_anomalies, BIN_WIDTH, obs_var.name)
             bincentres = bins[1:] - (BIN_WIDTH/2)
             hist, bin_edges = np.histogram(normalised_anomalies.compressed(), bins)
 
@@ -191,16 +192,16 @@ def find_month_thresholds(obs_var: utils.MeteorologicalVariable, station: utils.
             # NOTE: for some of the recent exceptional extremes, skew gaussian
             #       may still not be sufficient, and need to think perhaps of an
             #       alternative distribution
-            gaussian_fit = utils.fit_gaussian(bincentres, hist, max(hist),
+            gaussian_fit = qc_utils.fit_gaussian(bincentres, hist, max(hist),
                                               mu=np.ma.median(normalised_anomalies),
-                                              sig=1.5*utils.spread(normalised_anomalies),
+                                              sig=1.5*qc_utils.spread(normalised_anomalies),
                                               skew=skew(normalised_anomalies.compressed())
             )
 
             if len(gaussian_fit) == 3:
-                fitted_curve = utils.gaussian(bincentres, gaussian_fit)
+                fitted_curve = qc_utils.gaussian(bincentres, gaussian_fit)
             elif len(gaussian_fit) == 4:
-                fitted_curve = utils.skew_gaussian(bincentres, gaussian_fit)
+                fitted_curve = qc_utils.skew_gaussian(bincentres, gaussian_fit)
 
             # diagnostic plots
             if plots:
@@ -268,7 +269,7 @@ def monthly_clim(obs_var: utils.MeteorologicalVariable, station: utils.Station, 
 
         if len(normalised_anomalies.compressed()) >= utils.DATA_COUNT_THRESHOLD:
 
-            bins = utils.create_bins(normalised_anomalies, BIN_WIDTH, obs_var.name)
+            bins = qc_utils.create_bins(normalised_anomalies, BIN_WIDTH, obs_var.name)
             # bincentres = bins[1:] - (BIN_WIDTH/2)
             hist, bin_edges = np.histogram(normalised_anomalies.compressed(), bins)
 
@@ -286,7 +287,7 @@ def monthly_clim(obs_var: utils.MeteorologicalVariable, station: utils.Station, 
             lowercount = len(np.where(normalised_anomalies < lower_threshold)[0])
 
             if uppercount > 0:
-                gap_start = utils.find_gap(hist, bins, upper_threshold, GAP_SIZE)
+                gap_start = qc_utils.find_gap(hist, bins, upper_threshold, GAP_SIZE)
 
                 if gap_start != 0:
                     bad_locs, = np.ma.where(normalised_anomalies > gap_start) # all years for one month
@@ -295,7 +296,7 @@ def monthly_clim(obs_var: utils.MeteorologicalVariable, station: utils.Station, 
                     flags[bad_locs] = "C"
 
             if lowercount > 0:
-                gap_start = utils.find_gap(hist, bins, lower_threshold, GAP_SIZE, upwards=False)
+                gap_start = qc_utils.find_gap(hist, bins, lower_threshold, GAP_SIZE, upwards=False)
 
                 if gap_start != 0:
                     bad_locs, = np.ma.where(normalised_anomalies < gap_start) # all years for one month

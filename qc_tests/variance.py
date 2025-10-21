@@ -10,7 +10,8 @@ import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-import qc_utils as utils
+import qc_utils
+import utils
 #************************************************************************
 STORM_THRESHOLD = 4
 MIN_VARIANCES = 10
@@ -18,7 +19,8 @@ SPREAD_THRESHOLD = 8.
 MIN_VALUES = 30
 
 #************************************************************************
-def prepare_data(obs_var: utils.MeteorologicalVariable, station: utils.Station, month:int, diagnostics: bool = False, winsorize: bool = True) -> np.ndarray:
+def prepare_data(obs_var: utils.MeteorologicalVariable, station: utils.Station, month:int,
+                 diagnostics: bool = False, winsorize: bool = True) -> np.ndarray:
     """
     Calculate the monthly variances
 
@@ -49,7 +51,7 @@ def prepare_data(obs_var: utils.MeteorologicalVariable, station: utils.Station, 
 
         if winsorize:
             if len(hour_data.compressed()) > 10:
-                hour_data = utils.winsorize(hour_data, 5)
+                hour_data = qc_utils.winsorize(hour_data, 5)
 
         if len(hour_data.compressed()) >= utils.DATA_COUNT_THRESHOLD:
             hourly_clims[hour] = np.ma.mean(hour_data)
@@ -61,7 +63,7 @@ def prepare_data(obs_var: utils.MeteorologicalVariable, station: utils.Station, 
 
     if len(anomalies[mlocs].compressed()) >= MIN_VARIANCES:
         # for the month, normalise anomalies by spread
-        spread = utils.spread(anomalies[mlocs])
+        spread = qc_utils.spread(anomalies[mlocs])
         if spread < 1.5:
             spread = 1.5
     else:
@@ -81,7 +83,7 @@ def prepare_data(obs_var: utils.MeteorologicalVariable, station: utils.Station, 
 
         # HadISD used M.A.D.
         if this_year.compressed().shape[0] > MIN_VALUES:
-            variances[y] = utils.spread(this_year)
+            variances[y] = qc_utils.spread(this_year)
 
     return variances # prepare_data
 
@@ -105,8 +107,8 @@ def find_thresholds(obs_var: utils.MeteorologicalVariable, station: utils.Statio
         variances = prepare_data(obs_var, station, month, diagnostics=diagnostics, winsorize=winsorize)
 
         if len(variances.compressed()) >= MIN_VARIANCES:
-            average_variance = utils.average(variances)
-            variance_spread = utils.spread(variances)
+            average_variance = qc_utils.average(variances)
+            variance_spread = qc_utils.spread(variances)
         else:
             average_variance = utils.MDI
             variance_spread = utils.MDI
@@ -122,7 +124,8 @@ def find_thresholds(obs_var: utils.MeteorologicalVariable, station: utils.Statio
     return # find_thresholds
 
 #************************************************************************
-def variance_check(obs_var: utils.MeteorologicalVariable, station: utils.Station, config_dict: dict, plots: bool = False, diagnostics: bool = False, winsorize: bool = True) -> None:
+def variance_check(obs_var: utils.MeteorologicalVariable, station: utils.Station, config_dict: dict,
+                   plots: bool = False, diagnostics: bool = False, winsorize: bool = True) -> None:
     """
     Use distribution to identify threshold values.  Then also store in config file.
 
@@ -170,11 +173,11 @@ def variance_check(obs_var: utils.MeteorologicalVariable, station: utils.Station
                 #    move on
                 continue
 
-            wind_average = utils.average(wind_monthly_data)
-            wind_spread = utils.spread(wind_monthly_data)
+            wind_average = qc_utils.average(wind_monthly_data)
+            wind_spread = qc_utils.spread(wind_monthly_data)
 
-            pressure_average = utils.average(pressure_monthly_data)
-            pressure_spread = utils.spread(pressure_monthly_data)
+            pressure_average = qc_utils.average(pressure_monthly_data)
+            pressure_spread = qc_utils.spread(pressure_monthly_data)
 
         # go through each bad year for this month
         all_years = np.unique(station.years)
@@ -252,7 +255,7 @@ def variance_check(obs_var: utils.MeteorologicalVariable, station: utils.Station
             import matplotlib.pyplot as plt
 
             scaled_variances = ((variances - average_variance) / variance_spread)
-            bins = utils.create_bins(scaled_variances, 0.25, obs_var.name)
+            bins = qc_utils.create_bins(scaled_variances, 0.25, obs_var.name)
             hist, bin_edges = np.histogram(scaled_variances, bins)
 
             plt.clf()

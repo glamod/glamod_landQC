@@ -10,7 +10,8 @@ import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-import qc_utils as utils
+import utils
+import qc_utils
 
 HIGH_FLAGGING_THRESHOLD = 0.4
 TOLERANCE = 1.e-10
@@ -40,11 +41,11 @@ def get_repeating_dpd_threshold(temperatures: utils.MeteorologicalVariable,
 
     # only process further if there are enough locations
     if len(locs) > 1:
-        repeated_streak_lengths, _, _ = utils.prepare_data_repeating_streak(locs, diff=1, plots=plots, diagnostics=diagnostics)
+        repeated_streak_lengths, _, _ = qc_utils.prepare_data_repeating_streak(locs, diff=1, plots=plots, diagnostics=diagnostics)
 
         # bin width is 1 as dealing with the index.
         # minimum bin value is 2 as this is the shortest streak possible
-        threshold = utils.get_critical_values(repeated_streak_lengths, binmin=2,
+        threshold = qc_utils.get_critical_values(repeated_streak_lengths, binmin=2,
                                               binwidth=1.0, plots=plots,
                                               diagnostics=diagnostics,
                                               title="DPD streak length",
@@ -222,7 +223,7 @@ def dew_point_depression_streak(times: np.ndarray,
 
     # only process further if there are enough locations
     if len(locs) > 1:
-        repeated_streak_lengths, grouped_diffs, streaks = utils.prepare_data_repeating_streak(locs, diff=1, plots=plots, diagnostics=diagnostics)
+        repeated_streak_lengths, grouped_diffs, streaks = qc_utils.prepare_data_repeating_streak(locs, diff=1, plots=plots, diagnostics=diagnostics)
 
         # above threshold
         bad, = np.nonzero(repeated_streak_lengths >= threshold)

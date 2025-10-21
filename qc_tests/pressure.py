@@ -9,7 +9,8 @@ import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-import qc_utils as utils
+import utils
+import qc_utils
 #************************************************************************
 
 THRESHOLD = 4 # min spread of 1hPa, so only outside +/-4hPa flagged.
@@ -162,8 +163,8 @@ def identify_values(sealp: utils.MeteorologicalVariable,
 
     if len(difference.compressed()) >= utils.DATA_COUNT_THRESHOLD:
 
-        average = utils.average(difference)
-        spread = utils.spread(difference)
+        average = qc_utils.average(difference)
+        spread = qc_utils.spread(difference)
         if spread < MIN_SPREAD: # less than XhPa
             spread = MIN_SPREAD
         elif spread > MAX_SPREAD: # more than XhPa

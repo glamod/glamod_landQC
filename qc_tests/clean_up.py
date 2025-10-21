@@ -10,7 +10,7 @@ import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-import qc_utils as utils
+import utils
 
 LOW_COUNT_THRESHOLD = 0
 HIGH_FLAGGING_THRESHOLD = 0.6
