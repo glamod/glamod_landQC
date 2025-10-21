@@ -36,11 +36,10 @@ shift
 
 #**************************************
 # other settings
-cwd=$(pwd)
 STATIONS_PER_BATCH=15000
 N_JOBS=10
 
-SCRIPT_DIR=${cwd}/parallel_scripts/
+SCRIPT_DIR="$(pwd)/parallel_scripts/"
 if [ ! -d "${SCRIPT_DIR}" ]; then
     mkdir "${SCRIPT_DIR}"
 fi
@@ -59,9 +58,7 @@ function write_and_submit_bastion_script {
     screen -r "qc_${batch}" -X stuff $'conda activate glamod_QC \n'
 
     # run the parallel script in this detached screen
-    screen -r "qc_${batch}" -X stuff $"parallel --jobs ${N_JOBS} < ${parallel_script}
-"
-
+    screen -r "qc_${batch}" -X stuff $"parallel --jobs ${N_JOBS} < ${parallel_script}"
 
 } # write_and_submit_bastion_script
 
@@ -82,7 +79,7 @@ function prepare_parallel_script {
 
 #**************************************
 # use configuration file to pull out paths &c
-CONFIG_FILE="${cwd}/configuration.txt"
+CONFIG_FILE="$(pwd)/configuration.txt"
 
 # VENVDIR="$(grep "venvdir " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 # using spaces after setting ID to ensure pull out correct line
@@ -121,7 +118,7 @@ if [ "${STAGE}" == "N" ]; then
 	echo "Running neighbour finding routine"
 	# module load conda
 	conda activate glamod_QC
-    python "${cwd}/find_neighbours.py"
+    python "$(pwd)/find_neighbours.py"
 
 	wc -l "${ROOTDIR}${CONFIG_DIR}${VERSION}neighbours.txt"
     else
@@ -274,12 +271,12 @@ do
         if [ "${CLOBBER}" == "C" ]; then
 
 	        if [ "${STAGE}" == "I" ]; then
-		        echo "python3 ${cwd}/intra_checks.py --restart_id ${stn} --end_id ${stn} --full --clobber" >> "${parallel_script}"
+		        echo "python3 $(pwd)/intra_checks.py --restart_id ${stn} --end_id ${stn} --full --clobber" >> "${parallel_script}"
 	        elif  [ "${STAGE}" == "N" ]; then
-		        echo "python3 ${cwd}/inter_checks.py --restart_id ${stn} --end_id ${stn} --full --clobber" >> "${parallel_script}"
+		        echo "python3 $(pwd)/inter_checks.py --restart_id ${stn} --end_id ${stn} --full --clobber" >> "${parallel_script}"
 	        fi
             # increment station counter (don't for other elifs to reduce jobs)
-            let scnt=scnt+1
+            (( scnt=scnt+1 ))
 
 	    # if not overwrite
 	    else
@@ -302,10 +299,10 @@ do
                 else
 
 		            # no output, include
-		            echo "python3 ${cwd}/intra_checks.py --restart_id ${stn} --end_id ${stn} --full" >> "${parallel_script}"
+		            echo "python3 $(pwd)/intra_checks.py --restart_id ${stn} --end_id ${stn} --full" >> "${parallel_script}"
 
                     # increment station counter (don't for other elifs to reduce jobs)
-                    let scnt=scnt+1
+                    (( scnt=scnt+1 ))
                 fi
 
             elif [ "${STAGE}" == "N" ]; then
@@ -324,10 +321,10 @@ do
 
                 else
 		            # no output, include
-                    echo "python3 ${cwd}/inter_checks.py --restart_id ${stn} --end_id ${stn} --full" >> "${parallel_script}"
+                    echo "python3 $(pwd)/inter_checks.py --restart_id ${stn} --end_id ${stn} --full" >> "${parallel_script}"
 
                     # increment station counter (don't for other elifs to reduce jobs)
-                    let scnt=scnt+1
+                    (( scnt=scnt+1 ))
 
                 fi
 	        fi # stage
@@ -342,7 +339,7 @@ do
 	    write_and_submit_bastion_script "${parallel_script}" "${batch}"
 
 	    # and reset counters and scripts
-	    let batch=batch+1
+	    (( batch=batch+1 ))
 	    parallel_script="$(prepare_parallel_script "${batch}")"
 	    scnt=1
 
@@ -358,19 +355,8 @@ done
 write_and_submit_bastion_script "${parallel_script}" "${batch}"
 
 
-#**************************************
-# and print summary
-#n_jobs=$(squeue --user="${USER}" | wc -l)
-# deal with Slurm header in output
-#let n_jobs=n_jobs-1
-#while [ ${n_jobs} -ne 0 ];
-#do
-#    echo "All submitted, waiting 5min for queue to clear"
-#    sleep 5m
-#    n_jobs=$(squeue --user="${USER}" | wc -l)
-#    let n_jobs=n_jobs-1
-#done
-
-source check_if_processed.bash "${STAGE}"
-
-echo "ends"
+echo "Once jobs are complete run:"
+echo
+echo "$> check_if_processed.bash ${STAGE}"
+echo
+echo "Script ends"
