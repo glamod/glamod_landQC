@@ -10,7 +10,7 @@ from unittest.mock import patch, Mock
 
 import streaks
 import utils
-import qc_utils
+import qc_utils  # used in patch
 
 import common
 
@@ -133,7 +133,7 @@ def test_get_repeating_streak_threshold_no_data() -> None:
     assert config_dict["STREAK-temperature"]["Straight"] == utils.MDI
 
 
-@patch("streaks.utils.get_critical_values")
+@patch("streaks.qc_utils.get_critical_values")
 def test_get_excess_streak_threshold(critical_values_mock: Mock) -> None:
     """
     Testing that values passed to get_critical_values() are as expected.

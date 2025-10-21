@@ -16,319 +16,8 @@ import logging
 from scipy.optimize import least_squares
 
 import setup
+import utils
 
-
-UNIT_DICT = {"temperature" : "degrees C", \
-             "dew_point_temperature" :  "degrees C", \
-             "wind_direction" :  "degrees", \
-             "wind_speed" : "meters per second", \
-             "sea_level_pressure" : "hPa hectopascals", \
-             "station_level_pressure" : "hPa hectopascals"}
-
-# Letters for flags which should exclude data
-# Numbers for information flags:
-#   the data are valid, but not necessarily adhering to conventions
-QC_TESTS = {"C" : "Climatological",
-            "D" : "Distribution - Monthly",
-            "E" : "Clean Up",
-            "F" : "Frequent Value",
-            "H" : "High Flag Rate",
-            "K" : "Repeating Streaks",
-            "L" : "Logic",
-            "N" : "Neighbour",
-            "S" : "Spike",
-            "T" : "Timestamp",
-            "U" : "Diurnal",
-            "V" : "Variance",
-            "W" : "World Records",
-            "d" : "Distribution - all",
-            "h" : "Humidity",
-            "n" : "Precision",
-            "o" : "Odd Cluster",
-            "p" : "Pressure",
-            "w" : "Winds",
-            "x" : "Excess streak proportion",
-            "y" : "Repeated Day streaks",
-            "1" : "Wind logical - calm, masked direction",
-            "2" : "Timestamp - identical observation values",
-            }
-
-
-MDI = -1.e30
-FIRST_YEAR = 1700
-# Can have these values for station elevations which are allowed, but indicate missing
-#   information.  Blank entries also allowed, but others which do not make sense
-#   are caught by logic check.  Need to escape these for e.g. pressure checks
-ALLOWED_MISSING_ELEVATIONS = ["-999", "9999"]
-
-# These data are retained and processed by the QC tests.  All others are not.
-WIND_MEASUREMENT_CODES = ["", "N-Normal", "C-Calm", "V-Variable", "9-Missing"]
-
-
-#*********************************************
-# Process the Configuration File
-#*********************************************
-
-CONFIG_FILE = "./configuration.txt"
-
-if not os.path.exists(os.path.join(os.path.dirname(__file__), CONFIG_FILE)):
-    print(f"Configuration file missing - {os.path.join(os.path.dirname(__file__), CONFIG_FILE)}")
-    sys.exit()
-else:
-    CONFIG_FILE = os.path.join(os.path.dirname(__file__), CONFIG_FILE)
-
-
-config = configparser.ConfigParser()
-config.read(CONFIG_FILE)
-
-#*********************************************
-# Statistics
-MEAN = config.getboolean("STATISTICS", "mean")
-MEDIAN = config.getboolean("STATISTICS", "median")
-if MEAN == MEDIAN:
-    print("Configuration file STATISTICS entry malformed. One of mean or median only")
-    sys.exit
-
-
-# MAD = 0.8 SD
-# IQR = 1.3 SD
-STDEV = config.getboolean("STATISTICS", "stdev")
-IQR = config.getboolean("STATISTICS", "iqr")
-MAD = config.getboolean("STATISTICS", "mad")
-if sum([STDEV, MAD, IQR]) >= 2:
-    print("Configuration file STATISTICS entry malformed. One of stdev, iqr, median only")
-    sys.exit
-
-#*********************************************
-# Thresholds
-DATA_COUNT_THRESHOLD = config.getint("THRESHOLDS", "min_data_count")
-HIGH_FLAGGING = config.getfloat("THRESHOLDS", "high_flag_proportion")
-
-# read in logic check list
-LOGICFILE = os.path.join(os.path.dirname(__file__), "configs", config.get("FILES", "logic"))
-
-#*********************************************
-# Neighbour Checks
-MAX_NEIGHBOUR_DISTANCE = config.getint("NEIGHBOURS", "max_distance")
-MAX_NEIGHBOUR_VERTICAL_SEP = config.getint("NEIGHBOURS", "max_vertical_separation")
-MAX_N_NEIGHBOURS = config.getint("NEIGHBOURS", "max_number")
-NEIGHBOUR_FILE = config.get("NEIGHBOURS", "filename")
-MIN_NEIGHBOURS = config.getint("NEIGHBOURS", "minimum_number")
-
-#*********************************************
-# Set up the Classes
-#*********************************************
-class MeteorologicalVariable(object):
-    '''
-    Class for meteorological variable.  Initialised with metadata only
-    '''
-
-    def __init__(self, name, mdi, units, dtype):
-        self.name = name
-        self.mdi = mdi
-        self.units = units
-        self.dtype = dtype
-        self.data = None
-
-
-    def __str__(self):
-        return f"variable: {self.name}"
-
-    __repr__ = __str__
-
-
-
-#*********************************************
-class Station(object):
-    '''
-    Class for station
-    '''
-
-    def __init__(self, stn_id, lat, lon, elev):
-        self.id = stn_id
-        self.lat = lat
-        self.lon = lon
-        self.elev = elev
-
-    def __str__(self):
-        return f"station {self.id}, lat {self.lat}, lon {self.lon}, elevation {self.elev}"
-
-    __repr__ = __str__
-
-
-#************************************************************************
-# Subroutines
-#************************************************************************
-def get_station_list(restart_id: str = "", end_id: str = "") -> pd.DataFrame:
-    """
-    Read in station list file(s) and return dataframe
-
-    :param str restart_id: which station to start on
-    :param str end_id: which station to end on
-
-    :returns: dataframe of station list
-    """
-    # Test if station list fixed-width format or comma separated
-    #  [Initially supplied nonFWF format for Release 8 processing]
-    fwf = True
-    with open(setup.STATION_LIST, "r") as infile:
-        lines = infile.readlines()
-        for row in lines:
-            # The non FWF version had double quotes present around the station names
-            #    but was space separated, so can use that to determine if it's FWF or not
-            if row.find('"') != -1:
-                fwf = False
-
-    # process the station list
-    if fwf:
-        # Fixed width format
-        # If station-ID has format "ID-START-END" then width is 29
-        station_list = pd.read_fwf(setup.STATION_LIST, widths=(11, 9, 10, 7, 3, 40, 5),
-                                header=None, names=("id", "latitude", "longitude", "elevation", "state",
-                                                    "name", "wmo"))
-    else:
-        # Comma separated
-        station_list = pd.read_csv(setup.STATION_LIST, delim_whitespace=True,
-                                header=None, names=("id", "latitude", "longitude", "elevation", "name"))
-        # add extra columns (despite being empty) so these are available to later stages
-        #  use insert for "state" so that order of columns is the same
-        station_list.insert(4, "state", ["" for i in range(len(station_list))])
-        station_list["wmo"] = ["" for i in range(len(station_list))]
-
-    # fill empty entries (default NaN) with blank strings
-    station_list = station_list.fillna("")
-
-    station_IDs = station_list.id
-
-    # work from the end to save messing up the start indexing
-    if end_id != "":
-        endindex, = np.where(station_IDs == end_id)
-        station_list = station_list.iloc[: endindex[0]+1]
-
-    # and do the front
-    if restart_id != "":
-        startindex, = np.where(station_IDs == restart_id)
-        station_list = station_list.iloc[startindex[0]:]
-
-    return station_list.reset_index(drop=True) # get_station_list
-
-
-#************************************************************************
-def insert_flags(qc_flags: np.ndarray, flags: np.ndarray) -> np.ndarray:
-    """
-    Update QC flags with the new flags
-
-    :param array qc_flags: string array of flags
-    :param array flags: string array of flags
-    """
-
-    qc_flags = np.core.defchararray.add(qc_flags.astype(str), flags.astype(str))
-
-    return qc_flags # insert_flags
-
-
-#************************************************************************
-def get_measurement_code_mask(ds: pd.Series,
-                              measurement_codes: list) -> np.ndarray:
-    """
-    Build up a mask of data rows to ignore by using a list of permitted
-    measurement codes
-
-    Parameters
-    ----------
-    ds : pd.Series
-        Measurement Codes field from data frame for variable
-    measurement_codes : list
-        List of accepted codes
-
-    Returns
-    -------
-    np.ndarray
-        Boolean array of mask
-    """
-    assert isinstance(ds, pd.Series)
-    assert isinstance(measurement_codes, list)
-
-    # Build up the mask
-    for c, code in enumerate(measurement_codes):
-
-        if code == "":
-            # Empty flags converted to NaNs on reading
-            if c == 0:
-                mask = (ds.isna())
-            else:
-                mask = (ds.isna()) | mask
-        else:
-            # Doing string comparison, but need to exclude NaNs
-            #   Need to convert to string before assessing (np.nan -> "nan") [using .astype(str)]
-            #   But test for NaNs separately [using .isna()], so that a string starting "nan"
-            #   could be used in the future
-            if c == 0:
-                # Initialise
-                mask = (~ds.isna() & ds.astype(str).str.startswith(code))
-            else:
-                # Combine using Or symbol ("|")
-                #   e.g. if code = "N-Normal" or "C-Calm" or "" set True
-                mask = (~ds.isna() & ds.astype(str).str.startswith(code)) | mask
-
-    return mask
-
-
-#************************************************************************
-def populate_station(station: Station, df: pd.DataFrame, obs_var_list: list, read_flags: bool = False) -> None:
-    """
-    Convert Data Frame into internal station and obs_variable objects
-
-    :param Station station: station object to hold information
-    :param DataFrame df: dataframe of input data
-    :param list obs_var_list: list of observed variables
-    :param bool read_flags: read in already pre-existing flags
-    """
-
-    for variable in obs_var_list:
-
-        # make a variable
-        this_var = MeteorologicalVariable(variable, MDI, UNIT_DICT[variable], (float))
-
-        # store the data
-        indata = df[variable].fillna(MDI).to_numpy()
-        indata = indata.astype(float)
-
-        # For wind direction and speed only, account for some measurement flags
-        #  Mask data in the Met_Var object used for the tests, but leave dataframe
-        #  unaffected.
-        if variable in ["wind_direction", "wind_speed"]:
-            m_code = df[f"{variable}_Measurement_Code"]
-            measurement_codes = setup.WIND_MEASUREMENT_CODES[variable]["retained"]
-
-            mask = get_measurement_code_mask(m_code, measurement_codes)
-
-            # invert mask and set to missing
-            indata[~mask] = MDI
-
-        this_var.data = np.ma.masked_where(indata == MDI, indata)
-        if len(this_var.data.mask.shape) == 0:
-            # single mask value, replace with arrage of True/False's
-            if this_var.data.mask:
-                # True
-                this_var.data.mask = np.ones(this_var.data.shape)
-            else:
-                # False
-                this_var.data.mask = np.zeros(this_var.data.shape)
-
-        this_var.data.fill_value = MDI
-
-        if read_flags:
-            # change all empty values (else NaN) to blank
-            this_var.flags = df[f"{variable}_QC_flag"].fillna("").to_numpy()
-        else:
-            # empty flag array
-            this_var.flags = np.array(["" for i in range(len(this_var.data))])
-
-        # and store
-        setattr(station, variable, this_var)
-
-    return # populate_station
 
 #*********************************************
 def calculate_IQR(data: np.ndarray, percentile: float = 0.25) -> float:
@@ -627,9 +316,9 @@ def average(data: np.ndarray) -> float:
     Routine to wrap mean or median functions so can easily switch
     """
 
-    if MEAN:
+    if utils.MEAN:
         return np.ma.mean(data)
-    elif MEDIAN:
+    elif utils.MEDIAN:
         return np.ma.median(data)
 
     # average
@@ -640,16 +329,16 @@ def spread(data: np.ndarray) -> float:
     Routine to wrap st-dev, IQR or MAD functions so can easily switch
     """
 
-    if STDEV:
+    if utils.STDEV:
         return np.ma.std(data)
-    elif IQR:
+    elif utils.IQR:
         try:
             return np.subtract(*np.percentile(data.compressed(), [75, 25]))
         except AttributeError:
             return np.subtract(*np.percentile(data, [75, 25]))
 
-    elif MAD:
-        if MEDIAN:
+    elif utils.MAD:
+        if utils.MEDIAN:
             return np.ma.median(np.ma.abs(data - np.ma.median(data)))
         else:
             return np.ma.mean(np.ma.abs(data - np.ma.mean(data)))
@@ -769,8 +458,8 @@ def residuals_gaussian(p: np.ndarray, Y: np.ndarray, X: np.ndarray) -> np.ndarra
 
 #*********************************************
 def fit_gaussian(x: np.ndarray, y: np.ndarray,
-                 norm: float, mu: float = MDI,
-                 sig: float = MDI, skew: float = MDI) -> np.ndarray:
+                 norm: float, mu: float = utils.MDI,
+                 sig: float = utils.MDI, skew: float = utils.MDI) -> np.ndarray:
     '''
     Fit a gaussian to the data provided
     Inputs:
@@ -780,9 +469,9 @@ def fit_gaussian(x: np.ndarray, y: np.ndarray,
     Outputs:
       fit - array of [norm,mu,sigma,(skew)]
     '''
-    if mu == MDI:
+    if mu == utils.MDI:
         mu = np.ma.mean(x)
-    if sig == MDI:
+    if sig == utils.MDI:
         sig = np.ma.std(x)
 
     if sig == 0:
@@ -794,7 +483,7 @@ def fit_gaussian(x: np.ndarray, y: np.ndarray,
         skew = 0
 
     # call the appropriate fitting function and routine
-    if skew == MDI:
+    if skew == utils.MDI:
         p0 = np.array([norm, mu, sig])
         result = least_squares(residuals_gaussian, p0, args=(y, x), max_nfev=10000, verbose=0, method="trf", jac="3-point")
     else:
@@ -982,78 +671,6 @@ def reporting_frequency(intimes: np.ndarray, inobs: np.ndarray) -> float:
 
     return frequency # reporting_frequency
 
-#*********************************************
-#DEPRECATED - now in a test
-def high_flagging(station: Station) -> bool:
-    """
-    Check flags for each observational variable, and return True if any
-    has too large a proportion flagged
-
-    :param Station station: station object
-
-    :returns: bool
-    """
-    bad = False
-
-    for ov in setup.obs_var_list:
-
-        obs_var = getattr(station, ov)
-
-        obs_locs, = np.nonzero(obs_var.data.mask == False)
-
-        if obs_locs.shape[0] > 10 * DATA_COUNT_THRESHOLD:
-            # require sufficient observations to make a flagged fraction useful.
-
-            flags = obs_var.flags
-
-            flagged, = np.nonzero(flags[obs_locs] != "")
-
-            if flagged.shape[0] / obs_locs.shape[0] > HIGH_FLAGGING:
-                bad = True
-                print(f"{obs_var.name} flagging rate of {100*(flagged.shape[0] / obs_locs.shape[0]):5.1f}%")
-                break
-
-    return bad # high_flagging
-
-
-#************************************************************************
-def find_country_code(lat: float, lon: float) -> str:
-    """
-    Use reverse Geocoder to find closest city to each station, and hence
-    find the country code.
-
-    :param float lat: latitude
-    :param float lon: longitude
-
-    :returns: [str] country_code
-    """
-    import reverse_geocoder as rg
-    results = rg.search((lat, lon))
-    country = results[0]['cc']
-
-    return country # find_country_code
-
-#************************************************************************
-def find_continent(country_code: str) -> str:
-    """
-    Use ISO country list to find continent from country_code.
-
-    :param str country_code: ISO standard country code
-
-    :returns: [str] continent
-    """
-
-    # as maybe run from another directory, get the right path
-    cwd = pathlib.Path(__file__).parent.absolute()
-    # prepare look up
-    with open(f'{cwd}/configs/iso_country_codes.json', 'r') as infile:
-        iso_codes = json.load(infile)
-
-    concord = {}
-    for entry in iso_codes:
-        concord[entry["Code"]] = entry["continent"]
-
-    return concord[country_code]
 
 #************************************************************************
 def prepare_data_repeating_streak(data: np.ndarray, diff:int = 0,
@@ -1091,38 +708,3 @@ def prepare_data_repeating_streak(data: np.ndarray, diff:int = 0,
     repeated_streak_lengths = grouped_diffs[streaks, 1] + 1
 
     return repeated_streak_lengths, grouped_diffs, streaks # prepare_data_repeating_streak
-
-
-#************************************************************************
-def custom_logger(logfile: str):
-
-    logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
-    # Remove any current handlers; the handlers persist within the same
-    # Python session, so ensure the root logger is 'clean' every time
-    # this function is called. Note that using logger.removeHandler()
-    # doesn't work reliably
-    logger.handlers = []
-
-    # create console handler with a higher log level
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.WARNING)
-
-    # create file handler to capture all output
-    fh = logging.FileHandler(logfile, "w")
-    fh.setLevel(logging.DEBUG)
-
-    # create formatter and add it to the handlers
-    logconsole_format = logging.Formatter('%(levelname)-8s %(message)s',
-                                          datefmt='%Y-%m-%d %H:%M:%S')
-    ch.setFormatter(logconsole_format)
-
-    logfile_format = logging.Formatter('%(asctime)s %(module)s %(levelname)-8s %(message)s',
-                                    datefmt='%Y-%m-%d %H:%M:%S')
-    fh.setFormatter(logfile_format)
-
-    # add the handlers to logger
-    logger.addHandler(ch)
-    logger.addHandler(fh)
-
-    return logger
