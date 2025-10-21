@@ -15,7 +15,7 @@ import warnings
 import logging
 logger = logging.getLogger(__name__)
 
-from qc_utils import Station, populate_station, MDI, QC_TESTS
+from utils import Station, populate_station, MDI, QC_TESTS
 
 #************************************************************************
 def count_skip_rows(infile: str) -> list:

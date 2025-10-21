@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 
 import setup
-import qc_utils as utils
+import utils
 
 # what is available
 START_YEAR = 1800
@@ -27,7 +27,7 @@ TODAY = dt.datetime.strftime(dt.datetime.now(), "%Y%m%d")
 def read_stations() -> None:
     """
     Process the GHCNH history file
-    
+
     Select stations which have defined lat, lon and elevation;
     at least N years of data (using start/end dates).  Also do additional
     processing for Canadian (71*) and German (09* and 10*) stations.
@@ -39,7 +39,7 @@ def read_stations() -> None:
 
     try:
         # process the station list
-        station_list = pd.read_fwf(setup.STATION_LIST, widths=(11, 9, 10, 7, 3, 40, 5), 
+        station_list = pd.read_fwf(setup.STATION_LIST, widths=(11, 9, 10, 7, 3, 40, 5),
                                header=None, names=("id", "latitude", "longitude", "elevation", "state", "name", "wmo"))
 
         station_IDs = station_list.id
@@ -48,7 +48,7 @@ def read_stations() -> None:
 
             station = utils.Station(station_id, station_list.latitude[st], station_list.longitude[st],
                                     station_list.elevation[st])
- 
+
             if station.lat != "" and station.lon != "" and station.elev != "" and float(station.elev) != -999.9:
 
                 # test if elevation is known (above Dead-Sea shore in Jordan at -423m)
@@ -63,11 +63,11 @@ def read_stations() -> None:
     except OSError:
         print(f"{setup.STATION_LIST:s} does not exist.")
         raise OSError
-    
+
     print(f"{len(station_IDs)} stations in full GHCNH")
 
     print(f"{len(all_stations)} stations with defined metadata")
-    
+
     return np.array(all_stations) # read_stations
 
 
@@ -98,7 +98,7 @@ def extract_inventory(station: utils.Station, inventory: np.ndarray, data_start:
         locs, = np.where(this_station[:, 2].astype(int) != 0)
         station.start = this_station[locs[0], 1].astype(int)
         station.end = this_station[locs[-1], 1].astype(int)
-        
+
         for year in this_station:
             monthly_obs[int(year[1]) - START_YEAR, :] = year[3:].astype(int)
 
@@ -183,7 +183,7 @@ def process_inventory(candidate_stations: list, data_start: int, data_end: int) 
     plt.colorbar(orientation="horizontal", label="Monthly obs counts",
                  extend="max", ticks=np.arange(0, 1100, 100),
                  pad=0.02, aspect=30, fraction=0.02)
-    
+
     plt.ylabel("Station sequence number")
 
     ax2 = ax1.twinx()
@@ -192,7 +192,7 @@ def process_inventory(candidate_stations: list, data_start: int, data_end: int) 
     ax2.set_ylabel("Station start letter")
 
     plt.savefig(os.path.join(setup.SUBDAILY_IMAGE_DIR, f"station_plot_{setup.DATESTAMP[:-1]}.png"), dpi=300)
-                        
+
     return # process_inventory
 
 
@@ -200,8 +200,8 @@ if __name__ == "__main__":
 
     # parse text file into candidate list, with lat, lon, elev and time span limits applied
     all_stations = read_stations()
-   
+
     data_start = 1800
     data_end = dt.datetime.now().year
-    
+
     process_inventory(all_stations, data_start, data_end)

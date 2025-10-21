@@ -11,7 +11,7 @@ import datetime as dt
 import calendar
 
 import setup
-import qc_utils as utils
+import utils
 import io_utils as ioutils
 
 MDI = -1.e30

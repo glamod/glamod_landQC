@@ -8,7 +8,7 @@ import numpy as np
 import datetime as dt
 
 import setup
-import qc_utils as utils
+import utils
 import io_utils as ioutils
 
 # ------------------------------------------------------------------------
