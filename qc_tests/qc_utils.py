@@ -2,7 +2,6 @@
 '''
 qc_utils.py contains utility scripts to help with quality control tests
 '''
-import pandas as pd
 import numpy as np
 import scipy.special
 import itertools
@@ -10,7 +9,6 @@ import logging
 
 from scipy.optimize import least_squares
 
-import setup
 import utils
 
 
