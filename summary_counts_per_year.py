@@ -14,7 +14,6 @@ Input arguments:
 --diagnostics       [False] Verbose output
 
 '''
-from pathlib import Path
 import datetime as dt
 import numpy as np
 
@@ -25,7 +24,8 @@ import setup
 #************************************************************************
 
 #************************************************************************
-def get_summary(stage: str = "N", restart_id: str = "", end_id: str = "", diagnostics: bool = False) -> None:
+def get_summary(stage: str="N", restart_id: str="",
+                end_id: str="", diagnostics: bool=False) -> None:
     """
     Main script.  Reads in station data, populates internal objects extracts counts per year.
 
@@ -49,15 +49,18 @@ def get_summary(stage: str = "N", restart_id: str = "", end_id: str = "", diagno
 
         #*************************
         # set up the stations
-        station = utils.Station(station_id, station_list.latitude[st], station_list.longitude[st], station_list.elevation[st])
+        station = utils.Station(station_id, station_list.latitude[st],
+                                station_list.longitude[st], station_list.elevation[st])
         if diagnostics:
             print(station)
 
         try:
             if stage == "I":
-                station, _ = io.read_station(setup.SUBDAILY_PROC_DIR / f"{station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}", station)
+                station, _ = io.read_station(setup.SUBDAILY_PROC_DIR /
+                                             f"{station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}", station)
             elif stage == "N":
-                station, _ = io.read_station(setup.SUBDAILY_OUT_DIR / f"{station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}", station)
+                station, _ = io.read_station(setup.SUBDAILY_OUT_DIR /
+                                             f"{station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}", station)
 
         except OSError: # as e:
             # file missing, move on to next in sequence

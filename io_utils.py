@@ -2,7 +2,7 @@
 '''
 io_utils - contains scripts for read/write of main files
 '''
-from pathlib import Path, PurePath
+from pathlib import PurePath
 import os
 import errno
 import pandas as pd

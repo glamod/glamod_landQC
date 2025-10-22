@@ -38,9 +38,9 @@ def main() -> None:
                                 station_list.longitude[st], station_list.elevation[st])
 
         try:
-            station, station_df = ioutils.read_station(setup.SUBDAILY_OUT_DIR /
-                                                       f"{station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}",
-                                                       station)
+            station, _ = ioutils.read_station(setup.SUBDAILY_OUT_DIR /
+                                              f"{station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}",
+                                              station)
         except OSError as e:
             # file missing, move on to next in sequence
             print(f"{station}, File Missing, {str(e)}")
