@@ -437,15 +437,12 @@ def test_noc_few_buddies(neighbour_outlier_mock: Mock) -> None:
 
 
 @patch("neighbour_outlier.utils.get_station_list")
-@patch("neighbour_outlier.setup")
-def test_noc_example_data(setup_mock: Mock,
-                          station_list_mock: Mock) -> None:
+@patch("neighbour_outlier.setup.SUBDAILY_PROC_DIR", EXAMPLE_FILES_PATH)
+@patch("neighbour_outlier.setup.OUT_COMPRESSION", "")
+@patch("neighbour_outlier.setup.IN_FORMAT", "psv")
+def test_noc_example_data(station_list_mock: Mock) -> None:
 
     # the neighbours and target all have data for 1979.
-
-    setup_mock.SUBDAILY_PROC_DIR = EXAMPLE_FILES_PATH
-    setup_mock.OUT_COMPRESSION = ""
-
     station_list = [["BUD00000001", 41.967, 100.883, 946.0],
                 ["DUM00000002", 40.0170, 48.4670, -15.0],
                 ["DUM00000003", 40.0170, 48.9170, -5.0],
