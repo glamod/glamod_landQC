@@ -12,7 +12,8 @@ from scipy.stats import skew
 import logging
 logger = logging.getLogger(__name__)
 
-import qc_utils as utils
+import qc_tests.qc_utils as qc_utils
+import utils
 #************************************************************************
 STORM_THRESHOLD = 5
 
@@ -74,8 +75,8 @@ def find_monthly_scaling(obs_var: utils.MeteorologicalVariable, station: utils.S
         if len(month_averages.compressed()) >= VALID_MONTHS:
 
             # have months, now to standardise
-            climatology = utils.average(month_averages) # mean
-            spread = utils.spread(month_averages) # IQR currently
+            climatology = qc_utils.average(month_averages) # mean
+            spread = qc_utils.spread(month_averages) # IQR currently
             if spread < SPREAD_LIMIT:
                 spread = SPREAD_LIMIT
 
@@ -135,7 +136,7 @@ def monthly_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station, c
 
         standardised_months = (month_averages - climatology) / spread
 
-        bins = utils.create_bins(standardised_months, BIN_WIDTH, obs_var.name)
+        bins = qc_utils.create_bins(standardised_months, BIN_WIDTH, obs_var.name)
         hist, bin_edges = np.histogram(standardised_months, bins)
 
         # flag months with very large offsets
@@ -228,8 +229,8 @@ def prepare_all_data(obs_var: utils.MeteorologicalVariable, station: utils.Stati
 
         if len(all_month_data.compressed()) >= utils.DATA_COUNT_THRESHOLD:
             # have data, now to standardise
-            climatology = utils.average(all_month_data) # mean
-            spread = utils.spread(all_month_data) # IQR currently
+            climatology = qc_utils.average(all_month_data) # mean
+            spread = qc_utils.spread(all_month_data) # IQR currently
         else:
             climatology = utils.MDI
             spread = utils.MDI
@@ -251,8 +252,8 @@ def prepare_all_data(obs_var: utils.MeteorologicalVariable, station: utils.Stati
 
             if len(all_month_data.compressed()) >= utils.DATA_COUNT_THRESHOLD:
                 # have data, now to standardise
-                climatology = utils.average(all_month_data) # mean
-                spread = utils.spread(all_month_data) # IQR currently
+                climatology = qc_utils.average(all_month_data) # mean
+                spread = qc_utils.spread(all_month_data) # IQR currently
             else:
                 climatology = utils.MDI
                 spread = utils.MDI
@@ -312,16 +313,16 @@ def find_thresholds(obs_var: utils.MeteorologicalVariable, station: utils.Statio
             config_dict[f"ADISTRIBUTION-{obs_var.name}"][f"{month}-lthresh"] = utils.MDI
             continue
 
-        bins = utils.create_bins(normalised_anomalies, BIN_WIDTH, obs_var.name, anomalies=True)
+        bins = qc_utils.create_bins(normalised_anomalies, BIN_WIDTH, obs_var.name, anomalies=True)
         bincentres = bins[1:] - (BIN_WIDTH/2)
         hist, bin_edges = np.histogram(normalised_anomalies, bins)
 
-        gaussian_fit = utils.fit_gaussian(bincentres, hist, 0.5*max(hist),
+        gaussian_fit = qc_utils.fit_gaussian(bincentres, hist, 0.5*max(hist),
                                           mu=np.ma.median(normalised_anomalies),
-                                          sig=1.5*utils.spread(normalised_anomalies),
+                                          sig=1.5*qc_utils.spread(normalised_anomalies),
                                           skew=0.5*skew(normalised_anomalies.compressed()))
 
-        fitted_curve = utils.skew_gaussian(bincentres, gaussian_fit)
+        fitted_curve = qc_utils.skew_gaussian(bincentres, gaussian_fit)
 
         # diagnostic plots
         if plots:
@@ -404,7 +405,7 @@ def all_obs_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
             # no data to work with for this month, move on.
             continue
 
-        bins = utils.create_bins(normalised_anomalies, BIN_WIDTH, obs_var.name, anomalies=True)
+        bins = qc_utils.create_bins(normalised_anomalies, BIN_WIDTH, obs_var.name, anomalies=True)
         hist, bin_edges = np.histogram(normalised_anomalies, bins)
 
         try:
@@ -429,7 +430,7 @@ def all_obs_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
 
         month_locs, = np.where(station.months == month) # append should keep year order
         if uppercount > 0:
-            gap_start = utils.find_gap(hist, bins, upper_threshold, GAP_SIZE)
+            gap_start = qc_utils.find_gap(hist, bins, upper_threshold, GAP_SIZE)
 
             if gap_start != 0:
                 bad_locs, = np.ma.where(normalised_anomalies > gap_start) # all years for one month
@@ -439,7 +440,7 @@ def all_obs_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
                 flags[month_locs] = month_flags
 
         if lowercount > 0:
-            gap_start = utils.find_gap(hist, bins, lower_threshold, GAP_SIZE, upwards=False)
+            gap_start = qc_utils.find_gap(hist, bins, lower_threshold, GAP_SIZE, upwards=False)
 
             if gap_start != 0:
                 bad_locs, = np.ma.where(normalised_anomalies < gap_start) # all years for one month
@@ -460,11 +461,11 @@ def all_obs_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
                         pass
                     else:
 
-                        wind_monthly_average = utils.average(wind_monthly_data)
-                        wind_monthly_spread = utils.spread(wind_monthly_data)
+                        wind_monthly_average = qc_utils.average(wind_monthly_data)
+                        wind_monthly_spread = qc_utils.spread(wind_monthly_data)
 
-                        pressure_monthly_average = utils.average(pressure_monthly_data)
-                        pressure_monthly_spread = utils.spread(pressure_monthly_data)
+                        pressure_monthly_average = qc_utils.average(pressure_monthly_data)
+                        pressure_monthly_spread = qc_utils.spread(pressure_monthly_data)
 
                         # already a single calendar month, so go through each year
                         all_years = np.unique(station.years)
@@ -556,7 +557,8 @@ def all_obs_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
     return # all_obs_gap
 
 #************************************************************************
-def dgc(station: utils.Station, var_list: list, config_dict: dict, full: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
+def dgc(station: utils.Station, var_list: list, config_dict: dict, full: bool = False,
+        plots: bool = False, diagnostics: bool = False) -> None:
     """
     Run through the variables and pass to the Distributional Gap Checks
 

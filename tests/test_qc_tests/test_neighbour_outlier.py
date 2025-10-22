@@ -8,6 +8,7 @@ import os
 from unittest.mock import patch, Mock
 
 import neighbour_outlier
+import utils
 import qc_utils
 import io_utils
 
@@ -18,8 +19,8 @@ EXAMPLE_FILES_PATH = os.path.join(os.path.dirname(__file__), "../", "example_dat
 # not testing plotting
 
 
-def _make_target_and_buddy(start_dt: dt.datetime | None = None) -> tuple[qc_utils.MeteorologicalVariable,
-                                      qc_utils.MeteorologicalVariable]:
+def _make_target_and_buddy(start_dt: dt.datetime | None = None) -> tuple[utils.MeteorologicalVariable,
+                                      utils.MeteorologicalVariable]:
 
     # set up variables and stations
     temperatures = common.example_test_variable("temperature", np.arange(10))
@@ -68,7 +69,7 @@ def test_read_in_buddies(read_station_mock: Mock,
     # is buddy in the dictionary
     assert "Buddy" in buddy_dict.keys()
     # assert it is a Station with suitable values
-    assert isinstance(buddy_dict["Buddy"], qc_utils.Station)
+    assert isinstance(buddy_dict["Buddy"], utils.Station)
     assert buddy_dict["Buddy"].lon == 100
     np.testing.assert_array_equal(buddy_dict["Buddy"].temperature.data, buddy_station.temperature.data)
 
@@ -332,10 +333,10 @@ def test_neighbour_outlier(read_buddy_data_mock: Mock) -> None:
                                     ["Buddy3", "120"],
                                     ["Buddy4", "80"]])
 
-    all_buddies = {"Buddy1" : qc_utils.Station("Buddy1", 45, 100 , 10),
-                   "Buddy2" : qc_utils.Station("Buddy1", 45, 100 , 10),
-                   "Buddy3" : qc_utils.Station("Buddy1", 45, 100 , 10),
-                   "Buddy4" : qc_utils.Station("Buddy1", 45, 100 , 10),}
+    all_buddies = {"Buddy1" : utils.Station("Buddy1", 45, 100 , 10),
+                   "Buddy2" : utils.Station("Buddy1", 45, 100 , 10),
+                   "Buddy3" : utils.Station("Buddy1", 45, 100 , 10),
+                   "Buddy4" : utils.Station("Buddy1", 45, 100 , 10),}
 
     temperatures = common.example_test_variable("temperature", np.arange(140))
     target_station = common.example_test_station(temperatures)
@@ -369,10 +370,10 @@ def test_neighbour_outlier_clean(read_buddy_data_mock: Mock) -> None:
                                     ["Buddy3", "120"],
                                     ["Buddy4", "120"]])
 
-    all_buddies = {"Buddy1" : qc_utils.Station("Buddy1", 45, 100 , 10),
-                   "Buddy2" : qc_utils.Station("Buddy1", 45, 100 , 10),
-                   "Buddy3" : qc_utils.Station("Buddy1", 45, 100 , 10),
-                   "Buddy4" : qc_utils.Station("Buddy1", 45, 100 , 10),}
+    all_buddies = {"Buddy1" : utils.Station("Buddy1", 45, 100 , 10),
+                   "Buddy2" : utils.Station("Buddy1", 45, 100 , 10),
+                   "Buddy3" : utils.Station("Buddy1", 45, 100 , 10),
+                   "Buddy4" : utils.Station("Buddy1", 45, 100 , 10),}
 
     temperatures = common.example_test_variable("temperature", np.arange(140))
     target_station = common.example_test_station(temperatures)
@@ -406,10 +407,10 @@ def test_noc(neighbour_outlier_mock: Mock,
     temperatures = common.example_test_variable("temperature", np.arange(10))
     station = common.example_test_station(temperatures)
 
-    read_in_buddies_mock.return_value  = {"Buddy1" : qc_utils.Station("Buddy1", 45, 100 , 10),
-                   "Buddy2" : qc_utils.Station("Buddy1", 45, 100 , 10),
-                   "Buddy3" : qc_utils.Station("Buddy1", 45, 100 , 10),
-                   "Buddy4" : qc_utils.Station("Buddy1", 45, 100 , 10),}
+    read_in_buddies_mock.return_value  = {"Buddy1" : utils.Station("Buddy1", 45, 100 , 10),
+                   "Buddy2" : utils.Station("Buddy1", 45, 100 , 10),
+                   "Buddy3" : utils.Station("Buddy1", 45, 100 , 10),
+                   "Buddy4" : utils.Station("Buddy1", 45, 100 , 10),}
 
     # Do the call, with 4 neighbours
     neighbour_outlier.noc(station, np.array([["Buddy1", 20],
@@ -454,7 +455,7 @@ def test_noc_example_data(setup_mock: Mock,
     station_list_mock.return_value = pd.DataFrame(station_list, columns=["id", "latitude",
                                                    "longitude", "elevation"])
 
-    target_station = qc_utils.Station("CHM00052353", 41.967, 100.883, 946.0)
+    target_station = utils.Station("CHM00052353", 41.967, 100.883, 946.0)
     # TODO: update station filename/id/data after Release 8 [Sept 2025]
     target_station, _ = io_utils.read_station(os.path.join(EXAMPLE_FILES_PATH, "CHM00052353.qff2"),
                                               target_station, read_flags=True)

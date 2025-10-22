@@ -15,7 +15,8 @@ import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-import qc_utils as utils
+import utils
+import qc_tests.qc_utils as qc_utils
 #************************************************************************
 
 #*********************************************
@@ -80,8 +81,8 @@ def precision_cross_check(station: utils.Station, primary: utils.MeteorologicalV
                 # no data in either of these two variables
                 continue
 
-            primary_precision = utils.reporting_accuracy(primary.data[month_locs])
-            secondary_precision = utils.reporting_accuracy(secondary.data[month_locs])
+            primary_precision = qc_utils.reporting_accuracy(primary.data[month_locs])
+            secondary_precision = qc_utils.reporting_accuracy(secondary.data[month_locs])
 
             if primary_precision != secondary_precision:
                 # flag secondary only

@@ -8,3 +8,4 @@ _templates
 logs/
 spice_scripts/
 doc/build
+parallel_scripts/

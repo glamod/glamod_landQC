@@ -9,7 +9,7 @@ import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-import qc_utils as utils
+import utils
 #************************************************************************
 
 MAX_LENGTH_OBS = 6 # up to X data points

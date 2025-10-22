@@ -48,7 +48,7 @@ import json
 from json.decoder import JSONDecodeError
 
 # internal utils
-import qc_utils as utils
+import utils
 import io_utils as io
 import qc_tests
 import setup

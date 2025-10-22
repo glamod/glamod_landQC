@@ -8,7 +8,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 # internal utils
-import qc_utils as utils
+import utils
 import setup
 #************************************************************************
 

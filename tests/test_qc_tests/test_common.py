@@ -2,7 +2,7 @@
 Contains tests for common.py
 """
 import numpy as np
-import qc_utils as utils
+import  utils
 
 import common
 

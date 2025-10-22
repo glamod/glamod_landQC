@@ -23,7 +23,7 @@ import numpy as np
 import random
 
 # internal utils
-import qc_utils as utils
+import utils
 
 # scripts to call
 import intra_checks as intra

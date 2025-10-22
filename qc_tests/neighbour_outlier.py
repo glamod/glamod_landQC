@@ -12,7 +12,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # internal utils
-import qc_utils as utils
+import utils
+import qc_tests.qc_utils as qc_utils
 import io_utils
 import setup
 #************************************************************************
@@ -219,7 +220,7 @@ def calculate_data_spread(target_station: utils.Station,
         for bid, buddy in enumerate(differences):
 
             if len(buddy[month_locs].compressed()) > utils.DATA_COUNT_THRESHOLD:
-                this_spread = utils.spread(buddy[month_locs])
+                this_spread = qc_utils.spread(buddy[month_locs])
                 if this_spread < MIN_SPREAD:
                     spreads[bid, month_locs] = MIN_SPREAD
                 else:

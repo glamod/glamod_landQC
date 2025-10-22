@@ -22,7 +22,8 @@ import datetime as dt
 import logging
 logger = logging.getLogger(__name__)
 
-import qc_utils as utils
+import utils
+import qc_tests.qc_utils as qc_utils
 
 MIN_STREAK_LENGTH_FOR_EXCESS_FREQUENCY = 10
 
@@ -69,7 +70,7 @@ def mask_calms(this_var: utils.MeteorologicalVariable) -> None:
 
     :param MetVar this_var: variable to process (wind speeds)
     """
-    reporting_resolution = utils.reporting_accuracy(this_var.data)
+    reporting_resolution = qc_utils.reporting_accuracy(this_var.data)
 
     # Don't take an identically equal to 0m/s given reporting
     #   resolution (even if good) may get the odd 0.5m/s as part of a long
@@ -134,7 +135,7 @@ def get_repeating_streak_threshold(obs_var: utils.MeteorologicalVariable,
     # only process further if there is enough data (need at least 2 for a streak of repeated values!)
     if len(this_var.data.compressed()) >= 2:
 
-        repeated_streak_lengths, _, _ = utils.prepare_data_repeating_streak(this_var.data.compressed(),
+        repeated_streak_lengths, _, _ = qc_utils.prepare_data_repeating_streak(this_var.data.compressed(),
                                                                             diff=0, plots=plots,
                                                                             diagnostics=diagnostics)
 
@@ -143,7 +144,7 @@ def get_repeating_streak_threshold(obs_var: utils.MeteorologicalVariable,
         # In Humidity, looking only for streaks (in DPD) are == 0, so have filtered into a
         #    set of locations where this criterion is met.
         # So for this test, could search in location space _or_ in value space.
-        #    The latter means that in the utils.prepare_data_repeating_streak()
+        #    The latter means that in the qc_utils.prepare_data_repeating_streak()
         #    routine the differences are 0, the former pre-identifies locations where a difference
         #    is a value (either specified as per humidity, or using first differences == 0)
         #    and hence the locational difference is 1, i.e. adjacent locations identified.
@@ -153,7 +154,7 @@ def get_repeating_streak_threshold(obs_var: utils.MeteorologicalVariable,
 
         # bin width is 1 as dealing in time index.
         # minimum bin value is 2 as this is the shortest streak possible
-        threshold = utils.get_critical_values(repeated_streak_lengths, binmin=2,
+        threshold = qc_utils.get_critical_values(repeated_streak_lengths, binmin=2,
                                               binwidth=1.0, plots=plots,
                                               diagnostics=diagnostics,
                                               title=this_var.name.capitalize(),
@@ -207,7 +208,7 @@ def get_excess_streak_threshold(obs_var: utils.MeteorologicalVariable,
         # Not looking for distribution of streak lengths,
         #  but proportion of obs identified as in a streak in each calendar year.
 
-        year_repeated_streak_lengths, _, _ = utils.prepare_data_repeating_streak(this_var.data[locs].compressed(),
+        year_repeated_streak_lengths, _, _ = qc_utils.prepare_data_repeating_streak(this_var.data[locs].compressed(),
                                                                         diff=0, plots=plots,
                                                                         diagnostics=diagnostics)
 
@@ -223,7 +224,7 @@ def get_excess_streak_threshold(obs_var: utils.MeteorologicalVariable,
 
         # bin width is 0.005 (0.5%) as dealing in fractions
         # minimum bin value is 0 as this is the lowest proportion possible
-        threshold = utils.get_critical_values(proportions, binmin=0,
+        threshold = qc_utils.get_critical_values(proportions, binmin=0,
                                               binwidth=0.005, plots=plots,
                                               diagnostics=diagnostics,
                                               title=this_var.name.capitalize(),
@@ -294,7 +295,9 @@ def repeating_value(obs_var: utils.MeteorologicalVariable, times: np.ndarray,
         # Escape if insufficient data in this array
         return
 
-    repeated_streak_lengths, grouped_diffs, streaks = utils.prepare_data_repeating_streak(this_var.data.compressed(), diff=0, plots=plots, diagnostics=diagnostics)
+    repeated_streak_lengths, grouped_diffs, streaks = qc_utils.prepare_data_repeating_streak(this_var.data.compressed(),
+                                                                                             diff=0, plots=plots,
+                                                                                             diagnostics=diagnostics)
 
     # above threshold
     bad, = np.nonzero(repeated_streak_lengths >= threshold)
@@ -379,7 +382,7 @@ def excess_repeating_value(obs_var: utils.MeteorologicalVariable, times: np.ndar
         #  but proportion of obs identified as in a streak in each calendar year.
         (year_repeated_streak_lengths,
         grouped_diffs,
-        streaks) = utils.prepare_data_repeating_streak(this_var.data[locs].compressed(),
+        streaks) = qc_utils.prepare_data_repeating_streak(this_var.data[locs].compressed(),
                                                         diff=0, plots=plots,
                                                         diagnostics=diagnostics)
 
@@ -501,7 +504,7 @@ def repeating_day(obs_var: utils.MeteorologicalVariable, station: utils.Station,
 
     # Calculate and save the threshold.
     if determine_threshold:
-        threshold = utils.get_critical_values(all_lengths, binwidth=1,
+        threshold = qc_utils.get_critical_values(all_lengths, binwidth=1,
                                 plots=plots,title=obs_var.name.capitalize(),
                                 xlabel="Streaks of repeating days")
 

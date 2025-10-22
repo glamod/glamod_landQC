@@ -17,7 +17,7 @@ import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-import qc_utils as utils
+import utils
 
 #************************************************************************
 def set_synergistic_flags(station: utils.Station, var: str) -> None:

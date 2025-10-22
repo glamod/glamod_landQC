@@ -32,7 +32,7 @@ import pandas as pd
 
 from geometry import polar2d_to_cartesian, cross_distance
 
-import qc_utils as utils
+import utils
 from setup import SUBDAILY_CONFIG_DIR
 
 DEFAULT_SEPARATION = 9999

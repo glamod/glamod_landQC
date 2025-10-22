@@ -10,7 +10,7 @@ import pytest
 from unittest.mock import call, patch, Mock
 
 import io_utils
-import qc_utils
+import utils
 import setup
 
 
@@ -165,7 +165,7 @@ def test_read_station() -> None:
         infile = os.path.join(os.path.dirname(__file__),
                             "example_data", "AJM00037898.pqt")
 
-    station = qc_utils.Station("AJM00037898", 39.6500, 46.5330, 1099.0)
+    station = utils.Station("AJM00037898", 39.6500, 46.5330, 1099.0)
 
     station, station_df = io_utils.read_station(infile, station)
 
@@ -185,7 +185,7 @@ def test_read_station_error() -> None:
     infile = os.path.join(os.path.dirname(__file__),
                           "example_data", "AJM000DUMMY.mff")
 
-    station = qc_utils.Station("AJM000DUMMY", 39.6500, 46.5330, 1099.0)
+    station = utils.Station("AJM000DUMMY", 39.6500, 46.5330, 1099.0)
 
     with pytest.raises(FileNotFoundError):
         station, _ = io_utils.read_station(infile, station)
@@ -318,7 +318,7 @@ def test_flag_write(setup_mock: Mock,
 def test_write_error(setup_mock: Mock,
                      tmp_path) -> None:
 
-    station = qc_utils.Station("DMY01234567", 50, 50, 50)
+    station = utils.Station("DMY01234567", 50, 50, 50)
     setup_mock.DATESTAMP = "DUMMYDATE"
     setup_mock.SUBDAILY_ERROR_DIR = tmp_path
 
@@ -334,7 +334,7 @@ def test_write_error(setup_mock: Mock,
 def test_write_error_append(setup_mock: Mock,
                      tmp_path) -> None:
 
-    station = qc_utils.Station("DMY01234567", 50, 50, 50)
+    station = utils.Station("DMY01234567", 50, 50, 50)
     setup_mock.SUBDAILY_ERROR_DIR = tmp_path
 
     # create the file and check append step worked

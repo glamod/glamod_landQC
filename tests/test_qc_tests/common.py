@@ -6,7 +6,7 @@ import datetime as dt
 import pandas as pd
 from typing import Optional
 
-import qc_utils as utils
+import utils
 
 # Tests are called with a station, and some variables.
 #   Need to build a station and empty variables to use

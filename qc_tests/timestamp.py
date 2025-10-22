@@ -8,7 +8,7 @@ import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-import qc_utils as utils
+import utils
 
 from qc_tests.spike import generate_differences
 #************************************************************************

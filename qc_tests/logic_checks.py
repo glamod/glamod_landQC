@@ -14,7 +14,7 @@ import setup
 import logging
 logger = logging.getLogger(__name__)
 
-import qc_utils as utils
+import utils
 #************************************************************************
 
 BAD_THRESHOLD = 0.005 # 99.5% good, 0.5% bad

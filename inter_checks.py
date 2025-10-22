@@ -39,7 +39,7 @@ import numpy as np
 import logging
 
 # internal utils
-import qc_utils as utils
+import utils
 import io_utils as io
 import qc_tests
 import setup
@@ -146,7 +146,7 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
             logging.warning(f"No data in station {target_station.id}")
             if diagnostics:
                 print("No data in station {target_station.id}")
-            # scoot onto next station
+                # scoot onto next station
             print("")
             continue
 

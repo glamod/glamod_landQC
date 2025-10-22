@@ -6,7 +6,7 @@ import pytest
 from unittest.mock import patch, Mock
 
 import high_flag
-import qc_utils
+import utils
 
 import common
 
@@ -19,7 +19,7 @@ def test_set_synergistic_flags_short_record() -> None:
 
     stnlp = common.example_test_variable("station_level_pressure",
                                          np.arange(10))
-    
+
     station = common.example_test_station(slp)
     station.station_level_pressure = stnlp
 
@@ -33,12 +33,12 @@ def test_set_synergistic_flags_short_record() -> None:
 def test_set_synergistic_flags() -> None:
 
     slp = common.example_test_variable("sea_level_pressure",
-                                       np.arange(11*qc_utils.DATA_COUNT_THRESHOLD))
+                                       np.arange(11*utils.DATA_COUNT_THRESHOLD))
     slp.flags[:] = "H"
 
     stnlp = common.example_test_variable("station_level_pressure",
-                                         np.arange(11*qc_utils.DATA_COUNT_THRESHOLD))
-    
+                                         np.arange(11*utils.DATA_COUNT_THRESHOLD))
+
     station = common.example_test_station(slp)
     station.station_level_pressure = stnlp
 
@@ -53,8 +53,8 @@ def test_set_synergistic_flags() -> None:
 def test_high_flag_rate_noflags() -> None:
 
     temperatures = common.example_test_variable("temperature",
-                                                np.arange(11*qc_utils.DATA_COUNT_THRESHOLD))
-   
+                                                np.arange(11*utils.DATA_COUNT_THRESHOLD))
+
     new_flags, flags_set = high_flag.high_flag_rate(temperatures)
     expected_flags = np.array(["" for _ in range(temperatures.data.shape[0])])
 
@@ -65,7 +65,7 @@ def test_high_flag_rate_noflags() -> None:
 def test_high_flag_rate_short_record() -> None:
 
     temperatures = common.example_test_variable("temperature", np.arange(5))
-   
+
     new_flags, flags_set = high_flag.high_flag_rate(temperatures)
 
     assert flags_set is False
@@ -75,41 +75,41 @@ def test_high_flag_rate_short_record() -> None:
 def test_high_flag_rate_prior_run() -> None:
 
     temperatures = common.example_test_variable("temperature",
-                                                np.arange(11*qc_utils.DATA_COUNT_THRESHOLD))
+                                                np.arange(11*utils.DATA_COUNT_THRESHOLD))
     temperatures.flags[:10] = "H"
     # Set a large number of other flags, so should trigger check
-    temperatures.flags[2*qc_utils.DATA_COUNT_THRESHOLD:] = "L"
+    temperatures.flags[2*utils.DATA_COUNT_THRESHOLD:] = "L"
     new_flags, flags_set = high_flag.high_flag_rate(temperatures)
     expected_flags = np.array(["" for _ in range(temperatures.data.shape[0])])
 
     assert flags_set is False
     np.testing.assert_array_equal(new_flags, expected_flags)
-   
+
 
 def test_high_flag_rate_low_fraction() -> None:
 
     temperatures = common.example_test_variable("temperature",
-                                                np.arange(11*qc_utils.DATA_COUNT_THRESHOLD))
-    
+                                                np.arange(11*utils.DATA_COUNT_THRESHOLD))
+
     # set many flags but too few to trigger the test
-    temperatures.flags[:int(temperatures.data.shape[0]*qc_utils.HIGH_FLAGGING) -1] = "L" 
+    temperatures.flags[:int(temperatures.data.shape[0]*utils.HIGH_FLAGGING) -1] = "L"
     new_flags, flags_set = high_flag.high_flag_rate(temperatures)
     expected_flags = np.array(["" for _ in range(temperatures.data.shape[0])])
 
     assert flags_set is False
     np.testing.assert_array_equal(new_flags, expected_flags)
-   
+
 
 def test_high_flag_rate_high_fraction() -> None:
 
     temperatures = common.example_test_variable("temperature",
-                                                np.arange(11*qc_utils.DATA_COUNT_THRESHOLD))
-    
+                                                np.arange(11*utils.DATA_COUNT_THRESHOLD))
+
     # set many flags to trigger the test
-    temperatures.flags[:int(temperatures.data.shape[0]*qc_utils.HIGH_FLAGGING) + 1] = "L"
+    temperatures.flags[:int(temperatures.data.shape[0]*utils.HIGH_FLAGGING) + 1] = "L"
 
     expected_flags = np.array(["" for _ in range(temperatures.data.shape[0])])
-    expected_flags[int(temperatures.data.shape[0]*qc_utils.HIGH_FLAGGING) + 1:] = "H"
+    expected_flags[int(temperatures.data.shape[0]*utils.HIGH_FLAGGING) + 1:] = "H"
 
     new_flags, flags_set = high_flag.high_flag_rate(temperatures)
 
@@ -133,7 +133,7 @@ def test_pcc(high_flag_rate_mock: Mock) -> None:
 
     np.testing.assert_array_equal(temperatures.flags,
                                   expected_flags)
-    
+
     assert set_vars == 1
 
 
@@ -160,7 +160,7 @@ def test_pcc_synergistic(high_flag_rate_mock: Mock,
 
     np.testing.assert_array_equal(var.flags,
                                   expected_flags)
-    
+
     synergistic_flags_mock.assert_called_once()
     # See comment in code, synergistically flagged ones only count once
     assert set_vars == 1

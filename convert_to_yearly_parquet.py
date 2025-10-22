@@ -18,7 +18,7 @@ import datetime as dt
 from collections import defaultdict
 
 import setup
-import qc_utils as utils
+import utils
 
 
 def get_files(diagnostics: bool = False) -> list:

@@ -9,7 +9,7 @@ import pytest
 import humidity
 
 import common
-import qc_utils as utils
+import utils
 
 def _setup_station() -> utils.Station:
 
@@ -22,7 +22,7 @@ def _setup_station() -> utils.Station:
     # make MetVars
     temperature = common.example_test_variable("temperature", temps)
     dew_point_temperature = common.example_test_variable("dew_point_temperature", dewps)
-    
+
     # make Station
     station = common.example_test_station(temperature)
     station.dew_point_temperature = dew_point_temperature
@@ -96,7 +96,7 @@ def test_super_saturation_check() -> None:
 
     np.testing.assert_array_equal(station.dew_point_temperature.flags, expected)
 
-                                          
+
 def test_super_saturation_check_w_mask() -> None:
 
     station = _setup_station()
@@ -113,7 +113,7 @@ def test_super_saturation_check_w_mask() -> None:
 
     np.testing.assert_array_equal(station.dew_point_temperature.flags, expected)
 
-                                          
+
 def test_super_saturation_check_proportion() -> None:
 
     station = _setup_station()
@@ -136,16 +136,16 @@ def test_dew_point_depression_streak() -> None:
     # set up the data
     temps = np.arange(75)
     dewps = np.arange(75) - 2.
-    # use same array as in qc_utils test
+    # use same array as in utils unit test
     locs = np.array([0,
                      10, 11, 12, 13, 14, 15,  # this set should be flagged
-                     20, 21, 22, 23,  # <-  all of these are too short 
+                     20, 21, 22, 23,  # <-  all of these are too short
                      30, 31, 32, 33,
                      40, 41, 42,
                      50, 51, 52,
                      60, 61, 62,
                      70])
-    
+
     expected = np.array(["" for _ in range(75)])
     expected[10:16] = "h"
 
@@ -162,7 +162,7 @@ def test_dew_point_depression_streak() -> None:
     humidity.dew_point_depression_streak(times, temperature, dewpoint, config_dict)
 
     np.testing.assert_array_equal(dewpoint.flags, expected)
- 
+
 
 def test_dew_point_depression_streak_dict() -> None:
 
@@ -173,11 +173,11 @@ def test_dew_point_depression_streak_dict() -> None:
 
     temperature = common.example_test_variable("temperature", temps)
     dewpoint = common.example_test_variable("dew_point_temperature", dewps)
-   
+
     times = np.array([dt.datetime(2024, 1, 1, 12, 0) +
                      (i * dt.timedelta(seconds=60*60))
                      for i in range(len(dewps))])
- 
+
     humidity.dew_point_depression_streak(times, temperature, dewpoint, config_dict)
 
     assert config_dict["HUMIDITY"]["DPD"] == -utils.MDI

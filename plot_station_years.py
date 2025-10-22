@@ -11,7 +11,7 @@ import cartopy.feature as cfeature
 
 # RJHD Utilities
 import setup
-import qc_utils as utils
+import utils
 
 
 # what is available
@@ -22,7 +22,7 @@ DAYS_IN_AVERAGE_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
 TODAY = dt.datetime.strftime(dt.datetime.now(), "%Y%m%d")
 
- 
+
 #*********************************************
 def read_stations() -> np.ndarray:
     """
@@ -34,14 +34,14 @@ def read_stations() -> np.ndarray:
 
     try:
         # process the station list
-        station_list = pd.read_fwf(setup.STATION_LIST, widths=(11, 9, 10, 7, 3, 40, 5), 
+        station_list = pd.read_fwf(setup.STATION_LIST, widths=(11, 9, 10, 7, 3, 40, 5),
                                header=None, names=("id", "latitude", "longitude", "elevation", "state", "name", "wmo"))
 
         station_IDs = station_list.id
         for st, station_id in enumerate(station_IDs):
             station = utils.Station(station_id, station_list.latitude[st], station_list.longitude[st],
                                     station_list.elevation[st])
- 
+
             if station.lat != "" and station.lon != "" and station.elev != "" and float(station.elev) != -999.9:
 
                 # test if elevation is known (above Dead-Sea shore in Jordan at -423m)
@@ -55,11 +55,11 @@ def read_stations() -> np.ndarray:
     except OSError:
         print(f"{setup.STATION_LIST:s} does not exist.  Check download")
         raise OSError
-    
+
     print(f"{len(station_IDs)} stations in full GHCNH")
 
     print(f"{len(all_stations)} stations with defined metadata")
-  
+
     return np.array(all_stations) # read_stations
 
 
@@ -87,7 +87,7 @@ def extract_inventory(station: utils.Station, inventory: np.ndarray) -> np.ndarr
         locs, = np.where(this_station[:, 2].astype(int) != 0)
         station.start = this_station[locs[0], 1].astype(int)
         station.end = this_station[locs[-1], 1].astype(int)
-        
+
         for year in this_station:
             monthly_obs[int(year[1]) - START_YEAR, :] = year[3:].astype(int)
 
@@ -106,7 +106,7 @@ def process_inventory(candidate_stations: list) -> list:
 
     :returns: list of selected station objects
     """
-    
+
 
     print("filtering GHCNH inventory")
 
@@ -132,7 +132,7 @@ def process_inventory(candidate_stations: list) -> list:
 
             station.obs = monthly_obs
 
-    inventory = [] #  clear memory    
+    inventory = [] #  clear memory
 
     return present_stations # process_inventory
 
@@ -143,7 +143,7 @@ def stations_per_year(candidate_stations: list) -> list:
 
     :param list candidate_station: list of station objects
 
-    :returns: stations_active_in_years - list of lists - which years a station is active in.   
+    :returns: stations_active_in_years - list of lists - which years a station is active in.
 
     """
 
@@ -199,7 +199,7 @@ def plot_stations(station_list: list, outfile: str, title: str = "") -> None:
                edgecolor='midnightblue', label=f'GHCNH {TODAY} stations')
 
     ax.set_global()
- 
+
     plt.legend(loc='lower center', ncol=2, bbox_to_anchor=(0.5, -0.17), frameon=False, prop={'size':13})
     if title != "":
         plt.suptitle(f"{title} - {len(lats)} stations")
@@ -340,7 +340,7 @@ def plot_station_number_over_time(station_list: list, outfile: str) -> None:
 
     station_numbers = np.array(station_numbers)
     station_numbers = np.ma.masked_where(station_numbers == 0, station_numbers)
-        
+
     plt.plot(np.arange(START_YEAR, END_YEAR+1), station_numbers, 'co', ls='-', label="raw")
 
     # prettify the plot
@@ -361,7 +361,7 @@ def plot_station_number_over_time(station_list: list, outfile: str) -> None:
 def main() -> None:
 
     # parse text file into candidate list, with lat, lon, elev and time span limits applied
-    all_stations = read_stations()      
+    all_stations = read_stations()
     plot_stations(all_stations,
                   os.path.join(setup.SUBDAILY_IMAGE_DIR, f'ghcnh_station_distribution_{TODAY}.png'),
                   title="GHCNh Stations")
@@ -388,7 +388,7 @@ def main() -> None:
 
         plot_stations(plot_list,
                       os.path.join(setup.SUBDAILY_IMAGE_DIR, f"ghcnh_station_number_in_{year}_{TODAY}.png"),
-                      title=str(year)), 
+                      title=str(year)),
         print(year, len(plot_list))
 
     return

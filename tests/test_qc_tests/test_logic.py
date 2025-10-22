@@ -9,30 +9,30 @@ import pytest
 from unittest.mock import (call, patch, mock_open, Mock)
 
 import logic_checks
-import qc_utils
+import utils
 import setup
 
 import common
 
 
-def _make_station() -> qc_utils.Station:
+def _make_station() -> utils.Station:
     """
     Create a station with two paired variables
 
     :returns: station
-    
+
     """
     test_data = np.ones(10)
     obs_var = common.example_test_variable("temperature", test_data)
     station = common.example_test_station(obs_var)
     station.id = "DUMMY"
-    
+
     return station
 
 
 def test_logic_file() -> None:
     # check necessary keys in the JSON file and read structure
-    with open(qc_utils.LOGICFILE, "r") as lf:
+    with open(utils.LOGICFILE, "r") as lf:
         limits = json.load(lf)["logic_limits"]
 
     for key in ["temperature",
@@ -86,14 +86,14 @@ def test_write_logic_error() -> None:
     with patch("logic_checks.open", open_mock, create=True):
         logic_checks.write_logic_error(station, "TEST MESSAGE")
 
-        
+
     # Check output file name and path
     expected_dir = os.path.join(setup.SUBDAILY_ERROR_DIR, "DUMMY.err")
-    open_mock.assert_called_with(expected_dir, "a")       
-        
+    open_mock.assert_called_with(expected_dir, "a")
+
     # Assert the number of write calls is correct
     assert open_mock.return_value.write.call_count == 2
-    
+
     # Assert the values of the write calls are correct
     calls = [call((dt.datetime.strftime(dt.datetime.now(), "%Y-%m-%d %H:%M") + "\n")),
              call('TEST MESSAGE\n')
@@ -106,7 +106,7 @@ def test_write_logic_error() -> None:
                                                 (90., 0),
                                                 (91., -1)])
 @patch("logic_checks.write_logic_error")
-def test_lc_latitude(write_error_mock: Mock, 
+def test_lc_latitude(write_error_mock: Mock,
                      latitude: float,
                      expected: int) -> None:
 
@@ -123,10 +123,10 @@ def test_lc_latitude(write_error_mock: Mock,
                                                  (180., 0),
                                                  (181., -1)])
 @patch("logic_checks.write_logic_error")
-def test_lc_longitude(write_error_mock: Mock, 
+def test_lc_longitude(write_error_mock: Mock,
                       longitude: float,
                       expected: int) -> None:
-    
+
     station = _make_station()
     station.lon = longitude
 
@@ -145,11 +145,11 @@ def test_lc_longitude(write_error_mock: Mock,
                                                            (91, 180., -1),
                                                            (91, 181., -1)])
 @patch("logic_checks.write_logic_error")
-def test_lc_combination(write_error_mock: Mock, 
+def test_lc_combination(write_error_mock: Mock,
                         latitude: float,
                         longitude: float,
                         expected: int) -> None:
-    
+
     station = _make_station()
     station.lat = latitude
     station.lon = longitude
@@ -165,10 +165,10 @@ def test_lc_combination(write_error_mock: Mock,
                                                 (0, 0),
                                                 (-999, 0),
                                                 (9999, 0),
-                                                (8850, 0),                                                
+                                                (8850, 0),
                                                 (8850.1, -1)])
 @patch("logic_checks.write_logic_error")
-def test_lc_elevation(write_error_mock: Mock, 
+def test_lc_elevation(write_error_mock: Mock,
                       elevation: float,
                       expected: int) -> None:
 
@@ -186,10 +186,10 @@ def test_lc_elevation(write_error_mock: Mock,
                                             (dt.datetime(1700, 1, 1, 1, 0), 0),
                                             ])
 @patch("logic_checks.write_logic_error")
-def test_lc_start(write_error_mock: Mock, 
+def test_lc_start(write_error_mock: Mock,
                   time: float,
                   expected: int) -> None:
-    
+
 
     station = _make_station()
     station.times[0] = time
@@ -204,10 +204,10 @@ def test_lc_start(write_error_mock: Mock,
                                             (dt.datetime.now(), 0),
                                             ])
 @patch("logic_checks.write_logic_error")
-def test_lc_end(write_error_mock: Mock, 
+def test_lc_end(write_error_mock: Mock,
                 time: float,
                 expected: int) -> None:
-    
+
 
     station = _make_station()
     station.times[-1] = time
@@ -219,7 +219,7 @@ def test_lc_end(write_error_mock: Mock,
 
 @patch("logic_checks.write_logic_error")
 def test_lc_time_diff(write_error_mock: Mock) -> None:
-    
+
 
     station = _make_station()
     # repeat the first two entries

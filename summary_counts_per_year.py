@@ -20,7 +20,7 @@ import datetime as dt
 import numpy as np
 
 # internal utils
-import qc_utils as utils
+import utils
 import io_utils as io
 import setup
 #************************************************************************
