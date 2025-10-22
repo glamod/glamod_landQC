@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 '''
-qc_utils.py contains utility scripts to help with quality control tests
+utils.py contains utility scripts to help with overall flow of suite
 '''
 import os
 import configparser

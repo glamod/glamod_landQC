@@ -80,7 +80,8 @@ def station_for_rsc_logic() -> utils.Station:
 
 # not testing plotting
 
-@patch("spike.qc_utils.reporting_accuracy")
+# patching qc_utils in streaks - but import not needed herein
+@patch("streaks.qc_utils.reporting_accuracy")
 def test_mask_calms(reporting_mock: Mock) -> None:
 
     # 0.1 m/s resolution

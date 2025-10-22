@@ -146,6 +146,7 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
             logging.warning(f"No data in station {target_station.id}")
             if diagnostics:
                 print("No data in station {target_station.id}")
+                # scoot onto next station
             print("")
             continue
 

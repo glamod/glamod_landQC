@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 '''
-qc_utils.py contains utility scripts to help with quality control tests
+qc_utils.py contains utility scripts to help with QC checks
 '''
 import numpy as np
 import scipy.special
