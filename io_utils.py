@@ -319,15 +319,18 @@ def integrity_check(infile: PurePath) -> bool:
 
 
 #************************************************************************
-def write(outfile: PurePath, df: pd.DataFrame, formatters: dict = {}) -> None:
+def write(outfile: PurePath, df: pd.DataFrame, formatters: dict=None) -> None:
     """
     Wrapper for write functions to allow remainder to be file format agnostic.
 
     :param PurePath outfile: location and name of outfile
     :param DataFrame df: data frame to write
-    :param formatters dict: dictionary of formatters
+    :param formatters dict: dictionary of formatters (default None)
     """
     # need to adjust formatting for certain columns before writing
+    # Have to have None as default to ensure predictable behaviour from mutable
+    if formatters is None:
+        formatters = {}
 
     for column, fmt in formatters.items():
         df[column] = pd.Series([fmt.format(val) for val in df[column]], index = df.index)
