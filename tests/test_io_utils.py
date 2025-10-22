@@ -20,7 +20,7 @@ EXAMPLE_FILES = os.listdir(os.path.join(os.path.dirname(__file__),
 def test_count_skip_rows() -> None:
 
     infile = os.path.join(os.path.dirname(__file__),
-                          "example_data", "AAI0000TNCA.mff")
+                          "example_data", "DUM00000001.mff")
 
     result = io_utils.count_skip_rows(infile)
 
@@ -30,7 +30,7 @@ def test_count_skip_rows() -> None:
 def test_read_psv_mff() -> None:
 
     infile = os.path.join(os.path.dirname(__file__),
-                          "example_data", "AAI0000TNCA.mff")
+                          "example_data", "DUM00000001.mff")
     separator = "|"
 
     # example file includes some Nulls and spaces in the data columns
@@ -48,7 +48,7 @@ def test_read_psv_mff() -> None:
 def test_read_psv_qff() -> None:
 
     infile = os.path.join(os.path.dirname(__file__),
-                          "example_data", "AJM00037843.qff")
+                          "example_data", "DUM00000002.qff")
     separator = "|"
 
     df = io_utils.read_psv(infile, separator)
@@ -60,7 +60,7 @@ def test_read_psv_qff() -> None:
 def test_read_psv_qff_fileerror() -> None:
 
     infile = os.path.join(os.path.dirname(__file__),
-                          "example_data", "AJM00037843.qff")
+                          "example_data", "DUM00000002.qff")
     separator = "|"
 
     # is a FileNotFoundError raised
@@ -77,10 +77,10 @@ def test_read_with_psv(setup_mock: Mock,
 
     setup_mock.IN_FORMAT = "psv"
     infile = os.path.join(os.path.dirname(__file__),
-                          "example_data", "AJM00037843.qff")
+                          "example_data", "DUM00000002.qff")
 
-    read_psv_mock.return_value = pd.DataFrame([["AJM00037843", "SABIRABAD", 1979],
-                                               ["AJM00037843", "SABIRABAD", 1979]],
+    read_psv_mock.return_value = pd.DataFrame([["DUM00000002", "SABIRABAD", 1979],
+                                               ["DUM00000002", "SABIRABAD", 1979]],
                                               columns=["STATION", "Station_name", "Year"])
 
     _ = io_utils.read(infile)
@@ -91,7 +91,7 @@ def test_read_with_psv(setup_mock: Mock,
 def test_read_oserror() -> None:
 
     infile = os.path.join(os.path.dirname(__file__),
-                          "example_data", "AJM00037843.qff")
+                          "example_data", "DUM00000002.qff")
 
     # is a FileNotFoundError raised
     with pytest.raises(FileNotFoundError):
@@ -160,12 +160,12 @@ def test_read_station() -> None:
     #   aspects, mocking this ended up with recursion errors
     if setup.IN_FORMAT in ["psv", "csv"]:
         infile = os.path.join(os.path.dirname(__file__),
-                            "example_data", "AJM00037898.qff")
+                            "example_data", "DUM00000004.qff")
     elif setup.IN_FORMAT in ["pqt", "parquet"]:
         infile = os.path.join(os.path.dirname(__file__),
-                            "example_data", "AJM00037898.pqt")
+                            "example_data", "DUM00000004.pqt")
 
-    station = utils.Station("AJM00037898", 39.6500, 46.5330, 1099.0)
+    station = utils.Station("DUM00000004", 39.6500, 46.5330, 1099.0)
 
     station, station_df = io_utils.read_station(infile, station)
 
@@ -183,9 +183,9 @@ def test_read_station_error() -> None:
 
     # unreachable file
     infile = os.path.join(os.path.dirname(__file__),
-                          "example_data", "AJM000DUMMY.mff")
+                          "example_data", "DUM00000000.mff")
 
-    station = utils.Station("AJM000DUMMY", 39.6500, 46.5330, 1099.0)
+    station = utils.Station("DUM00000000", 39.6500, 46.5330, 1099.0)
 
     with pytest.raises(FileNotFoundError):
         station, _ = io_utils.read_station(infile, station)

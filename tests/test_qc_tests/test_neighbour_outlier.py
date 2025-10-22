@@ -446,25 +446,25 @@ def test_noc_example_data(setup_mock: Mock,
     setup_mock.SUBDAILY_PROC_DIR = EXAMPLE_FILES_PATH
     setup_mock.OUT_COMPRESSION = ""
 
-    station_list = [["CHM00052353", 41.967, 100.883, 946.0],
-                ["AJM00037843", 40.0170, 48.4670, -15.0],
-                ["AJM00037849", 40.0170, 48.9170, -5.0],
-                ["AJM00037898", 39.6500, 46.5330, 1099.0],
-                ["AMM00037874", 39.8000, 44.7000, 818.0], # no overlapping data
+    station_list = [["BUD00000001", 41.967, 100.883, 946.0],
+                ["DUM00000002", 40.0170, 48.4670, -15.0],
+                ["DUM00000003", 40.0170, 48.9170, -5.0],
+                ["DUM00000004", 39.6500, 46.5330, 1099.0],
+                ["DUM00000005", 39.8000, 44.7000, 818.0], # no overlapping data
                 ]
     station_list_mock.return_value = pd.DataFrame(station_list, columns=["id", "latitude",
                                                    "longitude", "elevation"])
 
-    target_station = utils.Station("CHM00052353", 41.967, 100.883, 946.0)
+    target_station = utils.Station("BUD00000001", 41.967, 100.883, 946.0)
     # TODO: update station filename/id/data after Release 8 [Sept 2025]
-    target_station, _ = io_utils.read_station(os.path.join(EXAMPLE_FILES_PATH, "CHM00052353.qff2"),
+    target_station, _ = io_utils.read_station(os.path.join(EXAMPLE_FILES_PATH, "BUD00000001.qff"),
                                               target_station, read_flags=True)
 
-    initial_neighbours = np.array([["CHM00052353", 0],
-                                  ["AJM00037843", 110],
-                                  ["AJM00037849", 120],
-                                  ["AJM00037898", 130],
-                                  ["AMM00037874", 140]])
+    initial_neighbours = np.array([["BUD00000001", 0],
+                                  ["DUM00000002", 110],
+                                  ["DUM00000003", 120],
+                                  ["DUM00000004", 130],
+                                  ["DUM00000005", 140]])
 
     var_list = ["sea_level_pressure"]
 
@@ -477,6 +477,4 @@ def test_noc_example_data(setup_mock: Mock,
     example_flags = np.array(["" for _ in target_station.times])
     example_flags[locs] = "N"
 
-    print(target_station.sea_level_pressure.flags)
-    print(locs)
     np.testing.assert_array_equal(target_station.sea_level_pressure.flags, example_flags)
