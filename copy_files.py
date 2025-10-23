@@ -35,7 +35,7 @@ def copy_tree(source: PurePath, destination: PurePath, diagnostics: bool = False
     # copy entire tree
     shutil.copytree(source, destination)
     # ensure update of timestamps
-    for root, diry, files in destination.walk():
+    for root, _, files in destination.walk():
         for fname in files:
             os.utime(root / fname, None)
 
