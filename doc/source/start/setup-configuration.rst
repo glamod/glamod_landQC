@@ -42,6 +42,7 @@ thresholds to use.  The ``configuration.txt`` file contains:
     [THRESHOLDS]
     min_data_count = 120
     high_flag_proportion = 0.2
+    odd_cluster_separation = 14
     [NEIGHBOURS]
     max_distance = 500
     max_vertical_separation = 200
@@ -92,9 +93,10 @@ configuration file - there are two for the central tendency (``mean`` or ``media
 and three for the spread (``stdev``, ``iqr``, and ``mad`` [Median Absolute Deviation]).
 The default settings are as per this repository.
 
-There are a couple of thresholds which are used for when deciding whether to create a
-distribution or not (``min_data_count``) or for when the proportion of flags is
-classed as high (``high_flag_proportion``).
+There are a few thresholds which are used for when deciding whether to create a
+distribution or not (``min_data_count``), or for when the proportion of flags is
+classed as high (``high_flag_proportion``), or for setting the separation of an
+odd cluster of points to be flagged from others (``odd_cluster_separation``).
 
 Finally, for the buddy/neighbour checks, there are a number of settings for
 selecting the neighbours (``max_distance`` and ``max_vertical_separation``),

@@ -19,8 +19,11 @@ NOTES:
 HadISD uses 2 days (48h)
 Did try 7 days for initial run (October 2019) but still flagging lots of obs
 Next version using 4 weeks (~1 month) to get the really isolated ones.
+Release8.1 changed to 2 weeks (14days) as perhaps a better balance on test station (AJM00037849)
+   and now set in configuration file
 """
-MIN_SEPARATION = 28*24 # separated by Z days on either side from other data
+MIN_SEPARATION = utils.ODD_CLUSTER_SEPARATION * 24
+# separated by Z days on either side from other data
 
 
 #*********************************************
@@ -45,6 +48,7 @@ def plot_cluster(times: np.ndarray, obs_var: utils.MeteorologicalVariable,
             start = 0
     if oc_end == -1:
         end = -1
+        oc_end = None
     else:
         end = oc_end + 20
         if end > len(times):
@@ -126,7 +130,7 @@ def flag_clusters(obs_var: utils.MeteorologicalVariable, station: utils.Station,
                     flags[cluster_end+1:] = "o"
 
                     if plots:
-                        plot_cluster(station, obs_var, cluster_end+1, -1)
+                        plot_cluster(station.times, obs_var, cluster_end+1, -1)
 
     # append flags to object
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)

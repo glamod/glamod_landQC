@@ -95,6 +95,7 @@ if sum([STDEV, MAD, IQR]) >= 2:
 # Thresholds
 DATA_COUNT_THRESHOLD = config.getint("THRESHOLDS", "min_data_count")
 HIGH_FLAGGING = config.getfloat("THRESHOLDS", "high_flag_proportion")
+ODD_CLUSTER_SEPARATION = config.getint("THRESHOLDS", "odd_cluster_separation")
 
 # read in logic check list
 LOGICFILE = Path(__file__).parent / "configs" / config.get("FILES", "logic")
