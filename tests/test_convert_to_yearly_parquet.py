@@ -25,6 +25,7 @@ def test_get_files(iterdir_mock: Mock,
                                  Path("test5.qff.zip"),
                                  Path("test6.qff.zip")]
     setup_mock.OUT_COMPRESSION = compression
+    setup_mock.OUT_SUFFIX = "qff"
     setup_mock.SUBDAILY_OUT_DIR = Path("testdir")
 
     qff_files = convert_to_yearly_parquet.get_files()

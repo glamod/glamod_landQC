@@ -12,6 +12,7 @@ Input arguments:
 --clobber           Overwrite output files if already existing.  If not set, will skip if output exists
 '''
 #************************************************************************
+from pathlib import Path
 import pandas as pd
 import datetime as dt
 from collections import defaultdict
@@ -30,7 +31,7 @@ def get_files(diagnostics: bool = False) -> list:
     """
     file_extension = f'.{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}'
 
-    qff_files = [f for f in setup.SUBDAILY_OUT_DIR.iterdir() if str(f).endswith(file_extension)]
+    qff_files = [f for f in Path(setup.SUBDAILY_OUT_DIR).iterdir() if str(f).endswith(file_extension)]
 
     if diagnostics:
         print(f"Found {len(qff_files)} files in {setup.SUBDAILY_OUT_DIR}")
