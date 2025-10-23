@@ -20,8 +20,9 @@ HadISD uses 2 days (48h)
 Did try 7 days for initial run (October 2019) but still flagging lots of obs
 Next version using 4 weeks (~1 month) to get the really isolated ones.
 Release8.1 changed to 2 weeks (14days) as perhaps a better balance on test station (AJM00037849)
+   and now set in configuration file
 """
-MIN_SEPARATION = utils.ODD_CLUSTER_SEPARATION*24
+MIN_SEPARATION = utils.ODD_CLUSTER_SEPARATION * 24
 # separated by Z days on either side from other data
 
 

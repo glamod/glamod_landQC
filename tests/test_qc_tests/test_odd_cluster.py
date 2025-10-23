@@ -131,7 +131,7 @@ def test_flag_clusters_start() -> None:
 def test_flag_clusters_end() -> None:
     """Mock up a cluster of isolated data at the end of a run"""
 
-    # standard data, then cluster (kength 5)
+    # standard data, then cluster (length 5)
     start_dt = dt.datetime(2000, 4, 1, 0, 0)
     start_times = _generate_pd_times(len(INDATA), start_dt)
     # separation of 2 months
