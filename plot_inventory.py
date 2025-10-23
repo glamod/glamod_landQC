@@ -1,7 +1,6 @@
 #!/usr/local/bin python
 
 
-import os
 import datetime as dt
 import numpy as np
 import pandas as pd
@@ -140,7 +139,7 @@ def process_inventory(candidate_stations: list, data_start: int, data_end: int) 
 
     # read in the inventory
     try:
-        inventory = np.genfromtxt(os.path.join(setup.SUBDAILY_METADATA_DIR, setup.INVENTORY),
+        inventory = np.genfromtxt(setup.INVENTORY,
                                   skip_header=8, dtype=str)
     except OSError:
         pass
@@ -191,7 +190,7 @@ def process_inventory(candidate_stations: list, data_start: int, data_end: int) 
     ax2.set_yticks(name_labels[:, 1].astype(int), name_labels[:, 0])
     ax2.set_ylabel("Station start letter")
 
-    plt.savefig(os.path.join(setup.SUBDAILY_IMAGE_DIR, f"station_plot_{setup.DATESTAMP[:-1]}.png"), dpi=300)
+    plt.savefig(setup.SUBDAILY_IMAGE_DIR / f"station_plot_{setup.DATESTAMP[:-1]}.png", dpi=300)
 
     return # process_inventory
 

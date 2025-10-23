@@ -1,27 +1,27 @@
-
 #!/usr/bin/env python
 '''
 copy_files - scripts to copy files and trees
 '''
+from pathlib import PurePath
 import os
 import shutil
 import glob
 
 #*********************************************
-def copy_tree(source: str, destination: str, diagnostics: bool = False) -> None:
+def copy_tree(source: PurePath, destination: PurePath, diagnostics: bool = False) -> None:
     """
     Perform local copy from networked storage to working area
         (e.g. GWS to /work/scratch )
 
     Automatically wipes and clobbers
 
-    :param str source: source directory
-    :param str destination: destination directory
+    :param PurePath source: source directory
+    :param PurePath destination: destination directory
     :param bool diagnostics: verbose output
     """
 
     # remove entire directory
-    if os.path.exists(destination):
+    if destination.exists():
         try:
             shutil.rmtree(destination)
         except OSError:
@@ -35,9 +35,9 @@ def copy_tree(source: str, destination: str, diagnostics: bool = False) -> None:
     # copy entire tree
     shutil.copytree(source, destination)
     # ensure update of timestamps
-    for root, diry, files in os.walk(destination):
+    for root, _, files in destination.walk():
         for fname in files:
-            os.utime(os.path.join(root, fname), None)
+            os.utime(root / fname, None)
 
     if diagnostics:
         print(f"copied {source} to {destination}")
@@ -46,14 +46,14 @@ def copy_tree(source: str, destination: str, diagnostics: bool = False) -> None:
 
 
 #*********************************************
-def copy_files(source: str, destination: str, extension:str = "",
+def copy_files(source: PurePath, destination: PurePath, extension:str = "",
                clobber:bool = True, wipe: bool = True, diagnostics: bool = False) -> None:
     """
     Perform local copy from networked storage to working area
         (e.g. GWS/file.txt to /work/scratch/file.txt )
 
-    :param str source: source directory
-    :param str destination: destination directory
+    :param PurePath source: source directory
+    :param PurePath destination: destination directory
     :param bool clobber: overwrite
     :param bool wipe: clean out destination in advance of copy
     :param str extension: optional filename extension
@@ -63,13 +63,13 @@ def copy_files(source: str, destination: str, extension:str = "",
     # remove entire directory and recreate as blank
     if wipe:
         shutil.rmtree(destination)
-        if not os.path.exists(destination):
-            os.mkdir(destination)
+        if not destination.exists():
+            destination.mkdir()
 
     # for each file at a time
-    for filename in glob.glob(fr'{os.path.expanduser(source)}*{extension}'):
+    for filename in glob.glob(fr'{source.expanduser()}*{extension}'):
 
-        if not os.path.exists(os.path.join(destination, filename.split("/")[-1])):
+        if not (destination / filename.split("/")[-1]).exists():
             # file doesn't exist, so copy
             shutil.copy(filename, destination)
 
@@ -89,6 +89,6 @@ def copy_files(source: str, destination: str, extension:str = "",
                     print(f"{filename} exists")
 
         # force update of timestamps
-        os.utime(os.path.join(destination, filename.split("/")[-1]), None)
+        os.utime(destination / filename.split("/")[-1], None)
 
     return # copy_files

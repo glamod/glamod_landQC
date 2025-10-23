@@ -33,7 +33,6 @@ Input arguments:
 
 '''
 #************************************************************************
-import os
 import datetime as dt
 import numpy as np
 import logging
@@ -56,7 +55,7 @@ def read_neighbours(restart_id: str = "", end_id: str = "") -> np.ndarray:
     :returns: array - [station, neighbours, distances]
     """
 
-    all_entries = np.genfromtxt(os.path.join(setup.SUBDAILY_CONFIG_DIR, utils.NEIGHBOUR_FILE), dtype=(str))
+    all_entries = np.genfromtxt(utils.NEIGHBOUR_FILE, dtype=(str))
     station_IDs = all_entries[:, 0]
 
     # work from the end to save messing up the start indexing
@@ -101,12 +100,12 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
 
         if not clobber:
             # wanting to skip if files exist
-            if os.path.exists(os.path.join(setup.SUBDAILY_BAD_DIR, f"{target_station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}")):
-                print(os.path.join(setup.SUBDAILY_BAD_DIR, "f{target_station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}") +
+            if (setup.SUBDAILY_BAD_DIR / f"{target_station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}").exists():
+                print(setup.SUBDAILY_BAD_DIR / "f{target_station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}" +
                       "exists and clobber kwarg not set, skipping to next station.")
                 continue
-            elif os.path.exists(os.path.join(setup.SUBDAILY_OUT_DIR, f"{target_station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}")):
-                print(os.path.join(setup.SUBDAILY_OUT_DIR, f"{target_station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}") +
+            elif (setup.SUBDAILY_OUT_DIR / f"{target_station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}").exists():
+                print(setup.SUBDAILY_OUT_DIR / f"{target_station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}" +
                       "exists and clobber kwarg not set, skipping to next station.")
                 continue
             else:
@@ -118,9 +117,9 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
 
         #*************************
         # set up logging
-        logfile = os.path.join(setup.SUBDAILY_LOG_DIR, f"{target_station_id}_external_checks.log")
-        if os.path.exists(logfile):
-            os.remove(logfile)
+        logfile = setup.SUBDAILY_LOG_DIR / f"{target_station_id}_external_checks.log"
+        if logfile.exists():
+            logfile.unlink()
         logger = utils.custom_logger(logfile)
         logger.info(f"External (Buddy) Checks on {target_station_id}")
         logger.info("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
@@ -132,8 +131,8 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
             print(target_station)
 
         try:
-            target_station, target_station_df = io.read_station(os.path.join(
-                setup.SUBDAILY_PROC_DIR, f"{target_station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}"),
+            target_station, target_station_df = io.read_station(
+                setup.SUBDAILY_PROC_DIR / f"{target_station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}",
                                                                 target_station, read_flags=True)
         except FileNotFoundError:
             # file missing, move on to next in sequence
@@ -183,17 +182,17 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
             # high flagging rates in more than one variable.  Withholding station completely
             if diagnostics: print(f"{target_station.id} withheld as too high flagging")
             logging.info(f"{target_station.id} withheld as too high flagging")
-            io.write(os.path.join(setup.SUBDAILY_BAD_DIR, f"{target_station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}"),
+            io.write(setup.SUBDAILY_BAD_DIR / f"{target_station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}",
                      target_station_df, formatters={"LATITUDE" : "{:7.4f}", "LONGITUDE" : "{:7.4f}", "Month": "{:02d}", "Day": "{:02d}", "Hour" : "{:02d}", "Minute" : "{:02d}"})
 
         else:
-            io.write(os.path.join(setup.SUBDAILY_OUT_DIR, f"{target_station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}"),
+            io.write(setup.SUBDAILY_OUT_DIR / f"{target_station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}",
                      target_station_df, formatters={"LATITUDE" : "{:7.4f}", "LONGITUDE" : "{:7.4f}", "Month": "{:02d}", "Day": "{:02d}", "Hour" : "{:02d}", "Minute" : "{:02d}"})
 
 
         #*************************
         # Output flagging summary file
-        io.flag_write(os.path.join(setup.SUBDAILY_FLAG_DIR, f"{target_station_id:11s}.flg"), target_station_df, diagnostics=diagnostics)
+        io.flag_write(setup.SUBDAILY_FLAG_DIR / f"{target_station_id:11s}.flg", target_station_df, diagnostics=diagnostics)
 
         if diagnostics or plots:
             input(f"Stop after {dt.datetime.now()-startT} of processing")

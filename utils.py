@@ -2,7 +2,7 @@
 '''
 utils.py contains utility scripts to help with overall flow of suite
 '''
-import os
+from pathlib import Path
 import configparser
 import json
 import pandas as pd
@@ -64,14 +64,11 @@ WIND_MEASUREMENT_CODES = ["", "N-Normal", "C-Calm", "V-Variable", "9-Missing"]
 # Process the Configuration File
 #*********************************************
 
-CONFIG_FILE = "./configuration.txt"
+CONFIG_FILE = Path(__file__).parent / "configuration.txt"
 
-if not os.path.exists(os.path.join(os.path.dirname(__file__), CONFIG_FILE)):
-    print(f"Configuration file missing - {os.path.join(os.path.dirname(__file__), CONFIG_FILE)}")
+if not CONFIG_FILE.exists:
+    print(f"Configuration file missing - {CONFIG_FILE}")
     quit()
-else:
-    CONFIG_FILE = os.path.join(os.path.dirname(__file__), CONFIG_FILE)
-
 
 config = configparser.ConfigParser()
 config.read(CONFIG_FILE)
@@ -100,7 +97,7 @@ DATA_COUNT_THRESHOLD = config.getint("THRESHOLDS", "min_data_count")
 HIGH_FLAGGING = config.getfloat("THRESHOLDS", "high_flag_proportion")
 
 # read in logic check list
-LOGICFILE = os.path.join(os.path.dirname(__file__), "configs", config.get("FILES", "logic"))
+LOGICFILE = Path(__file__).parent / "configs" / config.get("FILES", "logic")
 
 #*********************************************
 # Neighbour Checks

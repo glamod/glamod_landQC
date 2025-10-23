@@ -1,7 +1,6 @@
 """
 Contains tests for logic.py
 """
-import os
 import numpy as np
 import datetime as dt
 import json
@@ -88,7 +87,7 @@ def test_write_logic_error() -> None:
 
 
     # Check output file name and path
-    expected_dir = os.path.join(setup.SUBDAILY_ERROR_DIR, "DUMMY.err")
+    expected_dir = setup.SUBDAILY_ERROR_DIR / "DUMMY.err"
     open_mock.assert_called_with(expected_dir, "a")
 
     # Assert the number of write calls is correct

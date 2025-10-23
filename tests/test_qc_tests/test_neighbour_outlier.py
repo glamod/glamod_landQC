@@ -1,10 +1,10 @@
 """
 Contains tests for neighour_outlier.py
 """
+from pathlib import Path
 import numpy as np
 import pandas as pd
 import datetime as dt
-import os
 from unittest.mock import patch, Mock
 
 import neighbour_outlier
@@ -14,7 +14,7 @@ import io_utils
 
 import common
 
-EXAMPLE_FILES_PATH = os.path.join(os.path.dirname(__file__), "../", "example_data")
+EXAMPLE_FILES_PATH = Path(__file__).parent.parent / "example_data"
 
 # not testing plotting
 
@@ -454,7 +454,7 @@ def test_noc_example_data(station_list_mock: Mock) -> None:
 
     target_station = utils.Station("BUD00000001", 41.967, 100.883, 946.0)
     # TODO: update station filename/id/data after Release 8 [Sept 2025]
-    target_station, _ = io_utils.read_station(os.path.join(EXAMPLE_FILES_PATH, "BUD00000001.qff"),
+    target_station, _ = io_utils.read_station(EXAMPLE_FILES_PATH / "BUD00000001.qff",
                                               target_station, read_flags=True)
 
     initial_neighbours = np.array([["BUD00000001", 0],

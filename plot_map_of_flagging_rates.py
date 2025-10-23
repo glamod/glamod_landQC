@@ -1,6 +1,6 @@
 #************************************************************************
+from pathlib import Path
 import cartopy.crs as ccrs
-import os
 import datetime as dt
 import numpy as np
 import matplotlib
@@ -85,7 +85,7 @@ def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False) -> N
             print(station)
 
         try:
-            flag_summary = flag_read(os.path.join(setup.SUBDAILY_FLAG_DIR, f"{station_id}.flg"))
+            flag_summary = flag_read(setup.SUBDAILY_FLAG_DIR / f"{station_id}.flg")
         except IOError:
             print(f"flag file missing for {station_id}")
             continue
@@ -93,7 +93,7 @@ def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False) -> N
         #*************************
         # read QFF
         # try:
-        #     station_df = io.read(os.path.join(setup.SUBDAILY_OUT_DIR, f"{station_id}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}"))
+        #     station_df = io.read(setup.SUBDAILY_OUT_DIR / f"{station_id}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}")
         # except IOError:
         #     print(f"Missing station {station_id}")
         #     continue
@@ -207,15 +207,14 @@ def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False) -> N
                 else:
                     plt.title(f"{' '.join([v.capitalize() for v in var.split('_')])} - {utils.QC_TESTS[test]}")
 
-                watermarkstring="/".join(os.getcwd().split('/')[4:])+'/'+\
-                    os.path.basename( __file__ )+"   "+dt.datetime.strftime(dt.datetime.now(), "%d-%b-%Y %H:%M")
+                watermarkstring = Path(__file__).name+"   "+dt.datetime.strftime(dt.datetime.now(), "%d-%b-%Y %H:%M")
                 plt.figtext(0.01,0.01,watermarkstring,size=5)
 
                 plt.legend(loc='lower center', ncol=4, bbox_to_anchor=(0.5, -0.12), frameon=False, title='', prop={'size':9}, \
                                labelspacing=0.15, columnspacing=0.5, numpoints=1)
 
-                print(os.path.join(IMAGE_LOCS, f"All_fails_{var}-{test}{suffix}_{start_time_string}.png"))
-                plt.savefig(os.path.join(IMAGE_LOCS, f"All_fails_{var}-{test}{suffix}_{start_time_string}.png"))
+                print(IMAGE_LOCS / f"All_fails_{var}-{test}{suffix}_{start_time_string}.png")
+                plt.savefig(IMAGE_LOCS /f"All_fails_{var}-{test}{suffix}_{start_time_string}.png")
                 plt.close()
 
 
