@@ -64,7 +64,6 @@ def main() -> None:
 
         # clear the memory
         del station
-        del station_df
         gc.collect()
 
     station_list["begins"] = begins
