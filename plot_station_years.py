@@ -1,3 +1,4 @@
+from pathlib import Path
 import datetime as dt
 import numpy as np
 import pandas as pd
@@ -163,7 +164,7 @@ def stations_per_year(candidate_stations: list) -> list:
     return stations_active_in_years # stations_per_year
 
 #*********************************************
-def plot_stations(station_list: list, outfile: str, title: str = "") -> None:
+def plot_stations(station_list: list, outfile: Path, title: str = "") -> None:
     """
     Plot the stations on a global map
 
@@ -216,7 +217,14 @@ def plot_stations(station_list: list, outfile: str, title: str = "") -> None:
 
 
 #****************************************************
-def plot_gridded_map(station_list: list, outfile: str, title: str = "") -> None:
+def plot_gridded_map(station_list: list, outfile: Path, title: str = "") -> None:
+    """
+    Plot gridded map of stations
+
+    :param list station_list: list of station objects
+    :param Path outfile: file to save plot as
+    :param str title: title of plot
+    """
 
     #*************************
     # plot a gridded map
@@ -302,12 +310,12 @@ def plot_gridded_map(station_list: list, outfile: str, title: str = "") -> None:
 
 
 #****************************************************
-def plot_station_number_over_time(station_list: list, outfile: str) -> None:
+def plot_station_number_over_time(station_list: list, outfile: Path) -> None:
     """
     Plot the number of stations in each year
 
     :param list station_list: list of station objects
-    :param str outfile: name of output file
+    :param str Path: name of output file
     """
     # flatten list
     stations_active_in_years = stations_per_year(station_list)
@@ -329,7 +337,7 @@ def plot_station_number_over_time(station_list: list, outfile: str) -> None:
     watermarkstring = dt.datetime.strftime(dt.datetime.now(), "%d-%b-%Y %H:%M")
     plt.figtext(0.01, 0.01, watermarkstring, size=5)
 
-    plt.savefig(outfile+".png")
+    plt.savefig(outfile.with_suffixs("png"))
 
     # and log-scale y-axis
     plt.clf()
@@ -352,7 +360,7 @@ def plot_station_number_over_time(station_list: list, outfile: str) -> None:
     watermarkstring = dt.datetime.strftime(dt.datetime.now(), "%d-%b-%Y %H:%M")
     plt.figtext(0.01, 0.01, watermarkstring, size=5)
 
-    plt.savefig(outfile+"_log.png")
+    plt.savefig(outfile.with_suffix("png"))
 
     return station_numbers # plot_station_number_over_time
 
