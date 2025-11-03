@@ -360,7 +360,7 @@ def plot_station_number_over_time(station_list: list, outfile: Path) -> None:
     watermarkstring = dt.datetime.strftime(dt.datetime.now(), "%d-%b-%Y %H:%M")
     plt.figtext(0.01, 0.01, watermarkstring, size=5)
 
-    plt.savefig(outfile.with_suffix(".png"))
+    plt.savefig(outfile.with_name(f"{outfile.name}_log.png"))
 
     return station_numbers # plot_station_number_over_time
 
