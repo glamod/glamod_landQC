@@ -393,8 +393,8 @@ def create_bins(data: np.ndarray, width: float,
             pad = 500  # hpa
 
         # Using Rest Of World (ROW) to get total range
-        bmin = records.mins[var_name]["row"] - pad
-        bmax = records.maxes[var_name]["row"] + pad
+        bmin = np.floor(records.mins[var_name]["row"]) - pad
+        bmax = np.ceil(records.maxes[var_name]["row"]) + pad
 
         if anomalies:
             # for INI0000VOMM June 2021
