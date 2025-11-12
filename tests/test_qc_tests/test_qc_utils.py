@@ -215,7 +215,7 @@ def test_create_bins() -> None:
 
 
 def test_create_bins_long() -> None:
-    """Simple test of bin creation"""
+    """Simple test of bin creation when max and min would result in too many"""
 
     indata = np.array([-7000, 7000])
 
