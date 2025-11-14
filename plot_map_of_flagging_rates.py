@@ -119,7 +119,7 @@ def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False) -> N
 
 
             # # for total, get number of clean obs and subtract
-            # flagged, = np.where(flags != "")
+            # flagged, = np.nonzero(flags != "")
             # setattr(obs_var, "All", flagged.shape[0]/flags.shape[0])
             # setattr(obs_var, "All_counts", flagged.shape[0])
             try:
@@ -177,17 +177,17 @@ def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False) -> N
 
                     # sort the labels
                     if u == 0:
-                        locs, = np.where(flag_fraction == 0)
+                        locs, = np.nonzero(flag_fraction == 0)
                         upper_label = f'{upper:.0f}' if suffix == "_counts" else f'{upper:0.1f}'
                         label = f'{upper_label}{UNITS[suffix]}: {len(locs)}'
                     elif upper == limits[-1]:
                         # if the last entry, then don't use an upper bound
                         #   counts and % will likely be at times greater than 5000/100%
-                        locs, = np.where(flag_fraction > limits[u-1])
+                        locs, = np.nonzero(flag_fraction > limits[u-1])
                         upper_label = f'{limits[u-1]:.0f}' if suffix == "_counts" else f'{limits[u-1]:0.1f}'
                         label = f'>{upper_label}{UNITS[suffix]}: {len(locs)}'
                     else:
-                        locs, = np.where(np.logical_and(flag_fraction <= upper, \
+                        locs, = np.nonzero(np.logical_and(flag_fraction <= upper, \
                                                         flag_fraction > limits[u-1]))
                         lower_label = f'{limits[u-1]:.0f}' if suffix == "_counts" else f'{limits[u-1]:0.1f}'
                         upper_label = f'{upper:.0f}' if suffix == "_counts" else f'{upper:0.1f}'

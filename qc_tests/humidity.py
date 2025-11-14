@@ -37,7 +37,7 @@ def get_repeating_dpd_threshold(temperatures: utils.MeteorologicalVariable,
     dpd = temperatures.data - dewpoints.data
 
     # find only the DPD=0 locations, and then see if there are streaks
-    locs, = np.ma.where(dpd == 0)
+    locs, = np.ma.nonzero(dpd == 0)
 
     # only process further if there are enough locations
     if len(locs) > 1:
@@ -157,7 +157,7 @@ def super_saturation_check(station: utils.Station,
 
     flags = np.array(["" for i in range(temperatures.data.shape[0])])
 
-    sss, = np.ma.where(dewpoints.data > (temperatures.data + TOLERANCE))
+    sss, = np.ma.nonzero(dewpoints.data > (temperatures.data + TOLERANCE))
 
     flags[sss] = "h"
 
@@ -181,7 +181,7 @@ def super_saturation_check(station: utils.Station,
             plot_humidities(temperatures, dewpoints, station.times, bad)
 
     logger.info(f"Supersaturation {dewpoints.name}")
-    logger.info(f"   Cumulative number of flags set: {len(np.nonzero(flags != '')[0])}")
+    logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
     return # super_saturation_check
 
@@ -219,7 +219,7 @@ def dew_point_depression_streak(times: np.ndarray,
     dpd = temperatures.data - dewpoints.data
 
     # find only the DPD=0 locations, and then see if there are streaks
-    locs, = np.ma.where(dpd == 0)
+    locs, = np.ma.nonzero(dpd == 0)
 
     # only process further if there are enough locations
     if len(locs) > 1:
@@ -241,7 +241,7 @@ def dew_point_depression_streak(times: np.ndarray,
         dewpoints.flags = utils.insert_flags(dewpoints.flags, flags)
 
     logger.info(f"Dewpoint Depression {dewpoints.name}")
-    logger.info(f"   Cumulative number of flags set: {len(np.nonzero(flags != '')[0])}")
+    logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
     return # dew_point_depression_streak
 

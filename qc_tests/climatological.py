@@ -80,7 +80,7 @@ def low_pass_filter(normed_anomalies: np.ndarray, station: utils.Station,
 
             weights = get_weights(monthly_anoms, monthly_range, filter_range)
 
-            ymlocs, = np.where(np.logical_and(station.months == month, station.years == year))
+            ymlocs, = np.nonzero((station.months == month) & (station.years == year))
             normed_anomalies[ymlocs] = normed_anomalies[ymlocs] - weights
 
     return normed_anomalies # low_pass_filter
@@ -103,7 +103,7 @@ def prepare_data(obs_var: utils.MeteorologicalVariable, station: utils.Station,
     anomalies.mask = np.ones(anomalies.shape[0])
     normed_anomalies = np.ma.copy(anomalies)
 
-    mlocs, = np.where(station.months == month)
+    mlocs, = np.nonzero(station.months == month)
 
     nyears = len(np.unique(station.years[mlocs]))
 
@@ -118,7 +118,7 @@ def prepare_data(obs_var: utils.MeteorologicalVariable, station: utils.Station,
         for hour in range(24):
 
             # calculate climatology
-            hlocs, = np.where(np.logical_and(station.months == month, station.hours == hour))
+            hlocs, = np.nonzero((station.months == month) & (station.hours == hour))
 
             hour_data = obs_var.data[hlocs]
 
@@ -148,7 +148,7 @@ def prepare_data(obs_var: utils.MeteorologicalVariable, station: utils.Station,
             monthly_anoms = np.ma.zeros(all_years.shape[0])
             for y, year in enumerate(all_years):
 
-                ylocs, = np.where(station.years == year)
+                ylocs, = np.nonzero(station.years == year)
                 year_data = obs_var.data[ylocs]
 
                 monthly_anoms[y] = qc_utils.average(year_data)
@@ -220,11 +220,11 @@ def find_month_thresholds(obs_var: utils.MeteorologicalVariable, station: utils.
             # use bins and curve to find points where curve is < FREQUENCY_THRESHOLD
             #  round up or down to be fully encompassing
             try:
-                lower_threshold = bins[:-1][np.where(np.logical_and(fitted_curve < FREQUENCY_THRESHOLD, bincentres < 0))[0]][-1]
+                lower_threshold = bins[:-1][np.nonzero((fitted_curve < FREQUENCY_THRESHOLD) & (bincentres < 0))[0]][-1]
             except:
                 lower_threshold = bins[0]
             try:
-                upper_threshold = bins[1:][np.where(np.logical_and(fitted_curve < FREQUENCY_THRESHOLD, bincentres > 0))[0]][0]
+                upper_threshold = bins[1:][np.nonzero((fitted_curve < FREQUENCY_THRESHOLD) & (bincentres > 0))[0]][0]
             except:
                 upper_threshold = bins[-1]
 
@@ -262,7 +262,7 @@ def monthly_clim(obs_var: utils.MeteorologicalVariable, station: utils.Station, 
 
     for month in range(1, 13):
 
-        month_locs, = np.where(station.months == month)
+        month_locs, = np.nonzero(station.months == month)
 
         # note these are for the whole record, just this month is unmasked
         normalised_anomalies = prepare_data(obs_var, station, month, diagnostics=diagnostics, winsorize=winsorize)
@@ -283,14 +283,14 @@ def monthly_clim(obs_var: utils.MeteorologicalVariable, station: utils.Station, 
                 lower_threshold = float(config_dict[f"CLIMATOLOGICAL-{obs_var.name}"][f"{month}-lthresh"])
 
             # now to find the gaps
-            uppercount = len(np.where(normalised_anomalies > upper_threshold)[0])
-            lowercount = len(np.where(normalised_anomalies < lower_threshold)[0])
+            uppercount = np.count_nonzero(normalised_anomalies > upper_threshold)
+            lowercount = np.count_nonzero(normalised_anomalies < lower_threshold)
 
             if uppercount > 0:
                 gap_start = qc_utils.find_gap(hist, bins, upper_threshold, GAP_SIZE)
 
                 if gap_start != 0:
-                    bad_locs, = np.ma.where(normalised_anomalies > gap_start) # all years for one month
+                    bad_locs, = np.ma.nonzero(normalised_anomalies > gap_start) # all years for one month
 
                     # normalised_anomalies are for the whole record, just this month is unmasked
                     flags[bad_locs] = "C"
@@ -299,7 +299,7 @@ def monthly_clim(obs_var: utils.MeteorologicalVariable, station: utils.Station, 
                 gap_start = qc_utils.find_gap(hist, bins, lower_threshold, GAP_SIZE, upwards=False)
 
                 if gap_start != 0:
-                    bad_locs, = np.ma.where(normalised_anomalies < gap_start) # all years for one month
+                    bad_locs, = np.ma.nonzero(normalised_anomalies < gap_start) # all years for one month
 
                     flags[bad_locs] = "C"
 
@@ -318,7 +318,7 @@ def monthly_clim(obs_var: utils.MeteorologicalVariable, station: utils.Station, 
                 plt.axvline(upper_threshold, c="r")
                 plt.axvline(lower_threshold, c="r")
 
-                bad_locs, = np.where(flags[month_locs] == "C")
+                bad_locs, = np.nonzero(flags[month_locs] == "C")
                 bad_hist, dummy = np.histogram(normalised_anomalies[month_locs][bad_locs], bins)
                 plt.step(bins[1:], bad_hist, color='r', where="pre")
 
@@ -328,7 +328,7 @@ def monthly_clim(obs_var: utils.MeteorologicalVariable, station: utils.Station, 
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
     logger.info(f"Climatological {obs_var.name}")
-    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
+    logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
     return # monthly_clim
 

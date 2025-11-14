@@ -36,7 +36,7 @@ def prepare_data(obs_var: utils.MeteorologicalVariable, station: utils.Station, 
     anomalies.mask = np.ones(anomalies.shape[0])
     normed_anomalies = np.ma.copy(anomalies)
 
-    mlocs, = np.where(station.months == month)
+    mlocs, = np.nonzero(station.months == month)
     anomalies.mask[mlocs] = False
     normed_anomalies.mask[mlocs] = False
 
@@ -45,7 +45,7 @@ def prepare_data(obs_var: utils.MeteorologicalVariable, station: utils.Station, 
     for hour in range(24):
 
         # calculate climatology
-        hlocs, = np.where(np.logical_and(station.months == month, station.hours == hour))
+        hlocs, = np.nonzero((station.months == month) & (station.hours == hour))
 
         hour_data = obs_var.data[hlocs]
 
@@ -78,7 +78,7 @@ def prepare_data(obs_var: utils.MeteorologicalVariable, station: utils.Station, 
     variances.mask = np.ones(all_years.shape[0])
     for y, year in enumerate(all_years):
 
-        ymlocs, = np.where(np.logical_and(station.months == month, station.years == year))
+        ymlocs, = np.nonzero((station.months == month) & (station.years == year))
         this_year = normed_anomalies[ymlocs]
 
         # HadISD used M.A.D.
@@ -141,7 +141,7 @@ def variance_check(obs_var: utils.MeteorologicalVariable, station: utils.Station
 
     # get hourly climatology for each month
     for month in range(1, 13):
-        month_locs, = np.where(station.months == month)
+        month_locs, = np.nonzero(station.months == month)
 
         variances = prepare_data(obs_var, station, month, diagnostics=diagnostics, winsorize=winsorize)
 
@@ -157,7 +157,7 @@ def variance_check(obs_var: utils.MeteorologicalVariable, station: utils.Station
             # couldn't be calculated, move on
             continue
 
-        bad_years, = np.where(np.abs(variances - average_variance) / variance_spread > SPREAD_THRESHOLD)
+        bad_years, = np.nonzero(np.abs(variances - average_variance) / variance_spread > SPREAD_THRESHOLD)
 
         # prepare wind and pressure data in case needed to check for storms
         if obs_var.name in ["station_level_pressure", "sea_level_pressure", "wind_speed"]:
@@ -184,7 +184,7 @@ def variance_check(obs_var: utils.MeteorologicalVariable, station: utils.Station
         for year in bad_years:
 
             # corresponding locations
-            ym_locs, = np.where(np.logical_and(station.months == month, station.years == all_years[year]))
+            ym_locs, = np.nonzero((station.months == month) & (station.years == all_years[year]))
 
             # if pressure or wind speed, need to do some further checking before applying flags
             if obs_var.name in ["station_level_pressure", "sea_level_pressure", "wind_speed"]:
@@ -204,8 +204,8 @@ def variance_check(obs_var: utils.MeteorologicalVariable, station: utils.Station
                     continue
 
                 # find locations of high wind speeds and low pressures, cross match
-                high_winds, = np.ma.where((wind_data - wind_average)/wind_spread > STORM_THRESHOLD)
-                low_pressures, = np.ma.where((pressure_average - pressure_data)/pressure_spread > STORM_THRESHOLD)
+                high_winds, = np.ma.nonzero((wind_data - wind_average)/wind_spread > STORM_THRESHOLD)
+                low_pressures, = np.ma.nonzero((pressure_average - pressure_data)/pressure_spread > STORM_THRESHOLD)
 
                 match = np.in1d(high_winds, low_pressures)
 
@@ -279,7 +279,7 @@ def variance_check(obs_var: utils.MeteorologicalVariable, station: utils.Station
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
     logger.info(f"Variance {obs_var.name}")
-    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
+    logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
     return # variance_check
 

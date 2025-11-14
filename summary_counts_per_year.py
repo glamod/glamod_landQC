@@ -88,7 +88,7 @@ def get_summary(stage: str="N", restart_id: str="",
 
             # spin through each year
             for y, year in enumerate(unique_years):
-                locs, = np.where(station.years == year)
+                locs, = np.nonzero(station.years == year)
 
                 # where obs and years intersect
                 year_obs = obs_var.data[locs]
