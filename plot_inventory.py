@@ -87,14 +87,14 @@ def extract_inventory(station: utils.Station, inventory: np.ndarray, data_start:
     monthly_obs = np.zeros([END_YEAR - START_YEAR + 1, 12])
 
     # are WMO IDs sufficient?
-    locs, = np.where(inventory[:, 0] == station.id)
+    locs, = np.nonzero(inventory[:, 0] == station.id)
 
     if len(locs) == 0:
         return []
     else:
         this_station = inventory[locs, :]
 
-        locs, = np.where(this_station[:, 2].astype(int) != 0)
+        locs, = np.nonzero(this_station[:, 2].astype(int) != 0)
         station.start = this_station[locs[0], 1].astype(int)
         station.end = this_station[locs[-1], 1].astype(int)
 
@@ -111,7 +111,7 @@ def extract_inventory(station: utils.Station, inventory: np.ndarray, data_start:
                     for year in merger_station:
                         # only replace if have more observations
                         # can't tell how the merge will work with interleaving obs, so just take the max
-                        locs = np.where(year[3:].astype(int) > monthly_obs[int(year[1]) - START_YEAR, :])
+                        locs = np.nonzero(year[3:].astype(int) > monthly_obs[int(year[1]) - START_YEAR, :])
                         monthly_obs[int(year[1]) - START_YEAR, locs] = year[3:][locs].astype(int)
 
         # if restricted data period
