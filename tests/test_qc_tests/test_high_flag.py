@@ -117,6 +117,50 @@ def test_high_flag_rate_high_fraction() -> None:
     np.testing.assert_array_equal(new_flags, expected_flags)
 
 
+def test_high_flag_rate_humidity() -> None:
+    """test behaviour works for humdity+precision flags"""
+    dewpoint = common.example_test_variable("dewpoint_temperature",
+                                                np.arange(11*utils.DATA_COUNT_THRESHOLD))
+
+    # set enough flags to trigger the test if none are prec+hum, 3 precision
+    flags = np.array(["" for i in dewpoint.data])
+    flags[:3] = "n"
+
+    # the rest are humidity
+    dewpoint.flags[:int(dewpoint.data.shape[0]*utils.HIGH_FLAGGING) + 1] = "h"
+    # set enough to be both humidity and precision so that threshold not reached
+    dewpoint.flags = np.char.add(dewpoint.flags, flags)
+
+    new_flags, flags_set = high_flag.high_flag_rate(dewpoint)
+    expected_flags = np.array(["" for _ in range(dewpoint.data.shape[0])])
+
+    assert flags_set is False
+    np.testing.assert_array_equal(new_flags, expected_flags)
+
+
+def test_high_flag_rate_humidity_set() -> None:
+    """test behaviour works for humdity+precision flags if enough single tests set"""
+    dewpoint = common.example_test_variable("dewpoint_temperature",
+                                                np.arange(11*utils.DATA_COUNT_THRESHOLD))
+
+    # set enough flags to trigger the test if none are prec+hum, 3 precision
+    flags = np.array(["" for i in dewpoint.data])
+    flags[:3] = "n"
+
+    # the rest are humidity
+    dewpoint.flags[:int(dewpoint.data.shape[0]*utils.HIGH_FLAGGING) + 5] = "h"
+    # set enough to be both humidity and precision so that threshold not reached
+    dewpoint.flags = np.char.add(dewpoint.flags, flags)
+
+    new_flags, flags_set = high_flag.high_flag_rate(dewpoint)
+    expected_flags = np.array(["" for _ in range(dewpoint.data.shape[0])])
+    expected_flags[int(dewpoint.data.shape[0]*utils.HIGH_FLAGGING) + 5:] = "H"
+
+    assert flags_set is True
+    np.testing.assert_array_equal(new_flags, expected_flags)
+
+
+
 @patch("high_flag.high_flag_rate")
 def test_pcc(high_flag_rate_mock: Mock) -> None:
 

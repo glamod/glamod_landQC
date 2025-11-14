@@ -215,7 +215,7 @@ def insert_flags(qc_flags: np.ndarray, flags: np.ndarray) -> np.ndarray:
     :param array flags: string array of flags
     """
 
-    qc_flags = np.core.defchararray.add(qc_flags.astype(str), flags.astype(str))
+    qc_flags = np.char.add(qc_flags.astype(str), flags.astype(str))
 
     return qc_flags # insert_flags
 
