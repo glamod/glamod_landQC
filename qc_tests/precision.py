@@ -70,8 +70,7 @@ def precision_cross_check(station: utils.Station, primary: utils.MeteorologicalV
     # work through on a monthly basis
     for year in np.unique(station.years):
         for month in range(1, 13):
-            month_locs, = np.where(np.logical_and(station.years == year,
-                                                  station.months == month))
+            month_locs, = np.nonzero((station.years == year) & (station.months == month))
             # skip to next month if:
             if month_locs.shape[0] == 0:
                 # no data in any variable
@@ -101,7 +100,7 @@ def precision_cross_check(station: utils.Station, primary: utils.MeteorologicalV
     secondary.store_flags(utils.insert_flags(secondary.flags, flags))
 
     logger.info(f"Precision {secondary.name}")
-    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
+    logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
     # precision_cross_check
 

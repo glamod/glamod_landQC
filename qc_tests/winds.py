@@ -85,14 +85,14 @@ def logical_checks(speed: utils.MeteorologicalVariable,
     if diagnostics:
 
         print("Wind Logical")
-        print(f"   Cumulative number of {speed.name} flags set: {len(np.where(sflags != '')[0])}")
-        print(f"   Cumulative number of {direction.name} flags set: {len(np.where(dflags == 'w')[0])}")
-        print(f"   Cumulative number of {direction.name} convention flags set: {len(np.where(dflags == '1')[0])}")
+        print(f"   Cumulative number of {speed.name} flags set: {np.count_nonzero(sflags != '')}")
+        print(f"   Cumulative number of {direction.name} flags set: {np.count_nonzero(dflags == 'w')}")
+        print(f"   Cumulative number of {direction.name} convention flags set: {np.count_nonzero(dflags == '1')}")
 
     logger.info("Wind Logical")
-    logger.info(f"   Cumulative number of {speed.name} flags set: {len(np.where(sflags != '')[0])}")
-    logger.info(f"   Cumulative number of {direction.name} flags set: {len(np.where(dflags == 'w')[0])}")
-    logger.info(f"   Cumulative number of {direction.name} convention flags set: {len(np.where(dflags == '1')[0])}")
+    logger.info(f"   Cumulative number of {speed.name} flags set: {np.count_nonzero(sflags != '')}")
+    logger.info(f"   Cumulative number of {direction.name} flags set: {np.count_nonzero(dflags == 'w')}")
+    logger.info(f"   Cumulative number of {direction.name} convention flags set: {np.count_nonzero(dflags == '1')}")
 
 
     return fix_zero_direction # logical_checks

@@ -105,8 +105,7 @@ def calculate_critical_values(obs_var: utils.MeteorologicalVariable,
     for (lower, upper) in TIME_DIFF_RANGES:
 
         if upper is not None:
-            locs, = np.where(np.logical_and(time_diffs >= lower,
-                                            time_diffs <= upper))
+            locs, = np.nonzero((time_diffs >= lower) & (time_diffs <= upper))
         else:
             locs, = np.nonzero(time_diffs >= lower)
 
@@ -408,7 +407,7 @@ def identify_spikes(obs_var: utils.MeteorologicalVariable,
 
         logger.info(f"Spike {obs_var.name}")
         logger.info(f"   Time Difference: {lower}-{upper} minutes")
-        logger.info(f"      Cumulative number of flags set: {len(np.where(flags != '')[0])}")
+        logger.info(f"      Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
     # identify_spikes
 

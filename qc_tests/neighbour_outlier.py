@@ -92,7 +92,7 @@ def read_in_buddies(target_station: utils.Station, initial_neighbours: np.ndarra
             print(f"Buddy number {bid+1}/{len(initial_neighbours[:, 0])} {buddy_id}")
 
         # set up station object to hold information
-        buddy_idx, = np.where(station_list.id == buddy_id)
+        buddy_idx, = np.nonzero(station_list.id.to_numpy() == buddy_id)
         buddy = utils.Station(buddy_id, station_list.iloc[buddy_idx].latitude.values[0],
                                 station_list.iloc[buddy_idx].longitude.values[0],
                                 station_list.iloc[buddy_idx].elevation.values[0])
@@ -250,7 +250,7 @@ def adjust_pressure_for_tropical_storms(dubious: np.ma.MaskedArray, initial_neig
     :returns: np.ndarray of locations where target values are dubious given the neighbours
     """
     # select on distance
-    distant, = np.where(initial_neighbours[:, 1].astype(int) > DISTANT_NEIGHBOURS)
+    distant, = np.nonzero(initial_neighbours[:, 1].astype(int) > DISTANT_NEIGHBOURS)
 
     if len(distant) > 0:
         # find positive and negative differences across neighbours
@@ -261,8 +261,8 @@ def adjust_pressure_for_tropical_storms(dubious: np.ma.MaskedArray, initial_neig
         # spin through each neighbour
         for dn, dist_neigh in enumerate(distant):
             # pull out the large differences corresponding to each neighbour
-            pos, = np.where(positive[0] == dn)
-            neg, = np.where(negative[0] == dn)
+            pos, = np.nonzero(positive[0] == dn)
+            neg, = np.nonzero(negative[0] == dn)
 
             # by default, flag all dubious values greater difference than expected
             dubious[dist_neigh, positive[1][pos]] = 1
@@ -357,7 +357,7 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.ndar
     obs_var.store_flags(utils.insert_flags(obs_var.flags, flags))
 
     logger.info(f"Neighbour Outlier {obs_var.name}")
-    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
+    logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
     # neighbour_outlier
 
@@ -377,7 +377,7 @@ def noc(target_station: utils.Station, initial_neighbours: np.ndarray, var_list:
 
     # Check if have sufficient neighbours, as if too few, might as well exit here.
     #    First entry is self (target station), hence the "-1" at the end.
-    n_neighbours = len(np.where(initial_neighbours[:, 0] != "-")[0]) - 1
+    n_neighbours = np.count_nonzero(initial_neighbours[:, 0] != "-") - 1
     if n_neighbours < utils.MIN_NEIGHBOURS:
         logger.warning(f"{target_station.id} has insufficient neighbours ({n_neighbours}<{utils.MIN_NEIGHBOURS})")
         if diagnostics:

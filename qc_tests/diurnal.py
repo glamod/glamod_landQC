@@ -58,14 +58,14 @@ def quartile_check(minutes: np.ndarray) -> bool:
 
     quartile_has_data = np.zeros(4)
 
-    quartile_has_data[0] = np.where(np.logical_and(minutes >= 0,
-                                                   minutes < 6*60 ))[0].shape[0]
-    quartile_has_data[1] = np.where(np.logical_and(minutes >= 6*60,
-                                                   minutes < 12*60 ))[0].shape[0]
-    quartile_has_data[2] = np.where(np.logical_and(minutes >= 12*60,
-                                                   minutes < 18*60 ))[0].shape[0]
-    quartile_has_data[3] = np.where(np.logical_and(minutes >= 18*60,
-                                                   minutes < 24*60 ))[0].shape[0]
+    quartile_has_data[0] = np.nonzero((minutes >= 0) &
+                                      (minutes < 6*60 ))[0].shape[0]
+    quartile_has_data[1] = np.nonzero((minutes >= 6*60) &
+                                      (minutes < 12*60 ))[0].shape[0]
+    quartile_has_data[2] = np.nonzero((minutes >= 12*60) &
+                                      (minutes < 18*60 ))[0].shape[0]
+    quartile_has_data[3] = np.nonzero((minutes >= 18*60) &
+                                      (minutes < 24*60 ))[0].shape[0]
 
     # binary-ise
     quartile_has_data[quartile_has_data > 0] = 1
@@ -172,7 +172,7 @@ def find_uncertainty(differences: np.ndarray, best_fit: int) -> int:
 
 
     # find where below critical, add 1 to max offset
-    locs, = np.where(differences < critical_value)
+    locs, = np.nonzero(differences < critical_value)
     uncertainty = 1 + np.max([11 - locs[0],
                               locs[-1] - 11])
 
@@ -291,9 +291,9 @@ def get_all_daily_offsets(station: utils.Station,
                     # not a valid day (e.g. Leap years, short months etc)
                     continue
 
-                locs, = np.where(np.logical_and.reduce((station.years == year,
-                                                        station.months == month,
-                                                        station.days == day)))
+                locs, = np.nonzero(np.logical_and.reduce((station.years == year,
+                                                          station.months == month,
+                                                          station.days == day)))
 
                 if len(locs) >= OBS_PER_DAY:
                     # at least have the option of enough data
@@ -343,7 +343,7 @@ def find_best_fit(best_fit_diurnal: np.ndarray,
 
     best_fits = MISSING * np.ones(MAX_UNCERTAINTY).astype(int)
     for h in range(MAX_UNCERTAINTY):
-        locs, = np.where(best_fit_uncertainty == h + 1)
+        locs, = np.nonzero(best_fit_uncertainty == h + 1)
 
         if len(locs) >= utils.DATA_COUNT_THRESHOLD:
             # Locs are daily, so at least 120 days for each uncertainty bin
@@ -397,7 +397,7 @@ def find_offset(obs_var: utils.MeteorologicalVariable,
                 number_estimates += 1
 
             # else, get spread of uncertainty, and +1 to this range
-            centre, = np.where(hours == best_fits[h])
+            centre, = np.nonzero(hours == best_fits[h])
 
             if (centre[0] - (h + 1)) >= 0:
                 if (centre[0] + h + 1) <= 23:
@@ -415,7 +415,7 @@ def find_offset(obs_var: utils.MeteorologicalVariable,
     # If value at lowest uncertainty *not* found in all others,
     #     then see what value is found by all others
     if hour_matches[11] != number_estimates:  # central estimate at 12 o'clock
-        all_match, = np.where(hour_matches == number_estimates)
+        all_match, = np.nonzero(hour_matches == number_estimates)
 
         # if one is, then use it
         if len(all_match) == 1:
@@ -465,7 +465,7 @@ def get_potentially_spurious_days(best_fit_diurnal: np.ndarray,
             min_range = 11 - uncertainty
             max_range = 11 + uncertainty
 
-            offset_loc, = np.where(hours == fit)
+            offset_loc, = np.nonzero(hours == fit)
 
             # find where the best fit falls outside the range for this particular day
             if offset_loc < min_range or offset_loc > max_range:
@@ -601,7 +601,7 @@ def diurnal_cycle_check(obs_var: utils.MeteorologicalVariable, station: utils.St
                                                       station.days == this_day.day)))
 
             # only set flag on where there's data
-            data_locs, = np.where(obs_var.data[locs].mask == False)
+            data_locs, = np.nonzero(obs_var.data[locs].mask == False)
 
             flags[locs[data_locs]] = "U"
 
@@ -609,7 +609,7 @@ def diurnal_cycle_check(obs_var: utils.MeteorologicalVariable, station: utils.St
         obs_var.store_flags(utils.insert_flags(obs_var.flags, flags))
 
         logger.info(f"Diurnal Check {obs_var.name}")
-        logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
+        logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
     else:
         logger.info("Diurnal fit not found")

@@ -188,7 +188,7 @@ def super_saturation_check(station: utils.Station,
             plot_humidities(temperatures, dewpoints, station.times, bad)
 
     logger.info(f"Supersaturation {dewpoints.name}")
-    logger.info(f"   Cumulative number of flags set: {len(np.nonzero(flags != '')[0])}")
+    logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
     # super_saturation_check
 
@@ -247,7 +247,7 @@ def dew_point_depression_streak(times: pd.Series,
         dewpoints.store_flags(utils.insert_flags(dewpoints.flags, flags))
 
     logger.info(f"Dewpoint Depression {dewpoints.name}")
-    logger.info(f"   Cumulative number of flags set: {len(np.nonzero(flags != '')[0])}")
+    logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
     # dew_point_depression_streak
 

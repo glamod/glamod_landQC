@@ -68,13 +68,13 @@ def identify_multiple_values(obs_var: utils.MeteorologicalVariable, times: pd.Se
     # new blank flag array (redone for each difference)
     compressed_flags = np.array(["" for i in range(value_diffs.shape[0])])
 
-    multiple_obs_at_time, = np.where(time_diffs == 0)
+    multiple_obs_at_time, = np.nonzero(time_diffs == 0)
     if diagnostics:
         print(f" Number of identical timestamps in {obs_var.name}: {multiple_obs_at_time.shape[0]}")
 
     if len(multiple_obs_at_time) != 0:
         # to the observations differ for the entries
-        suspect_locs, = np.ma.where(value_diffs[multiple_obs_at_time] != 0)
+        suspect_locs, = np.ma.nonzero(value_diffs[multiple_obs_at_time] != 0)
 
         if len(suspect_locs) > 0:
             # Observations have different values, so not clear which is correct.
@@ -99,7 +99,7 @@ def identify_multiple_values(obs_var: utils.MeteorologicalVariable, times: pd.Se
         flags = np.array(["" for i in range(obs_var.data.shape[0])])
 
     logger.info(f"Timestamp {obs_var.name}")
-    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
+    logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
     # identify_multiple_values
 

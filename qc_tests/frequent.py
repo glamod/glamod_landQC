@@ -211,7 +211,7 @@ def frequent_values(obs_var: utils.MeteorologicalVariable, station: utils.Statio
 
         # work through each year
         for year in all_years:
-            locs, = np.where(np.logical_and(station.months == month, station.years == year))
+            locs, = np.nonzero((station.months == month) & (station.years == year))
 
             month_data = obs_var.data[locs]
 
