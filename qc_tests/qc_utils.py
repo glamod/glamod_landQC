@@ -365,10 +365,10 @@ def winsorize(data: np.ma.MaskedArray,
 
         if pct < 50:
             percentile = np.percentile(data.compressed(), pct)
-            locs = np.ma.where(data < percentile)
+            locs = np.ma.nonzero(data < percentile)
         else:
             percentile = np.percentile(data.compressed(), pct)
-            locs = np.ma.where(data > percentile)
+            locs = np.ma.nonzero(data > percentile)
 
         data[locs] = percentile
 

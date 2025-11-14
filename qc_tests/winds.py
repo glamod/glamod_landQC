@@ -53,17 +53,17 @@ def logical_checks(speed: utils.MeteorologicalVariable,
         fix_zero_direction = np.array([])
 
     # negative speeds (can't fix)
-    negative_speed = np.ma.where(speed.data < 0)
+    negative_speed = np.ma.nonzero(speed.data < 0)
     sflags[negative_speed] = "w"
     logger.info(f"  Negative speed : {len(negative_speed[0])}")
 
     # negative directions (don't try to adjust)
-    negative_direction = np.ma.where(direction.data < 0)
+    negative_direction = np.ma.nonzero(direction.data < 0)
     dflags[negative_direction] = "w"
     logger.info(f"  Negative direction : {len(negative_direction[0])}")
 
     # wrapped directions (don't try to adjust)
-    wrapped_direction = np.ma.where(direction.data > 360)
+    wrapped_direction = np.ma.nonzero(direction.data > 360)
     dflags[wrapped_direction] = "w"
     logger.info(f"  Wrapped direction : {len(wrapped_direction[0])}")
 
@@ -74,7 +74,7 @@ def logical_checks(speed: utils.MeteorologicalVariable,
     logger.info(f"  Bad direction : {len(bad_direction[0])}")
 
     # northerlies given as 360, not 0 --> calm
-    bad_speed = np.ma.where(np.logical_and(direction.data == 0, speed.data != 0))
+    bad_speed = np.ma.nonzero(np.logical_and(direction.data == 0, speed.data != 0))
     sflags[bad_speed] = "w"
     logger.info(f"  Bad speed : {len(bad_speed[0])}")
 

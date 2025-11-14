@@ -254,8 +254,8 @@ def adjust_pressure_for_tropical_storms(dubious: np.ma.MaskedArray, initial_neig
 
     if len(distant) > 0:
         # find positive and negative differences across neighbours
-        positive = np.ma.where(differences[distant] > spreads[distant]*SPREAD_LIMIT)
-        negative = np.ma.where(differences[distant] < -spreads[distant]*SPREAD_LIMIT)
+        positive = np.ma.nonzero(differences[distant] > spreads[distant]*SPREAD_LIMIT)
+        negative = np.ma.nonzero(differences[distant] < -spreads[distant]*SPREAD_LIMIT)
         # as 2-d array, positive/negative are tuples of (station, timestamp) locations
 
         # spin through each neighbour
@@ -280,7 +280,7 @@ def adjust_pressure_for_tropical_storms(dubious: np.ma.MaskedArray, initial_neig
     else:
         # all stations close by so storms shouldn't affect, include all
         # note where differences exceed the spread (using np.abs to get all)
-        dubious_locs = np.ma.where(np.ma.abs(differences) > spreads*SPREAD_LIMIT)
+        dubious_locs = np.ma.nonzero(np.ma.abs(differences) > spreads*SPREAD_LIMIT)
         dubious[dubious_locs] = 1
 
     return dubious
@@ -334,7 +334,7 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.ndar
     else:
         #*************************
         # note where differences exceed the spread [all non pressure variables]
-        dubious_locs = np.ma.where(np.ma.abs(differences) > spreads*SPREAD_LIMIT)
+        dubious_locs = np.ma.nonzero(np.ma.abs(differences) > spreads*SPREAD_LIMIT)
         dubious[dubious_locs] = 1
 
     logger.info("cross checks complete - assessing all outcomes")
@@ -345,7 +345,7 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.ndar
     dubious_count = np.ma.sum(dubious, axis=0)
 
     # flag if large enough fraction (>0.66)
-    sufficient, = np.ma.where(dubious_count > DUBIOUS_FRACTION*neighbour_count)
+    sufficient, = np.ma.nonzero(dubious_count > DUBIOUS_FRACTION*neighbour_count)
 
     flags[sufficient] = "N"
 

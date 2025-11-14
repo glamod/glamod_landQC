@@ -77,9 +77,9 @@ def mask_calms(this_var: utils.MeteorologicalVariable) -> None:
     #   resolution (even if good) may get the odd 0.5m/s as part of a long
     #   calm spell
     if reporting_resolution > 0.5: # nearest 1/2 or whole value
-        calms, = np.ma.where(this_var.data <= 1.0)
+        calms, = np.ma.nonzero(this_var.data <= 1.0)
     else: # nearest 1/10
-        calms, = np.ma.where(this_var.data <= 0.5)
+        calms, = np.ma.nonzero(this_var.data <= 0.5)
 
     this_var.data[calms] = utils.MDI
     this_var.data.mask[calms] = True

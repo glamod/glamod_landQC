@@ -234,8 +234,8 @@ def pressure_offset(sealp: utils.MeteorologicalVariable,
 
             pass
         else:
-            high, = np.ma.where(difference > (average + (THRESHOLD*spread)))
-            low, = np.ma.where(difference < (average - (THRESHOLD*spread)))
+            high, = np.ma.nonzero(difference > (average + (THRESHOLD*spread)))
+            low, = np.ma.nonzero(difference < (average - (THRESHOLD*spread)))
 
             # diagnostic plots
             if plots:
