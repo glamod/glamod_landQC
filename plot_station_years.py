@@ -78,14 +78,14 @@ def extract_inventory(station: utils.Station, inventory: np.ndarray) -> np.ndarr
     monthly_obs = np.zeros([END_YEAR - START_YEAR + 1, 12])
 
     # are WMO IDs sufficient?
-    locs, = np.where(inventory[:, 0] == station.id)
+    locs, = np.nonzero(inventory[:, 0] == station.id)
 
     if len(locs) == 0:
         return np.array([])
     else:
         this_station = inventory[locs, :]
 
-        locs, = np.where(this_station[:, 2].astype(int) != 0)
+        locs, = np.nonzero(this_station[:, 2].astype(int) != 0)
         station.start = this_station[locs[0], 1].astype(int)
         station.end = this_station[locs[-1], 1].astype(int)
 

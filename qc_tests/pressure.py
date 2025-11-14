@@ -277,7 +277,7 @@ def calc_slp(stnlp: np.ndarray, elevation: float, temperature: np.ndarray) -> np
     filled_temperature = np.ma.copy(temperature)
 
     # find locations where we could calculate the SLP, but temperatures are missing
-    missing_Ts, = np.where(np.logical_and(filled_temperature.mask == True,
+    missing_Ts, = np.nonzero(np.logical_and(filled_temperature.mask == True,
                                           stnlp.mask == False))
     if len(missing_Ts) > 0:
         filled_temperature[missing_Ts] = 15.0

@@ -39,7 +39,7 @@ def identify_values(obs_var: utils.MeteorologicalVariable, station: utils.Statio
 
     for month in range(1, 13):
 
-        locs, = np.where(station.months == month)
+        locs, = np.nonzero(station.months == month)
 
         month_data = obs_var.data[locs]
 
@@ -135,7 +135,7 @@ def frequent_values(obs_var: utils.MeteorologicalVariable, station: utils.Statio
 
         # work through each year
         for year in all_years:
-            locs, = np.where(np.logical_and(station.months == month, station.years == year))
+            locs, = np.nonzero((station.months == month) & (station.years == year))
 
             month_data = obs_var.data[locs]
 
@@ -168,7 +168,8 @@ def frequent_values(obs_var: utils.MeteorologicalVariable, station: utils.Statio
                                 # this bin meets all the criteria
                                 if bins[b] in suspect_bins:
                                     # find observations (month & year) to flag!
-                                    flag_locs = np.where(np.logical_and(month_data >= bins[b], month_data < bins[b+1]))
+                                    flag_locs = np.nonzero((month_data >= bins[b]) &
+                                                           (month_data < bins[b+1]))
                                     month_flags[flag_locs] = "F"
 
             # copy flags for all years into main array
@@ -197,7 +198,7 @@ def frequent_values(obs_var: utils.MeteorologicalVariable, station: utils.Statio
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
     logger.info(f"Frequent Values {obs_var.name}")
-    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
+    logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
     return # frequent_values
 

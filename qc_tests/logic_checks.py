@@ -49,7 +49,7 @@ def logic_check(obs_var: utils.MeteorologicalVariable, plots: bool = False,
 
             flags[bad_locs] = "L"
             logger.info(f"Logic Checks {obs_var.name}")
-            logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
+            logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
         else:
             logger.info(f"Logic Checks {obs_var.name}")
             logger.info(f"   Number of issues found: {len(bad_locs)}")

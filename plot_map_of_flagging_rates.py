@@ -119,7 +119,7 @@ def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False) -> N
 
 
             # # for total, get number of clean obs and subtract
-            # flagged, = np.where(flags != "")
+            # flagged, = np.nonzero(flags != "")
             # setattr(obs_var, "All", flagged.shape[0]/flags.shape[0])
             # setattr(obs_var, "All_counts", flagged.shape[0])
             try:

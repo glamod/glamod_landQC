@@ -80,7 +80,7 @@ def record_check(obs_var: utils.MeteorologicalVariable, continent: str,
     flags[too_low] = "W"
 
     logger.info(f"World Records {obs_var.name} ({continent})")
-    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
+    logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
     return flags # record_check
 

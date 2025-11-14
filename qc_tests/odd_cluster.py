@@ -136,7 +136,7 @@ def flag_clusters(obs_var: utils.MeteorologicalVariable, station: utils.Station,
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
     logger.info(f"Odd Cluster {obs_var.name}")
-    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
+    logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
     return # flag_clusters
 
