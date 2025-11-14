@@ -204,8 +204,8 @@ def variance_check(obs_var: utils.MeteorologicalVariable, station: utils.Station
                     continue
 
                 # find locations of high wind speeds and low pressures, cross match
-                high_winds, = np.ma.where((wind_data - wind_average)/wind_spread > STORM_THRESHOLD)
-                low_pressures, = np.ma.where((pressure_average - pressure_data)/pressure_spread > STORM_THRESHOLD)
+                high_winds, = np.ma.nonzero((wind_data - wind_average)/wind_spread > STORM_THRESHOLD)
+                low_pressures, = np.ma.nonzero((pressure_average - pressure_data)/pressure_spread > STORM_THRESHOLD)
 
                 match = np.in1d(high_winds, low_pressures)
 
