@@ -126,8 +126,8 @@ def get_neighbours(station_list_a: pd.DataFrame, station_list_b: pd.DataFrame | 
     # store indices of those if close enough.
     for t, target in enumerate(distances):
 
-        match_distance, = np.where(target <= utils.MAX_NEIGHBOUR_DISTANCE)
-        match_elevation, = np.where(vertical_separations[t] <= utils.MAX_NEIGHBOUR_VERTICAL_SEP)
+        match_distance, = np.nonzero(target <= utils.MAX_NEIGHBOUR_DISTANCE)
+        match_elevation, = np.nonzero(vertical_separations[t] <= utils.MAX_NEIGHBOUR_VERTICAL_SEP)
         matches = np.intersect1d(match_distance, match_elevation)
 
         if len(matches) > 0:
@@ -217,7 +217,7 @@ def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False, plot
 
             if station_list.latitude[st] == 0 and station_list.longitude[st] == 0:
                 # this station should be withheld by the logic checks, so no buddy checks will be run
-                zeros, = np.where(station[:, 1] == 0)
+                zeros, = np.nonzero(station[:, 1] == 0)
                 if len(zeros) == len(station[:, 1]):
                     # checking all neighbours have zero distance
                     if station[0, 0] != st and station[0, 1] == 0:
@@ -226,8 +226,8 @@ def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False, plot
 
             # check to make sure that the first entry is correct (in cases where a neighbour has zero separation
             if station[0, 0] != st:
-                zeros, = np.where(station[:, 1] == 0)
-                match, = np.where(station[zeros, 0] == st)
+                zeros, = np.nonzero(station[:, 1] == 0)
+                match, = np.nonzero(station[zeros, 0] == st)
                 if len(match) == 1:
                     station[[0, match[0]]]=station[[match[0], 0]]
                 else:
