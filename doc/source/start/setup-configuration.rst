@@ -50,6 +50,7 @@ thresholds to use.  The ``configuration.txt`` file contains:
     filename = neighbours.txt
     minimum_number = 3
     [MISC]
+    fix_wind_direction = False
     email = your.email@domain.com
 
 The input ".mff" (merged file format) files are in ``mff`` and the relevant
@@ -98,10 +99,15 @@ distribution or not (``min_data_count``), or for when the proportion of flags is
 classed as high (``high_flag_proportion``), or for setting the separation of an
 odd cluster of points to be flagged from others (``odd_cluster_separation``).
 
-Finally, for the buddy/neighbour checks, there are a number of settings for
+For the buddy/neighbour checks, there are a number of settings for
 selecting the neighbours (``max_distance`` and ``max_vertical_separation``),
 how many are selected (``max_number``), the filename to store the information
 (``filename``) and the minimum number needed for the tests to run (``minimum_number``).
+
+In the final section, you can enter an email which can help with logging of some
+processing.  There is also ``fix_wind_direction`` which toggles the correction of
+wind direction values to 0N during calm periods in cases where it had been set to missing.
+Usually this has been set to False.
 
 [Note, the ``venv`` directory is kept as an input incase any future
 implementation uses venv rather than conda.]
