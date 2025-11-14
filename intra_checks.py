@@ -178,26 +178,6 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
 
 
         #*************************
-        """
-        HadISD tests and order
-
-        Duplicated months
-        Odd Clusters of data - need to address output with buddy checks in due course.
-        Frequent Values - tick
-        Diurnal Cycle
-        Gaps in distributions - tick
-        World Records - tick
-        Repeated values (streaks or just too common short ones) - partial tick
-        Climatology - tick
-        Spike - tick
-        Humidity Cross checks - super saturation, dewpoint depression, dewpoint cut off - tick (dewpoint cut off not applied)
-        Cloud logical checks - clouds not in C3S 311a @Aug 2019
-        Excess Variance - partial tick
-        Winds (logical wind & wind rose) - logical tick.  Not sure if wind rose is robust enough
-        Logical SLP/StnLP - tick
-        Precipitation logical checks - precip not in C3S 311a @Aug 2019
-        """
-        #*************************
         if test in ["all", "logic"]:
             # incl lat, lon and elev checks
 
@@ -218,11 +198,16 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
         if test in ["all", "odd_cluster"]:
             if diagnostics: print("O", dt.datetime.now()-startT)
             # TODO - use suite config file to store all settings for tests
-            qc_tests.odd_cluster.occ(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed"], config_dict, full=full, plots=plots, diagnostics=diagnostics)
+            qc_tests.odd_cluster.occ(station, ["temperature", "dew_point_temperature",
+                                               "station_level_pressure", "sea_level_pressure",
+                                               "wind_speed"],
+                                     config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "frequent"]:
             if diagnostics: print("F", dt.datetime.now()-startT)
-            qc_tests.frequent.fvc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_dict, full=full, plots=plots, diagnostics=diagnostics)
+            qc_tests.frequent.fvc(station, ["temperature", "dew_point_temperature",
+                                            "station_level_pressure", "sea_level_pressure"],
+                                  config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         # HadISD only runs on stations where latitude lower than 60(N/S)
         # Takes a long time, this one
@@ -233,24 +218,33 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
 
         if test in ["all", "distribution"]:
             if diagnostics: print("D", dt.datetime.now()-startT)
-            qc_tests.distribution.dgc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure"], config_dict, full=full, plots=plots, diagnostics=diagnostics)
+            qc_tests.distribution.dgc(station, ["temperature", "dew_point_temperature",
+                                                "station_level_pressure", "sea_level_pressure"],
+                                      config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "world_records"]:
             if diagnostics: print("W", dt.datetime.now()-startT)
-            qc_tests.world_records.wrc(station, ["temperature", "dew_point_temperature", "sea_level_pressure", "wind_speed"], full=full, plots=plots, diagnostics=diagnostics)
+            qc_tests.world_records.wrc(station, ["temperature", "dew_point_temperature",
+                                                 "sea_level_pressure", "wind_speed"],
+                                       full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "streaks"]:
             if diagnostics: print("K", dt.datetime.now()-startT)
-            qc_tests.streaks.rsc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed", "wind_direction"], config_dict, full=full, plots=plots, diagnostics=diagnostics)
+            qc_tests.streaks.rsc(station, ["temperature", "dew_point_temperature", "station_level_pressure",
+                                           "sea_level_pressure", "wind_speed", "wind_direction"],
+                                 config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         # not run on pressure data in HadISD.
         if test in ["all", "climatological"]:
             if diagnostics: print("C", dt.datetime.now()-startT)
-            qc_tests.climatological.coc(station, ["temperature", "dew_point_temperature"], config_dict, full=full, plots=plots, diagnostics=diagnostics)
+            qc_tests.climatological.coc(station, ["temperature", "dew_point_temperature"],
+                                        config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "timestamp"]:
             if diagnostics: print("T", dt.datetime.now()-startT)
-            qc_tests.timestamp.tsc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed"], config_dict, full=full, plots=plots, diagnostics=diagnostics)
+            qc_tests.timestamp.tsc(station, ["temperature", "dew_point_temperature", "station_level_pressure",
+                                             "sea_level_pressure", "wind_speed"],
+                                   config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "precision"]:
             if diagnostics: print("n", dt.datetime.now()-startT)
@@ -258,7 +252,9 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
 
         if test in ["all", "spike"]:
             if diagnostics: print("S", dt.datetime.now()-startT)
-            qc_tests.spike.sc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed"], config_dict, full=full, plots=plots, diagnostics=diagnostics)
+            qc_tests.spike.sc(station, ["temperature", "dew_point_temperature", "station_level_pressure",
+                                        "sea_level_pressure", "wind_speed"],
+                              config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "humidity"]:
             if diagnostics: print("h", dt.datetime.now()-startT)
@@ -266,7 +262,9 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
 
         if test in ["all", "variance"]:
             if diagnostics: print("V", dt.datetime.now()-startT)
-            qc_tests.variance.evc(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed"], config_dict, full=full, plots=plots, diagnostics=diagnostics)
+            qc_tests.variance.evc(station, ["temperature", "dew_point_temperature",
+                                            "station_level_pressure", "sea_level_pressure", "wind_speed"],
+                                  config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "pressure"]:
             if diagnostics: print("P", dt.datetime.now()-startT)
@@ -274,12 +272,22 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
 
         if test in ["all", "winds"]:
             if diagnostics: print("w", dt.datetime.now()-startT)
-            qc_tests.winds.wcc(station, config_dict, fix=False, full=full, plots=plots, diagnostics=diagnostics)
-            # NOTE: fix only applies to obs_var within station, not to dataframe. Need to copy over if used.
+            fixed_locs = qc_tests.winds.wcc(station, config_dict, fix=setup.FIX_WINDDIR, full=full,
+                                            plots=plots, diagnostics=diagnostics)
+
+            # fix only applies to obs_var within station, not to dataframe, hence needing to copy
+            if setup.FIX_WINDDIR and len(fixed_locs) > 0:
+                # take copy so can revert missing and other details
+                wind_dir = np.copy(getattr(station, "wind_direction").data)
+                qc_tests.qc_utils.update_dataframe(station_df, wind_dir, fixed_locs, "wind_direction")
+
 
         if test in ["all", "high_flag"]:
             if diagnostics: print("H", dt.datetime.now()-startT)
-            hfr_vars_set = qc_tests.high_flag.hfr(station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed", "wind_direction"], full=full, plots=plots, diagnostics=diagnostics)
+            hfr_vars_set = qc_tests.high_flag.hfr(station, ["temperature", "dew_point_temperature",
+                                                            "station_level_pressure", "sea_level_pressure",
+                                                            "wind_speed", "wind_direction"],
+                                                  full=full, plots=plots, diagnostics=diagnostics)
         else:
             hfr_vars_set = 0
 
@@ -295,7 +303,6 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
         # Insert flags into Data Frame
 
         # need to insert columns in correct place
-        # column_names = station_df.columns.values
 
         #*************************
         # add QC flag columns to each variable
@@ -311,24 +318,11 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
         for index in new_column_indices:
             station_df.insert(index, "{}_QC_flag".format(station_df.columns[index-2]), ["" for i in range(station_df.shape[0])], True)
 
-        # # sort source_ID.x columns - purely for first release
-        # for c, column in enumerate(station_df.columns):
-        #     if "Source_ID" in column:
-        #         # replace the NaN with empty string
-        #         station_df[column] = station_df[column].fillna('')
-        #         # rename the column
-        #         variable = station_df.columns[c-1]
-        #         station_df = station_df.rename(columns={column : "{}_Source_ID".format(variable)})
-
 
         # write in the flag information
         for var in setup.obs_var_list:
             obs_var = getattr(station, var)
             station_df["{}_QC_flag".format(var)] = obs_var.flags
-
-
-        # Some wind direction information is "fixed" to match DeGeatano conventions
-        # TODO - move from obs_var into station_df if we decide to
 
 
         #*************************

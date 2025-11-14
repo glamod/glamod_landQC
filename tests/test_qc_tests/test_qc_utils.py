@@ -2,6 +2,7 @@
 Contains tests for qc_utils.py
 """
 import numpy as np
+import pandas as pd
 import pytest
 from unittest.mock import patch, Mock
 
@@ -200,3 +201,24 @@ def test_gcv_calculate_binmax_large() -> None:
     binmax = qc_utils.gcv_calculate_binmax(indata, binmin, binwidth)
 
     assert binmax == 2000
+
+
+def test_update_dataframe() -> None:
+
+    data = {"Year" : [2020, 2020, 2020, 2020, 2020],
+            "Month" : [1, 1, 1, 1, 1],
+            "Day" : [10, 11, 12, 13, 14],
+            "wind_direction" : [10, 20, 30, 40, 50]}
+    df = pd.DataFrame(data)
+
+    indata = np.array([100, 200, 300, 400, 500])
+
+    locations = np.array([False, False, True, False, False])
+
+    column = "wind_direction"
+
+    qc_utils.update_dataframe(df, indata, locations, column)
+
+    expected = np.array([10, 20, 300, 40, 50])
+    np.testing.assert_array_equal(df["wind_direction"].to_numpy(),
+                                  expected)
