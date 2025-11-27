@@ -13,8 +13,16 @@ import utils
 import qc_tests.qc_utils as qc_utils
 #************************************************************************
 
+# Excess in normalised differences between the two pressure quantities
 THRESHOLD = 4 # min spread of 1hPa, so only outside +/-4hPa flagged.
-THEORY_THRESHOLD = 15 # allows for small offset as well as intrinsic spread
+
+# Difference between expected and recorded SLP values from StnLP
+SLP_THEORY_THRESHOLD = 15 # allows for small offset (e.g. temperature)
+                          # as well as from intrinsic spread
+
+# Difference between recorded StnLP and that from standard normal SLP
+STNLP_THEORY_THRESHOLD = 50 # larger variation allowed to account for weather
+
 
 MIN_SPREAD = 1.0
 MAX_SPREAD = 5.0
@@ -260,14 +268,15 @@ def pressure_offset(sealp: utils.MeteorologicalVariable,
 
 
 #*********************************************
-def calc_slp(stnlp: np.ndarray, elevation: float, temperature: np.ndarray) -> np.ndarray:
+def calc_slp_factor(elevation: float,
+                    temperature: np.ndarray) -> np.ndarray:
     '''
-    Suggestion from Scott Stevens to calculate the SLP from the StnLP
+    Suggestion from Scott Stevens to calculate the SLP from the StnLP.
+    Get factor to multiply SLP to get StnLP
     Presumes 15C if no temperature available
 
     Formula from https://keisan.casio.com/keisan/image/Convertpressure.pdf
 
-    :param array stnlp: station level pressure data
     :param float elevation: station elevation
     :param array temperature: temperature data
 
@@ -277,16 +286,13 @@ def calc_slp(stnlp: np.ndarray, elevation: float, temperature: np.ndarray) -> np
     filled_temperature = np.ma.copy(temperature)
 
     # find locations where we could calculate the SLP, but temperatures are missing
-    missing_Ts, = np.where(np.logical_and(filled_temperature.mask == True,
-                                          stnlp.mask == False))
+    missing_Ts, = np.where(filled_temperature.mask == True)
     if len(missing_Ts) > 0:
         filled_temperature[missing_Ts] = 15.0
 
     factor = (1. - ((0.0065*elevation) / ((filled_temperature+273.15) + (0.0065*elevation))))
 
-    sealp = stnlp * (factor ** -5.257)
-
-    return sealp # calc_slp
+    return (factor ** -5.257)
 
 
 #************************************************************************
@@ -312,11 +318,65 @@ def adjust_existing_flag_locs(var: utils.MeteorologicalVariable,
 
 
 #************************************************************************
-def pressure_theory(sealp: utils.MeteorologicalVariable,
-                    stnlp: utils.MeteorologicalVariable,
-                    temperature: utils.MeteorologicalVariable,
-                    times: np.ndarray, elevation: int,
-                    plots: bool=False, diagnostics: bool=False) -> None:
+def pressure_station_theory(stnlp: utils.MeteorologicalVariable,
+                            temperature: utils.MeteorologicalVariable,
+                            times: np.ndarray, elevation: int,
+                            plots: bool=False, diagnostics: bool=False) -> None:
+    """
+    Flag locations where difference between recorded and expected station-level pressure
+    falls outside of bounds
+
+    :param MetVar stnlp: station level pressure object
+    :param MetVar temperature: temperature object
+    :param array times: datetime array
+    :param float elevation: station elevation (m)
+    :param bool plots: turn on plots
+    :param bool diagnostics: turn on diagnostic output
+    """
+
+    flags = np.array(["" for i in range(stnlp.data.shape[0])])
+
+    theoretical_stnlp_value = 1013 / calc_slp_factor(elevation, temperature.data)
+
+    difference = stnlp.data - theoretical_stnlp_value
+
+    if len(difference.compressed()) > 0:
+        bad_locs, = np.ma.where(np.ma.abs(difference) > STNLP_THEORY_THRESHOLD)
+
+        # diagnostic plots
+        if plots:
+            plot_pressure_distribution(difference, "Station Pressure Theory",
+                                       vmin=-STNLP_THEORY_THRESHOLD,
+                                       vmax=STNLP_THEORY_THRESHOLD)
+
+        if len(bad_locs) != 0:
+            flags[bad_locs] = "p"
+            logger.info(f"Pressure {stnlp.name}")
+            logger.info(f"   Number of mismatches between expected and recorded station pressure {len(bad_locs)}")
+            if plots:
+                for bad in bad_locs:
+                    theory_stnlp = utils.MeteorologicalVariable("Theory StnLP",
+                                                                utils.MDI,
+                                                                units="hPa",
+                                                                dtype=float)
+                    theory_stnlp.data=theoretical_stnlp_value
+                    plot_pressure_timeseries(theory_stnlp,
+                                             stnlp, times, bad)
+
+        stnlp.flags = utils.insert_flags(stnlp.flags, adjust_existing_flag_locs(stnlp, flags))
+
+    logger.info(f"Pressure {stnlp.name}")
+    logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
+
+    return
+
+
+#************************************************************************
+def pressure_consistency_theory(sealp: utils.MeteorologicalVariable,
+                                stnlp: utils.MeteorologicalVariable,
+                                temperature: utils.MeteorologicalVariable,
+                                times: np.ndarray, elevation: int,
+                                plots: bool=False, diagnostics: bool=False) -> None:
     """
     Flag locations where difference between recorded and calculated sea-level pressure
     falls outside of bounds
@@ -332,18 +392,18 @@ def pressure_theory(sealp: utils.MeteorologicalVariable,
 
     flags = np.array(["" for i in range(sealp.data.shape[0])])
 
-    theoretical_value = calc_slp(stnlp.data, elevation, temperature.data)
+    theoretical_value = stnlp.data * calc_slp_factor(elevation, temperature.data)
 
     difference = sealp.data - theoretical_value
 
     if len(difference.compressed()) > 0:
-        bad_locs, = np.ma.where(np.ma.abs(difference) > THEORY_THRESHOLD)
+        bad_locs, = np.ma.where(np.ma.abs(difference) > SLP_THEORY_THRESHOLD)
 
         # diagnostic plots
         if plots:
-            plot_pressure_distribution(difference, "Theory",
-                                       vmin=-THEORY_THRESHOLD,
-                                       vmax=THEORY_THRESHOLD)
+            plot_pressure_distribution(difference, "Station and SLP Consistency",
+                                       vmin=-SLP_THEORY_THRESHOLD,
+                                       vmax=SLP_THEORY_THRESHOLD)
 
         if len(bad_locs) != 0:
             flags[bad_locs] = "p"
@@ -399,7 +459,11 @@ def pcc(station: utils.Station, config_dict: dict, full: bool = False,
         logger.warning(f"Station Elevation missing ({station.elev}m)")
         logger.warning("   Theoretical SLP/StnLP cross check not run.")
     else:
-        pressure_theory(sealp, stnlp, temperature, station.times,
-                        station.elev, plots=plots, diagnostics=diagnostics)
+        pressure_consistency_theory(sealp, stnlp, temperature, station.times,
+                                    station.elev, plots=plots, diagnostics=diagnostics)
+
+        pressure_station_theory(stnlp, temperature, station.times,
+                                station.elev, plots=plots, diagnostics=diagnostics)
+
 
     return # pcc
