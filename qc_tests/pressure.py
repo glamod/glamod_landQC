@@ -21,7 +21,7 @@ SLP_THEORY_THRESHOLD = 15 # allows for small offset (e.g. temperature)
                           # as well as from intrinsic spread
 
 # Difference between recorded StnLP and that from standard normal SLP
-STNLP_THEORY_THRESHOLD = 50 # larger variation allowed to account for weather
+STNLP_THEORY_THRESHOLD = 100 # larger variation allowed to account for weather
 
 
 MIN_SPREAD = 1.0
@@ -325,6 +325,11 @@ def pressure_station_theory(stnlp: utils.MeteorologicalVariable,
     """
     Flag locations where difference between recorded and expected station-level pressure
     falls outside of bounds
+
+    Tests with distribution fitting for UK station (UKM00003844 Exeter) showed that
+        a spread of >65hPa was necessary to include all valid measurements
+    However, for pervasive issues like Sonnblick () the distribution fitting failed,
+        so intend this test to identify and flag the worst cases
 
     :param MetVar stnlp: station level pressure object
     :param MetVar temperature: temperature object
