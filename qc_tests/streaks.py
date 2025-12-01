@@ -29,7 +29,7 @@ MIN_STREAK_LENGTH_FOR_EXCESS_FREQUENCY = 10
 
 #*********************************************
 def plot_streak(times: np.ndarray, data: np.ndarray, units: str,
-                streak_start: int, streak_end: int) -> None:
+                streak_start: int, streak_end: int) -> None:  # pragma: no cover
     '''
     Plot each streak against surrounding data
 

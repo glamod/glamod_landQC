@@ -22,7 +22,7 @@ MAX_SPREAD = 5.0
 #*********************************************
 def plot_pressure_timeseries(sealp: utils.MeteorologicalVariable,
                              stnlp: utils.MeteorologicalVariable,
-                             times: np.ndarray, bad: int) -> None:
+                             times: np.ndarray, bad: int) -> None:  # pragma: no cover
     '''
     Plot each observation of SLP or StnLP against surrounding data
 
@@ -115,7 +115,7 @@ def pressure_logic(sealp: utils.MeteorologicalVariable,
 #*********************************************
 def plot_pressure_distribution(difference: np.ndarray,
                                title: str,
-                               vmin: int=-1, vmax:int=1)-> None:
+                               vmin: int=-1, vmax:int=1)-> None:  # pragma: no cover
     '''
     Plot distribution and include the upper and lower thresholds
 

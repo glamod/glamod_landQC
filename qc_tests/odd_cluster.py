@@ -28,7 +28,7 @@ MIN_SEPARATION = utils.ODD_CLUSTER_SEPARATION * 24
 
 #*********************************************
 def plot_cluster(times: np.ndarray, obs_var: utils.MeteorologicalVariable,
-                 oc_start: int, oc_end: int) -> None:
+                 oc_start: int, oc_end: int) -> None:  # pragma: no cover
     '''
     Plot each odd cluster highlighted against surrounding data
 

@@ -13,7 +13,9 @@ import utils
 from qc_tests.spike import generate_differences
 #************************************************************************
 #*********************************************
-def plot_multiple(times: np.ndarray, obs_var: utils.MeteorologicalVariable, start: int) -> None:
+def plot_multiple(times: np.ndarray,
+                  obs_var: utils.MeteorologicalVariable,
+                  start: int) -> None:   # pragma: no cover
     '''
     Plot each instance of multiple values against surrounding data
 

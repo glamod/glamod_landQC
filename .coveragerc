@@ -1,0 +1,8 @@
+[report]
+exclude_also =
+    def __repr__
+    raise NotImplementedError
+    if 0:
+    if __name__ == .__main__.:
+    # RJHD - exclude at least calls to plotting routines
+    plot.*

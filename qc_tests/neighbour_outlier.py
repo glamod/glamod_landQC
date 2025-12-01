@@ -25,7 +25,8 @@ DISTANT_NEIGHBOURS = 100 # km
 
 #************************************************************************
 def plot_neighbour_flags(times: np.ndarray, flagged_time: int,
-                         target: utils.MeteorologicalVariable, buddies: np.ndarray) -> None:
+                         target: utils.MeteorologicalVariable,
+                         buddies: np.ndarray) -> None:  # pragma: no cover
     '''
     Plot each spike against surrounding data
 

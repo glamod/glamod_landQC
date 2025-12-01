@@ -37,7 +37,7 @@ TIME_DIFF_RANGES = np.array([[1, 15],  # 15
 
 #*********************************************
 def plot_spike(times: np.ndarray, obs_var: utils.MeteorologicalVariable,
-               spike_start: int, spike_length: int) -> None:
+               spike_start: int, spike_length: int) -> None:  # pragma: no cover
     '''
     Plot each spike against surrounding data
 

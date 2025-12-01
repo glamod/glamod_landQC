@@ -257,7 +257,10 @@ def get_critical_values(indata: np.ndarray, binmin: float = 0, binwidth: float =
 
 
 #*********************************************
-def plot_log_distribution(edges: np.ndarray, hist: np.ndarray, fit: np.ndarray, threshold: float, line_label: str, xlabel: str, title: str) -> None:
+def plot_log_distribution(edges: np.ndarray, hist: np.ndarray,
+                          fit: np.ndarray, threshold: float,
+                          line_label: str, xlabel: str,
+                          title: str) -> None:  # pragma: no cover
     """
     Plot distribution on a log scale and show the fit
 

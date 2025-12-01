@@ -73,7 +73,7 @@ def get_repeating_dpd_threshold(temperatures: utils.MeteorologicalVariable,
 def plot_humidities(T: utils.MeteorologicalVariable,
                     D: utils.MeteorologicalVariable,
                     times: np.ndarray,
-                    bad: int) -> None:
+                    bad: int) -> None:  # pragma: no cover
     '''
     Plot each observation of SSS or DPD against surrounding data
 
@@ -107,7 +107,7 @@ def plot_humidities(T: utils.MeteorologicalVariable,
 def plot_humidity_streak(times: np.ndarray,
                          T: utils.MeteorologicalVariable,
                          D: utils.MeteorologicalVariable,
-                         streak_start: int, streak_end: int) -> None:
+                         streak_start: int, streak_end: int) -> None:  # pragma: no cover
     '''
     Plot each streak against surrounding data
 
