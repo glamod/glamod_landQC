@@ -200,3 +200,41 @@ def test_gcv_calculate_binmax_large() -> None:
     binmax = qc_utils.gcv_calculate_binmax(indata, binmin, binwidth)
 
     assert binmax == 2000
+
+
+def test_reporting_accuracy_1() -> None:
+
+    indata = np.ma.arange(10)
+
+    result = qc_utils.reporting_accuracy(indata)
+
+    assert result == 1
+
+
+def test_reporting_accuracy_05() -> None:
+
+    indata = np.ma.arange(0, 10, 0.5)
+
+    result = qc_utils.reporting_accuracy(indata)
+
+    assert result == 0.5
+
+
+def test_reporting_accuracy_01() -> None:
+
+    indata = np.ma.arange(0, 10, 0.1)
+
+    result = qc_utils.reporting_accuracy(indata)
+
+    assert result == 0.1
+
+
+def test_create_bins_simple() -> None:
+
+    indata = np.array([-10, 10])
+
+    result = qc_utils.create_bins(indata, 1, "DUMMY")
+
+    # pad by 5*width either side, but upper limit exclusive
+    assert result[0] == -15
+    assert result[-1] == 14
