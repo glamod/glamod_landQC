@@ -100,14 +100,14 @@ def scan_histogram(hist: np.ndarray, bins: np.ndarray) -> list[int]:
         if (b >= (ROLLING//2)) and (b < (len(hist) - ROLLING//2)):
             target_bins = hist[b-(ROLLING//2) : b + (ROLLING//2) + 1]
 
-            # if sufficient obs, maximum and contains > 50%, but not all, of the data
+            # if sufficient obs, maximum and contains > 50% (can be all) of the data
             if bar < utils.DATA_COUNT_THRESHOLD:
                 # if insufficient obs, skip on
                 continue
             if bar == target_bins.max():
                 # if the maximum
-                if 1 > (bar/target_bins.sum()) > RATIO:
-                    # and more than 50% of the data (but not all)
+                if (bar/target_bins.sum()) > RATIO:
+                    # and more than 50% of the data (can be all of it)
                     suspect += [bins[b]]
 
     return suspect
@@ -215,53 +215,36 @@ def frequent_values(obs_var: utils.MeteorologicalVariable, station: utils.Statio
 
             month_flags = np.array(["" for i in range(month_data.shape[0])])
 
-            # adjust bin widths according to reporting accuracy
-            resolution = qc_utils.reporting_accuracy(month_data)
+            # use stored bin widths
+            bins = qc_utils.create_bins(month_data, width, obs_var.name)
+            hist, _ = np.histogram(month_data, bins)
 
-            if resolution <= 0.5:
-                bins = qc_utils.create_bins(month_data, 0.5, obs_var.name)
-            else:
-                bins = qc_utils.create_bins(month_data, 1.0, obs_var.name)
-            hist, bin_edges = np.histogram(month_data, bins)
+            # Re-scan through the histogram
+            #   check if a bin is the maximum of a local area in this month
+            suspect_monthly = scan_histogram(hist, bins)
 
-            # Scan through the histogram
-            #   check if a bin is the maximum of a local area ("ROLLING")
-            for b, bar in enumerate(hist):
-                if (b > ROLLING//2) and (b <= (len(hist) - ROLLING//2)):
-
-                    target_bins = hist[b-(ROLLING//2) : b + (ROLLING//2) + 1]
-
-                    # if sufficient obs, maximum and contains > 50% of data
-                    if bar >= utils.DATA_COUNT_THRESHOLD:
-                        if bar == target_bins.max():
-                            if (bar/target_bins.sum()) > RATIO:
-                                # this bin meets all the criteria
-                                if bins[b] in suspect_bins:
-                                    # find observations (month & year) to flag!
-                                    flag_locs = np.where(np.logical_and(month_data >= bins[b], month_data < bins[b+1]))
-                                    month_flags[flag_locs] = "F"
+            for sm_bin in suspect_monthly:
+                if sm_bin in suspect_bins:
+                # find observations (month & year) to flag!
+                    flag_locs = np.where(np.logical_and(month_data >= sm_bin,
+                                                        month_data < sm_bin+width))
+                    month_flags[flag_locs] = "F"
 
             # copy flags for all years into main array
             flags[locs] = month_flags
 
-        # diagnostic plots
-        if plots:
-            import matplotlib.pyplot as plt
+            # diagnostic plots
+            if plots:
+                # pull out the
+                bad_hist = np.copy(hist)
+                for b, _ in enumerate(bad_hist):
+                    if bins[b] not in suspect_monthly:
+                        bad_hist[b] = 0
 
-            plt.step(bins[1:], hist, color='k', where="pre")
-            plt.yscale("log")
+                plot_frequent_values(bins, hist, bad_hist,
+                                    obs_var.name.capitalize(),
+                                    f"{station.id} - {year}/{month}")
 
-            plt.ylabel("Number of Observations")
-            plt.xlabel(obs_var.name.capitalize())
-            plt.title(f"{station.id} - month {month}")
-
-            bad_hist = np.copy(hist)
-            for b, bar in enumerate(bad_hist):
-                if bins[b] not in suspect_bins:
-                    bad_hist[b] = 0
-
-            plt.step(bins[1:], bad_hist, color='r', where="pre")
-            plt.show()
 
     # append flags to object
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)

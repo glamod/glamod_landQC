@@ -3,7 +3,7 @@ Contains tests for frequent.py
 """
 import numpy as np
 import datetime as dt
-import json
+import pandas as pd
 import pytest
 from unittest.mock import (call, patch, mock_open, Mock)
 
@@ -128,6 +128,44 @@ def test_identify_values() -> None:
 
     assert config_dict["FREQUENT-temperature"][f"1-width"] == "1.0"
     assert config_dict["FREQUENT-temperature"][f"1"] == [10]
+
+
+def test_identify_values_gaussian() -> None:
+    """Check identification works using gaussian data"""
+    nyears = 10
+    month_hours = 24*31
+    # 10 years of Januaries at 0.1C resolution
+    indata = np.ma.array(np.round(np.random.normal(15, 10,
+                                                   month_hours * nyears),
+                                  decimals=1))
+    indata.mask = np.zeros(len(indata))
+    # every 5th entry set to 0 (mean is 15)
+    indata[::5] = 0
+
+    # make MetVars
+    temperature = common.example_test_variable("temperature", indata)
+
+    for y in range(nyears):
+        start_dt = dt.datetime(2000+y, 1, 1, 0, 0)
+        month_times = pd.to_datetime(pd.DataFrame([start_dt + dt.timedelta(hours=i)\
+                                for i in range(month_hours)])[0])
+        if y == 0:
+            times = month_times.copy()
+        else:
+            times = pd.concat([times, month_times])
+    # check at this generation stage that have all Januaries
+    assert np.unique(times.dt.month) == 1
+
+    # make Station, by hand so can set times
+    station = common.example_test_station(temperature, times)
+
+    config_dict = {}
+
+    frequent.identify_values(temperature, station, config_dict)
+
+    # data resolution at 0.1 so width == 0.5
+    assert config_dict["FREQUENT-temperature"][f"1-width"] == "0.5"
+    assert config_dict["FREQUENT-temperature"][f"1"] == [0]
 
 
 # def test_frequent_values() -> None:
