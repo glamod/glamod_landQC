@@ -33,7 +33,7 @@ def plot_frequent_values(bins, hist, suspect,
     plt.title(title)
 
     bad_hist = np.copy(hist)
-    for b, bar in enumerate(bad_hist):
+    for b, _ in enumerate(bad_hist):
         if bins[b] not in suspect:
             bad_hist[b] = 0
 
