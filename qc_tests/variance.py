@@ -18,11 +18,87 @@ MIN_VARIANCES = 10
 SPREAD_THRESHOLD = 8.
 MIN_VALUES = 30
 
-#************************************************************************
-def prepare_data(obs_var: utils.MeteorologicalVariable, station: utils.Station, month:int,
-                 diagnostics: bool = False, winsorize: bool = True) -> np.ndarray:
+
+def calculate_climatology(hour_data: np.ma.MaskedArray,
+                          winsorize: bool=False) -> tuple[float, bool]:
+    """Calculate the hourly climatology, with winsorizing if selected
+
+    Parameters
+    ----------
+    hour_data : np.ma.MaskedArray
+        Data for which to calculate the climatology
+    winsorize : bool, optional
+        Apply the winsorization, by default False
+
+    Returns
+    -------
+    tuple[float, bool]
+        mean and mask value.  If mean calculable, mask is False,
+        else mean is 0 and mask is True
     """
-    Calculate the monthly variances
+
+    if len(hour_data.compressed()) >= utils.DATA_COUNT_THRESHOLD:
+        if winsorize:
+            hour_data = qc_utils.winsorize(hour_data, 5)
+
+        return np.ma.mean(hour_data), False
+    else:
+        return 0, True
+
+
+def calculate_hourly_anomalies(hours: np.ndarray[int],
+                               month_data: np.ndarray,
+                               winsorize: bool=False) -> np.ma.MaskedArray:
+    """Calculate anomaly values, using climatology for each hour in
+    24, for this calendar month (i.e. all Januaries)
+
+    Parameters
+    ----------
+    hours : np.ndarray
+        Array of hours of the day for each observation in this month of the year
+    month_data : np.ndarray
+        Data for all of this calendar month
+    winsorize : bool, optional
+        Apply the winsorization, by default False
+
+    Returns
+    -------
+    np.ma.MaskedArray
+        Anomalies for this calendar month using each hour of the day
+    """
+    assert isinstance(hours, np.ndarray)
+    assert isinstance(month_data, np.ndarray)
+
+    # set up the climatology and anomaly arrays
+    hourly_clims = np.ma.zeros(24)
+    hourly_clims.mask = np.ones(24)
+
+    anomalies = np.ma.zeros(month_data.shape[0])
+    anomalies.mask = np.ones(anomalies.shape[0])
+
+    # spin through each hour of the day
+    for hour in range(24):
+
+        # calculate climatology
+        hlocs, = np.where(hours == hour)
+
+        (hourly_clims[hour],
+         hourly_clims.mask[hour]) = calculate_climatology(month_data[hlocs],
+                                                          winsorize=winsorize)
+
+        # make anomalies - keeping the order
+        anomalies[hlocs] = month_data[hlocs] - hourly_clims[hour]
+        print(hourly_clims)
+
+    return anomalies
+
+#************************************************************************
+def prepare_data(obs_var: utils.MeteorologicalVariable,
+                 station: utils.Station, month:int,
+                 diagnostics: bool = False,
+                 winsorize: bool = True) -> np.ndarray:
+    """
+    Calculate the monthly variances (each year for a given calendar month)
 
     :param MetVar obs_var: meteorological variable object
     :param Station station: station object
@@ -31,45 +107,23 @@ def prepare_data(obs_var: utils.MeteorologicalVariable, station: utils.Station, 
     :param bool diagnostics: turn on diagnostic output
     :param bool winsorize: apply winsorization at 5%/95%
     """
+    mlocs, = np.nonzero(station.months == month)
+    month_data = obs_var.data[mlocs]
 
-    anomalies = np.ma.zeros(obs_var.data.shape[0])
-    anomalies.mask = np.ones(anomalies.shape[0])
-    normed_anomalies = np.ma.copy(anomalies)
+    # get hourly anomalies for this month, for each hour of the day
+    anomalies = calculate_hourly_anomalies(station.hours[mlocs],
+                                           month_data,
+                                           winsorize=winsorize)
 
-    mlocs, = np.where(station.months == month)
-    anomalies.mask[mlocs] = False
-    normed_anomalies.mask[mlocs] = False
-
-    hourly_clims = np.ma.zeros(24)
-    hourly_clims.mask = np.ones(24)
-    for hour in range(24):
-
-        # calculate climatology
-        hlocs, = np.where(np.logical_and(station.months == month, station.hours == hour))
-
-        hour_data = obs_var.data[hlocs]
-
-        if winsorize:
-            if len(hour_data.compressed()) > 10:
-                hour_data = qc_utils.winsorize(hour_data, 5)
-
-        if len(hour_data.compressed()) >= utils.DATA_COUNT_THRESHOLD:
-            hourly_clims[hour] = np.ma.mean(hour_data)
-            hourly_clims.mask[hour] = False
-
-        # make anomalies - keeping the order
-        anomalies[hlocs] = obs_var.data[hlocs] - hourly_clims[hour]
-
-
-    if len(anomalies[mlocs].compressed()) >= MIN_VARIANCES:
+    if len(anomalies.compressed()) >= MIN_VARIANCES:
         # for the month, normalise anomalies by spread
-        spread = qc_utils.spread(anomalies[mlocs])
+        spread = qc_utils.spread(anomalies)
         if spread < 1.5:
             spread = 1.5
     else:
         spread = 1.5
 
-    normed_anomalies[mlocs] = anomalies[mlocs] / spread
+    normed_anomalies = anomalies / spread
 
     # calculate the variance for each year in this single month.
     all_years = np.unique(station.years)
@@ -78,7 +132,7 @@ def prepare_data(obs_var: utils.MeteorologicalVariable, station: utils.Station, 
     variances.mask = np.ones(all_years.shape[0])
     for y, year in enumerate(all_years):
 
-        ymlocs, = np.where(np.logical_and(station.months == month, station.years == year))
+        ymlocs, = np.where(station.years[mlocs] == year)
         this_year = normed_anomalies[ymlocs]
 
         # HadISD used M.A.D.
@@ -104,7 +158,8 @@ def find_thresholds(obs_var: utils.MeteorologicalVariable, station: utils.Statio
     # get hourly climatology for each month
     for month in range(1, 13):
 
-        variances = prepare_data(obs_var, station, month, diagnostics=diagnostics, winsorize=winsorize)
+        variances = prepare_data(obs_var, station, month,
+                                 diagnostics=diagnostics, winsorize=winsorize)
 
         if len(variances.compressed()) >= MIN_VARIANCES:
             average_variance = qc_utils.average(variances)
@@ -143,7 +198,8 @@ def variance_check(obs_var: utils.MeteorologicalVariable, station: utils.Station
     for month in range(1, 13):
         month_locs, = np.where(station.months == month)
 
-        variances = prepare_data(obs_var, station, month, diagnostics=diagnostics, winsorize=winsorize)
+        variances = prepare_data(obs_var, station, month,
+                                 diagnostics=diagnostics, winsorize=winsorize)
 
         try:
             average_variance = float(config_dict[f"VARIANCE-{obs_var.name}"][f"{month}-average"])
@@ -284,7 +340,9 @@ def variance_check(obs_var: utils.MeteorologicalVariable, station: utils.Station
     return # variance_check
 
 #************************************************************************
-def evc(station: utils.Station, var_list: list, config_dict: dict, full: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
+def evc(station: utils.Station, var_list: list,
+        config_dict: dict, full: bool = False,
+        plots: bool = False, diagnostics: bool = False) -> None:
     """
     Run through the variables and pass to the Excess Variance Check
 
@@ -301,8 +359,10 @@ def evc(station: utils.Station, var_list: list, config_dict: dict, full: bool = 
         obs_var = getattr(station, var)
 
         if full:
-            find_thresholds(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
-        variance_check(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
+            find_thresholds(obs_var, station, config_dict,
+                            plots=plots, diagnostics=diagnostics)
+        variance_check(obs_var, station, config_dict,
+                       plots=plots, diagnostics=diagnostics)
 
 
     return # evc
