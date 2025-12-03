@@ -17,7 +17,8 @@ ROLLING = 7  # looking for peaks in centre of $ROLLING bins
 BIN_WIDTH = 1.0
 RATIO = 0.5
 
-def plot_frequent_values(bins, hist, suspect, xlabel, title) -> None:
+def plot_frequent_values(bins, hist, suspect,
+                         xlabel, title) -> None:  #  pragma: no cover
     """
     Plot the histogram, with suspect values identified
     """
@@ -250,7 +251,7 @@ def frequent_values(obs_var: utils.MeteorologicalVariable, station: utils.Statio
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
     logger.info(f"Frequent Values {obs_var.name}")
-    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
+    logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
     return # frequent_values
 

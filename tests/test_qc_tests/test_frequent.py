@@ -168,6 +168,63 @@ def test_identify_values_gaussian() -> None:
     assert config_dict["FREQUENT-temperature"][f"1"] == [0]
 
 
-# def test_frequent_values() -> None:
+def test_frequent_values() -> None:
 
-# def test_fvc() -> None:
+    nyears = 10
+    month_hours = 24*31
+    # 10 years of Januaries at 0.1C resolution
+    indata = np.ma.array(np.round(np.random.normal(15, 10,
+                                                   month_hours * nyears),
+                                  decimals=1))
+    indata.mask = np.zeros(len(indata))
+    # every 5th entry set to 0 (mean is 15)
+    indata[::5] = 0
+
+    # make MetVars
+    temperature = common.example_test_variable("temperature", indata)
+
+    for y in range(nyears):
+        start_dt = dt.datetime(2000+y, 1, 1, 0, 0)
+        month_times = pd.to_datetime(pd.DataFrame([start_dt + dt.timedelta(hours=i)\
+                                for i in range(month_hours)])[0])
+        if y == 0:
+            times = month_times.copy()
+        else:
+            times = pd.concat([times, month_times])
+    # check at this generation stage that have all Januaries
+    assert np.unique(times.dt.month) == 1
+
+    # make Station, by hand so can set times
+    station = common.example_test_station(temperature, times)
+
+    config_dict = {}
+
+    frequent.frequent_values(temperature, station, config_dict)
+
+    # data resolution at 0.1 so width == 0.5
+    assert config_dict["FREQUENT-temperature"][f"1-width"] == "0.5"
+    assert config_dict["FREQUENT-temperature"][f"1"] == [0]
+
+    # assert flags set correctly
+    flag_locs = np.nonzero(temperature.flags == "F")
+    zero_locs = np.nonzero(np.logical_and(temperature.data >= 0,
+                                          temperature.data < 0.5))
+
+    np.testing.assert_array_equal(flag_locs, zero_locs)
+
+
+@patch("frequent.identify_values")
+@patch("frequent.frequent_values")
+def test_fvc(identify_mock: Mock,
+             values_mock: Mock) -> None:
+
+    station = _setup_station(np.ma.ones(24) * 10)
+
+    frequent.fvc(station, ["temperature"], {}, full=True)
+
+    obs_var = station.temperature
+    identify_mock.assert_called_once_with(obs_var, station, {},
+                                          plots=False, diagnostics=False)
+    values_mock.assert_called_once_with(obs_var, station, {},
+                                        plots=False, diagnostics=False)
+
