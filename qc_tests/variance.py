@@ -15,6 +15,7 @@ import utils
 #************************************************************************
 STORM_THRESHOLD = 4
 MIN_VARIANCES = 10
+MIN_SPREAD = 1.5
 SPREAD_THRESHOLD = 8.
 MIN_VALUES = 30
 
@@ -88,9 +89,34 @@ def calculate_hourly_anomalies(hours: np.ndarray[int],
 
         # make anomalies - keeping the order
         anomalies[hlocs] = month_data[hlocs] - hourly_clims[hour]
-        print(hourly_clims)
 
     return anomalies
+
+
+def normalise_hourly_anomalies(anomalies: np.ndarray) -> np.ndarray:
+    """Normalise the anomalies by their spread (e.g. variance)
+
+    Parameters
+    ----------
+    anomalies : np.ndarray
+        Hourly anomalies to normalise by the spread
+
+    Returns
+    -------
+    np.ndarray
+        Normalised anomalies
+    """
+
+    if len(anomalies.compressed()) >= MIN_VARIANCES:
+        # for the month, normalise anomalies by spread
+        spread = qc_utils.spread(anomalies)
+        if spread < MIN_SPREAD:
+            spread = MIN_SPREAD
+    else:
+        spread = MIN_SPREAD
+
+    return anomalies / spread
+
 
 #************************************************************************
 def prepare_data(obs_var: utils.MeteorologicalVariable,
@@ -115,15 +141,7 @@ def prepare_data(obs_var: utils.MeteorologicalVariable,
                                            month_data,
                                            winsorize=winsorize)
 
-    if len(anomalies.compressed()) >= MIN_VARIANCES:
-        # for the month, normalise anomalies by spread
-        spread = qc_utils.spread(anomalies)
-        if spread < 1.5:
-            spread = 1.5
-    else:
-        spread = 1.5
-
-    normed_anomalies = anomalies / spread
+    normed_anomalies = normalise_hourly_anomalies(anomalies)
 
     # calculate the variance for each year in this single month.
     all_years = np.unique(station.years)

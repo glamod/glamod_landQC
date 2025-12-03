@@ -10,6 +10,7 @@ from unittest.mock import patch, Mock
 import variance
 import common
 import utils
+import qc_utils
 
 
 def _setup_station() -> utils.Station:
@@ -102,6 +103,25 @@ def test_calculate_hourly_anomalies_nonzero() -> None:
     assert np.all(result[:24] == 1)
     assert np.all(result[-24:] == -1)
 
+
+def test_normalise_hourly_anomalies() -> None:
+
+    anomalies = np.ma.arange(20)
+
+    result = variance.normalise_hourly_anomalies(anomalies)
+
+    spread = qc_utils.spread(anomalies)
+
+    np.testing.assert_allclose(result, anomalies/spread)
+
+
+def test_normalise_hourly_anomalies_small_spread() -> None:
+
+    anomalies = np.ma.ones(20) * 3
+
+    result = variance.normalise_hourly_anomalies(anomalies)
+
+    np.testing.assert_allclose(result, anomalies/1.5)
 
 @patch("variance.find_thresholds")
 @patch("variance.variance_check")
