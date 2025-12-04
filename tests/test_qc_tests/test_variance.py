@@ -82,7 +82,8 @@ def test_calculate_hourly_anomalies() -> None:
     result = variance.calculate_hourly_anomalies(station.hours,
                                                  station.temperature.data)
 
-    # hence anomalies will all be zero
+    # hence anomalies will all be zero, as each hour of a day
+    #    the same across the month
     assert np.all(result == 0)
 
 
@@ -160,6 +161,26 @@ def test_prepare_data(yearly_var_mock: Mock,
     hourly_anoms_mock.assert_called_once()
     norm_anoms_mock.assert_called_once()
     yearly_var_mock.assert_called_once()
+
+
+@patch("variance.prepare_data")
+def test_find_thresholds(prepare_data_mock: Mock) -> None:
+    """Test writing of config dictionary correct given mocked variances"""
+    length = 20
+    vars = np.ma.arange(length)
+
+    prepare_data_mock.return_value = vars
+
+    station = _setup_station()
+    config_dict = {}
+
+    _ = variance.find_thresholds(station.temperature,
+                                      station, config_dict,
+                                      winsorize=False)
+
+    assert config_dict["VARIANCE-temperature"]["1-average"] == qc_utils.average(vars)
+    #  all the same in this example
+    assert config_dict["VARIANCE-temperature"]["1-spread"] == qc_utils.spread(vars)
 
 
 @patch("variance.find_thresholds")

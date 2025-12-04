@@ -20,6 +20,36 @@ SPREAD_THRESHOLD = 8.
 MIN_VALUES = 30
 
 
+def plot_variance_distribution(scaled_variances: np.ndarray,
+                               bad_years: np.ndarray,
+                               name: str, title: str) -> None:  # pragma: no cover
+    """Plot the distribution of scaled annual variances
+    for this month, highlighting those flagged"""
+
+    import matplotlib.pyplot as plt
+
+
+    bins = qc_utils.create_bins(scaled_variances, 0.25, name)
+    hist, _ = np.histogram(scaled_variances, bins)
+
+    plt.clf()
+    plt.step(bins[1:], hist, color='k', where="pre")
+    plt.yscale("log")
+
+    plt.ylabel("Number of Months")
+    plt.xlabel(f"Scaled {name.capitalize()} Variances")
+    plt.title(title)
+
+    plt.ylim([0.1, max(hist)*2])
+    plt.axvline(SPREAD_THRESHOLD, c="r")
+    plt.axvline(-SPREAD_THRESHOLD, c="r")
+
+    bad_hist, _ = np.histogram(scaled_variances[bad_years], bins)
+    plt.step(bins[1:], bad_hist, color='r', where="pre")
+
+    plt.show()
+
+
 def calculate_climatology(hour_data: np.ma.MaskedArray,
                           winsorize: bool=False) -> tuple[float, bool]:
     """Calculate the hourly climatology, with winsorizing if selected
@@ -228,6 +258,93 @@ def find_thresholds(obs_var: utils.MeteorologicalVariable,
 
     return # find_thresholds
 
+
+def identify_bad_years(obs_var: utils.MeteorologicalVariable,
+                       station: utils.Station, config_dict: dict,
+                       month: int, plots: bool = False, diagnostics: bool = False,
+                       winsorize: bool = True) -> tuple[np.ndarray, np.ndarray]:
+    """Use the settings in the config_dict (or calculate if not available)
+    to return both the years for this calendar month where variances are suspect
+    and the scaled variances.
+
+    Parameters
+    ----------
+    obs_var : utils.MeteorologicalVariable
+        Data structure for this variable
+    station : utils.Station
+        utils.Station object for the station
+    config_dict : dict
+        Dictionary holding the QC settings for this station
+    month : int
+        The calendar month to process
+    plots : bool, optional
+        Run plots, by default False
+    diagnostics : bool, optional
+        Diagnostic outout, by default False
+    winsorize : bool, optional
+        Apply winsorization, by default True
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray]
+        Arrays of the indices of bad year, and the scaled variances
+    """
+
+    variances = prepare_data(obs_var, station, month,
+                             diagnostics=diagnostics, winsorize=winsorize)
+
+    try:
+        average_variance = float(config_dict[f"VARIANCE-{obs_var.name}"][f"{month}-average"])
+        variance_spread = float(config_dict[f"VARIANCE-{obs_var.name}"][f"{month}-spread"])
+    except KeyError:
+        find_thresholds(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
+        average_variance = float(config_dict[f"VARIANCE-{obs_var.name}"][f"{month}-average"])
+        variance_spread = float(config_dict[f"VARIANCE-{obs_var.name}"][f"{month}-spread"])
+
+    if average_variance == utils.MDI and variance_spread == utils.MDI:
+        # couldn't be calculated, move on
+        return (np.array([]), np.array([]))
+
+    scaled_variances = ((variances - average_variance) / variance_spread)
+
+    bad_years, = np.where(np.abs(scaled_variances) > SPREAD_THRESHOLD)
+
+    return bad_years, scaled_variances
+
+
+def read_wind_or_pressure(station: utils.Station,
+                          var: str,
+                          locs: np.ndarray) -> tuple[float, float]:
+    """Read the wind or pressure data, and return the spread or
+
+    Parameters
+    ----------
+    station : utils.Station
+        _description_
+    var : str
+        _description_
+    locs : np.ndarray
+        _description_
+
+    Returns
+    -------
+    tuple[float, float]
+        _description_
+    """
+
+    this_var = getattr(station, var)
+
+    monthly_var = this_var.data[locs]
+
+    if len(monthly_var.compressed()) < utils.DATA_COUNT_THRESHOLD:
+        return (-1., -1.)
+
+    average = qc_utils.average(monthly_var)
+    spread = qc_utils.spread(monthly_var)
+
+    return (average, spread)
+
+
 #************************************************************************
 def variance_check(obs_var: utils.MeteorologicalVariable, station: utils.Station, config_dict: dict,
                    plots: bool = False, diagnostics: bool = False, winsorize: bool = True) -> None:
@@ -246,51 +363,45 @@ def variance_check(obs_var: utils.MeteorologicalVariable, station: utils.Station
 
     # get hourly climatology for each month
     for month in range(1, 13):
-        month_locs, = np.where(station.months == month)
+        # TODO: move bad_years from indices in all_years, but to the actual years (YYYY)
+        bad_years, scaled_variances = identify_bad_years(obs_var, station,
+                                                         config_dict, month, plots=plots,
+                                                         diagnostics=diagnostics,
+                                                         winsorize=winsorize)
 
-        variances = prepare_data(obs_var, station, month,
-                                 diagnostics=diagnostics, winsorize=winsorize)
-
-        try:
-            average_variance = float(config_dict[f"VARIANCE-{obs_var.name}"][f"{month}-average"])
-            variance_spread = float(config_dict[f"VARIANCE-{obs_var.name}"][f"{month}-spread"])
-        except KeyError:
-            find_thresholds(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
-            average_variance = float(config_dict[f"VARIANCE-{obs_var.name}"][f"{month}-average"])
-            variance_spread = float(config_dict[f"VARIANCE-{obs_var.name}"][f"{month}-spread"])
-
-        if average_variance == utils.MDI and variance_spread == utils.MDI:
-            # couldn't be calculated, move on
+        # if no bad years, or variances calculable, move to next month
+        if len(bad_years) == 0 and len(scaled_variances) == 0:
             continue
 
-        bad_years, = np.where(np.abs(variances - average_variance) / variance_spread > SPREAD_THRESHOLD)
-
+        month_locs, = np.where(station.months == month)
         # prepare wind and pressure data in case needed to check for storms
-        if obs_var.name in ["station_level_pressure", "sea_level_pressure", "wind_speed"]:
-            wind_monthly_data = station.wind_speed.data[month_locs]
-            if obs_var.name in ["station_level_pressure", "sea_level_pressure"]:
-                pressure_monthly_data = obs_var.data[month_locs]
+        if obs_var.name in ["station_level_pressure",
+                            "sea_level_pressure",
+                            "wind_speed"]:
+
+            wind_average, wind_spread = read_wind_or_pressure(station,
+                                                              "wind_speed",
+                                                              month_locs)
+
+            if obs_var.name == "wind_speed":
+                pressure_name = "sea_level_pressure"
             else:
-                pressure_monthly_data = station.sea_level_pressure.data[month_locs]
+                pressure_name = obs_var.name
 
-            if len(pressure_monthly_data.compressed()) < utils.DATA_COUNT_THRESHOLD or \
-                    len(wind_monthly_data.compressed()) < utils.DATA_COUNT_THRESHOLD:
-                # need sufficient data to work with for storm check to work, else can't tell
-                #    move on
+            pressure_average, pressure_spread = read_wind_or_pressure(station,
+                                                                      pressure_name,
+                                                                      month_locs)
+
+            # if either metrics has insufficient data (these variables cannot be positive)
+            if pressure_average == -1 or wind_average == -1:
                 continue
-
-            wind_average = qc_utils.average(wind_monthly_data)
-            wind_spread = qc_utils.spread(wind_monthly_data)
-
-            pressure_average = qc_utils.average(pressure_monthly_data)
-            pressure_spread = qc_utils.spread(pressure_monthly_data)
 
         # go through each bad year for this month
         all_years = np.unique(station.years)
         for year in bad_years:
 
             # corresponding locations
-            ym_locs, = np.where(np.logical_and(station.months == month, station.years == all_years[year]))
+            ym_locs, = np.where(station.years[month_locs] == all_years[year])
 
             # if pressure or wind speed, need to do some further checking before applying flags
             if obs_var.name in ["station_level_pressure", "sea_level_pressure", "wind_speed"]:
@@ -358,28 +469,10 @@ def variance_check(obs_var: utils.MeteorologicalVariable, station: utils.Station
 
         # diagnostic plots
         if plots:
-            import matplotlib.pyplot as plt
-
-            scaled_variances = ((variances - average_variance) / variance_spread)
-            bins = qc_utils.create_bins(scaled_variances, 0.25, obs_var.name)
-            hist, bin_edges = np.histogram(scaled_variances, bins)
-
-            plt.clf()
-            plt.step(bins[1:], hist, color='k', where="pre")
-            plt.yscale("log")
-
-            plt.ylabel("Number of Months")
-            plt.xlabel(f"Scaled {obs_var.name.capitalize()} Variances")
-            plt.title(f"{station.id} - month {month}")
-
-            plt.ylim([0.1, max(hist)*2])
-            plt.axvline(SPREAD_THRESHOLD, c="r")
-            plt.axvline(-SPREAD_THRESHOLD, c="r")
-
-            bad_hist, dummy = np.histogram(scaled_variances[bad_years], bins)
-            plt.step(bins[1:], bad_hist, color='r', where="pre")
-
-            plt.show()
+            plot_variance_distribution(scaled_variances,
+                                       bad_years,
+                                       obs_var.name,
+                                       f"{station.id} - month {month}")
 
     # append flags to object
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
