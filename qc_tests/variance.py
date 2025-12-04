@@ -345,6 +345,59 @@ def read_wind_or_pressure(station: utils.Station,
     return (average, spread)
 
 
+def high_wind_low_pressure_match(scaled_wind, scaled_pressure) -> bool:
+
+    # TODO: I think I can combine the reading, the scaling and the matching into
+    #   one parent routine which may be overall shorter
+    #   - read the wind and pressure data for the month
+    #   - pass wind and pressure data and year locs into routine
+    #   - routine gets spread and var, then scale the yearly only
+    #   - and then check if storm/matching.
+    #  Can try to split out after that into smaller bits
+
+    high_winds, = np.ma.where(scaled_wind > STORM_THRESHOLD)
+    low_pressures, = np.ma.where(scaled_pressure > STORM_THRESHOLD)
+
+    match = np.in1d(high_winds, low_pressures)
+
+    couldbe_storm = False
+    if len(match) > 0:
+        # this could be a storm, either at tropical station (relatively constant pressure)
+        # or out of season in mid-latitudes.
+        couldbe_storm = True
+
+    return couldbe_storm
+
+
+def sequential_differences(diffs: np.ndarray,
+                           couldbe_storm: bool) -> bool:
+
+    # count up the largest number of sequential negative and positive differences
+    negs, poss = 0, 0
+    biggest_neg, biggest_pos = 0, 0
+
+    for diff in diffs:
+
+        if diff > 0:
+            if negs > biggest_neg: biggest_neg = negs
+            negs = 0
+            poss += 1
+        else:
+            if poss > biggest_pos: biggest_pos = poss
+            poss = 0
+            negs += 1
+
+    if (biggest_neg < 10) and (biggest_pos < 10) and not couldbe_storm:
+        # insufficient to identify as a storm (HadISD values)
+        # leave flags set
+        return False
+    else:
+        # could be a storm, so better to leave this month unflagged
+        # zero length array to flag
+        return True
+
+
+
 #************************************************************************
 def variance_check(obs_var: utils.MeteorologicalVariable, station: utils.Station, config_dict: dict,
                    plots: bool = False, diagnostics: bool = False, winsorize: bool = True) -> None:
@@ -438,27 +491,7 @@ def variance_check(obs_var: utils.MeteorologicalVariable, station: utils.Station
                     diffs = np.ma.diff(wind_data)
 
                 # count up the largest number of sequential negative and positive differences
-                negs, poss = 0, 0
-                biggest_neg, biggest_pos = 0, 0
-
-                for diff in diffs:
-
-                    if diff > 0:
-                        if negs > biggest_neg: biggest_neg = negs
-                        negs = 0
-                        poss += 1
-                    else:
-                        if poss > biggest_pos: biggest_pos = poss
-                        poss = 0
-                        negs += 1
-
-                if (biggest_neg < 10) and (biggest_pos < 10) and not couldbe_storm:
-                    # insufficient to identify as a storm (HadISD values)
-                    # leave flags set
-                    pass
-                else:
-                    # could be a storm, so better to leave this month unflagged
-                    # zero length array to flag
+                if sequential_differences(diffs, couldbe_storm):
                     ym_locs = np.ma.array([])
 
 

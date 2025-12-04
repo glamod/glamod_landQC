@@ -183,6 +183,9 @@ def test_find_thresholds(prepare_data_mock: Mock) -> None:
     assert config_dict["VARIANCE-temperature"]["1-spread"] == qc_utils.spread(vars)
 
 
+
+
+
 @patch("variance.find_thresholds")
 @patch("variance.variance_check")
 def test_evc(check_mock: Mock,
