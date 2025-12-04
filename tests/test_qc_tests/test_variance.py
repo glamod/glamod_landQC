@@ -89,6 +89,7 @@ def test_calculate_hourly_anomalies() -> None:
 def test_calculate_hourly_anomalies_nonzero() -> None:
 
     # station has values of 0..23 repeating for each hour
+    #   10 Januaries worth
     station = _setup_station()
 
     # offset first and last day
@@ -105,6 +106,7 @@ def test_calculate_hourly_anomalies_nonzero() -> None:
 
 
 def test_normalise_hourly_anomalies() -> None:
+    """Test normalising step when using calculated spread"""
 
     anomalies = np.ma.arange(20)
 
@@ -116,12 +118,49 @@ def test_normalise_hourly_anomalies() -> None:
 
 
 def test_normalise_hourly_anomalies_small_spread() -> None:
+    """Test normalising when spread too small, and set to 1.5"""
 
-    anomalies = np.ma.ones(20) * 3
+    anomalies = np.ma.ones(20)
 
     result = variance.normalise_hourly_anomalies(anomalies)
 
     np.testing.assert_allclose(result, anomalies/1.5)
+
+
+def test_calculate_yearly_variances() -> None:
+    """Test the calculation of variances for a given month over all years"""
+
+    # station has values of 0..23 repeating for each hour
+    # so variance is just that of [00..23]
+    station = _setup_station()
+    locs = np.arange(station.years.shape[0])
+
+    result = variance.calculate_yearly_variances(station.years,
+                                                 station.temperature.data,
+                                                 locs)
+
+    expected=qc_utils.spread(np.arange(24))
+    assert np.all(result == expected)
+    assert len(result) == 10
+
+
+@patch("variance.calculate_hourly_anomalies")
+@patch("variance.normalise_hourly_anomalies")
+@patch("variance.calculate_yearly_variances")
+def test_prepare_data(yearly_var_mock: Mock,
+                      norm_anoms_mock: Mock,
+                      hourly_anoms_mock: Mock) -> None:
+    """Test call of processing scripts done correctly"""
+
+    station = _setup_station()
+    temperature = station.temperature
+
+    _ = variance.prepare_data(temperature, station, 1)
+
+    hourly_anoms_mock.assert_called_once()
+    norm_anoms_mock.assert_called_once()
+    yearly_var_mock.assert_called_once()
+
 
 @patch("variance.find_thresholds")
 @patch("variance.variance_check")

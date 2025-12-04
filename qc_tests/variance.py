@@ -118,6 +118,44 @@ def normalise_hourly_anomalies(anomalies: np.ndarray) -> np.ndarray:
     return anomalies / spread
 
 
+def calculate_yearly_variances(stn_years: np.ndarray,
+                               anomalies: np.ma.MaskedArray,
+                               month_locs: np.ndarray) -> np.ndarray:
+    """Calculate the variance for each year in the station
+    for the calendar month selected in parent routine
+
+    Parameters
+    ----------
+    stn_years : np.ndarray
+        Year of observation for each timestamp
+    anomalies : _type_
+        Normalised anomaly at each timestamp
+    month_locs : np.ndarray
+        Locations in stn_years which correspond to this calendar month
+
+    Returns
+    -------
+    np.ndarray
+        Array of variances for each year for this calendar month
+    """
+
+    # calculate the variance for each year in this single month.
+    all_years = np.unique(stn_years)
+
+    variances = np.ma.zeros(all_years.shape[0])
+    variances.mask = np.ones(all_years.shape[0])
+    for y, year in enumerate(all_years):
+
+        ymlocs, = np.where(stn_years[month_locs] == year)
+        this_year = anomalies[ymlocs]
+
+        # HadISD used M.A.D.
+        if this_year.compressed().shape[0] > MIN_VALUES:
+            variances[y] = qc_utils.spread(this_year)
+
+    return variances
+
+
 #************************************************************************
 def prepare_data(obs_var: utils.MeteorologicalVariable,
                  station: utils.Station, month:int,
@@ -141,27 +179,21 @@ def prepare_data(obs_var: utils.MeteorologicalVariable,
                                            month_data,
                                            winsorize=winsorize)
 
+    # normalise by spread
     normed_anomalies = normalise_hourly_anomalies(anomalies)
 
-    # calculate the variance for each year in this single month.
-    all_years = np.unique(station.years)
-
-    variances = np.ma.zeros(all_years.shape[0])
-    variances.mask = np.ones(all_years.shape[0])
-    for y, year in enumerate(all_years):
-
-        ymlocs, = np.where(station.years[mlocs] == year)
-        this_year = normed_anomalies[ymlocs]
-
-        # HadISD used M.A.D.
-        if this_year.compressed().shape[0] > MIN_VALUES:
-            variances[y] = qc_utils.spread(this_year)
+    # find spread ("variance") of yearly anomalies
+    variances = calculate_yearly_variances(station.years, normed_anomalies,
+                                           mlocs)
 
     return variances # prepare_data
 
+
 #************************************************************************
-def find_thresholds(obs_var: utils.MeteorologicalVariable, station: utils.Station, config_dict: dict,
-                    plots: bool = False, diagnostics: bool = False, winsorize: bool = True) -> None:
+def find_thresholds(obs_var: utils.MeteorologicalVariable,
+                    station: utils.Station, config_dict: dict,
+                    plots: bool = False, diagnostics: bool = False,
+                    winsorize: bool = True) -> None:
     """
     Use distribution to identify threshold values.  Then also store in config dictionary.
 
