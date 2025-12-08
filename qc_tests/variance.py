@@ -426,12 +426,87 @@ def sequential_differences(diffs: np.ma.MaskedArray,
         return True
 
 
+def check_if_storm(station: utils.Station,
+                   obs_var: utils.MeteorologicalVariable,
+                   month_locs: np.ndarray,
+                   ym_locs: np.ndarray) -> bool | np.ndarray:
+    """Check if this year for this calendar month is potentially a storm
+    which could result in above usual variance which should not be flagged
+
+    Parameters
+    ----------
+    station : utils.Station
+        Station which is being processed
+    obs_var : utils.MeteorologicalVariable
+        Observations being processed
+    month_locs : np.ndarray
+        Locations of this calendar month in the data array
+    ym_locs : np.ndarray
+        Locations of this year for this month in the data array
+
+    Returns
+    -------
+    bool | np.ndarray
+        Returns False if insufficient data to do the check.  Else returns
+        locations (indices) which are to be flagged. This sequence of
+        checks can remove all locations if they are likely enough to be a
+        storm for this year-month
+    """
+
+    month_winds = station.wind_speed.data[month_locs]
+    if obs_var.name in ["station_level_pressure", "sea_level_pressure"]:
+        month_pressure = obs_var.data[month_locs]
+    else:
+        month_pressure = station.sea_level_pressure.data[month_locs]
+
+    # this is knowingly duplicative, but as already in memory, logic is easier
+    #    to do this step for each year.
+    wind_average, wind_spread = read_wind_or_pressure(month_winds)
+    pressure_average, pressure_spread = read_wind_or_pressure(month_pressure)
+
+    # need enough data to work with
+    if wind_average == wind_spread == -1 or\
+        pressure_average == pressure_spread == -1:
+        # set to be missing, so move on.
+        return False
+
+    # pull out the data for this year (and month)
+    wind_data = month_winds[ym_locs]
+    pressure_data = month_pressure[ym_locs]
+
+    # need sufficient data to work with for storm check to work, else can't tell
+    if len(pressure_data.compressed()) < utils.DATA_COUNT_THRESHOLD or \
+            len(wind_data.compressed()) < utils.DATA_COUNT_THRESHOLD:
+        # move on
+        return False
+
+    scaled_wind = (wind_data - wind_average)/wind_spread
+    scaled_pressure = (pressure_average - pressure_data)/pressure_spread
+
+    couldbe_storm = high_wind_low_pressure_match(scaled_wind, scaled_pressure)
+
+    if obs_var.name in ["station_level_pressure", "sea_level_pressure"]:
+        diffs = np.ma.diff(pressure_data)
+    elif obs_var.name == "wind_speed":
+        diffs = np.ma.diff(wind_data)
+
+    # count up the largest number of sequential negative and positive differences
+    if sequential_differences(diffs, couldbe_storm):
+        # this month has the potential to be a storm
+        #   so do not set any flags
+        return np.ma.array([])
+
+    return ym_locs
+
 
 #************************************************************************
-def variance_check(obs_var: utils.MeteorologicalVariable, station: utils.Station, config_dict: dict,
-                   plots: bool = False, diagnostics: bool = False, winsorize: bool = True) -> None:
+def variance_check(obs_var: utils.MeteorologicalVariable,
+                   station: utils.Station, config_dict: dict,
+                   plots: bool = False, diagnostics: bool = False,
+                   winsorize: bool = True) -> None:
     """
-    Use distribution to identify threshold values.  Then also store in config file.
+    Use distribution to identify threshold values.
+    Then also store in config file.
 
     :param MetVar obs_var: meteorological variable object
     :param Station station: station object
@@ -463,52 +538,22 @@ def variance_check(obs_var: utils.MeteorologicalVariable, station: utils.Station
 
             # corresponding locations
             ym_locs, = np.where(station.years[month_locs] == all_years[year])
-            # if pressure or wind speed, need to do some further checking before applying flags
-            if obs_var.name in ["station_level_pressure", "sea_level_pressure", "wind_speed"]:
+            # if pressure or wind speed, need to do some
+            # # further checking before applying flags
+            if obs_var.name in ["station_level_pressure",
+                                "sea_level_pressure",
+                                "wind_speed"]:
 
-                month_winds = station.wind_speed.data[month_locs]
-                if obs_var.name in ["station_level_pressure", "sea_level_pressure"]:
-                    month_pressure = obs_var.data[month_locs]
+                storm_check = check_if_storm(station, obs_var,
+                                             month_locs, ym_locs)
+
+                if not storm_check:
+                    # returned False, insufficient data to check
+                    continue
                 else:
-                    month_pressure = station.sea_level_pressure.data[month_locs]
-
-                # this is knowingly duplicative, but as already in memory, logic is easier
-                #    to do this step for each year.
-                wind_average, wind_spread = read_wind_or_pressure(month_winds)
-                pressure_average, pressure_spread = read_wind_or_pressure(month_pressure)
-
-                # need enough data to work with
-                if wind_average == wind_spread == -1 or\
-                    pressure_average == pressure_spread == -1:
-                    # set to be missing, so move on.
-                    continue
-
-                # pull out the data for this year (and month)
-                wind_data = month_winds[ym_locs]
-                pressure_data = month_pressure[ym_locs]
-
-                # need sufficient data to work with for storm check to work, else can't tell
-                if len(pressure_data.compressed()) < utils.DATA_COUNT_THRESHOLD or \
-                        len(wind_data.compressed()) < utils.DATA_COUNT_THRESHOLD:
-                    # move on
-                    continue
-
-                scaled_wind = (wind_data - wind_average)/wind_spread
-                scaled_pressure = (pressure_average - pressure_data)/pressure_spread
-
-                couldbe_storm = high_wind_low_pressure_match(scaled_wind, scaled_pressure)
-
-                if obs_var.name in ["station_level_pressure", "sea_level_pressure"]:
-                    diffs = np.ma.diff(pressure_data)
-                elif obs_var.name == "wind_speed":
-                    diffs = np.ma.diff(wind_data)
-
-                # count up the largest number of sequential negative and positive differences
-                if sequential_differences(diffs, couldbe_storm):
-                    # this month has the potential to be a storm
-                    #   so do not set any flags
-                    ym_locs = np.ma.array([])
-
+                    # returned array, so overwrite flag locations
+                    #    which may now be empty
+                    ym_locs = storm_check
 
             # copy over the flags, if any
             if len(ym_locs) != 0:

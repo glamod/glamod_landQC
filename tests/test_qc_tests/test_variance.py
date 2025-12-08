@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import datetime as dt
 import pytest
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, call
 
 import variance
 import common
@@ -188,9 +188,9 @@ def test_prepare_data(yearly_var_mock: Mock,
 def test_find_thresholds(prepare_data_mock: Mock) -> None:
     """Test writing of config dictionary correct given mocked variances"""
     length = 20
-    vars = np.ma.arange(length)
+    variances = np.ma.arange(length)
 
-    prepare_data_mock.return_value = vars
+    prepare_data_mock.return_value = variances
 
     station = _setup_station()
     config_dict = {}
@@ -199,9 +199,9 @@ def test_find_thresholds(prepare_data_mock: Mock) -> None:
                                  station, config_dict,
                                  winsorize=False)
 
-    assert config_dict["VARIANCE-temperature"]["1-average"] == qc_utils.average(vars)
+    assert config_dict["VARIANCE-temperature"]["1-average"] == qc_utils.average(variances)
     #  all the same in this example
-    assert config_dict["VARIANCE-temperature"]["1-spread"] == qc_utils.spread(vars)
+    assert config_dict["VARIANCE-temperature"]["1-spread"] == qc_utils.spread(variances)
 
 
 @patch("variance.prepare_data")
@@ -210,9 +210,9 @@ def test_find_thresholds_short(prepare_data_mock: Mock) -> None:
        as data length is too short"""
 
     length = 9
-    vars = np.ma.arange(length)
+    variances = np.ma.arange(length)
 
-    prepare_data_mock.return_value = vars
+    prepare_data_mock.return_value = variances
 
     station = _setup_station()
     config_dict = {}
@@ -231,9 +231,9 @@ def test_identify_bad_years(prepare_data_mock: Mock) -> None:
     """Simple test of routine to identify which years (indices) exceed range"""
 
     length = 20
-    vars = np.ma.arange(length)
+    variances = np.ma.arange(length)
 
-    prepare_data_mock.return_value = vars
+    prepare_data_mock.return_value = variances
 
     station = _setup_station()
     config_dict = {"VARIANCE-temperature": {
@@ -246,9 +246,9 @@ def test_identify_bad_years(prepare_data_mock: Mock) -> None:
                                                          station, config_dict, 1,
                                                          winsorize=False)
 
-    np.testing.assert_array_equal(result_var, (vars - 1)/2)
+    np.testing.assert_array_equal(result_var, (variances - 1)/2)
 
-    expected_bad, = np.nonzero(((vars-1)/2) > 8)
+    expected_bad, = np.nonzero(((variances-1)/2) > 8)
     np.testing.assert_array_equal(result_bad, expected_bad)
 
 
@@ -257,9 +257,9 @@ def test_identify_bad_years_mdi(prepare_data_mock: Mock) -> None:
     """Simple test of routine to identify which years (indices) exceed range"""
 
     length = 20
-    vars = np.ma.arange(length)
+    variances = np.ma.arange(length)
 
-    prepare_data_mock.return_value = vars
+    prepare_data_mock.return_value = variances
 
     station = _setup_station()
     config_dict = {"VARIANCE-temperature": {
@@ -358,6 +358,46 @@ def test_sequential_differences_invert(length: int,
     result = variance.sequential_differences(indiffs, storm)
 
     assert result == expected
+
+
+
+@patch("variance.logger")
+@patch("variance.identify_bad_years")
+def test_variance_check_none(identify_mock: Mock,
+                             logger_mock: Mock) -> None:
+
+    station = _setup_station()
+    config_dict = {}
+
+    identify_mock.return_value = np.array([]), np.array([])
+
+    variance.variance_check(station.temperature, station,
+                            config_dict)
+
+    calls = [call("Variance temperature"),
+             call("   Cumulative number of flags set: 0")]
+    logger_mock.info.assert_has_calls(calls)
+
+
+@patch("variance.logger")
+@patch("variance.identify_bad_years")
+def test_variance_check(identify_mock: Mock,
+                        logger_mock: Mock) -> None:
+
+    station = _setup_station()
+    config_dict = {}
+
+    identify_mock.return_value = np.array([0]), np.arange(10)
+
+    variance.variance_check(station.temperature, station,
+                            config_dict)
+
+    calls = [call("Variance temperature"),
+             call(f"   Cumulative number of flags set: {24*31}")]
+    logger_mock.info.assert_has_calls(calls)
+
+    assert np.all(station.temperature.flags[:744] == "V")
+    assert np.all(station.temperature.flags[744:] == "")
 
 
 @patch("variance.find_thresholds")
