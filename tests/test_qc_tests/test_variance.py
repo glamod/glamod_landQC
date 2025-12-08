@@ -74,6 +74,17 @@ def test_calculate_climatology_winsorize() -> None:
     assert clim == 50.45
 
 
+def test_calculate_climatology_nodata() -> None:
+    """Test climatology calculation if too short data length"""
+    indata = np.ma.ones(20)
+
+    clim, c_mask = variance.calculate_climatology(indata,
+                                                  winsorize=False)
+
+    assert c_mask  # test if False
+    assert clim == 0
+
+
 def test_calculate_hourly_anomalies() -> None:
 
     # station has values of 0..23 repeating for each hour
@@ -119,9 +130,19 @@ def test_normalise_hourly_anomalies() -> None:
 
 
 def test_normalise_hourly_anomalies_small_spread() -> None:
-    """Test normalising when spread too small, and set to 1.5"""
+    """Test normalising when spread too small, and hence set to 1.5"""
 
     anomalies = np.ma.ones(20)
+
+    result = variance.normalise_hourly_anomalies(anomalies)
+
+    np.testing.assert_allclose(result, anomalies/1.5)
+
+
+def test_normalise_hourly_anomalies_short() -> None:
+    """Test normalising when too short data, and hence set to 1.5"""
+
+    anomalies = np.ma.ones(5)
 
     result = variance.normalise_hourly_anomalies(anomalies)
 
@@ -175,15 +196,168 @@ def test_find_thresholds(prepare_data_mock: Mock) -> None:
     config_dict = {}
 
     _ = variance.find_thresholds(station.temperature,
-                                      station, config_dict,
-                                      winsorize=False)
+                                 station, config_dict,
+                                 winsorize=False)
 
     assert config_dict["VARIANCE-temperature"]["1-average"] == qc_utils.average(vars)
     #  all the same in this example
     assert config_dict["VARIANCE-temperature"]["1-spread"] == qc_utils.spread(vars)
 
 
+@patch("variance.prepare_data")
+def test_find_thresholds_short(prepare_data_mock: Mock) -> None:
+    """Test writing of config dictionary correct given unable to calculate average and spread
+       as data length is too short"""
 
+    length = 9
+    vars = np.ma.arange(length)
+
+    prepare_data_mock.return_value = vars
+
+    station = _setup_station()
+    config_dict = {}
+
+    _ = variance.find_thresholds(station.temperature,
+                                 station, config_dict,
+                                 winsorize=False)
+
+    assert config_dict["VARIANCE-temperature"]["1-average"] == utils.MDI
+    #  all the same in this example
+    assert config_dict["VARIANCE-temperature"]["1-spread"] == utils.MDI
+
+
+@patch("variance.prepare_data")
+def test_identify_bad_years(prepare_data_mock: Mock) -> None:
+    """Simple test of routine to identify which years (indices) exceed range"""
+
+    length = 20
+    vars = np.ma.arange(length)
+
+    prepare_data_mock.return_value = vars
+
+    station = _setup_station()
+    config_dict = {"VARIANCE-temperature": {
+        "1-average" : 1,
+        "1-spread" : 2
+    }
+                   }
+
+    result_bad, result_var = variance.identify_bad_years(station.temperature,
+                                                         station, config_dict, 1,
+                                                         winsorize=False)
+
+    np.testing.assert_array_equal(result_var, (vars - 1)/2)
+
+    expected_bad, = np.nonzero(((vars-1)/2) > 8)
+    np.testing.assert_array_equal(result_bad, expected_bad)
+
+
+@patch("variance.prepare_data")
+def test_identify_bad_years_mdi(prepare_data_mock: Mock) -> None:
+    """Simple test of routine to identify which years (indices) exceed range"""
+
+    length = 20
+    vars = np.ma.arange(length)
+
+    prepare_data_mock.return_value = vars
+
+    station = _setup_station()
+    config_dict = {"VARIANCE-temperature": {
+        "1-average" : utils.MDI,
+        "1-spread" : utils.MDI
+    }
+                   }
+
+    result_bad, result_var = variance.identify_bad_years(station.temperature,
+                                                         station, config_dict, 1,
+                                                         winsorize=False)
+
+    np.testing.assert_array_equal(result_var, np.array([]))
+    np.testing.assert_array_equal(result_bad, np.array([]))
+
+
+def test_read_wind_or_pressure_short() -> None:
+    """Test passing of array returns correct values for spread and average"""
+
+    indata = np.ma.arange(20)
+
+    result_avg, result_spread = variance.read_wind_or_pressure(indata)
+
+    assert result_avg == -1
+    assert result_spread == -1
+
+
+@patch("utils.DATA_COUNT_THRESHOLD", 10)
+def test_read_wind_or_pressure() -> None:
+    """Test passing of array returns correct values for spread and average"""
+    # override the minimum data count
+    indata = np.ma.ones(10)
+
+    result_avg, result_spread = variance.read_wind_or_pressure(indata)
+
+    assert result_avg == 1
+    assert result_spread == 0
+
+
+def test_high_wind_low_pressure_match() -> None:
+    """Test selection of overlapping high winds/low pressures"""
+    # set up dummy arrays
+    scaled_wind = np.ma.ones(10)
+    scaled_pressure = np.ma.ones(10)
+
+    # locations to trigger test
+    scaled_wind[:2] = 5
+    scaled_pressure[1:3 ] = 5
+
+    result = variance.high_wind_low_pressure_match(scaled_wind, scaled_pressure)
+
+    assert result
+
+
+def test_high_wind_low_pressure_no_match() -> None:
+    """Test selection of no overlap of high winds/low pressures"""
+    scaled_wind = np.ma.ones(10)
+    scaled_pressure = np.ma.ones(10)
+
+    # non overlapping locations so no triggering
+    scaled_wind[:2] = 5
+    scaled_pressure[-2:] = 5
+
+    result = variance.high_wind_low_pressure_match(scaled_wind, scaled_pressure)
+
+    assert not result
+
+
+@pytest.mark.parametrize("length, storm, expected", [(9, False, False),
+                                                     (9, True, True),
+                                                     (10, False, True),
+                                                     (10, True, True)])
+def test_sequential_differences(length: int,
+                                storm: bool,
+                                expected: bool) -> None:
+    """Test that counting of sequential differences works as intended"""
+
+    indiffs = np.append(np.ones(length), -np.ones(length))
+
+    result = variance.sequential_differences(indiffs, storm)
+
+    assert result == expected
+
+
+@pytest.mark.parametrize("length, storm, expected", [(9, False, False),
+                                                     (9, True, True),
+                                                     (10, False, True),
+                                                     (10, True, True)])
+def test_sequential_differences_invert(length: int,
+                                       storm: bool,
+                                       expected: bool) -> None:
+    """Test that counting of sequential differences works as intended"""
+
+    indiffs = np.append(-np.ones(length), np.ones(length))
+
+    result = variance.sequential_differences(indiffs, storm)
+
+    assert result == expected
 
 
 @patch("variance.find_thresholds")

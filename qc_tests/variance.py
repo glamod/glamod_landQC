@@ -312,48 +312,45 @@ def identify_bad_years(obs_var: utils.MeteorologicalVariable,
     return bad_years, scaled_variances
 
 
-def read_wind_or_pressure(station: utils.Station,
-                          var: str,
-                          locs: np.ndarray) -> tuple[float, float]:
-    """Read the wind or pressure data, and return the spread or
+def read_wind_or_pressure(monthly_var: np.ma.MaskedArray) -> tuple[float, float]:
+    """Return average and spread of data array supplied
 
     Parameters
     ----------
-    station : utils.Station
-        _description_
-    var : str
-        _description_
-    locs : np.ndarray
-        _description_
+    monthly_var : np.ma.MaskedArray
+        The data array for the variable
 
     Returns
     -------
     tuple[float, float]
-        _description_
+        Values for average and spread
     """
-
-    this_var = getattr(station, var)
-
-    monthly_var = this_var.data[locs]
 
     if len(monthly_var.compressed()) < utils.DATA_COUNT_THRESHOLD:
         return (-1., -1.)
-
-    average = qc_utils.average(monthly_var)
-    spread = qc_utils.spread(monthly_var)
-
-    return (average, spread)
+    else:
+        return (qc_utils.average(monthly_var),
+                qc_utils.spread(monthly_var))
 
 
-def high_wind_low_pressure_match(scaled_wind, scaled_pressure) -> bool:
+def high_wind_low_pressure_match(scaled_wind: np.ma.MaskedArray,
+                                 scaled_pressure: np.ma.MaskedArray) -> bool:
+    """Return locations where there are both high winds and low pressures,
+    signifying that these could be low pressure storm system
 
-    # TODO: I think I can combine the reading, the scaling and the matching into
-    #   one parent routine which may be overall shorter
-    #   - read the wind and pressure data for the month
-    #   - pass wind and pressure data and year locs into routine
-    #   - routine gets spread and var, then scale the yearly only
-    #   - and then check if storm/matching.
-    #  Can try to split out after that into smaller bits
+    Parameters
+    ----------
+    scaled_wind : np.ma.MaskedArray
+        Scaled wind anomalies ((data-average)/spread)
+    scaled_pressure : _type_
+        Scaled wind anomalies ((data-average)/spread)
+
+    Returns
+    -------
+    bool
+        True if there is at least one match of low pressure and high wind,
+        else False
+    """
 
     high_winds, = np.ma.where(scaled_wind > STORM_THRESHOLD)
     low_pressures, = np.ma.where(scaled_pressure > STORM_THRESHOLD)
@@ -361,39 +358,71 @@ def high_wind_low_pressure_match(scaled_wind, scaled_pressure) -> bool:
     match = np.in1d(high_winds, low_pressures)
 
     couldbe_storm = False
-    if len(match) > 0:
-        # this could be a storm, either at tropical station (relatively constant pressure)
-        # or out of season in mid-latitudes.
+
+    locs, = np.nonzero(match == True)
+    if len(locs) > 0:
+        # At least one observation of concurrent high wind
+        #    and low pressure this month
+        # This could be a storm, either at tropical station
+        #    (relatively constant pressure)
+        #    or out of season in mid-latitudes.
         couldbe_storm = True
 
     return couldbe_storm
 
 
-def sequential_differences(diffs: np.ndarray,
+def sequential_differences(diffs: np.ma.MaskedArray,
                            couldbe_storm: bool) -> bool:
+    """Count the number of sequential differences in the quanitity.
+    For a storm, expecting either a ramping up and down of wind, or down
+    and up of pressure.  So want to calculate the number of sequential obs
+    which step down/up.
 
+    Parameters
+    ----------
+    diffs : np.ma.MaskedArray
+        First difference array of quantity
+    couldbe_storm : bool
+        Indicator if high winds and low pressure values have occurred
+        concurrently this month
+
+    Returns
+    -------
+    bool
+        True if sufficient indicators that storms may have occurred this
+        month - and so set no flags.  Otherwise False
+    """
     # count up the largest number of sequential negative and positive differences
     negs, poss = 0, 0
-    biggest_neg, biggest_pos = 0, 0
+    biggest_neg_run, biggest_pos_run = 0, 0
 
     for diff in diffs:
 
         if diff > 0:
-            if negs > biggest_neg: biggest_neg = negs
+            if negs > biggest_neg_run:
+                biggest_neg_run = negs
+            # and reset counters
             negs = 0
             poss += 1
         else:
-            if poss > biggest_pos: biggest_pos = poss
+            if poss > biggest_pos_run:
+                biggest_pos_run = poss
+            # and reset counters
             poss = 0
             negs += 1
 
-    if (biggest_neg < 10) and (biggest_pos < 10) and not couldbe_storm:
+    # And do final check
+    if negs > biggest_neg_run:
+        biggest_neg_run = negs
+    if poss > biggest_pos_run:
+        biggest_pos_run = poss
+
+    if (biggest_neg_run < 10) and (biggest_pos_run < 10) and not couldbe_storm:
         # insufficient to identify as a storm (HadISD values)
-        # leave flags set
+        # No runs of wind/pressure differences and no match of high wind/low pressure
         return False
     else:
         # could be a storm, so better to leave this month unflagged
-        # zero length array to flag
         return True
 
 
@@ -427,45 +456,36 @@ def variance_check(obs_var: utils.MeteorologicalVariable, station: utils.Station
             continue
 
         month_locs, = np.where(station.months == month)
-        # prepare wind and pressure data in case needed to check for storms
-        if obs_var.name in ["station_level_pressure",
-                            "sea_level_pressure",
-                            "wind_speed"]:
-
-            wind_average, wind_spread = read_wind_or_pressure(station,
-                                                              "wind_speed",
-                                                              month_locs)
-
-            if obs_var.name == "wind_speed":
-                pressure_name = "sea_level_pressure"
-            else:
-                pressure_name = obs_var.name
-
-            pressure_average, pressure_spread = read_wind_or_pressure(station,
-                                                                      pressure_name,
-                                                                      month_locs)
-
-            # if either metrics has insufficient data (these variables cannot be positive)
-            if pressure_average == -1 or wind_average == -1:
-                continue
-
         # go through each bad year for this month
         all_years = np.unique(station.years)
+
         for year in bad_years:
 
             # corresponding locations
             ym_locs, = np.where(station.years[month_locs] == all_years[year])
-
             # if pressure or wind speed, need to do some further checking before applying flags
             if obs_var.name in ["station_level_pressure", "sea_level_pressure", "wind_speed"]:
 
-                # pull out the data
-                wind_data = station.wind_speed.data[ym_locs]
+                month_winds = station.wind_speed.data[month_locs]
                 if obs_var.name in ["station_level_pressure", "sea_level_pressure"]:
-                    pressure_data = obs_var.data[ym_locs]
+                    month_pressure = obs_var.data[month_locs]
                 else:
-                    pressure_data = station.sea_level_pressure.data[ym_locs]
+                    month_pressure = station.sea_level_pressure.data[month_locs]
 
+                # this is knowingly duplicative, but as already in memory, logic is easier
+                #    to do this step for each year.
+                wind_average, wind_spread = read_wind_or_pressure(month_winds)
+                pressure_average, pressure_spread = read_wind_or_pressure(month_pressure)
+
+                # need enough data to work with
+                if wind_average == wind_spread == -1 or\
+                    pressure_average == pressure_spread == -1:
+                    # set to be missing, so move on.
+                    continue
+
+                # pull out the data for this year (and month)
+                wind_data = month_winds[ym_locs]
+                pressure_data = month_pressure[ym_locs]
 
                 # need sufficient data to work with for storm check to work, else can't tell
                 if len(pressure_data.compressed()) < utils.DATA_COUNT_THRESHOLD or \
@@ -473,17 +493,10 @@ def variance_check(obs_var: utils.MeteorologicalVariable, station: utils.Station
                     # move on
                     continue
 
-                # find locations of high wind speeds and low pressures, cross match
-                high_winds, = np.ma.where((wind_data - wind_average)/wind_spread > STORM_THRESHOLD)
-                low_pressures, = np.ma.where((pressure_average - pressure_data)/pressure_spread > STORM_THRESHOLD)
+                scaled_wind = (wind_data - wind_average)/wind_spread
+                scaled_pressure = (pressure_average - pressure_data)/pressure_spread
 
-                match = np.in1d(high_winds, low_pressures)
-
-                couldbe_storm = False
-                if len(match) > 0:
-                    # this could be a storm, either at tropical station (relatively constant pressure)
-                    # or out of season in mid-latitudes.
-                    couldbe_storm = True
+                couldbe_storm = high_wind_low_pressure_match(scaled_wind, scaled_pressure)
 
                 if obs_var.name in ["station_level_pressure", "sea_level_pressure"]:
                     diffs = np.ma.diff(pressure_data)
@@ -492,13 +505,15 @@ def variance_check(obs_var: utils.MeteorologicalVariable, station: utils.Station
 
                 # count up the largest number of sequential negative and positive differences
                 if sequential_differences(diffs, couldbe_storm):
+                    # this month has the potential to be a storm
+                    #   so do not set any flags
                     ym_locs = np.ma.array([])
 
 
             # copy over the flags, if any
             if len(ym_locs) != 0:
                 # and set the flags
-                flags[ym_locs] = "V"
+                flags[month_locs[ym_locs]] = "V"
 
         # diagnostic plots
         if plots:
@@ -511,7 +526,7 @@ def variance_check(obs_var: utils.MeteorologicalVariable, station: utils.Station
     obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
     logger.info(f"Variance {obs_var.name}")
-    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
+    logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
     return # variance_check
 
