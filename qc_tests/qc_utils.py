@@ -361,15 +361,25 @@ def winsorize(data: np.ndarray, percent: float) -> np.ndarray:
 #************************************************************************
 def create_bins(data: np.ndarray, width: float,
                 obs_var_name: str, anomalies: bool = False) -> np.ndarray:
-
     """Create a number of bins from the data given the width
 
+    Parameters
+    ----------
+    data : np.ndarray
+        Data from which to determine reasonable bins
+    width : float
+        Width of bins
+    obs_var_name : str
+        Name of variable [to be able to check pressure types]
+    anomalies : bool, optional
+        Select if values are anomalies, by default False
 
     Returns
     -------
-    _type_
-        _description_
+    np.ndarray
+        Array of bin edges.
     """
+
     logger = logging.getLogger(__name__)
     # get the lowest and highest possible values (int) from data
     bmin = np.floor(np.ma.min(data))
