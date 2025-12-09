@@ -45,8 +45,11 @@ shift
 
 #**************************************
 # other settings
-STATIONS_PER_BATCH=10000
+STATIONS_PER_BATCH=5000
 N_JOBS=10
+# 35,000 stations, 5000/batch => 7 batches
+#      7 batches with 10 jobs each => 70 processors
+# have 80 to play with.
 
 SCRIPT_DIR="$(pwd)/parallel_scripts/"
 if [ ! -d "${SCRIPT_DIR}" ]; then
