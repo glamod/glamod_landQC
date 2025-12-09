@@ -382,8 +382,11 @@ def flag_write(outfilename: PurePath, df: pd.DataFrame, diagnostics: bool = Fals
                 outfile.write(f"{var} : {test}_counts : {locs.shape[0]}\n")
 
 
-            # for total, get number of set flags (excluding fixable wind logical)
-            flagged, = np.where(np.logical_and(flags != "", flags != "1"))
+            # for total, get number of set flags (excluding fixable wind logical,
+            #                                       identical timestamp (same value))
+            flagged, = np.where(np.logical_and(flags != "",
+                                               flags != ".",
+                                               flags != ","))
 
             if np.ma.count(this_var_data) == 0 or flagged.shape[0] == 0:
                 proportion_flagged = 0
