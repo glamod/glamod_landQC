@@ -200,3 +200,28 @@ def test_gcv_calculate_binmax_large() -> None:
     binmax = qc_utils.gcv_calculate_binmax(indata, binmin, binwidth)
 
     assert binmax == 2000
+
+
+def test_create_bins() -> None:
+    """Simple test of bin creation"""
+
+    indata = np.array([1, 10])
+
+    result = qc_utils.create_bins(indata, 0.5, "dummy")
+
+    expected = np.arange(1-2.5, 10+2.5, 0.5)
+
+    np.testing.assert_array_equal(result, expected)
+
+
+def test_create_bins_long() -> None:
+    """Simple test of bin creation when max and min would result in too many"""
+
+    indata = np.array([-7000, 7000])
+
+    result = qc_utils.create_bins(indata, 0.5, "temperature")
+
+    # -89.2 to 56.7
+    expected = np.arange(-190-2.5, 157+2.5, 0.5)
+
+    np.testing.assert_array_equal(result, expected)
