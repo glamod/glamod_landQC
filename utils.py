@@ -20,8 +20,8 @@ UNIT_DICT = {"temperature" : "degrees C", \
              "sea_level_pressure" : "hPa hectopascals", \
              "station_level_pressure" : "hPa hectopascals"}
 
-# Letters for flags which should exclude data
-# Numbers for information flags:
+# Lowercase letters for flags which should exclude data
+# Punctuation for information flags:
 #   the data are valid, but not necessarily adhering to conventions
 QC_TESTS = {"a" : "Repeated Day streaks",  # repeAted day streaks
             "b" : "Neighbour",  # neighBour
@@ -44,8 +44,8 @@ QC_TESTS = {"a" : "Repeated Day streaks",  # repeAted day streaks
             "v" : "Variance",  # Variance
             "w" : "Winds",  # Winds
             "x" : "Excess streak proportion",  # eXcess streak proportion
-            "1" : "Wind logical - calm, masked direction",
-            "2" : "Timestamp - identical observation values",
+            "." : "Wind logical - calm, masked direction",
+            "," : "Timestamp - identical observation values",
             }
 
 
