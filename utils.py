@@ -33,7 +33,7 @@ QC_TESTS = {"a" : "Repeated Day streaks",  # repeAted day streaks
             "i" : "Distribution - all",  # dIstribution (all)
             "k" : "Repeating Streaks",  # repeating streaKs
             "l" : "Logic",  # Logic
-            "m" : "Humidity",  # humiditY
+            "m" : "Humidity",  # huMidity
             "n" : "Precision",  # precisioN
             "o" : "Odd Cluster",  # Odd cluster
             "p" : "Pressure",  # Pressure

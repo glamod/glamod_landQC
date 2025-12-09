@@ -20,7 +20,7 @@ def test_identify_multiple_values_simple():
     expected = np.array(["" for _ in range(10)])
 
     # Two time stamps the same, and values different, so flags set
-    expected[2:4] = "T"
+    expected[2:4] = "t"
 
     timestamp.identify_multiple_values(obs_var, station. times, {})
 
@@ -52,7 +52,7 @@ def test_identify_multiple_values_masked_simple():
 
     # Three time stamps the same, and values different, so flags set
     #   But final one has data masked, so no flag included for that one.
-    expected[2:4] = "T"
+    expected[2:4] = "t"
 
     timestamp.identify_multiple_values(obs_var, station. times, {})
 
@@ -71,14 +71,14 @@ def test_identify_multiple_values_masked():
 
     # Three time stamps the same, and values different, so flags set
     #   But middle one has data masked, so no flag included for that one.
-    expected[2] = "T"
-    expected[4] = "T"
+    expected[2] = "t"
+    expected[4] = "t"
 
     timestamp.identify_multiple_values(obs_var, station. times, {})
 
     np.testing.assert_array_equal(obs_var.flags, expected)
-    
-    
+
+
 def test_identify_multiple_values_same():
 
     # Set up data, variable & station
@@ -90,7 +90,7 @@ def test_identify_multiple_values_same():
     # Even though two time stamps are the same, the values are identical
     #   (np.ones) but an information flag still set
     expected = np.array(["" for _ in range(10)])
-    expected[2:4] = "2"
+    expected[2:4] = ","
 
     timestamp.identify_multiple_values(obs_var, station.times, {})
 

@@ -52,7 +52,7 @@ def test_logic_check_large_fraction(value: int) -> None:
     test_data = np.arange(0, 10, 0.01)
     test_data[:index] = value # lots too high/low
     expected = np.array(["" for _ in test_data])
-    expected[:index] = "L"
+    expected[:index] = "l"
     obs_var = common.example_test_variable("temperature", test_data)
 
     flags = logic_checks.logic_check(obs_var)

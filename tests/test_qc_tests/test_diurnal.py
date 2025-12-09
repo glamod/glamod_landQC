@@ -349,7 +349,7 @@ def test_diurnal_cycle_check(check_spurious_mock: Mock,
     diurnal.diurnal_cycle_check(obs_var, dummy_station, config_dict)
 
     expected = np.array(["" for i in range(obs_var.data.shape[0])])
-    expected[48:72] = "U"
+    expected[48:72] = "u"
 
     np.testing.assert_array_equal(expected, obs_var.flags)
 
