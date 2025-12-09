@@ -40,7 +40,7 @@ def logical_checks(speed: utils.MeteorologicalVariable, direction: utils.Meteoro
         direction.data[fix_zero_direction] = 0
         direction.data.mask[fix_zero_direction] = False
     else:
-        dflags[fix_zero_direction] = "1"
+        dflags[fix_zero_direction] = "."
     if diagnostics:
         print("  Zero direction : {}".format(len(fix_zero_direction[0])))
 
