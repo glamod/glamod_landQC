@@ -287,10 +287,11 @@ def test_flag_write(setup_mock: Mock,
                     tmp_path) -> None:
 
     outfilename = tmp_path / "DMY01234567.flg"
+    print(outfilename)
     setup_mock.obs_var_list = ["temperature"]
 
     data = {"temperature" : [1, 2, 3, 4, 5],
-            "temperature_QC_flag" : ["CFE", "CE", "Cw", "w", ""]}
+            "temperature_QC_flag" : ["cfe", "ce", "cw", "w", ""]}
     df = pd.DataFrame(data)
 
     io_utils.flag_write(outfilename, df)
