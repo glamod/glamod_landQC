@@ -352,7 +352,7 @@ def test_neighbour_outlier(read_buddy_data_mock: Mock) -> None:
     # Use of simple offset means spreads == MIN_SPREAD
     # now set differences > SPREAD_LIMIT*MIN_SPREAD
     all_buddy_data[1:4, :20] += 20.
-    expected_flags[:20] = "N"
+    expected_flags[:20] = "b"
 
     read_buddy_data_mock.return_value = all_buddy_data
 
@@ -472,6 +472,6 @@ def test_noc_example_data(station_list_mock: Mock) -> None:
                                                      target_station.months == 8),
                                       target_station.days == 14))
     example_flags = np.array(["" for _ in target_station.times])
-    example_flags[locs] = "N"
+    example_flags[locs] = "b"
 
     np.testing.assert_array_equal(target_station.sea_level_pressure.flags, example_flags)

@@ -21,7 +21,7 @@ def test_read_wrc(record_check_mock: Mock) -> None:
     station.continent="row"
 
     # Set up flags to uses mocked return
-    test_flags = np.array(["W" for i in test_data])
+    test_flags = np.array(["r" for i in test_data])
     record_check_mock.return_value = test_flags
 
     # Do the call
@@ -45,7 +45,7 @@ def test_record_check_nolocation() -> None:
     flags = world_records.record_check(this_var, "none")
 
     # Does the right value get flagged
-    np.testing.assert_array_equal(flags, np.array(["W", "", "", "", ""]))
+    np.testing.assert_array_equal(flags, np.array(["r", "", "", "", ""]))
 
 
 def test_record_check_africa() -> None:
@@ -61,7 +61,7 @@ def test_record_check_africa() -> None:
     flags = world_records.record_check(this_var, "africa")
 
     # Does the right value get flagged
-    np.testing.assert_array_equal(flags, np.array(["W", "", "", "", ""]))
+    np.testing.assert_array_equal(flags, np.array(["r", "", "", "", ""]))
 
 
 def test_record_check_europe() -> None:
@@ -77,7 +77,7 @@ def test_record_check_europe() -> None:
     flags = world_records.record_check(this_var, "europe")
 
     # Does the right value get flagged
-    np.testing.assert_array_equal(flags, np.array(["W", "", "", "", ""]))
+    np.testing.assert_array_equal(flags, np.array(["r", "", "", "", ""]))
 
 
 def test_record_check_samerica() -> None:
@@ -93,4 +93,4 @@ def test_record_check_samerica() -> None:
     flags = world_records.record_check(this_var, "europe")
 
     # Does the right value get flagged
-    np.testing.assert_array_equal(flags, np.array(["", "W", "W", "W", "W"]))
+    np.testing.assert_array_equal(flags, np.array(["", "r", "r", "r", "r"]))

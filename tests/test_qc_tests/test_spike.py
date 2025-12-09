@@ -377,7 +377,7 @@ def test_identify_spikes(spike_points: np.ndarray) -> None:
     # adjust the locations which will be flagged using the data mask
     non_mask_locs, = np.nonzero(values.mask == False)
     spike_points = np.array([sp for sp in spike_points if sp in non_mask_locs])
-    spike_flags[spike_points] = "S"
+    spike_flags[spike_points] = "s"
 
     # generate the example variable
     obs_var = common.example_test_variable("temperature", values)
@@ -392,7 +392,7 @@ def test_identify_spikes(spike_points: np.ndarray) -> None:
 
     #check the flags set correctly
     np.testing.assert_array_equal(obs_var.flags, spike_flags)
-    assert obs_var.flags[spike_points[0]] == "S"
+    assert obs_var.flags[spike_points[0]] == "s"
 
 
 @pytest.mark.parametrize("full", [True, False])
