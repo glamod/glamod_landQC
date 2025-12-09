@@ -38,15 +38,19 @@ def logical_checks(speed: utils.MeteorologicalVariable,
     dflags = np.array(["" for i in range(speed.data.shape[0])])
 
     # recover direction information where the speed is Zero
-    fix_zero_direction = np.ma.where(np.logical_and(speed.data == 0,
-                                                    direction.data.mask == True))
+    fix_zero_direction, = np.ma.where(np.logical_and(speed.data == 0,
+                                                     direction.data.mask == True))
     if fix:
         direction.data[fix_zero_direction] = 0
         direction.data.mask[fix_zero_direction] = False
+        if diagnostics:
+            print("  Zero direction : {}".format(len(fix_zero_direction[0])))
     else:
         dflags[fix_zero_direction] = "1"
-    if diagnostics:
-        print("  Zero direction : {}".format(len(fix_zero_direction[0])))
+        if diagnostics:
+            print("  Zero direction : {}".format(len(fix_zero_direction[0])))
+        # and set to empty
+        fix_zero_direction = np.array([])
 
     # negative speeds (can't fix)
     negative_speed = np.ma.where(speed.data < 0)
