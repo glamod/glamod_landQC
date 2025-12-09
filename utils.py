@@ -23,27 +23,27 @@ UNIT_DICT = {"temperature" : "degrees C", \
 # Letters for flags which should exclude data
 # Numbers for information flags:
 #   the data are valid, but not necessarily adhering to conventions
-QC_TESTS = {"C" : "Climatological",
-            "D" : "Distribution - Monthly",
-            "E" : "Clean Up",
-            "F" : "Frequent Value",
-            "H" : "High Flag Rate",
-            "K" : "Repeating Streaks",
-            "L" : "Logic",
-            "N" : "Neighbour",
-            "S" : "Spike",
-            "T" : "Timestamp",
-            "U" : "Diurnal",
-            "V" : "Variance",
-            "W" : "World Records",
-            "d" : "Distribution - all",
-            "h" : "Humidity",
-            "n" : "Precision",
-            "o" : "Odd Cluster",
-            "p" : "Pressure",
-            "w" : "Winds",
-            "x" : "Excess streak proportion",
-            "y" : "Repeated Day streaks",
+QC_TESTS = {"a" : "Repeated Day streaks",  # repeAted day streaks
+            "b" : "Neighbour",  # neighBour
+            "c" : "Climatological",  # Climatological
+            "d" : "Distribution - monthly",  # Distribution (monthly)
+            "e" : "Clean Up",  # clEan up
+            "f" : "Frequent Value",  # Frequent value
+            "h" : "High Flag Rate",  # High flag rate
+            "i" : "Distribution - all",  # dIstribution (all)
+            "k" : "Repeating Streaks",  # repeating streaKs
+            "l" : "Logic",  # Logic
+            "m" : "Humidity",  # humiditY
+            "n" : "Precision",  # precisioN
+            "o" : "Odd Cluster",  # Odd cluster
+            "p" : "Pressure",  # Pressure
+            "r" : "World Records",  # world Records
+            "s" : "Spike",  # Spike
+            "t" : "Timestamp",  # Timestamp
+            "u" : "Diurnal",  # diUrnal
+            "v" : "Variance",  # Variance
+            "w" : "Winds",  # Winds
+            "x" : "Excess streak proportion",  # eXcess streak proportion
             "1" : "Wind logical - calm, masked direction",
             "2" : "Timestamp - identical observation values",
             }

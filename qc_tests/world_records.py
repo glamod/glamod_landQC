@@ -76,8 +76,8 @@ def record_check(obs_var: utils.MeteorologicalVariable, continent: str,
         too_high, = np.ma.nonzero(obs_var.data > maxes[obs_var.name]["row"])
         too_low, = np.ma.nonzero(obs_var.data < mins[obs_var.name]["row"])
 
-    flags[too_high] = "W"
-    flags[too_low] = "W"
+    flags[too_high] = "r"
+    flags[too_low] = "r"
 
     logger.info(f"World Records {obs_var.name} ({continent})")
     logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")

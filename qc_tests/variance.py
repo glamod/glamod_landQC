@@ -570,7 +570,7 @@ def variance_check(obs_var: utils.MeteorologicalVariable,
             # copy over the flags, if any
             if len(ym_locs) != 0:
                 # and set the flags
-                flags[month_locs[ym_locs]] = "V"
+                flags[month_locs[ym_locs]] = "v"
 
         # diagnostic plots
         if plots:

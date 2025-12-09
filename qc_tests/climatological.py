@@ -503,7 +503,7 @@ def monthly_clim(obs_var: utils.MeteorologicalVariable,
                     # all years for one month
                     bad_locs, = np.ma.nonzero(normalised_anomalies > gap_start)
                     # normalised_anomalies are for the whole record, just this month is unmasked
-                    flags[bad_locs] = "C"
+                    flags[bad_locs] = "c"
 
             if lowercount > 0:
                 gap_start = qc_utils.find_gap(hist, bins,
@@ -511,8 +511,8 @@ def monthly_clim(obs_var: utils.MeteorologicalVariable,
 
                 if gap_start != 0:
                     # all years for one month
-                    bad_locs, = np.ma.nonzero(normalised_anomalies < gap_start)
-                    flags[bad_locs] = "C"
+                    bad_locs, = np.ma.nonzero(normalised_anomalies < gap_start)  # all years for one month
+                    flags[bad_locs] = "c"
 
             # diagnostic plots
             if plots:  # pragma: no cover

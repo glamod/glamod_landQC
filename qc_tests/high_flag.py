@@ -38,7 +38,7 @@ def set_synergistic_flags(station: utils.Station, var: str) -> None:
         # require sufficient observations to make a flagged fraction useful.
 
         # As synergistically flagged, add to all flags.
-        new_flags[obs_locs] = "H"
+        new_flags[obs_locs] = "h"
 
     obs_var.store_flags(utils.insert_flags(obs_var.flags, new_flags))
 
@@ -67,7 +67,7 @@ def high_flag_rate(obs_var: utils.MeteorologicalVariable,
         # If already flagged on internal run, return with dummy results.
         flag_set = np.unique(old_flags[obs_locs]) # Flags per obs.
         unique_flags = set("".join(flag_set)) # Unique set of flag letters.
-        if "H" in unique_flags:
+        if "h" in unique_flags:
             # This test has been run before on this variable, so don't do again.
             return new_flags, any_flags_set
 
@@ -93,12 +93,21 @@ def high_flag_rate(obs_var: utils.MeteorologicalVariable,
                 print(f" {obs_var.name} flagging rate of {100*(flagged_fraction):5.1f}%")
                 print(f"   Flagging remaining {obs_var.name} obs")
             # Set flags only obs currently unflagged.
+<<<<<<< HEAD
             unflagged, = np.nonzero(old_flags[obs_locs] == "")
             new_flags[obs_locs[unflagged]] = "H"
             any_flags_set = True
 
     logger.info(f"High Flag Rate {obs_var.name}")
     logger.info(f"   Cumulative number of flags set: {np.count_nonzero(new_flags == 'H')}")
+=======
+            unflagged, = np.where(old_flags[obs_locs] == "")
+            new_flags[obs_locs[unflagged]] = "h"
+            any_flags_set = True
+
+    logger.info(f"High Flag Rate {obs_var.name}")
+    logger.info(f"   Cumulative number of flags set: {len(np.where(new_flags == 'h')[0])}")
+>>>>>>> 5a3d12e (Rebase of master into #255: initial pass through of flag characters (upper -> lower))
 
     return new_flags, any_flags_set # high_flag_rate
 

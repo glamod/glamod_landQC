@@ -309,7 +309,7 @@ def repeating_value(obs_var: utils.MeteorologicalVariable,
         start = int(np.sum(grouped_diffs[:streaks[streak], 1]))
         end = start + int(grouped_diffs[streaks[streak], 1]) + 1
 
-        compressed_flags[start : end] = "K"
+        compressed_flags[start : end] = "k"
 
         if plots:
             plot_streak(masked_times, this_var.data, obs_var.units, start, end)
@@ -494,7 +494,7 @@ def repeating_day(obs_var: utils.MeteorologicalVariable, station: utils.Station,
                     if streak_length != 0:
                         if set_flags and streak_length > threshold:
                             # Apply the flags
-                            flags[streak_locs] = "y"
+                            flags[streak_locs] = "a"
 
                         all_lengths += [streak_length]
                         streak_length = 0

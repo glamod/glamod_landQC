@@ -234,7 +234,7 @@ def frequent_values(obs_var: utils.MeteorologicalVariable, station: utils.Statio
                 # find observations (month & year) to flag!
                     flag_locs = np.nonzero(np.logical_and(month_data >= sm_bin,
                                                           month_data < sm_bin+width))
-                    month_flags[flag_locs] = "F"
+                    month_flags[flag_locs] = "f"
 
             # copy flags for all years into main array
             flags[locs] = month_flags

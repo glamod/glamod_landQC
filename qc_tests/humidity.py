@@ -166,7 +166,7 @@ def super_saturation_check(station: utils.Station,
 
     sss, = np.ma.nonzero(dewpoints.data > (temperatures.data + TOLERANCE))
 
-    flags[sss] = "h"
+    flags[sss] = "m"
 
     # and whole month of dewpoints if month has a high proportion (of dewpoint obs)
     for year in np.unique(station.years):
@@ -175,9 +175,9 @@ def super_saturation_check(station: utils.Station,
                                                     station.months == month,
                                                     dewpoints.data.mask == True))
             if month_locs.shape[0] != 0:
-                flagged, = np.nonzero(flags[month_locs] == "h")
+                flagged, = np.nonzero(flags[month_locs] == "m")
                 if (flagged.shape[0]/month_locs.shape[0]) > HIGH_FLAGGING_THRESHOLD:
-                    flags[month_locs] = "h"
+                    flags[month_locs] = "m"
 
     # only flag the dewpoints
     dewpoints.store_flags(utils.insert_flags(dewpoints.flags, flags))
@@ -239,7 +239,8 @@ def dew_point_depression_streak(times: pd.Series,
         for streak in bad:
             start = int(np.sum(grouped_diffs[:streaks[streak], 1]))
             end = start + int(grouped_diffs[streaks[streak], 1]) + 1
-            flags[locs[start : end]] = "h"
+            flags[locs[start : end]] = "m"
+
             if plots:
                 plot_humidity_streak(times, temperatures, dewpoints, locs[start: end])
 

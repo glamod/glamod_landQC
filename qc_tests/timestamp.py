@@ -80,8 +80,8 @@ def identify_multiple_values(obs_var: utils.MeteorologicalVariable, times: pd.Se
             # Observations have different values, so not clear which is correct.
             #   Flag both
             # set the first of the obs, then the second which make the diff
-            compressed_flags[multiple_obs_at_time[suspect_locs]] = "T"
-            compressed_flags[multiple_obs_at_time[suspect_locs]+1] = "T"
+            compressed_flags[multiple_obs_at_time[suspect_locs]] = "t"
+            compressed_flags[multiple_obs_at_time[suspect_locs]+1] = "t"
         else:
             # Observations have the _same_ value, so add information flag only
             compressed_flags[multiple_obs_at_time] = "2"
