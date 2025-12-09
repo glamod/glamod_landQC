@@ -145,7 +145,7 @@ def monthly_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station, c
         for bad_month_id in bad:
             # year ID for this set of calendar months
             locs, = np.where(np.logical_and(station.months == month, station.years == all_years[bad_month_id]))
-            flags[locs] = "D"
+            flags[locs] = "d"
 
         # walk distribution from centre to find assymetry
         sort_order = standardised_months.argsort()
@@ -183,7 +183,7 @@ def monthly_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station, c
         for bad_month_id in bad:
             # year ID for this set of calendar months
             locs, = np.where(np.logical_and(station.months == month, station.years == all_years[bad_month_id]))
-            flags[locs] = "D"
+            flags[locs] = "d"
 
         if plots:
             import matplotlib.pyplot as plt
@@ -436,7 +436,7 @@ def all_obs_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
                 bad_locs, = np.ma.where(normalised_anomalies > gap_start) # all years for one month
 
                 month_flags = flags[month_locs]
-                month_flags[bad_locs] = "d"
+                month_flags[bad_locs] = "i"
                 flags[month_locs] = month_flags
 
         if lowercount > 0:
@@ -446,7 +446,7 @@ def all_obs_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
                 bad_locs, = np.ma.where(normalised_anomalies < gap_start) # all years for one month
 
                 month_flags = flags[month_locs]
-                month_flags[bad_locs] = "d"
+                month_flags[bad_locs] = "i"
 
                 # TODO - can this bit be refactored?
                 # for pressure data, see if the flagged obs correspond with high winds
@@ -541,7 +541,7 @@ def all_obs_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
             plt.axvline(upper_threshold, c="r")
             plt.axvline(lower_threshold, c="r")
 
-            bad_locs, = np.where(flags[month_locs] == "d")
+            bad_locs, = np.where(flags[month_locs] == "i")
             bad_hist, dummy = np.histogram(normalised_anomalies[bad_locs], bins)
             plt.step(bins[1:], bad_hist, color='r', where="pre")
 

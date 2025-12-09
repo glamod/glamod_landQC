@@ -385,7 +385,7 @@ def identify_spikes(obs_var: utils.MeteorologicalVariable, times: np.ndarray, co
 
             # if the spike is still set, set the flags
             if is_spike:
-                compressed_flags[possible_in_spike : possible_in_spike+spike_len] = "S"
+                compressed_flags[possible_in_spike : possible_in_spike+spike_len] = "s"
 
                 # diagnostic plots
                 if plots:

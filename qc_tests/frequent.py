@@ -169,7 +169,7 @@ def frequent_values(obs_var: utils.MeteorologicalVariable, station: utils.Statio
                                 if bins[b] in suspect_bins:
                                     # find observations (month & year) to flag!
                                     flag_locs = np.where(np.logical_and(month_data >= bins[b], month_data < bins[b+1]))
-                                    month_flags[flag_locs] = "F"
+                                    month_flags[flag_locs] = "f"
 
             # copy flags for all years into main array
             flags[locs] = month_flags
