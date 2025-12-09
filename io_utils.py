@@ -382,8 +382,11 @@ def flag_write(outfilename: Path, df: pd.DataFrame, diagnostics: bool = False) -
                 outfile.write(f"{var} : {test}_counts : {locs.shape[0]}\n")
 
 
-            # for total, get number of set flags (excluding fixable wind logical)
-            flagged, = np.nonzero((flags.to_numpy() != "") & (flags.to_numpy() != "1"))
+            # for total, get number of set flags (excluding fixable wind logical,
+            #                                     identical timestamp (same value))
+            #     Values to be updated periodically
+            flagged, = np.nonzero(np.logical_and(flags != "",
+                                                 flags != "z"))
 
             if np.ma.count(this_var_data) == 0 or flagged.shape[0] == 0:
                 proportion_flagged = 0

@@ -93,21 +93,12 @@ def high_flag_rate(obs_var: utils.MeteorologicalVariable,
                 print(f" {obs_var.name} flagging rate of {100*(flagged_fraction):5.1f}%")
                 print(f"   Flagging remaining {obs_var.name} obs")
             # Set flags only obs currently unflagged.
-<<<<<<< HEAD
             unflagged, = np.nonzero(old_flags[obs_locs] == "")
-            new_flags[obs_locs[unflagged]] = "H"
-            any_flags_set = True
-
-    logger.info(f"High Flag Rate {obs_var.name}")
-    logger.info(f"   Cumulative number of flags set: {np.count_nonzero(new_flags == 'H')}")
-=======
-            unflagged, = np.where(old_flags[obs_locs] == "")
             new_flags[obs_locs[unflagged]] = "h"
             any_flags_set = True
 
     logger.info(f"High Flag Rate {obs_var.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.where(new_flags == 'h')[0])}")
->>>>>>> 5a3d12e (Rebase of master into #255: initial pass through of flag characters (upper -> lower))
 
     return new_flags, any_flags_set # high_flag_rate
 
