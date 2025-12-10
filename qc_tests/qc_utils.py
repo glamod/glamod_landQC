@@ -3,6 +3,7 @@
 qc_utils.py contains utility scripts to help with QC checks
 '''
 import numpy as np
+import pandas as pd
 import scipy.special
 import itertools
 import logging
@@ -722,3 +723,25 @@ def prepare_data_repeating_streak(data: np.ndarray, diff:int = 0,
     repeated_streak_lengths = grouped_diffs[streaks, 1] + 1
 
     return repeated_streak_lengths, grouped_diffs, streaks # prepare_data_repeating_streak
+
+
+def update_dataframe(df: pd.DataFrame,
+                     indata: np.ndarray,
+                     locations: np.ndarray,
+                     column_name: str  ) -> None:
+    """Update dataframe from station values corrected during QC
+    At the moment, wind direction during calm spells only
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame holding complete station data
+    indata : np.ndarray
+        Updated station data for single variable
+    locations : np.ndarray
+        Locations where data need updating
+    column_name : str
+        Column in DataFrame to update
+    """
+
+    df.loc[locations, column_name] = indata[locations]
