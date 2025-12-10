@@ -4,6 +4,7 @@ Timestamp Check
 
 Checks for instances of more than one reading at the same time, with different values
 """
+import pandas as pd
 import numpy as np
 import logging
 logger = logging.getLogger(__name__)
@@ -13,13 +14,13 @@ import utils
 from qc_tests.spike import generate_differences
 #************************************************************************
 #*********************************************
-def plot_multiple(times: np.ndarray,
+def plot_multiple(times: pd.DataFrame,
                   obs_var: utils.MeteorologicalVariable,
                   start: int) -> None:   # pragma: no cover
     '''
     Plot each instance of multiple values against surrounding data
 
-    :param array times: datetime array
+    :param DataFrame times: datetime array
     :param MetVar obs_var: Meteorological variable object
     :param int start: the location of the readings
 
@@ -43,10 +44,11 @@ def plot_multiple(times: np.ndarray,
     plt.ylabel(obs_var.name.capitalize())
     plt.show()
 
-    return # plot_spike
+    # plot_spike
+
 
 #************************************************************************
-def identify_multiple_values(obs_var: utils.MeteorologicalVariable, times: np.ndarray,
+def identify_multiple_values(obs_var: utils.MeteorologicalVariable, times: pd.DataFrame,
                              config_dict: dict, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Use config_dict to read in critical values, and then assess to find
@@ -99,7 +101,7 @@ def identify_multiple_values(obs_var: utils.MeteorologicalVariable, times: np.nd
     logger.info(f"Timestamp {obs_var.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
-    return # identify_multiple_values
+    # identify_multiple_values
 
 
 #************************************************************************

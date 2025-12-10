@@ -23,7 +23,7 @@ Input arguments:
 
 '''
 
-DEFAULT_SPHERICAL_EARTH_RADIUS=6367470
+DEFAULT_SPHERICAL_EARTH_RADIUS=6367470.
 
 import numpy as np
 import pandas as pd
@@ -58,7 +58,8 @@ def get_cartesian(latitudes: np.ndarray, longitudes: np.ndarray) -> np.ndarray:
     return cartesian_coords # get_cartesian
 
 #************************************************************************
-def compute_corange_matrix(cartesian_coords_a: np.ndarray, cartesian_coords_b: np.ndarray = None) -> np.ndarray:
+def compute_corange_matrix(cartesian_coords_a: np.ndarray,
+                           cartesian_coords_b: np.ndarray | None = None) -> np.ndarray:
     """Compute the matrix of coranges between all location in a grid
     Args:
         cartesian_coords_a:
@@ -73,12 +74,14 @@ def compute_corange_matrix(cartesian_coords_a: np.ndarray, cartesian_coords_b: n
     """
 
     # Compute cross distance matrix
-    coranges = cross_distance(cartesian_coords_a, locations_b=cartesian_coords_b, R=DEFAULT_SPHERICAL_EARTH_RADIUS / 1000.)
+    coranges = cross_distance(cartesian_coords_a,
+                              locations_b=cartesian_coords_b,
+                              R=int(DEFAULT_SPHERICAL_EARTH_RADIUS / 1000.))
 
     return coranges # compute_corange_matrix
 
 #************************************************************************
-def get_neighbours(station_list_a: pd.DataFrame, station_list_b: pd.DataFrame = None,
+def get_neighbours(station_list_a: pd.DataFrame, station_list_b: pd.DataFrame | None = None,
                    diagnostics: bool = False, plots: bool = False, full: bool = False) -> np.ndarray:
     """
     Find the neighbour indices and distances for the list supplied
@@ -242,7 +245,7 @@ def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False, plot
 
             outfile.write(f"{outstring}\n")
 
-    return # main
+    # main
 
 #************************************************************************
 if __name__ == "__main__":

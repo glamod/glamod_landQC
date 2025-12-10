@@ -5,6 +5,7 @@ Odd Cluster Checks
 Find isolated data (single points and small runs)
 """
 #************************************************************************
+import pandas as pd
 import numpy as np
 import logging
 logger = logging.getLogger(__name__)
@@ -27,12 +28,12 @@ MIN_SEPARATION = utils.ODD_CLUSTER_SEPARATION * 24
 
 
 #*********************************************
-def plot_cluster(times: np.ndarray, obs_var: utils.MeteorologicalVariable,
-                 oc_start: int, oc_end: int) -> None:  # pragma: no cover
+def plot_cluster(times: pd.DataFrame, obs_var: utils.MeteorologicalVariable,
+                 oc_start: int, oc_end: int | None) -> None:  # pragma: no cover
     '''
     Plot each odd cluster highlighted against surrounding data
 
-    :param array times: datetime array
+    :param DataFrame times: datetime array
     :param MetVar obs_var: Meteorological variable object
     :param int oc_start: start of cluster in data array index
     :param int oc_end: end of cluster in data array index
@@ -62,7 +63,7 @@ def plot_cluster(times: np.ndarray, obs_var: utils.MeteorologicalVariable,
     plt.ylabel(obs_var.name.capitalize())
     plt.show()
 
-    return # plot_cluster
+    # plot_cluster
 
 #************************************************************************
 def flag_clusters(obs_var: utils.MeteorologicalVariable, station: utils.Station,
@@ -103,7 +104,7 @@ def flag_clusters(obs_var: utils.MeteorologicalVariable, station: utils.Station,
                     flags[:cluster_end+1] = "o"
 
                     if plots:
-                        plot_cluster(station, obs_var, 0, cluster_end+1)
+                        plot_cluster(station.times, obs_var, 0, cluster_end+1)
 
         elif ce > 0:
             # check for cluster in series.
@@ -138,16 +139,18 @@ def flag_clusters(obs_var: utils.MeteorologicalVariable, station: utils.Station,
     logger.info(f"Odd Cluster {obs_var.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
-    return # flag_clusters
+    # flag_clusters
+
 
 #************************************************************************
-def occ(station: utils.Station, var_list: list, config_file: str, full: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
+def occ(station: utils.Station, var_list: list, config_dict: dict,
+        full: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Run through the variables and pass to the Odd Cluster Check
 
     :param Station station: Station Object for the station
     :param list var_list: list of variables to test
-    :param str config_file: string for configuration file (unused at the moment)
+    :param dict config_dict: dictionary for settings (unused at the moment)
     :param bool full: run a full update (unused at the moment)
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
@@ -160,5 +163,6 @@ def occ(station: utils.Station, var_list: list, config_file: str, full: bool = F
         flag_clusters(obs_var, station, plots=plots, diagnostics=diagnostics)
 
 
-    return # dgc
+    # dgc
+
 

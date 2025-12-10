@@ -109,5 +109,5 @@ def wrc(station: utils.Station, var_list: list, full: bool = False,
 
         obs_var.flags = utils.insert_flags(obs_var.flags, flags)
 
-    return # wrc
+    # wrc
 

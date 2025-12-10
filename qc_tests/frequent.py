@@ -97,7 +97,7 @@ def identify_values(obs_var: utils.MeteorologicalVariable, station: utils.Statio
         # write out the thresholds...
         config_dict[f"FREQUENT-{obs_var.name}"][f"{month}"] = suspect
 
-    return # identify_values
+    # identify_values
 
 
 #************************************************************************
@@ -199,7 +199,7 @@ def frequent_values(obs_var: utils.MeteorologicalVariable, station: utils.Statio
     logger.info(f"Frequent Values {obs_var.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
-    return # frequent_values
+    # frequent_values
 
 #************************************************************************
 def fvc(station: utils.Station, var_list: list, config_dict: dict, full: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
@@ -230,5 +230,5 @@ def fvc(station: utils.Station, var_list: list, config_dict: dict, full: bool = 
         frequent_values(obs_var, station, config_dict, plots=fplots, diagnostics=diagnostics)
 
 
-    return # fvc
+    # fvc
 

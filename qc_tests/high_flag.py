@@ -42,7 +42,7 @@ def set_synergistic_flags(station: utils.Station, var: str) -> None:
 
     obs_var.flags = utils.insert_flags(obs_var.flags, new_flags)
 
-    return # set_synergistic_flags
+    # set_synergistic_flags
 
 #************************************************************************
 def high_flag_rate(obs_var: utils.MeteorologicalVariable,
@@ -91,7 +91,7 @@ def high_flag_rate(obs_var: utils.MeteorologicalVariable,
         if flagged_fraction > utils.HIGH_FLAGGING:
             if diagnostics:
                 print(f" {obs_var.name} flagging rate of {100*(flagged_fraction):5.1f}%")
-
+                print(f"   Flagging remaining {obs_var.name} obs")
             # Set flags only obs currently unflagged.
             unflagged, = np.where(old_flags[obs_locs] == "")
             new_flags[obs_locs[unflagged]] = "H"

@@ -62,7 +62,7 @@ def plot_pressure_timeseries(sealp: utils.MeteorologicalVariable,
 
     plt.show()
 
-    return # plot_pressure_timeseries
+    # plot_pressure_timeseries
 
 
 #************************************************************************
@@ -117,20 +117,21 @@ def pressure_logic(sealp: utils.MeteorologicalVariable,
     logger.info(f"Pressure {stnlp.name}")
     logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
-    return  # pressure_logic
+    # pressure_logic
 
 
 #*********************************************
 def plot_pressure_distribution(difference: np.ndarray,
                                title: str,
-                               vmin: int=-1, vmax:int=1)-> None:  # pragma: no cover
+                               vmin: float = -1.,
+                               vmax: float = 1.) -> None:  # pragma: no cover
     '''
     Plot distribution and include the upper and lower thresholds
 
     :param array difference: values to form histogram from
     :param str title: label for plot
-    :param int vmin: lower locations for vertical line
-    :param int vmax: upper locations for vertical line
+    :param float vmin: lower locations for vertical line
+    :param float vmax: upper locations for vertical line
 
     '''
     import matplotlib.pyplot as plt
@@ -149,7 +150,7 @@ def plot_pressure_distribution(difference: np.ndarray,
     plt.title(title)
     plt.show()
 
-    return # plot_pressure_distribution
+    # plot_pressure_distribution
 
 
 #************************************************************************
@@ -187,7 +188,7 @@ def identify_values(sealp: utils.MeteorologicalVariable,
 
         config_dict["PRESSURE"]["spread"] = spread
 
-    return # identify_values
+    # identify_values
 
 
 #************************************************************************
@@ -264,7 +265,7 @@ def pressure_offset(sealp: utils.MeteorologicalVariable,
     logger.info(f"Pressure {stnlp.name}")
     logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
-    return # pressure_offset
+    # pressure_offset
 
 
 #*********************************************
@@ -366,7 +367,7 @@ def pressure_station_theory(stnlp: utils.MeteorologicalVariable,
                                                                 utils.MDI,
                                                                 units="hPa",
                                                                 dtype=float)
-                    theory_stnlp.data=theoretical_stnlp_value
+                    theory_stnlp.data = theoretical_stnlp_value
                     plot_pressure_timeseries(theory_stnlp,
                                              stnlp, times, bad)
 
@@ -427,7 +428,7 @@ def pressure_consistency_theory(sealp: utils.MeteorologicalVariable,
     logger.info(f"Pressure {stnlp.name}")
     logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
-    return # pressure_theory
+    # pressure_theory
 
 
 #************************************************************************
@@ -473,4 +474,4 @@ def pcc(station: utils.Station, config_dict: dict, full: bool = False,
                                 station.elev, plots=plots, diagnostics=diagnostics)
 
 
-    return # pcc
+    # pcc

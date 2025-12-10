@@ -100,12 +100,13 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
 
         if not clobber:
             # wanting to skip if files exist
-            if (setup.SUBDAILY_BAD_DIR / f"{target_station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}").exists():
-                print(setup.SUBDAILY_BAD_DIR / "f{target_station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}" +
+            station_file = f"{target_station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}"
+            if (setup.SUBDAILY_BAD_DIR / station_file).exists():
+                print(f"{setup.SUBDAILY_BAD_DIR / station_file}" +
                       "exists and clobber kwarg not set, skipping to next station.")
                 continue
-            elif (setup.SUBDAILY_OUT_DIR / f"{target_station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}").exists():
-                print(setup.SUBDAILY_OUT_DIR / f"{target_station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}" +
+            elif (setup.SUBDAILY_OUT_DIR / station_file).exists():
+                print(f"{setup.SUBDAILY_OUT_DIR / station_file}" +
                       "exists and clobber kwarg not set, skipping to next station.")
                 continue
             else:
@@ -198,7 +199,7 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
             input(f"Stop after {dt.datetime.now()-startT} of processing")
             return
 
-    return # run_checks
+    # run_checks
 
 #************************************************************************
 if __name__ == "__main__":

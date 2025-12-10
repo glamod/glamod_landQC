@@ -354,7 +354,7 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
             input(f"Stop after {dt.datetime.now()-startT} of processing")
             return
 
-    return # run_checks
+    # run_checks
 
 #************************************************************************
 if __name__ == "__main__":

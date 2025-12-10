@@ -56,7 +56,8 @@ def plot_neighbour_flags(times: np.ndarray, flagged_time: int,
     plt.ylabel(target.name.capitalize())
     plt.show()
 
-    return # plot_neighbour_flags
+    # plot_neighbour_flags
+
 
 #************************************************************************
 def read_in_buddies(target_station: utils.Station, initial_neighbours: np.ndarray,
@@ -120,7 +121,7 @@ def read_in_buddies(target_station: utils.Station, initial_neighbours: np.ndarra
 
 
 def read_in_buddy_data(target_station: utils.Station, initial_neighbours: np.ndarray,
-                       all_buddies: dict, variable: utils.MeteorologicalVariable,
+                       all_buddies: dict, variable: str,
                        diagnostics: bool = False, plots: bool = False) -> np.ndarray:
     """
     Read in the buddy data for the neighbours for specified variable
@@ -286,7 +287,7 @@ def adjust_pressure_for_tropical_storms(dubious: np.ma.MaskedArray, initial_neig
 
 #************************************************************************
 def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.ndarray,
-                      all_buddies: dict, variable: utils.MeteorologicalVariable,
+                      all_buddies: dict, variable: str,
                       diagnostics: bool = False,
                       plots: bool = False, full: bool = False) -> None:
     """
@@ -357,7 +358,7 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.ndar
     logger.info(f"Neighbour Outlier {obs_var.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
-    return # neighbour_outlier
+    # neighbour_outlier
 
 #************************************************************************
 def noc(target_station: utils.Station, initial_neighbours: np.ndarray, var_list: list,

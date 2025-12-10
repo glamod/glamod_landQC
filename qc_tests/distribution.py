@@ -26,7 +26,7 @@ GAP_SIZE = 2
 FREQUENCY_THRESHOLD = 0.1
 #************************************************************************
 def prepare_monthly_data(obs_var: utils.MeteorologicalVariable, station: utils.Station,
-                         month: int, diagnostics: bool = False) -> None:
+                         month: int, diagnostics: bool = False) -> np.ma.MaskedArray:
     """
     Extract monthly data and make average.
 
@@ -34,6 +34,8 @@ def prepare_monthly_data(obs_var: utils.MeteorologicalVariable, station: utils.S
     :param Station station: station object
     :param int month: month to process
     :param bool diagnostics: turn on diagnostic output
+
+    :returns: np.ma.MaskedArray
     """
 
     all_years = np.unique(station.years)
@@ -96,8 +98,8 @@ def find_monthly_scaling(obs_var: utils.MeteorologicalVariable, station: utils.S
                 config_dict[f"MDISTRIBUTION-{obs_var.name}"] = CD_clim
             config_dict[f"MDISTRIBUTION-{obs_var.name}"][f"{month}-spread"] = utils.MDI
 
+    # find_monthly_scaling
 
-    return # find_monthly_scaling
 
 #************************************************************************
 def monthly_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station, config_dict: dict,
@@ -124,7 +126,6 @@ def monthly_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station, c
             climatology = float(config_dict[f"MDISTRIBUTION-{obs_var.name}"][f"{month}-clim"])
             spread = float(config_dict[f"MDISTRIBUTION-{obs_var.name}"][f"{month}-spread"])
         except KeyError:
-            print("Information missing in config dictionary")
             find_monthly_scaling(obs_var, station, config_dict, diagnostics=diagnostics)
             climatology = float(config_dict[f"MDISTRIBUTION-{obs_var.name}"][f"{month}-clim"])
             spread = float(config_dict[f"MDISTRIBUTION-{obs_var.name}"][f"{month}-spread"])
@@ -205,11 +206,14 @@ def monthly_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station, c
     logger.info(f"Distribution (monthly) {obs_var.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
-    return # monthly_gap
+    # monthly_gap
+
 
 #************************************************************************
-def prepare_all_data(obs_var: utils.MeteorologicalVariable, station: utils.Station, month: int,
-                     config_dict: dict, full: bool = False, diagnostics: bool = False) -> np.ndarray:
+def prepare_all_data(obs_var: utils.MeteorologicalVariable,
+                     station: utils.Station, month: int,
+                     config_dict: dict, full: bool = False,
+                     diagnostics: bool = False) -> np.ma.MaskedArray:
     """
     Extract data for the month, make & store or read average and spread.
     Use to calculate normalised anomalies.
@@ -219,6 +223,8 @@ def prepare_all_data(obs_var: utils.MeteorologicalVariable, station: utils.Stati
     :param int month: month to process
     :param str config_dict: configuration dictionary to store critical values
     :param bool diagnostics: turn on diagnostic output
+
+    :returns: np.ma.MaskedArray
     """
 
     month_locs, = np.where(station.months == month)
@@ -365,7 +371,7 @@ def find_thresholds(obs_var: utils.MeteorologicalVariable, station: utils.Statio
             config_dict[f"ADISTRIBUTION-{obs_var.name}"] = CD_uthresh
         config_dict[f"ADISTRIBUTION-{obs_var.name}"][f"{month}-lthresh"] = lower_threshold
 
-    return # find_thresholds
+    # find_thresholds
 
 #************************************************************************
 def expand_around_storms(storms: np.ndarray, maximum: int, pad: int = 6) -> np.ndarray:
@@ -554,7 +560,7 @@ def all_obs_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
     logger.info(f"Distribution (all) {obs_var.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
-    return # all_obs_gap
+    # all_obs_gap
 
 #************************************************************************
 def dgc(station: utils.Station, var_list: list, config_dict: dict, full: bool = False,
@@ -590,5 +596,5 @@ def dgc(station: utils.Station, var_list: list, config_dict: dict, full: bool = 
         all_obs_gap(obs_var, station, config_dict, plots=gplots, diagnostics=diagnostics)
 
 
-    return # dgc
+    # dgc
 

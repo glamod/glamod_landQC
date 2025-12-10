@@ -216,10 +216,7 @@ def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False) -> N
                 print(IMAGE_LOCS / f"All_fails_{var}-{test}{suffix}_{start_time_string}.png")
                 plt.savefig(IMAGE_LOCS /f"All_fails_{var}-{test}{suffix}_{start_time_string}.png")
                 plt.close()
-
-
-
-    return # main
+    # main
 
 #************************************************************************
 if __name__ == "__main__":

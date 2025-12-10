@@ -42,7 +42,7 @@ def copy_tree(source: PurePath, destination: PurePath, diagnostics: bool = False
     if diagnostics:
         print(f"copied {source} to {destination}")
 
-    return # copy_tree
+    # copy_tree
 
 
 #*********************************************
@@ -91,4 +91,4 @@ def copy_files(source: PurePath, destination: PurePath, extension:str = "",
         # force update of timestamps
         os.utime(destination / filename.split("/")[-1], None)
 
-    return # copy_files
+    # copy_files

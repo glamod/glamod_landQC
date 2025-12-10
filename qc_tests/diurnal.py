@@ -430,7 +430,7 @@ def find_offset(obs_var: utils.MeteorologicalVariable,
     CD_peak = {"peak" : int(diurnal_peak)}
     config_dict[f"DIURNAL-{obs_var.name}"] = CD_peak
 
-    return  # find_offset
+    # find_offset
 
 
 def get_potentially_spurious_days(best_fit_diurnal: np.ndarray,
@@ -570,7 +570,6 @@ def diurnal_cycle_check(obs_var: utils.MeteorologicalVariable, station: utils.St
     try:
         diurnal_offset = int(config_dict[f"DIURNAL-{obs_var.name}"]["peak"])
     except KeyError:
-        print("Information missing in config dictionary")
         find_offset(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
         diurnal_offset = int(config_dict[f"DIURNAL-{obs_var.name}"]["peak"])
 
@@ -614,7 +613,7 @@ def diurnal_cycle_check(obs_var: utils.MeteorologicalVariable, station: utils.St
     else:
         logger.info("Diurnal fit not found")
 
-    return # diurnal_cycle_check
+    # diurnal_cycle_check
 
 
 #************************************************************************
@@ -635,5 +634,5 @@ def dcc(station: utils.Station, config_dict: dict, full: bool = False, plots: bo
         find_offset(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
     diurnal_cycle_check(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
 
-    return # dgc
+    # dgc
 

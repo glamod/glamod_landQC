@@ -305,7 +305,7 @@ def plot_log_distribution(edges: np.ndarray, hist: np.ndarray,
         ax.xaxis.set_major_locator(mticker.MultipleLocator(0.1))
     plt.show()
 
-    return # plot_log_distribution
+    # plot_log_distribution
 
 
 #*********************************************

@@ -213,7 +213,7 @@ def plot_stations(station_list: list, outfile: Path, title: str = "") -> None:
     plt.savefig(outfile)
     plt.close()
 
-    return # plot_stations
+    # plot_stations
 
 
 #****************************************************
@@ -306,7 +306,7 @@ def plot_gridded_map(station_list: list, outfile: Path, title: str = "") -> None
     #plt.show()
 
     plt.savefig(outfile)
-    return # plot_gridded_map
+    # plot_gridded_map
 
 
 #****************************************************

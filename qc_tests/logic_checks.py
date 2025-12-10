@@ -73,7 +73,8 @@ def write_logic_error(station: utils.Station, message: str, diagnostics: bool = 
         outfile.write(dt.datetime.strftime(dt.datetime.now(), "%Y-%m-%d %H:%M") + "\n")
         outfile.write(message + "\n")
 
-    return # write_logic_error
+    # write_logic_error
+
 
 #************************************************************************
 def lc(station: utils.Station, var_list: list, full: bool = False,

@@ -44,11 +44,11 @@ def logical_checks(speed: utils.MeteorologicalVariable,
         direction.data[fix_zero_direction] = 0
         direction.data.mask[fix_zero_direction] = False
         if diagnostics:
-            print("  Zero direction : {}".format(len(fix_zero_direction[0])))
+            print("  Zero direction : {}".format(len(fix_zero_direction)))
     else:
         dflags[fix_zero_direction] = "1"
         if diagnostics:
-            print("  Zero direction : {}".format(len(fix_zero_direction[0])))
+            print("  Zero direction : {}".format(len(fix_zero_direction)))
         # and set to empty
         fix_zero_direction = np.array([])
 

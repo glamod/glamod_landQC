@@ -397,7 +397,8 @@ def flag_write(outfilename: PurePath, df: pd.DataFrame, diagnostics: bool = Fals
             if diagnostics:
                 print(f"{var} - {flagged.shape[0]} [{100*proportion_flagged:.1f}%]")
 
-    return # flag_write
+    # flag_write
+
 
 #************************************************************************
 def write_error(station: Station, message: str,
@@ -426,4 +427,4 @@ def write_error(station: Station, message: str,
         if error != "":
             outfile.write(error + "\n")
 
-    return # write_error
+    # write_error

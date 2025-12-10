@@ -121,7 +121,8 @@ def find_thresholds(obs_var: utils.MeteorologicalVariable, station: utils.Statio
 
         config_dict[f"VARIANCE-{obs_var.name}"][f"{month}-spread"] = variance_spread
 
-    return # find_thresholds
+    # find_thresholds
+
 
 #************************************************************************
 def variance_check(obs_var: utils.MeteorologicalVariable, station: utils.Station, config_dict: dict,
@@ -281,7 +282,8 @@ def variance_check(obs_var: utils.MeteorologicalVariable, station: utils.Station
     logger.info(f"Variance {obs_var.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
-    return # variance_check
+    # variance_check
+
 
 #************************************************************************
 def evc(station: utils.Station, var_list: list, config_dict: dict, full: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
@@ -305,5 +307,5 @@ def evc(station: utils.Station, var_list: list, config_dict: dict, full: bool = 
         variance_check(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
 
 
-    return # evc
+    # evc
 

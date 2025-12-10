@@ -116,12 +116,15 @@ class MeteorologicalVariable(object):
     Class for meteorological variable.  Initialised with metadata only
     '''
 
-    def __init__(self, name, mdi, units, dtype):
+    def __init__(self, name: str, mdi: float,
+                 units: str, dtype: str):
+
         self.name = name
         self.mdi = mdi
         self.units = units
         self.dtype = dtype
-        self.data = None
+        self.data: np.ma.MaskedArray | None = None
+        self.flags: np.ndarray | None = None
 
 
     def __str__(self):
@@ -137,11 +140,28 @@ class Station(object):
     Class for station
     '''
 
-    def __init__(self, stn_id, lat, lon, elev):
+    def __init__(self, stn_id: str,
+                 lat: float, lon: float,
+                 elev: float):
         self.id = stn_id
         self.lat = lat
         self.lon = lon
         self.elev = elev
+
+        # set other information
+        self.country: str = ""
+        self.continent: str = ""
+
+        # set up empty placeholders for times
+        self.times: pd.DataFrame | None = None
+        self.years: np.ndarray | None = None
+        self.months: np.ndarray | None = None
+        self.days: np.ndarray | None = None
+
+        # set up empty placeholders of observation data
+        for obs_var in setup.obs_var_list:
+            setattr(self, obs_var, None)
+
 
     def __str__(self):
         return f"station {self.id}, lat {self.lat}, lon {self.lon}, elevation {self.elev}"
@@ -321,7 +341,7 @@ def populate_station(station: Station, df: pd.DataFrame, obs_var_list: list, rea
         # and store
         setattr(station, variable, this_var)
 
-    return # populate_station
+    # populate_station
 
 
 #************************************************************************
@@ -365,7 +385,7 @@ def find_continent(country_code: str) -> str:
 
 
 #************************************************************************
-def custom_logger(logfile: str):
+def custom_logger(logfile: Path):
 
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)

@@ -67,7 +67,8 @@ def get_repeating_dpd_threshold(temperatures: utils.MeteorologicalVariable,
             CD_dpd = {"DPD" : float(-utils.MDI)}
             config_dict["HUMIDITY"] = CD_dpd
 
-    return # repeating_dpd_threshold
+    # repeating_dpd_threshold
+
 
 #*********************************************
 def plot_humidities(T: utils.MeteorologicalVariable,
@@ -101,7 +102,8 @@ def plot_humidities(T: utils.MeteorologicalVariable,
     plt.ylabel(T.units)
     plt.show()
 
-    return # plot_humidities
+    # plot_humidities
+
 
 #*********************************************
 def plot_humidity_streak(times: np.ndarray,
@@ -141,7 +143,8 @@ def plot_humidity_streak(times: np.ndarray,
     plt.ylabel(T.units)
     plt.show()
 
-    return # plot_humidity_streak
+    # plot_humidity_streak
+
 
 #************************************************************************
 def super_saturation_check(station: utils.Station,
@@ -186,7 +189,7 @@ def super_saturation_check(station: utils.Station,
     logger.info(f"Supersaturation {dewpoints.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.nonzero(flags != '')[0])}")
 
-    return # super_saturation_check
+    # super_saturation_check
 
 #************************************************************************
 def dew_point_depression_streak(times: np.ndarray,
@@ -245,7 +248,7 @@ def dew_point_depression_streak(times: np.ndarray,
     logger.info(f"Dewpoint Depression {dewpoints.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.nonzero(flags != '')[0])}")
 
-    return # dew_point_depression_streak
+    # dew_point_depression_streak
 
 #************************************************************************
 def hcc(station: utils.Station, config_dict: dict,
@@ -278,5 +281,5 @@ def hcc(station: utils.Station, config_dict: dict,
     #  greater chance of removing good observations
     #  18 July 2019 RJHD
 
-    return # hcc
+    # hcc
 

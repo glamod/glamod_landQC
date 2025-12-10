@@ -11,6 +11,7 @@ Paired metrics (Primary/Secondary):
   - Temperature / Dewpoint-temperature
 
 """
+import pandas as pd
 import numpy as np
 import logging
 logger = logging.getLogger(__name__)
@@ -22,13 +23,13 @@ import qc_tests.qc_utils as qc_utils
 #*********************************************
 def plot_flags(primary: utils. MeteorologicalVariable,
                secondary: utils.MeteorologicalVariable,
-               times: np.ndarray, locations: np.ndarray) -> None:  # pragma: no cover
+               times: pd.DataFrame, locations: np.ndarray) -> None:  # pragma: no cover
     '''
     Plot each month of observations and the flags
 
     :param MetVar primary: Meteorological variable object
     :param MetVar secondary: Meteorological variable object
-    :param array times: datetime array
+    :param DataFrame times: datetime array
     :param array locations: the locations which have been flagged
 
     :returns:
@@ -47,7 +48,7 @@ def plot_flags(primary: utils. MeteorologicalVariable,
     plt.ylabel(primary.units)
     plt.show()
 
-    return # plot_flags
+    # plot_flags
 
 
 #************************************************************************
@@ -102,7 +103,7 @@ def precision_cross_check(station: utils.Station, primary: utils.MeteorologicalV
     logger.info(f"Precision {secondary.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
-    return # precision_cross_check
+    # precision_cross_check
 
 
 #************************************************************************
@@ -126,5 +127,5 @@ def pcc(station: utils.Station, config_dict: dict, full: bool = False,
 
     # other pairs will appear here
 
-    return # pcc
+    # pcc
 
