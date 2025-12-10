@@ -119,19 +119,22 @@ def test_high_flag_rate_high_fraction() -> None:
 
 def test_high_flag_rate_humidity() -> None:
     """test behaviour works for humdity+precision flags"""
+
     dewpoint = common.example_test_variable("dewpoint_temperature",
-                                                np.arange(11*utils.DATA_COUNT_THRESHOLD))
+                                            np.arange(11*utils.DATA_COUNT_THRESHOLD))
 
     # set enough flags to trigger the test if none are prec+hum, 3 precision
     flags = np.array(["" for i in dewpoint.data])
     flags[:3] = "n"
 
-    # the rest are humidity
+    # and set humidity flags
     dewpoint.flags[:int(dewpoint.data.shape[0]*utils.HIGH_FLAGGING) + 1] = "h"
-    # set enough to be both humidity and precision so that threshold not reached
     dewpoint.flags = np.char.add(dewpoint.flags, flags)
+    # set flags so that when discounting the precision and humidity flags
+    #  then the high-flag threshold not reached
 
     new_flags, flags_set = high_flag.high_flag_rate(dewpoint)
+    # expecting that no flags set from high_flag
     expected_flags = np.array(["" for _ in range(dewpoint.data.shape[0])])
 
     assert flags_set is False
@@ -149,10 +152,11 @@ def test_high_flag_rate_humidity_set() -> None:
 
     # the rest are humidity
     dewpoint.flags[:int(dewpoint.data.shape[0]*utils.HIGH_FLAGGING) + 5] = "h"
-    # set enough to be both humidity and precision so that threshold not reached
+    # set enough to be both humidity and precision so that high-flag threshold reached
     dewpoint.flags = np.char.add(dewpoint.flags, flags)
 
     new_flags, flags_set = high_flag.high_flag_rate(dewpoint)
+    # expecting flag from high_flag routine to be set.
     expected_flags = np.array(["" for _ in range(dewpoint.data.shape[0])])
     expected_flags[int(dewpoint.data.shape[0]*utils.HIGH_FLAGGING) + 5:] = "H"
 
