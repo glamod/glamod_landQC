@@ -13,7 +13,8 @@ import common
 
 # not testing plotting
 
-def _set_up_data() -> tuple[np.ndarray, np.ndarray, dict]:
+def _set_up_data() -> tuple[np.ma.MaskedArray,
+                            np.ma.MaskedArray, dict]:
     series_length = 20
     values = np.ma.ones(series_length)
     values.mask = np.zeros(series_length)
@@ -25,7 +26,8 @@ def _set_up_data() -> tuple[np.ndarray, np.ndarray, dict]:
 
     return values, times, critical_values
 
-def _set_up_masked_data() -> tuple[np.ndarray, np.ndarray, dict]:
+def _set_up_masked_data() -> tuple[np.ma.MaskedArray,
+                                   np.ma.MaskedArray, dict]:
     series_length = 20
     values = np.ma.ones(series_length)
     values.mask = np.zeros(series_length)

@@ -23,13 +23,13 @@ import qc_tests.qc_utils as qc_utils
 #*********************************************
 def plot_flags(primary: utils. MeteorologicalVariable,
                secondary: utils.MeteorologicalVariable,
-               times: pd.DataFrame, locations: np.ndarray) -> None:  # pragma: no cover
+               times: pd.Series, locations: np.ndarray) -> None:  # pragma: no cover
     '''
     Plot each month of observations and the flags
 
     :param MetVar primary: Meteorological variable object
     :param MetVar secondary: Meteorological variable object
-    :param DataFrame times: datetime array
+    :param Series times: datetime array
     :param array locations: the locations which have been flagged
 
     :returns:
@@ -98,7 +98,7 @@ def precision_cross_check(station: utils.Station, primary: utils.MeteorologicalV
 
 
     # only flag the secondary
-    secondary.flags = utils.insert_flags(secondary.flags, flags)
+    secondary.store_flags(utils.insert_flags(secondary.flags, flags))
 
     logger.info(f"Precision {secondary.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")

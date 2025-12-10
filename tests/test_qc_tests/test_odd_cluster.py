@@ -23,7 +23,7 @@ OCDATA.mask = np.zeros(5)
 OCDATA.mask[2] = True
 
 
-def _generate_pd_times(length: int, start_dt: dt.datetime) -> pd.DataFrame:
+def _generate_pd_times(length: int, start_dt: dt.datetime) -> pd.Series:
     """generate a pandas dataframe of the times
 
     Parameters
@@ -35,8 +35,8 @@ def _generate_pd_times(length: int, start_dt: dt.datetime) -> pd.DataFrame:
 
     Returns
     -------
-    pd.DataFrame
-        DataFrame of datetimes
+    pd.Series
+        Series of datetimes
     """
 
     return pd.to_datetime(pd.DataFrame([start_dt + dt.timedelta(hours=i)\

@@ -13,8 +13,8 @@ import common
 import utils
 
 
-def _setup_station(indata: np.ma.array,
-                   intimes: np.ndarray | None = None) -> utils.Station:
+def _setup_station(indata: np.ma.MaskedArray,
+                   intimes: pd.Series | None = None) -> utils.Station:
 
     # set up the data
     indata.mask = np.zeros(len(indata))

@@ -328,7 +328,7 @@ def monthly_clim(obs_var: utils.MeteorologicalVariable, station: utils.Station, 
                 plt.show()
 
     # append flags to object
-    obs_var.flags = utils.insert_flags(obs_var.flags, flags)
+    obs_var.store_flags(utils.insert_flags(obs_var.flags, flags))
 
     logger.info(f"Climatological {obs_var.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")

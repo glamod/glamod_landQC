@@ -79,8 +79,8 @@ def logical_checks(speed: utils.MeteorologicalVariable,
     logger.info(f"  Bad speed : {len(bad_speed[0])}")
 
     # copy flags into attribute
-    speed.flags = utils.insert_flags(speed.flags, sflags)
-    direction.flags = utils.insert_flags(direction.flags, dflags)
+    speed.store_flags(utils.insert_flags(speed.flags, sflags))
+    direction.store_flags(utils.insert_flags(direction.flags, dflags))
 
     if diagnostics:
 

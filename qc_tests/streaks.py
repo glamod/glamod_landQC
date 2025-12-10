@@ -17,6 +17,7 @@ Repeated Streaks Check
 """
 #************************************************************************
 import copy
+import pandas as pd
 import numpy as np
 import datetime as dt
 import logging
@@ -28,13 +29,13 @@ import qc_tests.qc_utils as qc_utils
 MIN_STREAK_LENGTH_FOR_EXCESS_FREQUENCY = 10
 
 #*********************************************
-def plot_streak(times: np.ndarray, data: np.ndarray, units: str,
+def plot_streak(times: pd.Series, data: np.ma.MaskedArray, units: str,
                 streak_start: int, streak_end: int) -> None:  # pragma: no cover
     '''
     Plot each streak against surrounding data
 
-    :param array times: datetime array
-    :param array data: values array
+    :param Series times: datetime array
+    :param MaskedArray data: values array
     :param str units: units for plotting
     :param int streak_start: the location of the streak
     :param int streak_end: the end of the streak
@@ -253,7 +254,8 @@ def get_excess_streak_threshold(obs_var: utils.MeteorologicalVariable,
 
 
 #************************************************************************
-def repeating_value(obs_var: utils.MeteorologicalVariable, times: np.ndarray,
+def repeating_value(obs_var: utils.MeteorologicalVariable,
+                    times: pd.Series,
                     config_dict: dict,
                     wind_speed: utils.MeteorologicalVariable | None = None,
                     plots: bool = False, diagnostics: bool = False) -> None:
@@ -314,7 +316,7 @@ def repeating_value(obs_var: utils.MeteorologicalVariable, times: np.ndarray,
 
     # undo compression and write into original object (the one with calm periods)
     flags[this_var.data.mask == False] = compressed_flags
-    obs_var.flags = utils.insert_flags(obs_var.flags, flags)
+    obs_var.store_flags(utils.insert_flags(obs_var.flags, flags))
 
     logger.info(f"Repeated streaks {this_var.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.nonzero(flags != '')[0])}")
@@ -323,10 +325,10 @@ def repeating_value(obs_var: utils.MeteorologicalVariable, times: np.ndarray,
 
 
 #************************************************************************
-def excess_repeating_value(obs_var: utils.MeteorologicalVariable, times: np.ndarray,
-                    config_dict: dict,
-                    wind_speed: utils.MeteorologicalVariable | None = None,
-                    plots: bool = False, diagnostics: bool = False) -> None:
+def excess_repeating_value(obs_var: utils.MeteorologicalVariable, times: pd.Series,
+                           config_dict: dict,
+                           wind_speed: utils.MeteorologicalVariable | None = None,
+                           plots: bool = False, diagnostics: bool = False) -> None:
     """
     Flag years where more than expected fraction of data occurs in streaks,
       but none/not many are long enough in themselves to trigger the repeating_value check
@@ -407,7 +409,7 @@ def excess_repeating_value(obs_var: utils.MeteorologicalVariable, times: np.ndar
         flags[locs] = year_flags
 
     # Write into original object (the one with calm periods)
-    obs_var.flags = utils.insert_flags(obs_var.flags, flags)
+    obs_var.store_flags(utils.insert_flags(obs_var.flags, flags))
 
     logger.info(f"Excess Repeated streaks {this_var.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.ma.nonzero(flags != '')[0])}")
@@ -504,7 +506,7 @@ def repeating_day(obs_var: utils.MeteorologicalVariable, station: utils.Station,
 
     # Calculate and save the threshold.
     if determine_threshold:
-        threshold = qc_utils.get_critical_values(all_lengths, binwidth=1,
+        threshold = qc_utils.get_critical_values(np.array(all_lengths), binwidth=1,
                                 plots=plots,title=obs_var.name.capitalize(),
                                 xlabel="Streaks of repeating days")
 
@@ -520,7 +522,7 @@ def repeating_day(obs_var: utils.MeteorologicalVariable, station: utils.Station,
 
     if set_flags:
         # Write into original object (the one with calm periods)
-        obs_var.flags = utils.insert_flags(obs_var.flags, flags)
+        obs_var.store_flags(utils.insert_flags(obs_var.flags, flags))
 
         logger.info(f"Repeated Day streaks {obs_var.name}")
         logger.info(f"   Cumulative number of flags set: {len(np.nonzero(flags != '')[0])}")

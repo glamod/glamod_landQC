@@ -194,7 +194,7 @@ def frequent_values(obs_var: utils.MeteorologicalVariable, station: utils.Statio
             plt.show()
 
     # append flags to object
-    obs_var.flags = utils.insert_flags(obs_var.flags, flags)
+    obs_var.store_flags(utils.insert_flags(obs_var.flags, flags))
 
     logger.info(f"Frequent Values {obs_var.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
@@ -202,7 +202,9 @@ def frequent_values(obs_var: utils.MeteorologicalVariable, station: utils.Statio
     # frequent_values
 
 #************************************************************************
-def fvc(station: utils.Station, var_list: list, config_dict: dict, full: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
+def fvc(station: utils.Station, var_list: list,
+        config_dict: dict, full: bool = False,
+        plots: bool = False, diagnostics: bool = False) -> None:
     """
     Run through the variables and pass to the Frequent Value Check
 

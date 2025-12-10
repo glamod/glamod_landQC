@@ -40,7 +40,7 @@ def set_synergistic_flags(station: utils.Station, var: str) -> None:
         # As synergistically flagged, add to all flags.
         new_flags[obs_locs] = "H"
 
-    obs_var.flags = utils.insert_flags(obs_var.flags, new_flags)
+    obs_var.store_flags(utils.insert_flags(obs_var.flags, new_flags))
 
     # set_synergistic_flags
 
@@ -103,7 +103,9 @@ def high_flag_rate(obs_var: utils.MeteorologicalVariable,
     return new_flags, any_flags_set # high_flag_rate
 
 #************************************************************************
-def hfr(station: utils.Station, var_list: list, full: bool = False, plots: bool = False, diagnostics: bool = False) -> int:
+def hfr(station: utils.Station, var_list: list,
+        full: bool = False, plots: bool = False,
+        diagnostics: bool = False) -> int:
     """
     Run through the variables and pass to the High Flag Rate Check
 
@@ -123,7 +125,7 @@ def hfr(station: utils.Station, var_list: list, full: bool = False, plots: bool 
 
         flags, any_set = high_flag_rate(obs_var, plots=plots, diagnostics=diagnostics)
 
-        obs_var.flags = utils.insert_flags(obs_var.flags, flags)
+        obs_var.store_flags(utils.insert_flags(obs_var.flags, flags))
 
         if any_set:
             vars_set += [var]

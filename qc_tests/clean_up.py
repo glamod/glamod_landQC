@@ -16,9 +16,12 @@ LOW_COUNT_THRESHOLD = 0
 HIGH_FLAGGING_THRESHOLD = 0.6
 
 #************************************************************************
-def clean_up(obs_var: utils.MeteorologicalVariable, station: utils.Station,
-             low_counts: int = LOW_COUNT_THRESHOLD, high_flags: float = HIGH_FLAGGING_THRESHOLD,
-             plots: bool = False, diagnostics:bool = False) -> np.ndarray:
+def clean_up(obs_var: utils.MeteorologicalVariable,
+             station: utils.Station,
+             low_counts: int = LOW_COUNT_THRESHOLD,
+             high_flags: float = HIGH_FLAGGING_THRESHOLD,
+             plots: bool = False,
+             diagnostics: bool = False) -> np.ndarray:
     """
     Check for high flagging rates within a calendar month and flag remaining
 
@@ -87,7 +90,7 @@ def mcu(station: utils.Station, var_list: list, full: bool = False,
 
         flags = clean_up(obs_var, station, plots=plots, diagnostics=diagnostics)
 
-        obs_var.flags = utils.insert_flags(obs_var.flags, flags)
+        obs_var.store_flags(utils.insert_flags(obs_var.flags, flags))
 
     # mcu
 

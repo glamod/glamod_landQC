@@ -355,7 +355,8 @@ def find_best_fit(best_fit_diurnal: np.ndarray,
 #************************************************************************
 def find_offset(obs_var: utils.MeteorologicalVariable,
                 station: utils.Station, config_dict: dict,
-                plots: bool = False, diagnostics: bool = False) -> tuple[np.ndarray, np.ndarray]:
+                plots: bool = False,
+                diagnostics: bool = False) -> None:
     """
     Find the best offset for a sine curve to represent the cycle & write to config file
 
@@ -605,7 +606,7 @@ def diurnal_cycle_check(obs_var: utils.MeteorologicalVariable, station: utils.St
             flags[locs[data_locs]] = "U"
 
         # append flags to object (temperature)
-        obs_var.flags = utils.insert_flags(obs_var.flags, flags)
+        obs_var.store_flags(utils.insert_flags(obs_var.flags, flags))
 
         logger.info(f"Diurnal Check {obs_var.name}")
         logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")

@@ -48,13 +48,13 @@ def plot_multiple(times: pd.DataFrame,
 
 
 #************************************************************************
-def identify_multiple_values(obs_var: utils.MeteorologicalVariable, times: pd.DataFrame,
+def identify_multiple_values(obs_var: utils.MeteorologicalVariable, times: pd.Series,
                              config_dict: dict, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Use config_dict to read in critical values, and then assess to find
 
     :param MetVar obs_var: meteorological variable object
-    :param array times: array of times (usually in minutes)
+    :param Series times: array of times (usually in minutes)
     :param str config_dict: configuration dictionary to store critical values (UNUSED)
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
@@ -94,7 +94,7 @@ def identify_multiple_values(obs_var: utils.MeteorologicalVariable, times: pd.Da
         #   Spike only want to flag following (for single point spike with large value_diff)
         locs, = np.nonzero(obs_var.data.mask == False)
         flags[locs[:-1]] = compressed_flags
-        obs_var.flags = utils.insert_flags(obs_var.flags, flags)
+        obs_var.store_flags(utils.insert_flags(obs_var.flags, flags))
     else:
         flags = np.array(["" for i in range(obs_var.data.shape[0])])
 

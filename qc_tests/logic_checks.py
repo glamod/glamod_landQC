@@ -77,8 +77,10 @@ def write_logic_error(station: utils.Station, message: str, diagnostics: bool = 
 
 
 #************************************************************************
-def lc(station: utils.Station, var_list: list, full: bool = False,
-       plots: bool = False, diagnostics: bool = False) -> int:
+def lc(station: utils.Station, var_list: list,
+       full: bool = False,
+       plots: bool = False,
+       diagnostics: bool = False) -> int:
     """
     Run through the variables and pass to the Logic Checks
 
@@ -156,7 +158,7 @@ def lc(station: utils.Station, var_list: list, full: bool = False,
 
         flags = logic_check(obs_var, plots=plots, diagnostics=diagnostics)
 
-        obs_var.flags = utils.insert_flags(obs_var.flags, flags)
+        obs_var.store_flags(utils.insert_flags(obs_var.flags, flags))
 
     return return_code # lc
 

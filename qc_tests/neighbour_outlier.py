@@ -6,6 +6,7 @@ Check for timestamps where difference to sufficient fraction of neighbours is
 sufficiently high.
 '''
 #************************************************************************
+import pandas as pd
 import numpy as np
 import logging
 logger = logging.getLogger(__name__)
@@ -24,13 +25,13 @@ STORM_FRACTION = 2./3. # fraction of negative differences to target (likely at c
 DISTANT_NEIGHBOURS = 100 # km
 
 #************************************************************************
-def plot_neighbour_flags(times: np.ndarray, flagged_time: int,
+def plot_neighbour_flags(times: pd.Series, flagged_time: int,
                          target: utils.MeteorologicalVariable,
                          buddies: np.ndarray) -> None:  # pragma: no cover
     '''
     Plot each spike against surrounding data
 
-    :param array times: datetime array
+    :param Series times: datetime array
     :param int flagged_time: location of flagged value
     :param MetVar target: meteorological variable to plot
     :param array buddies: 2d array of all buddy's data
@@ -353,7 +354,7 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.ndar
             plot_neighbour_flags(target_station.times, flag, obs_var, all_buddy_data)
 
     # append flags to object
-    obs_var.flags = utils.insert_flags(obs_var.flags, flags)
+    obs_var.store_flags(utils.insert_flags(obs_var.flags, flags))
 
     logger.info(f"Neighbour Outlier {obs_var.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")

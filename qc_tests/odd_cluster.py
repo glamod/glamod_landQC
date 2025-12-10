@@ -28,12 +28,12 @@ MIN_SEPARATION = utils.ODD_CLUSTER_SEPARATION * 24
 
 
 #*********************************************
-def plot_cluster(times: pd.DataFrame, obs_var: utils.MeteorologicalVariable,
+def plot_cluster(times: pd.Series, obs_var: utils.MeteorologicalVariable,
                  oc_start: int, oc_end: int | None) -> None:  # pragma: no cover
     '''
     Plot each odd cluster highlighted against surrounding data
 
-    :param DataFrame times: datetime array
+    :param Series times: datetime array
     :param MetVar obs_var: Meteorological variable object
     :param int oc_start: start of cluster in data array index
     :param int oc_end: end of cluster in data array index
@@ -134,7 +134,7 @@ def flag_clusters(obs_var: utils.MeteorologicalVariable, station: utils.Station,
                         plot_cluster(station.times, obs_var, cluster_end+1, -1)
 
     # append flags to object
-    obs_var.flags = utils.insert_flags(obs_var.flags, flags)
+    obs_var.store_flags(utils.insert_flags(obs_var.flags, flags))
 
     logger.info(f"Odd Cluster {obs_var.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")

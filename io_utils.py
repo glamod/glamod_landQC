@@ -2,7 +2,7 @@
 '''
 io_utils - contains scripts for read/write of main files
 '''
-from pathlib import PurePath
+from pathlib import Path
 import os
 import errno
 import pandas as pd
@@ -19,12 +19,12 @@ logger = logging.getLogger(__name__)
 from utils import Station, populate_station, MDI, QC_TESTS
 
 #************************************************************************
-def count_skip_rows(infile: PurePath) -> list:
+def count_skip_rows(infile: Path) -> list:
     """
     Read through the file, counting matches for expected header,
     but in unexpected lines (!=0).  Return these line numbers as list (zero-indexed)
 
-    :param PurePath infile: file to process
+    :param Path infile: file to process
 
     :returns: list of line numbers
     """
@@ -42,13 +42,13 @@ def count_skip_rows(infile: PurePath) -> list:
 
 
 #************************************************************************
-def read_psv(infile: PurePath, separator: str) -> pd.DataFrame:
+def read_psv(infile: Path, separator: str) -> pd.DataFrame:
     '''
     http://pandas.pydata.org/pandas-docs/stable/user_guide/io.html#io-read-csv-table
 
     https://stackoverflow.com/questions/64302419/what-are-all-of-the-exceptions-that-pandas-read-csv-throw
 
-    :param PurePath infile: location and name of infile
+    :param Path infile: location and name of infile
     :param str separator: separating character (e.g. ",", "|")
 
     :returns: df - DataFrame
@@ -94,7 +94,7 @@ def read_psv(infile: PurePath, separator: str) -> pd.DataFrame:
 
 
 #************************************************************************
-def read_pqt(infile: PurePath) -> pd.DataFrame:
+def read_pqt(infile: Path) -> pd.DataFrame:
     '''
 
     :param PurePath infile: location and name of infile
@@ -134,11 +134,11 @@ def read_pqt(infile: PurePath) -> pd.DataFrame:
     return df  # read_pqt
 
 #************************************************************************
-def read(infile: PurePath) -> pd.DataFrame:
+def read(infile: Path) -> pd.DataFrame:
     """
     Wrapper for read functions to allow remainder to be file format agnostic.
 
-    :param PurePath infile: location and name of infile
+    :param Path infile: location and name of infile
     :returns: df - DataFrame
     """
 
@@ -220,12 +220,12 @@ def convert_wind_flags(station_df: pd.DataFrame,
 
 
 #************************************************************************
-def read_station(stationfile: PurePath, station: Station,
+def read_station(stationfile: Path, station: Station,
                  read_flags: bool = False) -> tuple[Station, pd.DataFrame]:
     """
     Read station info, and populate with data.
 
-    :param PurePath stationfile: full path to station file
+    :param Path stationfile: full path to station file
     :param station station: station object with locational metadata only
     :param bool read_flags: incorporate any pre-existing flags
 
@@ -251,22 +251,22 @@ def read_station(stationfile: PurePath, station: Station,
 
     # convert dataframe to station and MetVar objects for internal processing
     populate_station(station, station_df, setup.obs_var_list, read_flags=read_flags)
-    station.times = datetimes
+    station.set_times(datetimes)
 
     # store extra information to enable easy extraction later
-    station.years = station_df["Year"].fillna(MDI).to_numpy()
-    station.months = station_df["Month"].fillna(MDI).to_numpy()
-    station.days = station_df["Day"].fillna(MDI).to_numpy()
-    station.hours = station_df["Hour"].fillna(MDI).to_numpy()
+    station.set_datetime_values(station_df["Year"].fillna(MDI).to_numpy(),
+                                station_df["Month"].fillna(MDI).to_numpy(),
+                                station_df["Day"].fillna(MDI).to_numpy(),
+                                station_df["Hour"].fillna(MDI).to_numpy())
 
     return station, station_df # read_station
 
 #************************************************************************
-def write_psv(outfile: PurePath, df: pd.DataFrame, separator: str) -> None:
+def write_psv(outfile: Path, df: pd.DataFrame, separator: str) -> None:
     '''
     http://pandas.pydata.org/pandas-docs/stable/user_guide/io.html#io-read-csv-table
 
-    :param PurePath outfile: location and name of outfile
+    :param Path outfile: location and name of outfile
     :param DataFrame df: data frame to write
     :param str separator: separating character (e.g. ",", "|")
     '''
@@ -276,11 +276,11 @@ def write_psv(outfile: PurePath, df: pd.DataFrame, separator: str) -> None:
 
 
 #************************************************************************
-def write_pqt(outfile: PurePath, df: pd.DataFrame) -> None:
+def write_pqt(outfile: Path, df: pd.DataFrame) -> None:
     '''
     Write to parquet file
 
-    :param PurePath outfile: location and name of outfile
+    :param Path outfile: location and name of outfile
     :param DataFrame df: data frame to write
     '''
     df.to_parquet(outfile, index=False)
@@ -288,12 +288,12 @@ def write_pqt(outfile: PurePath, df: pd.DataFrame) -> None:
     return  # write_pqt
 
 #************************************************************************
-def integrity_check(infile: PurePath) -> bool:
+def integrity_check(infile: Path) -> bool:
     """Test integrity of a Gzip file
 
     Parameters
     ----------
-    infile : PurePath
+    infile : Path
         File path to test integrity of gzip file
 
     Returns
@@ -303,7 +303,7 @@ def integrity_check(infile: PurePath) -> bool:
     """
     # using shlex to ensure safe usage of subprocess
     try:
-        cmd = shlex.split(f"gzip -t {shlex.quote(infile)}")
+        cmd = shlex.split(f"gzip -t {shlex.quote(str(infile))}")
         proc = subprocess.run(cmd,
                               capture_output=True, text=True, check=True, shell=False)
         logging.info(f"{proc.stdout}")
@@ -319,11 +319,11 @@ def integrity_check(infile: PurePath) -> bool:
 
 
 #************************************************************************
-def write(outfile: PurePath, df: pd.DataFrame, formatters: dict=None) -> None:
+def write(outfile: Path, df: pd.DataFrame, formatters: None | dict=None) -> None:
     """
     Wrapper for write functions to allow remainder to be file format agnostic.
 
-    :param PurePath outfile: location and name of outfile
+    :param Path outfile: location and name of outfile
     :param DataFrame df: data frame to write
     :param formatters dict: dictionary of formatters (default None)
     """
@@ -352,11 +352,11 @@ def write(outfile: PurePath, df: pd.DataFrame, formatters: dict=None) -> None:
     return  # write
 
 #************************************************************************
-def flag_write(outfilename: PurePath, df: pd.DataFrame, diagnostics: bool = False) -> None:
+def flag_write(outfilename: Path, df: pd.DataFrame, diagnostics: bool = False) -> None:
     """
     Write out flag summary files to enable quicker plotting
 
-    :param PurePath outfile: location and name of outfile
+    :param Path outfile: location and name of outfile
     :param DataFrame df: data frame to write
     :param bool diagnostics: verbose output
     """
