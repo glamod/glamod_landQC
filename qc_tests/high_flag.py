@@ -72,10 +72,26 @@ def high_flag_rate(obs_var: utils.MeteorologicalVariable,
             return new_flags, any_flags_set
 
         flagged, = np.where(old_flags[obs_locs] != "")
+        flagged_fraction = flagged.shape[0] / obs_locs.shape[0]
 
-        if flagged.shape[0] / obs_locs.shape[0] > utils.HIGH_FLAGGING:
+        # precision issues can cause excess dewpoint temperature flags from humidity check
+        if obs_var.name == "dewpoint_temperature":
+            # find the locations where *ONLY* humidity *AND* precision set [either order]
+            hum_and_prec_locs, = np.where((old_flags[obs_locs] == "nh") |
+                                          (old_flags[obs_locs] == "hn"))
+
+            # if both have been set, adjust the flagged_fraction
+            if hum_and_prec_locs.shape[0] > 0:
+                if diagnostics:
+                    print(f" {obs_var.name} ignoring {hum_and_prec_locs.shape[0]} combined humidity and precision flags")
+                # remove these from the flagged locs to be assessed
+                flagged_fraction = (flagged.shape[0] - hum_and_prec_locs.shape[0]) / obs_locs.shape[0]
+
+        # now test if the flagged_fraction exceeds threshold
+        if flagged_fraction > utils.HIGH_FLAGGING:
             if diagnostics:
-                print(f" {obs_var.name} flagging rate of {100*(flagged.shape[0] / obs_locs.shape[0]):5.1f}%")
+                print(f" {obs_var.name} flagging rate of {100*(flagged_fraction):5.1f}%")
+
             # Set flags only obs currently unflagged.
             unflagged, = np.where(old_flags[obs_locs] == "")
             new_flags[obs_locs[unflagged]] = "H"

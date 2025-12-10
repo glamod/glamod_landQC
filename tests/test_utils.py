@@ -67,3 +67,28 @@ def test_get_measurement_code_mask(ds: pd.Series,
     np.testing.assert_array_equal(mask, expected)
 
 
+def test_insert_flags() -> None:
+    """Test that flag insertion works"""
+
+    flags1 = np.array(["l" for i in range(10)])
+    flags2 = np.array(["a" for i in range(10)])
+    expected = np.array(["la" for i in range(10)])
+
+    result = utils.insert_flags(flags1, flags2)
+
+    np.testing.assert_array_equal(result, expected)
+
+
+def test_insert_flags_empty() -> None:
+    """Test that flag insertion works"""
+
+    flags1 = np.array(["l" for i in range(10)])
+    flags2 = np.array(["a" for i in range(10)])
+    flags1[0] = ""
+    flags2[1] = ""
+    expected = np.array(["la" for i in range(10)])
+    expected[:2] = ["a", "l"]
+
+    result = utils.insert_flags(flags1, flags2)
+
+    np.testing.assert_array_equal(result, expected)
