@@ -5,4 +5,7 @@ exclude_also =
     if 0:
     if __name__ == .__main__.:
     # RJHD - exclude at least calls to plotting routines
+    def plot_.*:
     plot_.*
+    if diagnostics:
+    if plots:
