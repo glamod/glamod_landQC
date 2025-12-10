@@ -328,8 +328,10 @@ def pressure_station_theory(stnlp: utils.MeteorologicalVariable,
 
     Tests with distribution fitting for UK station (UKM00003844 Exeter) showed that
         a spread of >65hPa was necessary to include all valid measurements
-    However, for pervasive issues like Sonnblick () the distribution fitting failed,
-        so intend this test to identify and flag the worst cases
+    However, for pervasive issues like Sonnblick (AUM00011343) where a merge between
+        two stations at vastly different elevations (300m & 3000m) the distribution
+        fitting failed as there were similar numbers of observations from both
+        contributing stations.  Hence intend this test to identify and flag the worst cases
 
     :param MetVar stnlp: station level pressure object
     :param MetVar temperature: temperature object
