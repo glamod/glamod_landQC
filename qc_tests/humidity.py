@@ -107,33 +107,36 @@ def plot_humidities(T: utils.MeteorologicalVariable,
 def plot_humidity_streak(times: np.ndarray,
                          T: utils.MeteorologicalVariable,
                          D: utils.MeteorologicalVariable,
-                         streak_start: int, streak_end: int) -> None:  # pragma: no cover
+                         streak_locs: np.ndarray) -> None:
     '''
     Plot each streak against surrounding data
 
     :param array times: datetime array
     :param MetVar T: Meteorological variable object - temperatures
     :param MetVar D: Meteorological variable object - dewpoints
-    :param int streak_start: the location of the streak
-    :param int streak_end: the end of the DPD streak
+    :param array streak_locs: locations of points in the DPD streak
 
     :returns:
     '''
     import matplotlib.pyplot as plt
 
-    pad_start = streak_start - 48
+    pad_start = streak_locs[0]- 48
     if pad_start < 0:
         pad_start = 0
-    pad_end = streak_end + 48
+    pad_end = streak_locs[-1] + 48
     if pad_end > len(T.data.compressed()):
         pad_end = len(T.data.compressed())
 
     # simple plot
     plt.clf()
-    plt.plot(times[pad_start: pad_end], T.data.compressed()[pad_start: pad_end], 'k-', marker=".", label=T.name.capitalize())
-    plt.plot(times[pad_start: pad_end], D.data.compressed()[pad_start: pad_end], 'b-', marker=".", label=D.name.capitalize())
-    plt.plot(times[streak_start: streak_end], T.data.compressed()[streak_start: streak_end], 'k-', marker=".", label=T.name.capitalize())
-    plt.plot(times[streak_start: streak_end], D.data.compressed()[streak_start: streak_end], 'b-', marker=".", label=D.name.capitalize())
+    plt.plot(times[pad_start: pad_end], T.data[pad_start: pad_end],
+             'k-', marker=".", label=T.name.capitalize())
+    plt.plot(times[pad_start: pad_end], D.data[pad_start: pad_end],
+             'b-', marker=".", label=D.name.capitalize())
+    plt.plot(times[streak_locs], T.data[streak_locs],
+             'k-', marker="o", label=T.name.capitalize())
+    plt.plot(times[streak_locs], D.data[streak_locs],
+             'b-', marker="o", label=D.name.capitalize())
 
     plt.ylabel(T.units)
     plt.show()
@@ -165,8 +168,8 @@ def super_saturation_check(station: utils.Station,
     for year in np.unique(station.years):
         for month in range(1, 13):
             month_locs, = np.nonzero(np.logical_and(station.years == year,
-                                                  station.months == month,
-                                                  dewpoints.data.mask == True))
+                                                    station.months == month,
+                                                    dewpoints.data.mask == True))
             if month_locs.shape[0] != 0:
                 flagged, = np.nonzero(flags[month_locs] == "h")
                 if (flagged.shape[0]/month_locs.shape[0]) > HIGH_FLAGGING_THRESHOLD:
@@ -233,9 +236,8 @@ def dew_point_depression_streak(times: np.ndarray,
             start = int(np.sum(grouped_diffs[:streaks[streak], 1]))
             end = start + int(grouped_diffs[streaks[streak], 1]) + 1
             flags[locs[start : end]] = "h"
-
             if plots:
-                plot_humidity_streak(times, temperatures, dewpoints, start, end)
+                plot_humidity_streak(times, temperatures, dewpoints, locs[start: end])
 
         # only flag the dewpoints
         dewpoints.flags = utils.insert_flags(dewpoints.flags, flags)

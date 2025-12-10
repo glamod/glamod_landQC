@@ -149,6 +149,8 @@ with open(Path(__file__).parent / "configs" / "wind_measurement_codes.json", 'r'
     WIND_MEASUREMENT_CODES = json.load(infile)
 
 
+FIX_WINDDIR = config.getboolean("MISC", "fix_wind_direction")
+
 
 #************************************************************************
 if __name__ == "__main__":

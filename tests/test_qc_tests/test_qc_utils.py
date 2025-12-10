@@ -2,6 +2,7 @@
 Contains tests for qc_utils.py
 """
 import numpy as np
+import pandas as pd
 import pytest
 from unittest.mock import patch, Mock
 
@@ -200,3 +201,50 @@ def test_gcv_calculate_binmax_large() -> None:
     binmax = qc_utils.gcv_calculate_binmax(indata, binmin, binwidth)
 
     assert binmax == 2000
+
+
+def test_update_dataframe() -> None:
+    """Test that DataFrame values are updated correctly"""
+
+    data = {"Year" : [2020, 2020, 2020, 2020, 2020],
+            "Month" : [1, 1, 1, 1, 1],
+            "Day" : [10, 11, 12, 13, 14],
+            "wind_direction" : [10, 20, 30, 40, 50]}
+    df = pd.DataFrame(data)
+
+    indata = np.array([100, 200, 300, 400, 500])
+
+    locations = np.array([False, False, True, False, False])
+
+    column = "wind_direction"
+
+    qc_utils.update_dataframe(df, indata, locations, column)
+
+    expected = np.array([10, 20, 300, 40, 50])
+    np.testing.assert_array_equal(df["wind_direction"].to_numpy(),
+                                  expected)
+
+
+def test_create_bins() -> None:
+    """Simple test of bin creation"""
+
+    indata = np.array([1, 10])
+
+    result = qc_utils.create_bins(indata, 0.5, "dummy")
+
+    expected = np.arange(1-2.5, 10+2.5, 0.5)
+
+    np.testing.assert_array_equal(result, expected)
+
+
+def test_create_bins_long() -> None:
+    """Simple test of bin creation when max and min would result in too many"""
+
+    indata = np.array([-7000, 7000])
+
+    result = qc_utils.create_bins(indata, 0.5, "temperature")
+
+    # -89.2 to 56.7
+    expected = np.arange(-190-2.5, 157+2.5, 0.5)
+
+    np.testing.assert_array_equal(result, expected)
