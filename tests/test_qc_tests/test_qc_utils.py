@@ -204,6 +204,7 @@ def test_gcv_calculate_binmax_large() -> None:
 
 
 def test_update_dataframe() -> None:
+    """Test that DataFrame values are updated correctly"""
 
     data = {"Year" : [2020, 2020, 2020, 2020, 2020],
             "Month" : [1, 1, 1, 1, 1],
@@ -222,7 +223,7 @@ def test_update_dataframe() -> None:
     expected = np.array([10, 20, 300, 40, 50])
     np.testing.assert_array_equal(df["wind_direction"].to_numpy(),
                                   expected)
-   
+
 
 def test_create_bins() -> None:
     """Simple test of bin creation"""

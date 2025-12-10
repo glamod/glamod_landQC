@@ -275,9 +275,10 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
             fixed_locs = qc_tests.winds.wcc(station, config_dict, fix=setup.FIX_WINDDIR, full=full,
                                             plots=plots, diagnostics=diagnostics)
 
-            # fix only applies to obs_var within station, not to dataframe, hence needing to copy
+            # Fix within winds routines only applies to obs_var within station,
+            #   not to dataframe, hence needing to copy over for wind directions
             if setup.FIX_WINDDIR and len(fixed_locs) > 0:
-                # take copy so can revert missing and other details
+                # take copy so could revert missing and other details if necessary in the future
                 wind_dir = np.copy(getattr(station, "wind_direction").data)
                 qc_tests.qc_utils.update_dataframe(station_df, wind_dir, fixed_locs, "wind_direction")
 

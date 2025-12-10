@@ -729,7 +729,8 @@ def update_dataframe(df: pd.DataFrame,
                      indata: np.ndarray,
                      locations: np.ndarray,
                      column_name: str  ) -> None:
-    """Update dataframe from station values corrected durign QC
+    """Update dataframe from station values corrected during QC
+    At the moment, wind direction during calm spells only
 
     Parameters
     ----------
