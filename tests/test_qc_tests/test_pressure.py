@@ -186,9 +186,8 @@ def test_calc_slp_0m():
     temperature = np.ma.arange(0, 22, 2)
     temperature.mask = np.zeros(10)
 
-    sealp = pressure.calc_slp(stnlp, elevation, temperature)
+    sealp = stnlp * pressure.calc_slp_factor(elevation, temperature)
 
-    print(sealp)
     np.testing.assert_array_equal(stnlp, sealp)
 
 
@@ -202,7 +201,7 @@ def test_calc_slp_1566m():
     temperature = np.ma.array([10])
     temperature.mask = np.zeros(1)
 
-    sealp = pressure.calc_slp(stnlp, elevation, temperature)
+    sealp = stnlp * pressure.calc_slp_factor(elevation, temperature)
 
     expected_sealp = np.ma.array([951.176798])
     # checked result by hand 7-Aug-2023
@@ -235,7 +234,7 @@ def test_adjust_existing_flag_locs():
                                   np.array(["p" for _ in test_data]))
 
 
-def test_pressure_theory_nodata():
+def test_pressure_consistency_theory_nodata():
 
     # Set up data, variables & station
     test_data = np.arange(6)
@@ -259,7 +258,7 @@ def test_pressure_theory_nodata():
     times = np.array([start_dt + dt.timedelta(hours=i)\
                       for i in range(len(sealp.data))])
 
-    pressure.pressure_theory(sealp, stnlp, temperature, times, 0)
+    pressure.pressure_consistency_theory(sealp, stnlp, temperature, times, 0)
 
     expected_flags = np.array(["" for i in test_data])
 
@@ -267,7 +266,7 @@ def test_pressure_theory_nodata():
     np.testing.assert_array_equal(sealp.flags, expected_flags)
 
 
-def test_pressure_theory_0m():
+def test_pressure_consistency_theory_0m():
 
     # Set up data, variables & station
     test_data = np.arange(6)
@@ -290,7 +289,7 @@ def test_pressure_theory_0m():
     times = np.array([start_dt + dt.timedelta(hours=i)\
                       for i in range(len(sealp.data))])
 
-    pressure.pressure_theory(sealp, stnlp, temperature, times, 0)
+    pressure.pressure_consistency_theory(sealp, stnlp, temperature, times, 0)
 
     expected_flags = np.array(["" for i in test_data])
     expected_flags[4] = "p"
@@ -299,10 +298,36 @@ def test_pressure_theory_0m():
     np.testing.assert_array_equal(sealp.flags, expected_flags)
 
 
+def test_pressure_station_theory_3000m():
+
+    # Set up data, variables & station
+    # use Sonnblick error (2025-11-27, #248) as example
+    test_data = np.array([700, 700, 900, 900, 500, 500])
+
+    stnlp = common.example_test_variable("station_level_pressure",
+                                         test_data)
+    stnlp.flags = np.array(["" for i in test_data])
+
+    temperature = common.example_test_variable("temperature",
+                                               np.full(6, 15), mdi=-99)
+    temperature.flags = np.array(["" for i in test_data])
+
+    start_dt = dt.datetime(2000, 1, 1, 0, 0)
+    times = np.array([start_dt + dt.timedelta(hours=i)\
+                      for i in range(len(stnlp.data))])
+
+    pressure.pressure_station_theory(stnlp, temperature, times, 3000)
+
+    expected_flags = np.array(["" for i in test_data])
+    expected_flags[2:] = "p"
+
+    np.testing.assert_array_equal(stnlp.flags, expected_flags)
+
+
 @patch("pressure.pressure_logic")
 @patch("pressure.identify_values")
 @patch("pressure.pressure_offset")
-@patch("pressure.pressure_theory")
+@patch("pressure.pressure_consistency_theory")
 def test_pcc(pressure_theory_mock: Mock,
              pressure_offset_mock: Mock,
              identify_values_mock: Mock,
@@ -340,7 +365,7 @@ def test_pcc(pressure_theory_mock: Mock,
 @patch("pressure.pressure_logic")
 @patch("pressure.identify_values")
 @patch("pressure.pressure_offset")
-@patch("pressure.pressure_theory")
+@patch("pressure.pressure_consistency_theory")
 def test_pcc_bad_elevation(pressure_theory_mock: Mock,
                            pressure_offset_mock: Mock,
                            identify_values_mock: Mock,

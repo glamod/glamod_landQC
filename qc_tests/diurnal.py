@@ -355,7 +355,8 @@ def find_best_fit(best_fit_diurnal: np.ndarray,
 #************************************************************************
 def find_offset(obs_var: utils.MeteorologicalVariable,
                 station: utils.Station, config_dict: dict,
-                plots: bool = False, diagnostics: bool = False) -> tuple[np.ndarray, np.ndarray]:
+                plots: bool = False,
+                diagnostics: bool = False) -> None:
     """
     Find the best offset for a sine curve to represent the cycle & write to config file
 
@@ -430,7 +431,7 @@ def find_offset(obs_var: utils.MeteorologicalVariable,
     CD_peak = {"peak" : int(diurnal_peak)}
     config_dict[f"DIURNAL-{obs_var.name}"] = CD_peak
 
-    return  # find_offset
+    # find_offset
 
 
 def get_potentially_spurious_days(best_fit_diurnal: np.ndarray,
@@ -570,7 +571,6 @@ def diurnal_cycle_check(obs_var: utils.MeteorologicalVariable, station: utils.St
     try:
         diurnal_offset = int(config_dict[f"DIURNAL-{obs_var.name}"]["peak"])
     except KeyError:
-        print("Information missing in config dictionary")
         find_offset(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
         diurnal_offset = int(config_dict[f"DIURNAL-{obs_var.name}"]["peak"])
 
@@ -606,7 +606,7 @@ def diurnal_cycle_check(obs_var: utils.MeteorologicalVariable, station: utils.St
             flags[locs[data_locs]] = "U"
 
         # append flags to object (temperature)
-        obs_var.flags = utils.insert_flags(obs_var.flags, flags)
+        obs_var.store_flags(utils.insert_flags(obs_var.flags, flags))
 
         logger.info(f"Diurnal Check {obs_var.name}")
         logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
@@ -614,7 +614,7 @@ def diurnal_cycle_check(obs_var: utils.MeteorologicalVariable, station: utils.St
     else:
         logger.info("Diurnal fit not found")
 
-    return # diurnal_cycle_check
+    # diurnal_cycle_check
 
 
 #************************************************************************
@@ -635,5 +635,5 @@ def dcc(station: utils.Station, config_dict: dict, full: bool = False, plots: bo
         find_offset(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
     diurnal_cycle_check(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
 
-    return # dgc
+    # dgc
 

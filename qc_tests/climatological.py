@@ -36,7 +36,7 @@ def get_weights(monthly_anoms: np.ndarray, monthly_subset: np.ndarray,
     filterweights = np.array([1., 2., 3., 2., 1.])
 
     if np.sum(filterweights[filter_subset] * np.ceil(monthly_anoms[monthly_subset] - np.floor(monthly_anoms[monthly_subset]))) == 0:
-        weights = 0
+        weights = 0.
     else:
         weights = np.sum(filterweights[filter_subset] * monthly_anoms[monthly_subset]) / \
             np.sum(filterweights[filter_subset] * np.ceil(monthly_anoms[monthly_subset] - np.floor(monthly_anoms[monthly_subset])))
@@ -86,8 +86,10 @@ def low_pass_filter(normed_anomalies: np.ndarray, station: utils.Station,
     return normed_anomalies # low_pass_filter
 
 #************************************************************************
-def prepare_data(obs_var: utils.MeteorologicalVariable, station: utils.Station,
-                 month: int, diagnostics: bool = False, winsorize: bool = True) -> np.ma.array:
+def prepare_data(obs_var: utils.MeteorologicalVariable,
+                 station: utils.Station,
+                 month: int, diagnostics: bool = False,
+                 winsorize: bool = True) -> np.ma.MaskedArray:
     """
     Prepare the data for the climatological check.  Makes anomalies and applies low-pass filter
 
@@ -97,6 +99,8 @@ def prepare_data(obs_var: utils.MeteorologicalVariable, station: utils.Station,
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     :param bool winsorize: apply winsorization at 5%/95%
+
+    :returns: MaskedArray
     """
 
     anomalies = np.ma.zeros(obs_var.data.shape[0])
@@ -243,7 +247,7 @@ def find_month_thresholds(obs_var: utils.MeteorologicalVariable, station: utils.
 
             config_dict[f"CLIMATOLOGICAL-{obs_var.name}"][f"{month}-lthresh"] = lower_threshold
 
-    return # find_month_thresholds
+    # find_month_thresholds
 
 #************************************************************************
 def monthly_clim(obs_var: utils.MeteorologicalVariable, station: utils.Station, config_dict: dict,
@@ -277,7 +281,6 @@ def monthly_clim(obs_var: utils.MeteorologicalVariable, station: utils.Station, 
                 upper_threshold = float(config_dict[f"CLIMATOLOGICAL-{obs_var.name}"][f"{month}-uthresh"])
                 lower_threshold = float(config_dict[f"CLIMATOLOGICAL-{obs_var.name}"][f"{month}-lthresh"])
             except KeyError:
-                print("Information missing in config file")
                 find_month_thresholds(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
                 upper_threshold = float(config_dict[f"CLIMATOLOGICAL-{obs_var.name}"][f"{month}-uthresh"])
                 lower_threshold = float(config_dict[f"CLIMATOLOGICAL-{obs_var.name}"][f"{month}-lthresh"])
@@ -325,12 +328,12 @@ def monthly_clim(obs_var: utils.MeteorologicalVariable, station: utils.Station, 
                 plt.show()
 
     # append flags to object
-    obs_var.flags = utils.insert_flags(obs_var.flags, flags)
+    obs_var.store_flags(utils.insert_flags(obs_var.flags, flags))
 
     logger.info(f"Climatological {obs_var.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
-    return # monthly_clim
+    # monthly_clim
 
 
 #************************************************************************
@@ -360,5 +363,5 @@ def coc(station: utils.Station, var_list: list, config_dict: dict, full: bool = 
             find_month_thresholds(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
         monthly_clim(obs_var, station, config_dict, plots=cplots, diagnostics=diagnostics)
 
-    return # coc
+    # coc
 

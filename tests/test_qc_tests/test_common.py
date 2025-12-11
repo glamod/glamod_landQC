@@ -29,7 +29,7 @@ def test_example_test_station() -> None:
 
 def test_generate_streaky_data() -> None:
 
-    testdata = np.arange(10)
+    testdata = np.ma.arange(10)
     testdict = {5: 3}
     expected = np.arange(10)
     expected[5:8] = expected[5]

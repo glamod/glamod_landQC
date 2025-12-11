@@ -16,8 +16,10 @@ import utils
 #************************************************************************
 
 #************************************************************************
-def logical_checks(speed: utils.MeteorologicalVariable, direction: utils.MeteorologicalVariable,
-                   fix: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
+def logical_checks(speed: utils.MeteorologicalVariable,
+                   direction: utils.MeteorologicalVariable,
+                   fix: bool = False, plots: bool = False,
+                   diagnostics: bool = False) -> np.ndarray:
     """
     Select occurrences of wind speed and direction which are
     logically inconsistent with measuring practices.
@@ -30,19 +32,25 @@ def logical_checks(speed: utils.MeteorologicalVariable, direction: utils.Meteoro
     :param bool plots: do plots?
     :param bool diagnostics: do diagnostics?
 
+    :returns: Array of locations where direction data have been corrected
     """
     sflags = np.array(["" for i in range(speed.data.shape[0])])
     dflags = np.array(["" for i in range(speed.data.shape[0])])
 
     # recover direction information where the speed is Zero
-    fix_zero_direction = np.ma.where(np.logical_and(speed.data == 0, direction.data.mask == True))
+    fix_zero_direction, = np.ma.where(np.logical_and(speed.data == 0,
+                                                     direction.data.mask == True))
     if fix:
         direction.data[fix_zero_direction] = 0
         direction.data.mask[fix_zero_direction] = False
+        if diagnostics:
+            print("  Zero direction : {}".format(len(fix_zero_direction)))
     else:
         dflags[fix_zero_direction] = "1"
-    if diagnostics:
-        print("  Zero direction : {}".format(len(fix_zero_direction[0])))
+        if diagnostics:
+            print("  Zero direction : {}".format(len(fix_zero_direction)))
+        # and set to empty as can be used in parent to copy values to dataframe
+        fix_zero_direction = np.array([])
 
     # negative speeds (can't fix)
     negative_speed = np.ma.where(speed.data < 0)
@@ -60,7 +68,8 @@ def logical_checks(speed: utils.MeteorologicalVariable, direction: utils.Meteoro
     logger.info(f"  Wrapped direction : {len(wrapped_direction[0])}")
 
     # no direction possible if speed == 0
-    bad_direction = np.ma.where(np.logical_and(speed.data == 0, direction.data != 0))
+    bad_direction = np.ma.where(np.logical_and(speed.data == 0,
+                                               direction.data != 0))
     dflags[bad_direction] = "w"
     logger.info(f"  Bad direction : {len(bad_direction[0])}")
 
@@ -70,8 +79,8 @@ def logical_checks(speed: utils.MeteorologicalVariable, direction: utils.Meteoro
     logger.info(f"  Bad speed : {len(bad_speed[0])}")
 
     # copy flags into attribute
-    speed.flags = utils.insert_flags(speed.flags, sflags)
-    direction.flags = utils.insert_flags(direction.flags, dflags)
+    speed.store_flags(utils.insert_flags(speed.flags, sflags))
+    direction.store_flags(utils.insert_flags(direction.flags, dflags))
 
     if diagnostics:
 
@@ -86,11 +95,12 @@ def logical_checks(speed: utils.MeteorologicalVariable, direction: utils.Meteoro
     logger.info(f"   Cumulative number of {direction.name} convention flags set: {len(np.where(dflags == '1')[0])}")
 
 
-    return # logical_checks
+    return fix_zero_direction # logical_checks
 
 #************************************************************************
-def wcc(station: utils.Station, config_dict: dict, fix: bool = False,
-        full: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
+def wcc(station: utils.Station, config_dict: dict,
+        fix: bool = False, full: bool = False,
+        plots: bool = False, diagnostics: bool = False) -> np.ndarray:
     """
     Extract the variables and pass to the Wind Cross Checks
 
@@ -100,11 +110,14 @@ def wcc(station: utils.Station, config_dict: dict, fix: bool = False,
     :param bool full: run a full update (unused here)
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
+
+    :returns: Array of locations where direction data have been corrected
     """
 
     speed = getattr(station, "wind_speed")
     direction = getattr(station, "wind_direction")
 
-    logical_checks(speed, direction, fix=fix, plots=plots, diagnostics=diagnostics)
+    corrected_locs = logical_checks(speed, direction, fix=fix,
+                                    plots=plots, diagnostics=diagnostics)
 
-    return # pcc
+    return corrected_locs # pcc

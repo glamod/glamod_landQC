@@ -3,14 +3,17 @@
 qc_utils.py contains utility scripts to help with QC checks
 '''
 import numpy as np
+import pandas as pd
 import scipy.special
 import itertools
 import logging
 
 from scipy.optimize import least_squares
 
+import qc_tests.world_records as records
 import utils
 
+MAX_N_BINS = 20000
 
 #*********************************************
 def calculate_IQR(data: np.ndarray, percentile: float = 0.25) -> float:
@@ -72,7 +75,6 @@ def gcv_calculate_binmax(indata: np.ndarray, binmin: float, binwidth: float) -> 
     """
     logger = logging.getLogger(__name__)
 
-    MAX_N_BINS = 20000
     # so that have sufficient x-bins to fit to
     if binwidth < 0.1:
         binmax = np.max([2 * max(np.ceil(np.abs(indata))), 1])
@@ -257,7 +259,10 @@ def get_critical_values(indata: np.ndarray, binmin: float = 0, binwidth: float =
 
 
 #*********************************************
-def plot_log_distribution(edges: np.ndarray, hist: np.ndarray, fit: np.ndarray, threshold: float, line_label: str, xlabel: str, title: str) -> None:
+def plot_log_distribution(edges: np.ndarray, hist: np.ndarray,
+                          fit: np.ndarray, threshold: float,
+                          line_label: str, xlabel: str,
+                          title: str) -> None:  # pragma: no cover
     """
     Plot distribution on a log scale and show the fit
 
@@ -300,7 +305,7 @@ def plot_log_distribution(edges: np.ndarray, hist: np.ndarray, fit: np.ndarray, 
         ax.xaxis.set_major_locator(mticker.MultipleLocator(0.1))
     plt.show()
 
-    return # plot_log_distribution
+    # plot_log_distribution
 
 
 #*********************************************
@@ -360,32 +365,50 @@ def winsorize(data: np.ndarray, percent: float) -> np.ndarray:
 #************************************************************************
 def create_bins(data: np.ndarray, width: float,
                 obs_var_name: str, anomalies: bool = False) -> np.ndarray:
+    """Create a number of bins from the data given the width
 
+    Parameters
+    ----------
+    data : np.ndarray
+        Data from which to determine reasonable bins
+    width : float
+        Width of bins
+    obs_var_name : str
+        Name of variable [to be able to check pressure types]
+    anomalies : bool, optional
+        Select if values are anomalies, by default False
+
+    Returns
+    -------
+    np.ndarray
+        Array of bin edges.
+    """
+
+    logger = logging.getLogger(__name__)
+    # get the lowest and highest possible values (int) from data
     bmin = np.floor(np.ma.min(data))
     bmax = np.ceil(np.ma.max(data))
 
-    try:
-        bins = np.arange(bmin - (5*width), bmax + (5*width), width)
-        return bins # create_bins
-    except (MemoryError, ValueError):
-        # wierd values (too small/negative or too high means lots of bins)
-        # for INM00020460 Jan 2021
-        import qc_tests.world_records as records
+    # default behaviour, use the width and pad a bit to give some clear space
+    bins = np.arange(bmin - (5*width), bmax + (5*width), width)
 
+    if len(bins) > MAX_N_BINS:
+        logger.warning(f" Too many bins requested: {bmin} to {bmax} in steps of {width}")
+        # Too many to be reasonably handled.
+        # Likely because of erroneous values causing too high max/low min
         # to ensure no overwriting of the obs variable name attribute
+
+        var_name = f"{obs_var_name}"
         if obs_var_name == "station_level_pressure":
             var_name = "sea_level_pressure"
-            # hence use 500hPa as +/- search
-        else:
-            var_name = obs_var_name
 
-        if var_name in ["station_level_pressure", "sea_level_pressure"]:
-            pad = 500
-        else:
-            pad = 100
+        pad = 100
+        if "pressure" in obs_var_name:
+            pad = 500  # hpa
 
-        bmin = records.mins[var_name]["row"] - pad
-        bmax = records.maxes[var_name]["row"] + pad
+        # Using Rest Of World (ROW) to get total range
+        bmin = np.floor(records.mins[var_name]["row"]) - pad
+        bmax = np.ceil(records.maxes[var_name]["row"]) + pad
 
         if anomalies:
             # for INI0000VOMM June 2021
@@ -393,9 +416,10 @@ def create_bins(data: np.ndarray, width: float,
             bmin = bmin - np.mean([bmin, bmax])
             bmax = bmax - np.mean([bmin, bmax])
 
+        logger.warning(f" Setting binmax range to {bmin} to {bmax}")
         bins = np.arange(bmin - (5*width), bmax + (5*width), width)
 
-        return bins # create_bins
+    return bins # create_bins
 
 #*********************************************
 def gaussian(X: np.ndarray, p: np.ndarray) -> np.ndarray:
@@ -703,3 +727,25 @@ def prepare_data_repeating_streak(data: np.ndarray, diff:int = 0,
     repeated_streak_lengths = grouped_diffs[streaks, 1] + 1
 
     return repeated_streak_lengths, grouped_diffs, streaks # prepare_data_repeating_streak
+
+
+def update_dataframe(df: pd.DataFrame,
+                     indata: np.ndarray,
+                     locations: np.ndarray,
+                     column_name: str  ) -> None:
+    """Update dataframe from station values corrected during QC
+    At the moment, wind direction during calm spells only
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame holding complete station data
+    indata : np.ndarray
+        Updated station data for single variable
+    locations : np.ndarray
+        Locations where data need updating
+    column_name : str
+        Column in DataFrame to update
+    """
+
+    df.loc[locations, column_name] = indata[locations]

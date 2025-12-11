@@ -19,8 +19,8 @@ EXAMPLE_FILES_PATH = Path(__file__).parent.parent / "example_data"
 # not testing plotting
 
 
-def _make_target_and_buddy(start_dt: dt.datetime | None = None) -> tuple[utils.MeteorologicalVariable,
-                                      utils.MeteorologicalVariable]:
+def _make_target_and_buddy(start_dt: dt.datetime | None = None) -> tuple[utils.Station,
+                                                                         utils.Station]:
 
     # set up variables and stations
     temperatures = common.example_test_variable("temperature", np.arange(10))
@@ -344,7 +344,7 @@ def test_neighbour_outlier(read_buddy_data_mock: Mock) -> None:
     expected_flags = np.array(["" for i in range(temperatures.data.shape[0])])
 
     # Make the buddy data, initially the same as target, and then deviate
-    all_buddy_data = np.tile(np.ma.arange(140.), (5, 1))
+    all_buddy_data = np.ma.MaskedArray(np.tile(np.arange(140.), (5, 1)))
     all_buddy_data.mask = np.zeros(all_buddy_data.shape)
     all_buddy_data.mask[0, :] = True # target
     all_buddy_data[1:4, :] += 1. # simple offset
@@ -381,7 +381,7 @@ def test_neighbour_outlier_clean(read_buddy_data_mock: Mock) -> None:
     expected_flags = np.array(["" for i in range(temperatures.data.shape[0])])
 
     # Make the buddy data, initially the same as target, and then deviate
-    all_buddy_data = np.tile(np.ma.arange(140.), (5, 1))
+    all_buddy_data = np.ma.MaskedArray(np.tile(np.arange(140.), (5, 1)))
     all_buddy_data.mask = np.zeros(all_buddy_data.shape)
     all_buddy_data.mask[0, :] = True # target
     all_buddy_data[1:2, :] += 1. # simple offset

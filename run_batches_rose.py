@@ -72,7 +72,8 @@ def run_intra_station_checks(restart_id: str, end_id: str, full: bool) -> None:
 
     intra.run_checks(restart_id=restart_id, end_id=end_id, diagnostics=False, plots=False, full=full)
 
-    return # run_intra_station_checks
+    # run_intra_station_checks
+
 
 #************************************************************************
 def run_inter_station_checks(restart_id: str, end_id: str, full: bool) -> None:
@@ -82,7 +83,8 @@ def run_inter_station_checks(restart_id: str, end_id: str, full: bool) -> None:
 
 #    inter.run_checks(restart_id=restart_id, end_id=end_id, diagnostics=False, plots=False, full=full)
 
-    return # run_inter_station_checks
+    # run_inter_station_checks
+
 
 #************************************************************************
 if __name__ == "__main__":
