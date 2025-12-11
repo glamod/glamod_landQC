@@ -34,7 +34,7 @@ def example_test_variable(name: str,
                           vardata: np.ndarray,
                           mdi: float = -1.e30,
                           units: str = "degrees C",
-                          dtype: tuple = (float)) -> utils.MeteorologicalVariable:
+                          dtype: str = "float") -> utils.MeteorologicalVariable:
 
     variable = utils.MeteorologicalVariable(name, mdi, units, dtype)
 
@@ -52,7 +52,7 @@ def example_test_variable(name: str,
 
 
 def example_test_station(variable: utils.MeteorologicalVariable,
-                         times: np.ndarray | None = None,
+                         times: pd.Series | None = None,
                          latitude: int = 45,
                          longitude: int = 100,
                          elevation: int = 10) -> utils.Station:
@@ -69,16 +69,17 @@ def example_test_station(variable: utils.MeteorologicalVariable,
         times = pd.to_datetime(pd.DataFrame([start_dt + dt.timedelta(hours=i)\
                                for i in range(len(variable.data))])[0])
 
-    station.times = times
-    station.years = np.array(times.dt.year)
-    station.months = np.array(times.dt.month)
-    station.days = np.array(times.dt.day)
-    station.hours = np.array(times.dt.hour)
+    station.set_times(times)
+    station.set_datetime_values(np.array(times.dt.year),
+                                np.array(times.dt.month),
+                                np.array(times.dt.day),
+                                np.array(times.dt.hour))
 
     return station
 
 
-def generate_streaky_data(data: np.ndarray, starts_lengths: dict) -> np.ma.MaskedArray:
+def generate_streaky_data(data: np.ma.MaskedArray,
+                          starts_lengths: dict) -> np.ma.MaskedArray:
     """
     Using a dictionary of {start:length} pairs, make streaky data
     """

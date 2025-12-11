@@ -6,6 +6,7 @@ Check for timestamps where difference to sufficient fraction of neighbours is
 sufficiently high.
 '''
 #************************************************************************
+import pandas as pd
 import numpy as np
 import logging
 logger = logging.getLogger(__name__)
@@ -24,12 +25,13 @@ STORM_FRACTION = 2./3. # fraction of negative differences to target (likely at c
 DISTANT_NEIGHBOURS = 100 # km
 
 #************************************************************************
-def plot_neighbour_flags(times: np.ndarray, flagged_time: int,
-                         target: utils.MeteorologicalVariable, buddies: np.ndarray) -> None:
+def plot_neighbour_flags(times: pd.Series, flagged_time: int,
+                         target: utils.MeteorologicalVariable,
+                         buddies: np.ndarray) -> None:  # pragma: no cover
     '''
     Plot each spike against surrounding data
 
-    :param array times: datetime array
+    :param Series times: datetime array
     :param int flagged_time: location of flagged value
     :param MetVar target: meteorological variable to plot
     :param array buddies: 2d array of all buddy's data
@@ -55,7 +57,8 @@ def plot_neighbour_flags(times: np.ndarray, flagged_time: int,
     plt.ylabel(target.name.capitalize())
     plt.show()
 
-    return # plot_neighbour_flags
+    # plot_neighbour_flags
+
 
 #************************************************************************
 def read_in_buddies(target_station: utils.Station, initial_neighbours: np.ndarray,
@@ -119,7 +122,7 @@ def read_in_buddies(target_station: utils.Station, initial_neighbours: np.ndarra
 
 
 def read_in_buddy_data(target_station: utils.Station, initial_neighbours: np.ndarray,
-                       all_buddies: dict, variable: utils.MeteorologicalVariable,
+                       all_buddies: dict, variable: str,
                        diagnostics: bool = False, plots: bool = False) -> np.ndarray:
     """
     Read in the buddy data for the neighbours for specified variable
@@ -285,7 +288,7 @@ def adjust_pressure_for_tropical_storms(dubious: np.ma.MaskedArray, initial_neig
 
 #************************************************************************
 def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.ndarray,
-                      all_buddies: dict, variable: utils.MeteorologicalVariable,
+                      all_buddies: dict, variable: str,
                       diagnostics: bool = False,
                       plots: bool = False, full: bool = False) -> None:
     """
@@ -351,12 +354,12 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.ndar
             plot_neighbour_flags(target_station.times, flag, obs_var, all_buddy_data)
 
     # append flags to object
-    obs_var.flags = utils.insert_flags(obs_var.flags, flags)
+    obs_var.store_flags(utils.insert_flags(obs_var.flags, flags))
 
     logger.info(f"Neighbour Outlier {obs_var.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
-    return # neighbour_outlier
+    # neighbour_outlier
 
 #************************************************************************
 def noc(target_station: utils.Station, initial_neighbours: np.ndarray, var_list: list,

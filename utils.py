@@ -116,18 +116,30 @@ class MeteorologicalVariable(object):
     Class for meteorological variable.  Initialised with metadata only
     '''
 
-    def __init__(self, name, mdi, units, dtype):
+    def __init__(self, name: str, mdi: float,
+                 units: str, dtype: str):
+
         self.name = name
         self.mdi = mdi
         self.units = units
         self.dtype = dtype
-        self.data = None
 
 
     def __str__(self):
         return f"variable: {self.name}"
 
+
     __repr__ = __str__
+
+
+    def store_data(self, indata: np.ma.MaskedArray):
+        """Set data array for observations"""
+        self.data: np.ma.MaskedArray = indata
+
+
+    def store_flags(self, flags: np.ndarray):
+        """Store the flag information"""
+        self.flags: np.ndarray = flags
 
 
 
@@ -137,16 +149,48 @@ class Station(object):
     Class for station
     '''
 
-    def __init__(self, stn_id, lat, lon, elev):
+    def __init__(self, stn_id: str,
+                 lat: float, lon: float,
+                 elev: float):
         self.id = stn_id
         self.lat = lat
         self.lon = lon
         self.elev = elev
 
+        # set other information
+        self.country: str = ""
+        self.continent: str = ""
+
+        # set up empty placeholders of observation data
+        for obs_var in setup.obs_var_list:
+            setattr(self, obs_var, None)
+
+
     def __str__(self):
         return f"station {self.id}, lat {self.lat}, lon {self.lon}, elevation {self.elev}"
 
+
     __repr__ = __str__
+
+
+    def set_times(self, times: pd.Series):
+        """Set the times attribute"""
+        self.times: pd.Series = times
+
+
+    def set_datetime_values(self, years: np.ndarray,
+                            months: np.ndarray,
+                            days: np.ndarray,
+                            hours: np.ndarray):
+        """Set values (arrays) for each date quantity"""
+
+        assert years.shape == months.shape == days.shape == hours.shape
+
+        self.years: np.ndarray = years
+        self.months: np.ndarray = months
+        self.days: np.ndarray = days
+        self.hours: np.ndarray = hours
+
 
 
 #************************************************************************
@@ -222,7 +266,7 @@ def insert_flags(qc_flags: np.ndarray, flags: np.ndarray) -> np.ndarray:
 
 #************************************************************************
 def get_measurement_code_mask(ds: pd.Series,
-                              measurement_codes: list) -> np.ndarray:
+                              measurement_codes: list) -> pd.Series:
     """
     Build up a mask of data rows to ignore by using a list of permitted
     measurement codes
@@ -236,7 +280,7 @@ def get_measurement_code_mask(ds: pd.Series,
 
     Returns
     -------
-    np.ndarray
+    pd.Series
         Boolean array of mask
     """
     assert isinstance(ds, pd.Series)
@@ -281,7 +325,8 @@ def populate_station(station: Station, df: pd.DataFrame, obs_var_list: list, rea
     for variable in obs_var_list:
 
         # make a variable
-        this_var = MeteorologicalVariable(variable, MDI, UNIT_DICT[variable], (float))
+        this_var = MeteorologicalVariable(variable, MDI, UNIT_DICT[variable],
+                                          "float")
 
         # store the data
         indata = df[variable].fillna(MDI).to_numpy()
@@ -299,7 +344,8 @@ def populate_station(station: Station, df: pd.DataFrame, obs_var_list: list, rea
             # invert mask and set to missing
             indata[~mask] = MDI
 
-        this_var.data = np.ma.masked_where(indata == MDI, indata)
+        this_var.store_data(np.ma.masked_where(indata == MDI, indata))
+
         if len(this_var.data.mask.shape) == 0:
             # single mask value, replace with arrage of True/False's
             if this_var.data.mask:
@@ -313,15 +359,15 @@ def populate_station(station: Station, df: pd.DataFrame, obs_var_list: list, rea
 
         if read_flags:
             # change all empty values (else NaN) to blank
-            this_var.flags = df[f"{variable}_QC_flag"].fillna("").to_numpy()
+            this_var.store_flags(df[f"{variable}_QC_flag"].fillna("").to_numpy())
         else:
             # empty flag array
-            this_var.flags = np.array(["" for i in range(len(this_var.data))])
+            this_var.store_flags(np.array(["" for i in range(len(this_var.data))]))
 
         # and store
         setattr(station, variable, this_var)
 
-    return # populate_station
+    # populate_station
 
 
 #************************************************************************
@@ -365,7 +411,7 @@ def find_continent(country_code: str) -> str:
 
 
 #************************************************************************
-def custom_logger(logfile: str):
+def custom_logger(logfile: Path):
 
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)

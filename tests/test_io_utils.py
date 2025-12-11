@@ -212,7 +212,7 @@ def test_integrity_check_fail(run_mock: Mock,
                                                          cmd="gzip -t dummy_file.psv",
                                                          stderr="error text")
 
-    result = io_utils.integrity_check("dummy_file.psv")
+    result = io_utils.integrity_check(Path("dummy_file.psv"))
 
     assert not result  # (i.e. False)
     calls = [call("Validation failed on dummy_file.psv"),
@@ -231,7 +231,7 @@ def test_integrity_check_pass(run_mock: Mock,
                                                       stdout="output",
                                                       stderr=None))
 
-    result = io_utils.integrity_check("dummy_file.psv")
+    result = io_utils.integrity_check(Path("dummy_file.psv"))
 
     assert result  # (i.e. True)
 

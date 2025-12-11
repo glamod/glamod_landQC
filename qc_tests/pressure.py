@@ -5,6 +5,7 @@ Pressure Cross Checks
 Check for observations where difference between station and sea level pressure
 falls outside of the expected range.
 """
+import pandas as pd
 import numpy as np
 import logging
 logger = logging.getLogger(__name__)
@@ -30,13 +31,13 @@ MAX_SPREAD = 5.0
 #*********************************************
 def plot_pressure_timeseries(sealp: utils.MeteorologicalVariable,
                              stnlp: utils.MeteorologicalVariable,
-                             times: np.ndarray, bad: int) -> None:
+                             times: pd.Series, bad: int) -> None:  # pragma: no cover
     '''
     Plot each observation of SLP or StnLP against surrounding data
 
     :param MetVar sealp: sea level pressure object
     :param MetVar stnlp: station level pressure object
-    :param array times: datetime array
+    :param Series times: datetime array
     :param int bad: the location of SLP or StnLP
     '''
     import matplotlib.pyplot as plt
@@ -62,13 +63,13 @@ def plot_pressure_timeseries(sealp: utils.MeteorologicalVariable,
 
     plt.show()
 
-    return # plot_pressure_timeseries
+    # plot_pressure_timeseries
 
 
 #************************************************************************
 def pressure_logic(sealp: utils.MeteorologicalVariable,
                    stnlp: utils.MeteorologicalVariable,
-                   times: np.ndarray, elevation: float,
+                   times: pd.Series, elevation: float,
                    rtol: float=1.e-4,
                    plots: bool=False, diagnostics: bool=False) -> None:
 
@@ -78,7 +79,7 @@ def pressure_logic(sealp: utils.MeteorologicalVariable,
 
     :param MetVar sealp: sea level pressure object (with data attribute of 1-D array)
     :param MetVar stnlp: station level pressure object (with data attribute of 1-D array)
-    :param array times: datetime array (corresponding to the Sea & Station pressure obs)
+    :param Series times: datetime array (corresponding to the Sea & Station pressure obs)
     :param float elevation: station elevation
     :param float rtol: relative tolerance (1.e-4)
     :param bool plots: turn on plots
@@ -111,26 +112,27 @@ def pressure_logic(sealp: utils.MeteorologicalVariable,
                 plot_pressure_timeseries(sealp, stnlp, times, bad)
 
     # flag both pressures
-    stnlp.flags = utils.insert_flags(stnlp.flags, flags)
-    sealp.flags = utils.insert_flags(sealp.flags, flags)
+    stnlp.store_flags(utils.insert_flags(stnlp.flags, flags))
+    sealp.store_flags(utils.insert_flags(sealp.flags, flags))
 
     logger.info(f"Pressure {stnlp.name}")
     logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
-    return  # pressure_logic
+    # pressure_logic
 
 
 #*********************************************
-def plot_pressure_distribution(difference: np.ndarray,
+def plot_pressure_distribution(difference: np.ma.MaskedArray,
                                title: str,
-                               vmin: int=-1, vmax:int=1)-> None:
+                               vmin: float = -1.,
+                               vmax: float = 1.) -> None:  # pragma: no cover
     '''
     Plot distribution and include the upper and lower thresholds
 
     :param array difference: values to form histogram from
     :param str title: label for plot
-    :param int vmin: lower locations for vertical line
-    :param int vmax: upper locations for vertical line
+    :param float vmin: lower locations for vertical line
+    :param float vmax: upper locations for vertical line
 
     '''
     import matplotlib.pyplot as plt
@@ -149,7 +151,7 @@ def plot_pressure_distribution(difference: np.ndarray,
     plt.title(title)
     plt.show()
 
-    return # plot_pressure_distribution
+    # plot_pressure_distribution
 
 
 #************************************************************************
@@ -187,13 +189,13 @@ def identify_values(sealp: utils.MeteorologicalVariable,
 
         config_dict["PRESSURE"]["spread"] = spread
 
-    return # identify_values
+    # identify_values
 
 
 #************************************************************************
 def pressure_offset(sealp: utils.MeteorologicalVariable,
                     stnlp: utils.MeteorologicalVariable,
-                    times: np.ndarray, config_dict: dict,
+                    times: pd.Series, config_dict: dict,
                     plots: bool=False, diagnostics: bool=False) -> None:
 
     """
@@ -259,17 +261,17 @@ def pressure_offset(sealp: utils.MeteorologicalVariable,
                         plot_pressure_timeseries(sealp, stnlp, times, bad)
 
             # only flag the station level pressure
-            stnlp.flags = utils.insert_flags(stnlp.flags, flags)
+            stnlp.store_flags(utils.insert_flags(stnlp.flags, flags))
 
     logger.info(f"Pressure {stnlp.name}")
     logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
-    return # pressure_offset
+    # pressure_offset
 
 
 #*********************************************
 def calc_slp_factor(elevation: float,
-                    temperature: np.ndarray) -> np.ndarray:
+                    temperature: np.ma.MaskedArray) -> np.ma.MaskedArray:
     '''
     Suggestion from Scott Stevens to calculate the SLP from the StnLP.
     Get factor to multiply SLP to get StnLP
@@ -280,7 +282,7 @@ def calc_slp_factor(elevation: float,
     :param float elevation: station elevation
     :param array temperature: temperature data
 
-    :returns: np.ndarray
+    :returns: np.ma.MaskedArray
     '''
 
     filled_temperature = np.ma.copy(temperature)
@@ -320,7 +322,7 @@ def adjust_existing_flag_locs(var: utils.MeteorologicalVariable,
 #************************************************************************
 def pressure_station_theory(stnlp: utils.MeteorologicalVariable,
                             temperature: utils.MeteorologicalVariable,
-                            times: np.ndarray, elevation: int,
+                            times: pd.Series, elevation: float,
                             plots: bool=False, diagnostics: bool=False) -> None:
     """
     Flag locations where difference between recorded and expected station-level pressure
@@ -335,7 +337,7 @@ def pressure_station_theory(stnlp: utils.MeteorologicalVariable,
 
     :param MetVar stnlp: station level pressure object
     :param MetVar temperature: temperature object
-    :param array times: datetime array
+    :param Series times: datetime array
     :param float elevation: station elevation (m)
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
@@ -365,12 +367,12 @@ def pressure_station_theory(stnlp: utils.MeteorologicalVariable,
                     theory_stnlp = utils.MeteorologicalVariable("Theory StnLP",
                                                                 utils.MDI,
                                                                 units="hPa",
-                                                                dtype=float)
-                    theory_stnlp.data=theoretical_stnlp_value
+                                                                dtype="float")
+                    theory_stnlp.store_data(theoretical_stnlp_value)
                     plot_pressure_timeseries(theory_stnlp,
                                              stnlp, times, bad)
 
-        stnlp.flags = utils.insert_flags(stnlp.flags, adjust_existing_flag_locs(stnlp, flags))
+        stnlp.store_flags(utils.insert_flags(stnlp.flags, adjust_existing_flag_locs(stnlp, flags)))
 
     logger.info(f"Pressure {stnlp.name}")
     logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
@@ -382,7 +384,7 @@ def pressure_station_theory(stnlp: utils.MeteorologicalVariable,
 def pressure_consistency_theory(sealp: utils.MeteorologicalVariable,
                                 stnlp: utils.MeteorologicalVariable,
                                 temperature: utils.MeteorologicalVariable,
-                                times: np.ndarray, elevation: int,
+                                times: pd.Series, elevation: float,
                                 plots: bool=False, diagnostics: bool=False) -> None:
     """
     Flag locations where difference between recorded and calculated sea-level pressure
@@ -391,7 +393,7 @@ def pressure_consistency_theory(sealp: utils.MeteorologicalVariable,
     :param MetVar sealp: sea level pressure object
     :param MetVar stnlp: station level pressure object
     :param MetVar temperature: temperature object
-    :param array times: datetime array
+    :param Series times: datetime array
     :param float elevation: station elevation (m)
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
@@ -421,13 +423,13 @@ def pressure_consistency_theory(sealp: utils.MeteorologicalVariable,
                     plot_pressure_timeseries(sealp, stnlp, times, bad)
 
         # flag both as not sure immediately where the issue lies
-        stnlp.flags = utils.insert_flags(stnlp.flags, adjust_existing_flag_locs(stnlp, flags))
-        sealp.flags = utils.insert_flags(sealp.flags, adjust_existing_flag_locs(sealp, flags))
+        stnlp.store_flags(utils.insert_flags(stnlp.flags, adjust_existing_flag_locs(stnlp, flags)))
+        sealp.store_flags(utils.insert_flags(sealp.flags, adjust_existing_flag_locs(sealp, flags)))
 
     logger.info(f"Pressure {stnlp.name}")
     logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
-    return # pressure_theory
+    # pressure_theory
 
 
 #************************************************************************
@@ -473,4 +475,4 @@ def pcc(station: utils.Station, config_dict: dict, full: bool = False,
                                 station.elev, plots=plots, diagnostics=diagnostics)
 
 
-    return # pcc
+    # pcc

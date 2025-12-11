@@ -19,8 +19,10 @@ SPREAD_THRESHOLD = 8.
 MIN_VALUES = 30
 
 #************************************************************************
-def prepare_data(obs_var: utils.MeteorologicalVariable, station: utils.Station, month:int,
-                 diagnostics: bool = False, winsorize: bool = True) -> np.ndarray:
+def prepare_data(obs_var: utils.MeteorologicalVariable,
+                 station: utils.Station, month:int,
+                 diagnostics: bool = False,
+                 winsorize: bool = True) -> np.ma.MaskedArray:
     """
     Calculate the monthly variances
 
@@ -88,8 +90,10 @@ def prepare_data(obs_var: utils.MeteorologicalVariable, station: utils.Station, 
     return variances # prepare_data
 
 #************************************************************************
-def find_thresholds(obs_var: utils.MeteorologicalVariable, station: utils.Station, config_dict: dict,
-                    plots: bool = False, diagnostics: bool = False, winsorize: bool = True) -> None:
+def find_thresholds(obs_var: utils.MeteorologicalVariable,
+                    station: utils.Station, config_dict: dict,
+                    plots: bool = False,
+                    diagnostics: bool = False, winsorize: bool = True) -> None:
     """
     Use distribution to identify threshold values.  Then also store in config dictionary.
 
@@ -121,7 +125,8 @@ def find_thresholds(obs_var: utils.MeteorologicalVariable, station: utils.Statio
 
         config_dict[f"VARIANCE-{obs_var.name}"][f"{month}-spread"] = variance_spread
 
-    return # find_thresholds
+    # find_thresholds
+
 
 #************************************************************************
 def variance_check(obs_var: utils.MeteorologicalVariable, station: utils.Station, config_dict: dict,
@@ -276,12 +281,13 @@ def variance_check(obs_var: utils.MeteorologicalVariable, station: utils.Station
             plt.show()
 
     # append flags to object
-    obs_var.flags = utils.insert_flags(obs_var.flags, flags)
+    obs_var.store_flags(utils.insert_flags(obs_var.flags, flags))
 
     logger.info(f"Variance {obs_var.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
-    return # variance_check
+    # variance_check
+
 
 #************************************************************************
 def evc(station: utils.Station, var_list: list, config_dict: dict, full: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
@@ -305,5 +311,5 @@ def evc(station: utils.Station, var_list: list, config_dict: dict, full: bool = 
         variance_check(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
 
 
-    return # evc
+    # evc
 

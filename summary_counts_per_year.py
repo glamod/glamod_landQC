@@ -105,7 +105,8 @@ def get_summary(stage: str="N", restart_id: str="",
         for key, value in sorted(yearly_counts.items(), key=lambda x: x[0]):
             outfile.write(f"{key} : {value}\n")
 
-    return # get_summary
+    # get_summary
+
 
 #************************************************************************
 if __name__ == "__main__":

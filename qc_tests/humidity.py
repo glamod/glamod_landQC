@@ -6,6 +6,7 @@ Humidity Cross Checks
 2. Check and flag instances of dew point depression
 """
 #************************************************************************
+import pandas as pd
 import numpy as np
 import logging
 logger = logging.getLogger(__name__)
@@ -67,19 +68,20 @@ def get_repeating_dpd_threshold(temperatures: utils.MeteorologicalVariable,
             CD_dpd = {"DPD" : float(-utils.MDI)}
             config_dict["HUMIDITY"] = CD_dpd
 
-    return # repeating_dpd_threshold
+    # repeating_dpd_threshold
+
 
 #*********************************************
 def plot_humidities(T: utils.MeteorologicalVariable,
                     D: utils.MeteorologicalVariable,
-                    times: np.ndarray,
-                    bad: int) -> None:
+                    times: pd.Series,
+                    bad: int) -> None:  # pragma: no cover
     '''
     Plot each observation of SSS or DPD against surrounding data
 
     :param MetVar T: Meteorological variable object - temperatures
     :param MetVar D: Meteorological variable object - dewpoints
-    :param array times: datetime array
+    :param Series times: datetime array
     :param int bad: the location of SSS
     '''
     import matplotlib.pyplot as plt
@@ -101,17 +103,18 @@ def plot_humidities(T: utils.MeteorologicalVariable,
     plt.ylabel(T.units)
     plt.show()
 
-    return # plot_humidities
+    # plot_humidities
+
 
 #*********************************************
-def plot_humidity_streak(times: np.ndarray,
+def plot_humidity_streak(times: pd.Series,
                          T: utils.MeteorologicalVariable,
                          D: utils.MeteorologicalVariable,
-                         streak_locs: np.ndarray) -> None:
+                         streak_locs: np.ndarray) -> None:  # pragma: no cover
     '''
     Plot each streak against surrounding data
 
-    :param array times: datetime array
+    :param Series times: datetime array
     :param MetVar T: Meteorological variable object - temperatures
     :param MetVar D: Meteorological variable object - dewpoints
     :param array streak_locs: locations of points in the DPD streak
@@ -141,7 +144,8 @@ def plot_humidity_streak(times: np.ndarray,
     plt.ylabel(T.units)
     plt.show()
 
-    return # plot_humidity_streak
+    # plot_humidity_streak
+
 
 #************************************************************************
 def super_saturation_check(station: utils.Station,
@@ -176,7 +180,7 @@ def super_saturation_check(station: utils.Station,
                     flags[month_locs] = "h"
 
     # only flag the dewpoints
-    dewpoints.flags = utils.insert_flags(dewpoints.flags, flags)
+    dewpoints.store_flags(utils.insert_flags(dewpoints.flags, flags))
 
     # diagnostic plots
     if plots:
@@ -186,10 +190,10 @@ def super_saturation_check(station: utils.Station,
     logger.info(f"Supersaturation {dewpoints.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.nonzero(flags != '')[0])}")
 
-    return # super_saturation_check
+    # super_saturation_check
 
 #************************************************************************
-def dew_point_depression_streak(times: np.ndarray,
+def dew_point_depression_streak(times: pd.Series,
                                 temperatures: utils.MeteorologicalVariable,
                                 dewpoints: utils.MeteorologicalVariable,
                                 config_dict: dict,
@@ -198,7 +202,7 @@ def dew_point_depression_streak(times: np.ndarray,
     """
     Flag locations where dewpoint equals air temperature
 
-    :param array times: datetime array
+    :param Series times: datetime array
     :param MetVar temperatures: temperatures object
     :param MetVar dewpoints: dewpoints object
     :param str config_dict: configuration dictionary to store critical values
@@ -240,12 +244,12 @@ def dew_point_depression_streak(times: np.ndarray,
                 plot_humidity_streak(times, temperatures, dewpoints, locs[start: end])
 
         # only flag the dewpoints
-        dewpoints.flags = utils.insert_flags(dewpoints.flags, flags)
+        dewpoints.store_flags(utils.insert_flags(dewpoints.flags, flags))
 
     logger.info(f"Dewpoint Depression {dewpoints.name}")
     logger.info(f"   Cumulative number of flags set: {len(np.nonzero(flags != '')[0])}")
 
-    return # dew_point_depression_streak
+    # dew_point_depression_streak
 
 #************************************************************************
 def hcc(station: utils.Station, config_dict: dict,
@@ -278,5 +282,5 @@ def hcc(station: utils.Station, config_dict: dict,
     #  greater chance of removing good observations
     #  18 July 2019 RJHD
 
-    return # hcc
+    # hcc
 

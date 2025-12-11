@@ -37,12 +37,13 @@ EXCESS_STREAK_STARTS_LENGTHS = {100: 15,
 
 
 def _make_station(data: np.ndarray, name: str,
-                  times: np.ndarray | None = None) -> utils.Station:
+                  times: pd.Series | None = None) -> utils.Station:
     """
     Create an example station
 
     :param array data: data array (presumed temperatures)
     :param str name: name for variable
+    :param Series times: time information
 
     :returns: Station
 
