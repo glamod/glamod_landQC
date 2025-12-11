@@ -223,7 +223,7 @@ def assess_inside_spike(time_diffs: np.ndarray, value_diffs: np.ndarray,
     :param bool is_spike: flag to indicate presence of spike
     :param int spike_len: length of spike (number of time stamps)
 
-    :returns: bool if it is a spike or note
+    :returns: bool if it is a spike or not
     """
 
     # test within spike differences (chosing correct time difference)

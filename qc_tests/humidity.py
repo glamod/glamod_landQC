@@ -110,7 +110,7 @@ def plot_humidities(T: utils.MeteorologicalVariable,
 def plot_humidity_streak(times: pd.Series,
                          T: utils.MeteorologicalVariable,
                          D: utils.MeteorologicalVariable,
-                         streak_locs: np.ndarray) -> None:
+                         streak_locs: np.ndarray) -> None:  # pragma: no cover
     '''
     Plot each streak against surrounding data
 

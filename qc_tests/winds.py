@@ -49,7 +49,7 @@ def logical_checks(speed: utils.MeteorologicalVariable,
         dflags[fix_zero_direction] = "1"
         if diagnostics:
             print("  Zero direction : {}".format(len(fix_zero_direction)))
-        # and set to empty
+        # and set to empty as can be used in parent to copy values to dataframe
         fix_zero_direction = np.array([])
 
     # negative speeds (can't fix)

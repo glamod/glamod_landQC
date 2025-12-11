@@ -20,7 +20,7 @@ EXAMPLE_FILES_PATH = Path(__file__).parent.parent / "example_data"
 
 
 def _make_target_and_buddy(start_dt: dt.datetime | None = None) -> tuple[utils.Station,
-                                      utils.Station]:
+                                                                         utils.Station]:
 
     # set up variables and stations
     temperatures = common.example_test_variable("temperature", np.arange(10))
