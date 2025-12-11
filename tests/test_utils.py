@@ -69,7 +69,7 @@ def test_station_times() -> None:
 
 
 def test_station_datetimes() -> None:
-   """Test Station stores datetime parameters in correct way"""
+    """Test Station stores datetime parameters in correct way"""
     station = utils.Station("ID", 90., 180., 100.)
     station.set_datetime_values(np.array([2000]), np.array([1]),
                                 np.array([1]), np.array([12]))

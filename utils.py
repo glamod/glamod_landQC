@@ -183,6 +183,9 @@ class Station(object):
                             days: np.ndarray,
                             hours: np.ndarray):
         """Set values (arrays) for each date quantity"""
+
+        assert years.shape == months.shape == days.shape == hours.shape
+
         self.years: np.ndarray = years
         self.months: np.ndarray = months
         self.days: np.ndarray = days
