@@ -152,10 +152,15 @@ def identify_values(obs_var: utils.MeteorologicalVariable,
         try:
             config_dict[f"FREQUENT-{obs_var.name}"][f"{month}-width"] = width
         except KeyError:
-            CD_width = {f"{month}-width" : f"{width}"}
+            CD_width = {f"{month}-width" : width}
             config_dict[f"FREQUENT-{obs_var.name}"] = CD_width
 
-        # TODO: Check that there are enough non-unique bins
+        # Check that there are enough non-unique bins
+        n_valid_bins = np.count_nonzero(hist != 0)
+        if n_valid_bins <= ROLLING:
+            # have fewer bins than can find maximum from
+            config_dict[f"FREQUENT-{obs_var.name}"][f"{month}"] = []
+            continue
 
         suspect = scan_histogram(hist, bins)
 

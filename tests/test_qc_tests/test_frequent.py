@@ -151,6 +151,25 @@ def test_identify_values_no_data() -> None:
         assert config_dict["FREQUENT-temperature"][f"{month}"] == []
 
 
+def test_identify_values_limited_data() -> None:
+    """Test identification script if there's data only in a (few <=7 )bins"""
+
+    # 100 instances of 8..12
+    indata = np.repeat(np.ma.arange(8, 13), 100)
+    # every 5th entry set to 10
+    indata[::5] = 10
+    station = _setup_station(indata)
+    obs_var = station.temperature
+
+    config_dict = {}
+
+    frequent.identify_values(obs_var, station, config_dict)
+
+    # check that January values set width, but not suspect bins
+    assert config_dict["FREQUENT-temperature"]["1-width"] == 1.0
+    assert config_dict["FREQUENT-temperature"]["1"] == []
+
+
 def test_identify_values() -> None:
     """Test identification script and storage of results"""
 
@@ -165,7 +184,7 @@ def test_identify_values() -> None:
 
     frequent.identify_values(obs_var, station, config_dict)
 
-    assert config_dict["FREQUENT-temperature"]["1-width"] == "1.0"
+    assert config_dict["FREQUENT-temperature"]["1-width"] == 1.0
     assert config_dict["FREQUENT-temperature"]["1"] == [10]
 
 
@@ -180,7 +199,7 @@ def test_identify_values_gaussian() -> None:
     frequent.identify_values(temperature, station, config_dict)
 
     # data resolution at 0.1 so width == 0.5
-    assert config_dict["FREQUENT-temperature"]["1-width"] == "0.5"
+    assert config_dict["FREQUENT-temperature"]["1-width"] == 0.5
     assert config_dict["FREQUENT-temperature"]["1"] == [0]
 
 
@@ -195,7 +214,7 @@ def test_frequent_values() -> None:
     frequent.frequent_values(temperature, station, config_dict)
 
     # data resolution at 0.1 so width == 0.5
-    assert config_dict["FREQUENT-temperature"]["1-width"] == "0.5"
+    assert config_dict["FREQUENT-temperature"]["1-width"] == 0.5
     assert config_dict["FREQUENT-temperature"]["1"] == [0]
 
     # assert flags set correctly
