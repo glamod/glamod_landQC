@@ -4,6 +4,7 @@ Spike Check
 
 Checks for short (<=3) observations which are far above/below their immediate neighbours.
 """
+import pandas as pd
 import numpy as np
 import logging
 logger = logging.getLogger(__name__)
@@ -36,12 +37,12 @@ TIME_DIFF_RANGES = np.array([[1, 15],  # 15
 
 
 #*********************************************
-def plot_spike(times: np.ndarray, obs_var: utils.MeteorologicalVariable,
-               spike_start: int, spike_length: int) -> None:
+def plot_spike(times: pd.Series, obs_var: utils.MeteorologicalVariable,
+               spike_start: int, spike_length: int) -> None:  # pragma: no cover
     '''
     Plot each spike against surrounding data
 
-    :param array times: datetime array
+    :param Series times: datetime array
     :param MetVar obs_var: Meteorological variable object
     :param int spike_start: the location of the spike
     :param int spike_length: the length of the spike
@@ -72,16 +73,19 @@ def plot_spike(times: np.ndarray, obs_var: utils.MeteorologicalVariable,
     plt.ylabel(obs_var.name.capitalize())
     plt.show()
 
-    return # plot_spike
+    # plot_spike
+
 
 #************************************************************************
-def calculate_critical_values(obs_var: utils.MeteorologicalVariable, times: np.ndarray,
-                              config_dict: dict, plots: bool=False, diagnostics: bool=False) -> None:
+def calculate_critical_values(obs_var: utils.MeteorologicalVariable,
+                              times: pd.Series,
+                              config_dict: dict, plots: bool=False,
+                              diagnostics: bool=False) -> None:
     """
     Use distribution to determine critical values.  Then also store in config dictionary.
 
     :param MetVar obs_var: meteorological variable object
-    :param array times: array of times (usually in minutes)
+    :param Series times: array of times (usually in minutes)
     :param str config_dict: configuration dictionary to store critical values
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
@@ -112,10 +116,11 @@ def calculate_critical_values(obs_var: utils.MeteorologicalVariable, times: np.n
         if len(first_differences.compressed()) >= utils.DATA_COUNT_THRESHOLD:
 
             # fit decay curve to one-sided distribution
-            c_value = qc_utils.get_critical_values(first_differences.compressed(), binmin=0, binwidth=0.5,
-                                                plots=plots, diagnostics=diagnostics,
-                                                xlabel="First differences",
-                                                title=f"Spike - {obs_var.name.capitalize()}: {lower}-{upper}min")
+            c_value = qc_utils.get_critical_values(first_differences.compressed(),
+                                                   binmin=0, binwidth=0.5,
+                                                   plots=plots, diagnostics=diagnostics,
+                                                   xlabel="First differences",
+                                                   title=f"Spike - {obs_var.name.capitalize()}: {lower}-{upper}min")
 
             # write out the thresholds...
             try:
@@ -218,7 +223,7 @@ def assess_inside_spike(time_diffs: np.ndarray, value_diffs: np.ndarray,
     :param bool is_spike: flag to indicate presence of spike
     :param int spike_len: length of spike (number of time stamps)
 
-    :returns: bool
+    :returns: bool if it is a spike or not
     """
 
     # test within spike differences (chosing correct time difference)
@@ -251,7 +256,7 @@ def assess_inside_spike(time_diffs: np.ndarray, value_diffs: np.ndarray,
 #************************************************************************
 def assess_outside_spike(time_diffs: np.ndarray, value_diffs: np.ndarray,
                          possible_in_spike: int, critical_values: dict,
-                         is_spike: bool, spike_len: int) -> tuple[bool, int]:
+                         is_spike: bool, spike_len: int) -> bool:
     """
     Check if points outside the spike don't vary too much (low noise).
     Using "side" to act as parameter for the timestamps before/after the spike
@@ -261,7 +266,7 @@ def assess_outside_spike(time_diffs: np.ndarray, value_diffs: np.ndarray,
     :param int possible_in_spike: location of potential start of spike
     :param dict critical_values: threshold values for this spike
 
-    :returns: (bool, int) of spike and length
+    :returns: bool if it is a spike or not
     """
 
     # test either side (either before or after is too big)
@@ -293,8 +298,10 @@ def assess_outside_spike(time_diffs: np.ndarray, value_diffs: np.ndarray,
 
 
 #************************************************************************
-def generate_differences(times: np.ndarray,
-                         data: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def generate_differences(times: pd.Series,
+                         data: np.ma.MaskedArray) -> tuple[np.ma.MaskedArray,
+                                                           np.ndarray,
+                                                           np.ndarray]:
     """
     Generate the first differences for the times and the data values
 
@@ -325,13 +332,14 @@ def generate_differences(times: np.ndarray,
 
 
 #************************************************************************
-def identify_spikes(obs_var: utils.MeteorologicalVariable, times: np.ndarray, config_dict: dict,
+def identify_spikes(obs_var: utils.MeteorologicalVariable,
+                    times: pd.Series, config_dict: dict,
                     plots: bool = False, diagnostics: bool = False) -> None:
     """
     Use config_dict to read in critical values, and then assess to find spikes
 
     :param MetVar obs_var: meteorological variable object
-    :param array times: array of times (usually in minutes)
+    :param Series times: array of times (usually in minutes)
     :param str config_dict: configuration dictionary to store critical values
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
@@ -396,17 +404,17 @@ def identify_spikes(obs_var: utils.MeteorologicalVariable, times: np.ndarray, co
         # offset of 1 from use of the difference arrays
         locs, = np.nonzero(obs_var.data.mask == False)
         flags[locs[1:]] = compressed_flags
-        obs_var.flags = utils.insert_flags(obs_var.flags, flags)
+        obs_var.store_flags(utils.insert_flags(obs_var.flags, flags))
 
         logger.info(f"Spike {obs_var.name}")
         logger.info(f"   Time Difference: {lower}-{upper} minutes")
         logger.info(f"      Cumulative number of flags set: {len(np.where(flags != '')[0])}")
 
-    return # identify_spikes
+    # identify_spikes
 
 
 #************************************************************************
-def sc(station: utils.MeteorologicalVariable, var_list: list, config_dict: dict,
+def sc(station: utils.Station, var_list: list, config_dict: dict,
        full: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Run through the variables and pass to the Spike Check
@@ -428,5 +436,5 @@ def sc(station: utils.MeteorologicalVariable, var_list: list, config_dict: dict,
 
         identify_spikes(obs_var, station.times, config_dict, plots=plots, diagnostics=diagnostics)
 
-    return  # sc
+    # sc
 

@@ -2,6 +2,7 @@
 Contains tests for qc_utils.py
 """
 import numpy as np
+import pandas as pd
 import pytest
 from unittest.mock import patch, Mock
 
@@ -216,3 +217,88 @@ def test_winsorize() -> None:
 
     upper, = np.nonzero(indata > 95)
     assert np.all(result[upper] == 95)
+    
+    
+def test_reporting_accuracy_1() -> None:
+
+    indata = np.ma.arange(10)
+
+    result = qc_utils.reporting_accuracy(indata)
+
+    assert result == 1
+
+
+def test_reporting_accuracy_05() -> None:
+
+    indata = np.ma.arange(0, 10, 0.5)
+
+    result = qc_utils.reporting_accuracy(indata)
+
+    assert result == 0.5
+
+
+def test_reporting_accuracy_01() -> None:
+
+    indata = np.ma.arange(0, 10, 0.1)
+
+    result = qc_utils.reporting_accuracy(indata)
+
+    assert result == 0.1
+
+
+def test_create_bins_simple() -> None:
+
+    indata = np.array([-10, 10])
+
+    result = qc_utils.create_bins(indata, 1, "DUMMY")
+
+    # pad by 5*width either side, but upper limit exclusive
+    assert result[0] == -15
+    assert result[-1] == 14
+
+
+def test_create_bins() -> None:
+    """Simple test of bin creation"""
+
+    indata = np.array([1, 10])
+
+    result = qc_utils.create_bins(indata, 0.5, "dummy")
+
+    expected = np.arange(1-2.5, 10+2.5, 0.5)
+
+    np.testing.assert_array_equal(result, expected)
+
+
+def test_create_bins_long() -> None:
+    """Simple test of bin creation when max and min would result in too many"""
+
+    indata = np.array([-7000, 7000])
+
+    result = qc_utils.create_bins(indata, 0.5, "temperature")
+
+    # -89.2 to 56.7
+    expected = np.arange(-190-2.5, 157+2.5, 0.5)
+
+    np.testing.assert_array_equal(result, expected)
+      
+    
+def test_update_dataframe() -> None:
+    """Test that DataFrame values are updated correctly"""
+
+    data = {"Year" : [2020, 2020, 2020, 2020, 2020],
+            "Month" : [1, 1, 1, 1, 1],
+            "Day" : [10, 11, 12, 13, 14],
+            "wind_direction" : [10, 20, 30, 40, 50]}
+    df = pd.DataFrame(data)
+
+    indata = np.array([100, 200, 300, 400, 500])
+
+    locations = np.array([False, False, True, False, False])
+
+    column = "wind_direction"
+
+    qc_utils.update_dataframe(df, indata, locations, column)
+
+    expected = np.array([10, 20, 300, 40, 50])
+    np.testing.assert_array_equal(df["wind_direction"].to_numpy(),
+                                  expected)

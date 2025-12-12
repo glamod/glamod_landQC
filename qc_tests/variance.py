@@ -256,7 +256,8 @@ def find_thresholds(obs_var: utils.MeteorologicalVariable,
 
         config_dict[f"VARIANCE-{obs_var.name}"][f"{month}-spread"] = variance_spread
 
-    return # find_thresholds
+    # find_thresholds
+
 
 
 def identify_bad_years(obs_var: utils.MeteorologicalVariable,
@@ -571,12 +572,13 @@ def variance_check(obs_var: utils.MeteorologicalVariable,
                                        f"{station.id} - month {month}")
 
     # append flags to object
-    obs_var.flags = utils.insert_flags(obs_var.flags, flags)
+    obs_var.store_flags(utils.insert_flags(obs_var.flags, flags))
 
     logger.info(f"Variance {obs_var.name}")
     logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
-    return # variance_check
+    # variance_check
+
 
 #************************************************************************
 def evc(station: utils.Station, var_list: list,
@@ -604,5 +606,5 @@ def evc(station: utils.Station, var_list: list,
                        plots=plots, diagnostics=diagnostics)
 
 
-    return # evc
+    # evc
 

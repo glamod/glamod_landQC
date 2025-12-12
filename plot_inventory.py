@@ -192,7 +192,7 @@ def process_inventory(candidate_stations: list, data_start: int, data_end: int) 
 
     plt.savefig(setup.SUBDAILY_IMAGE_DIR / f"station_plot_{setup.DATESTAMP[:-1]}.png", dpi=300)
 
-    return # process_inventory
+    # process_inventory
 
 
 if __name__ == "__main__":

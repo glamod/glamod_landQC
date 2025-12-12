@@ -1,6 +1,7 @@
 """
 Contains tests for humidity.py
 """
+import pandas as pd
 import numpy as np
 import datetime as dt
 from unittest.mock import patch, Mock
@@ -28,7 +29,7 @@ def _setup_station() -> utils.Station:
     station.dew_point_temperature = dew_point_temperature
 
     # and build the times, simple hourly stuff
-    datetimes = np.array([dt.datetime(2024, 1, 1, 12, 0) +
+    datetimes = pd.Series([dt.datetime(2024, 1, 1, 12, 0) +
                           (i * dt.timedelta(seconds=60*60))
                           for i in range(len(dewps))])
     station.times = datetimes
