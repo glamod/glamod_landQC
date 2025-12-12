@@ -13,12 +13,109 @@ import utils
 import qc_tests.qc_utils as qc_utils
 #************************************************************************
 
-ROLLING = 7
+ROLLING = 7  # looking for peaks in centre of $ROLLING bins
 BIN_WIDTH = 1.0
 RATIO = 0.5
 
+def plot_frequent_values(bins, hist, suspect,
+                         xlabel, title) -> None:  #  pragma: no cover
+    """
+    Plot the histogram, with suspect values identified
+    """
+
+    import matplotlib.pyplot as plt
+
+    plt.step(bins[1:], hist, color='k', where="pre")
+    plt.yscale("log")
+
+    plt.ylabel("Number of Observations")
+    plt.xlabel(xlabel)
+    plt.title(title)
+
+    bad_hist = np.copy(hist)
+    for b, _ in enumerate(bad_hist):
+        if bins[b] not in suspect:
+            bad_hist[b] = 0
+
+    plt.step(bins[1:], bad_hist, color='r', where="pre")
+    plt.show()
+
+
+
+def get_histogram(indata: np.ma.MaskedArray,
+                  name: str) -> tuple[float, np.ndarray, np.ndarray]:
+    """Get the histogram for the data, and the bins of the correct size
+
+    Parameters
+    ----------
+    indata : np.ma.MaskedArray
+        The data for that calendar month
+    name : str
+        The name of the variable for further checks on the bins
+
+    Returns
+    -------
+    tuple[float, np.ndarray, np.ndarray]
+        Bin width, and arrays of the histogram and associated bins
+    """
+
+    # adjust bin widths according to reporting accuracy
+    resolution = qc_utils.reporting_accuracy(indata)
+
+    # and check further dependent on the MetVar
+    if resolution <= 0.5:
+        width = 0.5
+    else:
+        width = 1.0
+    bins = qc_utils.create_bins(indata.compressed(), width, name)
+
+    hist, _ = np.histogram(indata.compressed(), bins)
+
+    assert len(bins) == len(hist) + 1
+
+    return (width, hist, bins)
+
+
+def scan_histogram(hist: np.ndarray, bins: np.ndarray) -> list[int]:
+    """Scan through the histogram to pick out suspect values
+
+    Parameters
+    ----------
+    hist : np.ndarray
+        histogram values
+    bins : np.ndarray
+        histogram bins
+
+    Returns
+    -------
+    list[int]
+        list of indices of values which are suspiciously common
+    """
+    assert len(bins) == len(hist) + 1
+
+    # Scan through the histogram
+    #   check if a bin is the maximum of a local area ("ROLLING")
+    suspect = []
+    for b, bar in enumerate(hist):
+
+        if (b >= (ROLLING//2)) and (b < (len(hist) - ROLLING//2)):
+            target_bins = hist[b-(ROLLING//2) : b + (ROLLING//2) + 1]
+
+            # if sufficient obs, maximum and contains > 50% (can be all) of the data
+            if bar < utils.DATA_COUNT_THRESHOLD:
+                # if insufficient obs, skip on
+                continue
+            if bar == target_bins.max():
+                # if the maximum
+                if (bar/target_bins.sum()) > RATIO:
+                    # and more than 50% of the data (can be all of it)
+                    suspect += [bins[b]]
+
+    return suspect
+
 #************************************************************************
-def identify_values(obs_var: utils.MeteorologicalVariable, station: utils.Station, config_dict: dict,
+def identify_values(obs_var: utils.MeteorologicalVariable,
+                    station: utils.Station, config_dict: dict,
                     plots: bool = False, diagnostics: bool = False) -> None:
     """
     Use distribution to identify frequent values.  Then also store in config file.
@@ -31,68 +128,47 @@ def identify_values(obs_var: utils.MeteorologicalVariable, station: utils.Statio
     """
 
     # TODO - do we want to go down the road of allowing resolution (and hence test)
-    #           to vary over the p-o-r?  I.e. 1C in early, to 0.5C to 0.1C in different decades?
-
-    # store bin width
-    CD_width = {"width" : f"{BIN_WIDTH}"}
-    config_dict[f"FREQUENT-{obs_var.name}"] = CD_width
+    #           to vary over the p-o-r?  I.e. 1C in early, to 0.5C to 0.1C in different decades
 
     for month in range(1, 13):
-
-        locs, = np.where(station.months == month)
-
+        # get data for calendar month
+        locs, = np.nonzero(station.months == month)
         month_data = obs_var.data[locs]
 
         if len(month_data.compressed()) < utils.DATA_COUNT_THRESHOLD:
             # insufficient data, so write out empty config and move on
+            try:
+                config_dict[f"FREQUENT-{obs_var.name}"][f"{month}-width"] = -1
+            except KeyError:
+                CD_width = {f"{month}-width" : -1}
+                config_dict[f"FREQUENT-{obs_var.name}"] = CD_width
             config_dict[f"FREQUENT-{obs_var.name}"][f"{month}"] = []
             continue
 
-        # adjust bin widths according to reporting accuracy
-        resolution = qc_utils.reporting_accuracy(month_data)
+        # get the histogram and the bins
+        width, hist, bins = get_histogram(month_data, obs_var.name)
 
-        if resolution <= 0.5:
-            bins = qc_utils.create_bins(month_data, 0.5, obs_var.name)
-        else:
-            bins = qc_utils.create_bins(month_data, 1.0, obs_var.name)
+        # store bin width
+        try:
+            config_dict[f"FREQUENT-{obs_var.name}"][f"{month}-width"] = width
+        except KeyError:
+            CD_width = {f"{month}-width" : width}
+            config_dict[f"FREQUENT-{obs_var.name}"] = CD_width
 
-        hist, bin_edges = np.histogram(month_data, bins)
+        # Check that there are enough non-unique bins
+        n_valid_bins = np.count_nonzero(hist != 0)
+        if n_valid_bins <= ROLLING:
+            # have fewer bins than can find maximum from
+            config_dict[f"FREQUENT-{obs_var.name}"][f"{month}"] = []
+            continue
 
-        # diagnostic plots
-        if plots:
-            import matplotlib.pyplot as plt
-
-            plt.step(bins[1:], hist, color='k', where="pre")
-            plt.yscale("log")
-
-            plt.ylabel("Number of Observations")
-            plt.xlabel(obs_var.name.capitalize())
-            plt.title(f"{station.id} - month {month}")
-
-        # Scan through the histogram
-        #   check if a bin is the maximum of a local area ("ROLLING")
-        suspect = []
-        for b, bar in enumerate(hist):
-            if (b > ROLLING//2) and (b <= (len(hist) - ROLLING//2)):
-
-                target_bins = hist[b-(ROLLING//2) : b + (ROLLING//2) + 1]
-
-                # if sufficient obs, maximum and contains > 50%, but not all, of the data
-                if bar >= utils.DATA_COUNT_THRESHOLD:
-                    if bar == target_bins.max():
-                        if (bar/target_bins.sum()) > RATIO:
-                            suspect += [bins[b]]
+        suspect = scan_histogram(hist, bins)
 
         # diagnostic plots
         if plots:
-            bad_hist = np.copy(hist)
-            for b, bar in enumerate(bad_hist):
-                if bins[b] not in suspect:
-                    bad_hist[b] = 0
-
-            plt.step(bins[1:], bad_hist, color='r', where="pre")
-            plt.show()
-
+            plot_frequent_values(bins, hist, suspect,
+                                 obs_var.name.capitalize(),
+                                 f"{station.id} - month {month}")
 
         # write out the thresholds...
         config_dict[f"FREQUENT-{obs_var.name}"][f"{month}"] = suspect
@@ -122,11 +198,11 @@ def frequent_values(obs_var: utils.MeteorologicalVariable, station: utils.Statio
 
         # read in bin-width and suspect bins for this month
         try:
-            width = float(config_dict[f"FREQUENT-{obs_var.name}"]["width"])
+            width = float(config_dict[f"FREQUENT-{obs_var.name}"][f"{month}-width"])
             suspect_bins = config_dict[f"FREQUENT-{obs_var.name}"][f"{month}"]
         except KeyError:
             identify_values(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
-            width = float(config_dict[f"FREQUENT-{obs_var.name}"]["width"])
+            width = float(config_dict[f"FREQUENT-{obs_var.name}"][f"{month}-width"])
             suspect_bins = config_dict[f"FREQUENT-{obs_var.name}"][f"{month}"]
 
         # skip on if nothing to find
@@ -145,59 +221,42 @@ def frequent_values(obs_var: utils.MeteorologicalVariable, station: utils.Statio
 
             month_flags = np.array(["" for i in range(month_data.shape[0])])
 
-            # adjust bin widths according to reporting accuracy
-            resolution = qc_utils.reporting_accuracy(month_data)
+            # use stored bin widths
+            bins = qc_utils.create_bins(month_data, width, obs_var.name)
+            hist, _ = np.histogram(month_data, bins)
 
-            if resolution <= 0.5:
-                bins = qc_utils.create_bins(month_data, 0.5, obs_var.name)
-            else:
-                bins = qc_utils.create_bins(month_data, 1.0, obs_var.name)
-            hist, bin_edges = np.histogram(month_data, bins)
+            # Re-scan through the histogram
+            #   check if a bin is the maximum of a local area in this month
+            suspect_monthly = scan_histogram(hist, bins)
 
-            # Scan through the histogram
-            #   check if a bin is the maximum of a local area ("ROLLING")
-            for b, bar in enumerate(hist):
-                if (b > ROLLING//2) and (b <= (len(hist) - ROLLING//2)):
-
-                    target_bins = hist[b-(ROLLING//2) : b + (ROLLING//2) + 1]
-
-                    # if sufficient obs, maximum and contains > 50% of data
-                    if bar >= utils.DATA_COUNT_THRESHOLD:
-                        if bar == target_bins.max():
-                            if (bar/target_bins.sum()) > RATIO:
-                                # this bin meets all the criteria
-                                if bins[b] in suspect_bins:
-                                    # find observations (month & year) to flag!
-                                    flag_locs = np.where(np.logical_and(month_data >= bins[b], month_data < bins[b+1]))
-                                    month_flags[flag_locs] = "F"
+            for sm_bin in suspect_monthly:
+                if sm_bin in suspect_bins:
+                # find observations (month & year) to flag!
+                    flag_locs = np.where(np.logical_and(month_data >= sm_bin,
+                                                        month_data < sm_bin+width))
+                    month_flags[flag_locs] = "F"
 
             # copy flags for all years into main array
             flags[locs] = month_flags
 
-        # diagnostic plots
-        if plots:
-            import matplotlib.pyplot as plt
+            # diagnostic plots
+            if plots:
+                # pull out the
+                bad_hist = np.copy(hist)
+                for b, _ in enumerate(bad_hist):
+                    if bins[b] not in suspect_monthly:
+                        bad_hist[b] = 0
 
-            plt.step(bins[1:], hist, color='k', where="pre")
-            plt.yscale("log")
+                plot_frequent_values(bins, hist, bad_hist,
+                                    obs_var.name.capitalize(),
+                                    f"{station.id} - {year}/{month}")
 
-            plt.ylabel("Number of Observations")
-            plt.xlabel(obs_var.name.capitalize())
-            plt.title(f"{station.id} - month {month}")
-
-            bad_hist = np.copy(hist)
-            for b, bar in enumerate(bad_hist):
-                if bins[b] not in suspect_bins:
-                    bad_hist[b] = 0
-
-            plt.step(bins[1:], bad_hist, color='r', where="pre")
-            plt.show()
 
     # append flags to object
     obs_var.store_flags(utils.insert_flags(obs_var.flags, flags))
 
     logger.info(f"Frequent Values {obs_var.name}")
-    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
+    logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
     # frequent_values
 

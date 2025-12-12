@@ -565,7 +565,8 @@ def find_gap(hist: np.ndarray, bins: np.ndarray, threshold: float, gap_size: int
     return gap_start # find_gap
 
 #*********************************************
-def reporting_accuracy(indata: np.ndarray, winddir: bool = False, plots: bool = False) -> float:
+def reporting_accuracy(indata: np.ma.MaskedArray, winddir: bool = False,
+                       plots: bool = False) -> float:
     '''
     Uses histogram of remainders to look for special values
 
@@ -618,7 +619,7 @@ def reporting_accuracy(indata: np.ndarray, winddir: bool = False, plots: bool = 
 
             # normalise
             hist = hist / float(sum(hist))
-
+            # TODO: check this in more detail at some point
             if hist[0] >= 0.3:
                 if hist[5] >= 0.15:
                     resolution = 0.5
