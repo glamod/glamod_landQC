@@ -123,12 +123,12 @@ def calculate_hourly_anomalies(hours: np.ndarray[int],
     return anomalies
 
 
-def normalise_hourly_anomalies(anomalies: np.ndarray) -> np.ndarray:
+def normalise_hourly_anomalies(anomalies: np.ma.MaskedArray) -> np.ndarray:
     """Normalise the anomalies by their spread (e.g. variance)
 
     Parameters
     ----------
-    anomalies : np.ndarray
+    anomalies : np.ma.MaskedArray
         Hourly anomalies to normalise by the spread
 
     Returns
@@ -495,7 +495,7 @@ def check_if_storm(station: utils.Station,
     if sequential_differences(diffs, couldbe_storm):
         # this month has the potential to be a storm
         #   so do not set any flags
-        return np.ma.array([])
+        return np.array([])
 
     return ym_locs
 

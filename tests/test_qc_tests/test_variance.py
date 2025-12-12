@@ -360,6 +360,147 @@ def test_sequential_differences_invert(length: int,
     assert result == expected
 
 
+@patch("variance.read_wind_or_pressure")
+def test_check_if_storm_no_data(read_mock: Mock) -> None:
+    """Test that insufficient data return from reading returns correctly"""
+
+    station = _setup_station()
+
+
+    # set up MetVar and put into station
+    slp = utils.MeteorologicalVariable("sea_level_pressure",
+                                       -99.9, "hPa", "float")
+    slp.store_data(np.ma.copy(station.temperature.data))
+    slp.store_flags(np.copy(station.temperature.flags))
+    setattr(station, "sea_level_pressure", slp)
+    wind = utils.MeteorologicalVariable("wind_speed",
+                                       -99.9, "m/s", "float")
+    wind.store_data(np.ma.copy(station.temperature.data))
+    wind.store_flags(np.copy(station.temperature.flags))
+    setattr(station, "wind_speed", slp)
+
+    month_locs = np.arange(wind.data.shape[0])
+    year_locs = np.arange(24*31)
+
+    read_mock.return_value = (-1, -1)
+
+    result = variance.check_if_storm(station, wind, month_locs, year_locs)
+
+    # check calls use correct data
+    for each_call, expected_call in zip(read_mock.call_args_list,
+                                        [wind.data[month_locs],
+                                         slp.data[month_locs]]):
+
+        np.testing.assert_array_equal(each_call.args[0], expected_call)
+    # and the final result
+    assert result == False
+
+
+@patch("variance.read_wind_or_pressure")
+def test_check_if_storm_no_year_data(read_mock: Mock) -> None:
+    """Test that insufficient data return from reading returns correctly"""
+
+    station = _setup_station()
+
+    # set up MetVar and put into station
+    slp = utils.MeteorologicalVariable("sea_level_pressure",
+                                       -99.9, "hPa", "float")
+    indata = np.ma.copy(station.temperature.data)
+    indata.mask[100:] = True
+    slp.store_data(indata)
+    slp.store_flags(np.copy(station.temperature.flags))
+    setattr(station, "sea_level_pressure", slp)
+    wind = utils.MeteorologicalVariable("wind_speed",
+                                       -99.9, "m/s", "float")
+    wind.store_data(indata)
+    wind.store_flags(np.copy(station.temperature.flags))
+    setattr(station, "wind_speed", slp)
+
+    month_locs = np.arange(wind.data.shape[0])
+    year_locs = np.arange(24*31)
+
+    # set so averages have no impact on scaling for this test
+    read_mock.return_value = (0, 1)
+
+    result = variance.check_if_storm(station, wind, month_locs, year_locs)
+
+    assert result == False
+
+
+@patch("variance.sequential_differences")
+@patch("variance.high_wind_low_pressure_match")
+@patch("variance.read_wind_or_pressure")
+def test_check_if_storm_no_couldbe(read_mock: Mock,
+                                   match_mock: Mock,
+                                   seqdif_mock: Mock) -> None:
+    """Test that if no couldbe_storm, then returns correctly"""
+
+    station = _setup_station()
+
+    # set up MetVar and put into station
+    slp = utils.MeteorologicalVariable("sea_level_pressure",
+                                       -99.9, "hPa", "float")
+    slp.store_data(np.ma.copy(station.temperature.data))
+    slp.store_flags(np.copy(station.temperature.flags))
+    setattr(station, "sea_level_pressure", slp)
+    wind = utils.MeteorologicalVariable("wind_speed",
+                                       -99.9, "m/s", "float")
+    wind.store_data(np.ma.copy(station.temperature.data))
+    wind.store_flags(np.copy(station.temperature.flags))
+    setattr(station, "wind_speed", slp)
+
+    month_locs = np.arange(wind.data.shape[0])
+    year_locs = np.arange(24*31)
+
+    # set so averages have no impact on scaling for this test
+    read_mock.return_value = (0, 1)
+    seqdif_mock.return_value = False
+
+    result = variance.check_if_storm(station, wind, month_locs, year_locs)
+
+    # check calls use correct data
+    calls = match_mock.call_args_list[0]
+    # only the single year of data
+    np.testing.assert_array_equal(calls.args[0], wind.data[year_locs])
+    # and the inverse for the pressure data scaling, hence the "-"
+    np.testing.assert_array_equal(calls.args[1], -slp.data[year_locs])
+
+    # check result as expected (flags retained)
+    np.testing.assert_array_equal(result, year_locs)
+
+
+@patch("variance.sequential_differences")
+@patch("variance.read_wind_or_pressure")
+def test_check_if_storm_couldbe(read_mock: Mock,
+                                   seqdif_mock: Mock) -> None:
+    """Test that if couldbe_storm, then returns correctly"""
+
+    station = _setup_station()
+
+    # set up MetVar and put into station
+    slp = utils.MeteorologicalVariable("sea_level_pressure",
+                                       -99.9, "hPa", "float")
+    slp.store_data(np.ma.copy(station.temperature.data))
+    slp.store_flags(np.copy(station.temperature.flags))
+    setattr(station, "sea_level_pressure", slp)
+    wind = utils.MeteorologicalVariable("wind_speed",
+                                       -99.9, "m/s", "float")
+    wind.store_data(np.ma.copy(station.temperature.data))
+    wind.store_flags(np.copy(station.temperature.flags))
+    setattr(station, "wind_speed", slp)
+
+    month_locs = np.arange(wind.data.shape[0])
+    year_locs = np.arange(24*31)
+
+    # set so averages have no impact on scaling for this test
+    read_mock.return_value = (0, 1)
+    seqdif_mock.return_value = True
+
+    result = variance.check_if_storm(station, wind, month_locs, year_locs)
+
+    # check that result as it should be (flags cleared)
+    np.testing.assert_array_equal(result, np.array([]))
+
 
 @patch("variance.logger")
 @patch("variance.identify_bad_years")
@@ -400,13 +541,12 @@ def test_variance_check(identify_mock: Mock,
     assert np.all(station.temperature.flags[744:] == "")
 
 
-
 @patch("variance.logger")
 @patch("variance.identify_bad_years")
 @patch("variance.check_if_storm")
-def test_variance_check_storm(storm_mock: Mock,
-                              identify_mock: Mock,
-                              logger_mock: Mock) -> None:
+def test_variance_check_no_storm(storm_mock: Mock,
+                                identify_mock: Mock,
+                                logger_mock: Mock) -> None:
     """Test that flow handled if storm checking called, but no storm found"""
     station = _setup_station()
     config_dict = {}
@@ -414,8 +554,8 @@ def test_variance_check_storm(storm_mock: Mock,
     # no data needed, but set up MetVar and put into station
     slp = utils.MeteorologicalVariable("sea_level_pressure",
                                        -99.9, "hPa", "float")
-    slp.data = np.copy(station.temperature.data)
-    slp.flags = np.copy(station.temperature.flags)
+    slp.store_data(np.ma.copy(station.temperature.data))
+    slp.store_flags(np.copy(station.temperature.flags))
     setattr(station, "sea_level_pressure", slp)
 
     identify_mock.return_value = np.array([0]), np.arange(10)
@@ -435,9 +575,9 @@ def test_variance_check_storm(storm_mock: Mock,
 @patch("variance.logger")
 @patch("variance.identify_bad_years")
 @patch("variance.check_if_storm")
-def test_variance_check_storm(storm_mock: Mock,
-                              identify_mock: Mock,
-                              logger_mock: Mock) -> None:
+def test_variance_check_storm_found(storm_mock: Mock,
+                                    identify_mock: Mock,
+                                    logger_mock: Mock) -> None:
     """Test that flow handled if storm checking called, but no storm found"""
     station = _setup_station()
     config_dict = {}
@@ -445,8 +585,8 @@ def test_variance_check_storm(storm_mock: Mock,
     # no data needed, but set up MetVar and put into station
     slp = utils.MeteorologicalVariable("sea_level_pressure",
                                        -99.9, "hPa", "float")
-    slp.data = np.copy(station.temperature.data)
-    slp.flags = np.copy(station.temperature.flags)
+    slp.store_data(np.ma.copy(station.temperature.data))
+    slp.store_flags(np.copy(station.temperature.flags))
     setattr(station, "sea_level_pressure", slp)
 
     identify_mock.return_value = np.array([0]), np.arange(10)
@@ -455,7 +595,7 @@ def test_variance_check_storm(storm_mock: Mock,
                             config_dict)
 
     calls = [call("Variance sea_level_pressure"),
-             call(f"   Cumulative number of flags set: 0")]
+             call("   Cumulative number of flags set: 0")]
     logger_mock.info.assert_has_calls(calls)
 
     # As storm is True (returns array), first month is a bad year, flags should NOT be set
