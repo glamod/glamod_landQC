@@ -538,6 +538,7 @@ def variance_check(obs_var: utils.MeteorologicalVariable,
 
             # corresponding locations
             ym_locs, = np.where(station.years[month_locs] == all_years[year])
+
             # if pressure or wind speed, need to do some
             # # further checking before applying flags
             if obs_var.name in ["station_level_pressure",
@@ -547,11 +548,13 @@ def variance_check(obs_var: utils.MeteorologicalVariable,
                 storm_check = check_if_storm(station, obs_var,
                                              month_locs, ym_locs)
 
-                if not storm_check:
+                if storm_check is False:
+                    # Checking explicitly for boolean False
                     # returned False, insufficient data to check
-                    continue
+                    #    or not matching storm characteristics
+                    pass
                 else:
-                    # returned array, so overwrite flag locations
+                    # Returned array, so overwrite flag locations
                     #    which may now be empty
                     ym_locs = storm_check
 
