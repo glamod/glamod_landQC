@@ -237,8 +237,8 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
         # not run on pressure data in HadISD.
         if test in ["all", "climatological"]:
             if diagnostics: print("C", dt.datetime.now()-startT)
-            qc_tests.climatological.coc(station, ["temperature", "dew_point_temperature"],
-                                        config_dict, full=full, plots=plots, diagnostics=diagnostics)
+            qc_tests.climatological.clim_outlier(station, ["temperature", "dew_point_temperature"],
+                                                 config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "timestamp"]:
             if diagnostics: print("T", dt.datetime.now()-startT)
