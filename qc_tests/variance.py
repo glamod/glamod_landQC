@@ -170,7 +170,7 @@ def calculate_yearly_variances(stn_years: np.ndarray,
     """
 
     # calculate the variance for each year in this single month.
-    all_years = np.unique(stn_years)
+    all_years = np.unique(stn_years)  #  unique returns sorted elements
 
     variances = np.ma.zeros(all_years.shape[0])
     variances.mask = np.ones(all_years.shape[0])
@@ -308,9 +308,9 @@ def identify_bad_years(obs_var: utils.MeteorologicalVariable,
 
     scaled_variances = ((variances - average_variance) / variance_spread)
 
-    bad_years, = np.where(np.abs(scaled_variances) > SPREAD_THRESHOLD)
+    bad_years_locs, = np.where(np.abs(scaled_variances) > SPREAD_THRESHOLD)
 
-    return bad_years, scaled_variances
+    return bad_years_locs, scaled_variances
 
 
 def read_wind_or_pressure(monthly_var: np.ma.MaskedArray) -> tuple[float, float]:
@@ -521,21 +521,21 @@ def variance_check(obs_var: utils.MeteorologicalVariable,
 
     # get hourly climatology for each month
     for month in range(1, 13):
-        # TODO: move bad_years from indices in all_years, but to the actual years (YYYY)
-        bad_years, scaled_variances = identify_bad_years(obs_var, station,
-                                                         config_dict, month, plots=plots,
-                                                         diagnostics=diagnostics,
-                                                         winsorize=winsorize)
+        bad_years_locs, scaled_variances = identify_bad_years(obs_var, station,
+                                                              config_dict, month,
+                                                              plots=plots,
+                                                              diagnostics=diagnostics,
+                                                              winsorize=winsorize)
 
         # if no bad years, or variances calculable, move to next month
-        if len(bad_years) == 0 and len(scaled_variances) == 0:
+        if len(bad_years_locs) == 0 and len(scaled_variances) == 0:
             continue
 
         month_locs, = np.where(station.months == month)
         # go through each bad year for this month
-        all_years = np.unique(station.years)
+        all_years = np.unique(station.years)  #  unique returns sorted elements
 
-        for year in bad_years:
+        for year in bad_years_locs:
 
             # corresponding locations
             ym_locs, = np.where(station.years[month_locs] == all_years[year])
@@ -567,7 +567,7 @@ def variance_check(obs_var: utils.MeteorologicalVariable,
         # diagnostic plots
         if plots:
             plot_variance_distribution(scaled_variances,
-                                       bad_years,
+                                       bad_years_locs,
                                        obs_var.name,
                                        f"{station.id} - month {month}")
 
