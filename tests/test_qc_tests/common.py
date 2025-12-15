@@ -4,7 +4,6 @@ Contains common code for testing the QC tests
 import numpy as np
 import datetime as dt
 import pandas as pd
-from typing import Optional
 
 import utils
 
