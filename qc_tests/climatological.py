@@ -190,10 +190,6 @@ def calculate_climatology(obs_var: utils.MeteorologicalVariable,
         climatology, of length one, to retain mask information
     """
 
-    # calculate climatology
-    hourly_clim = np.ma.zeros(1)
-    hourly_clim.mask = np.ones(1)
-
     hour_data = obs_var.data[hmlocs]
 
     if winsorize:
@@ -202,11 +198,11 @@ def calculate_climatology(obs_var: utils.MeteorologicalVariable,
 
     if len(hour_data) >= utils.DATA_COUNT_THRESHOLD:
         # TODO: check if should be  qc_utils.average
-        hourly_clim[0] = np.ma.mean(hour_data)
-        hourly_clim.mask[0] = False
+        clim = np.ma.mean(hour_data)
+        return np.ma.array(clim, mask=False)
 
-    assert len(hourly_clim) == 1
-    return hourly_clim
+    else:
+        return np.ma.array(0, mask=True)
 
 
 def calculate_anomalies(station: utils.Station,

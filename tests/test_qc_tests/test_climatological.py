@@ -69,14 +69,20 @@ def test_calculate_climatology_no_data() -> None:
 
     # pass in too few obs for test to run
     hmlocs, = np.nonzero(np.logical_and(station.years == 2000,
-                                        station.months == 1,
-                                        station.hours == 1))
+                                        np.logical_and(
+                                            station.months == 1,
+                                            station.hours == 1)
+                                        ))
 
     result = climatological.calculate_climatology(station.temperature,
                                                   hmlocs)
 
     assert isinstance(result, np.ma.MaskedArray)
-    np.testing.assert_array_almost_equal(result, np.ma.array(0, mask=True))
+    expected = np.ma.array(0, mask=True)
+
+    # as all elements masked, need to test separately
+    np.testing.assert_array_almost_equal(result.data, expected.data)
+    np.testing.assert_array_almost_equal(result.mask, expected.mask)
 
 
 def test_calculate_anomalies() -> None:
@@ -90,7 +96,8 @@ def test_calculate_anomalies() -> None:
     climatological.calculate_anomalies(station,
                                        station.temperature,
                                        result,
-                                       1)
+                                       1,
+                                       winsorize=False)
 
     # values are zero because all hours have the same value
     expected = np.ma.zeros(station.temperature.data.shape[0])
