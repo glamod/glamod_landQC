@@ -406,7 +406,7 @@ def find_month_thresholds(obs_var: utils.MeteorologicalVariable,
                                               mu=np.ma.median(normalised_anomalies),
                                               sig=1.5*qc_utils.spread(normalised_anomalies),
                                               skew=skew(normalised_anomalies.compressed())
-            )
+                                                )
 
             if len(gaussian_fit) == 3:
                 fitted_curve = qc_utils.gaussian(bincentres, gaussian_fit)
@@ -418,12 +418,12 @@ def find_month_thresholds(obs_var: utils.MeteorologicalVariable,
             try:
                 lower_threshold = bins[:-1][np.nonzero(np.logical_and(fitted_curve < FREQUENCY_THRESHOLD,
                                                                     bincentres < 0))[0]][-1]
-            except:
+            except IndexError:
                 lower_threshold = bins[0]
             try:
                 upper_threshold = bins[1:][np.nonzero(np.logical_and(fitted_curve < FREQUENCY_THRESHOLD,
                                                                    bincentres > 0))[0]][0]
-            except:
+            except IndexError:
                 upper_threshold = bins[-1]
 
 

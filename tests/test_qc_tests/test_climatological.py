@@ -86,6 +86,8 @@ def test_get_filter_ranges_short(year: int,
 
     month_range, filter_range = climatological.get_filter_ranges(year, all_years)
 
+    # compared to test on a longer run of data, the returned values
+    #   are trunctated by the available amount of data
     np.testing.assert_almost_equal(month_range, month)
     np.testing.assert_almost_equal(filter_range, filter)
 
@@ -344,6 +346,105 @@ def test_prepare_data(calc_anoms_mock: Mock,
     assert calls.args[1] == station
     np.testing.assert_array_almost_equal(calls.args[2], ann_anoms_mock.return_value)
     assert calls.args[3] == 1
+
+
+def test_find_month_thresholds() ->  None:
+    """Test if all anomalies are zero"""
+    station = _setup_station()
+    config_dict = {}
+
+    climatological.find_month_thresholds(station.temperature,
+                                         station, config_dict)
+
+    # anomalies are all zero, because hourly values are the same for
+    #   each hour of the day
+    assert config_dict["CLIMATOLOGICAL-temperature"]["1-uthresh"] == 0.5
+    assert config_dict["CLIMATOLOGICAL-temperature"]["1-lthresh"] == -0.5
+
+
+@patch("climatological.prepare_data")
+@patch("climatological.qc_utils.create_bins")
+@patch("climatological.np.histogram")
+@patch("climatological.qc_utils.fit_gaussian")
+@patch("climatological.qc_utils.gaussian")
+def test_find_month_thresholds_data(gauss_mock: Mock,
+                                    fit_mock: Mock,
+                                    hist_mock: Mock,
+                                    create_bins_mock: Mock,
+                                    prepare_mock: Mock) ->  None:
+    """Test that calls to bins, histogram and fitting all done as expected"""
+    station = _setup_station(nyears=1)
+    config_dict = {}
+
+    # want data only for first month, so make something to generate that
+    prepare_mock.side_effect = [station.temperature.data if i==0 else np.ma.MaskedArray([10]) for i in range(12)]
+    # simple bins and histogram
+    bins = np.arange(-3., 3.5, 0.5)
+    create_bins_mock.return_value = bins
+    hist_mock.return_value = (np.array([0, 1, 1, 2, 3, 5, 6, 5, 3, 2, 1, 0]),
+                              None)
+    # mocking this so that a simple Gaussian selected
+    fit_mock.return_value = np.array([1, 0, 1])
+    gauss_mock.return_value = np.ones(bins.shape[0]-1)
+
+    climatological.find_month_thresholds(station.temperature,
+                                         station, config_dict)
+
+    calls = create_bins_mock.call_args_list[0]
+    np.testing.assert_array_almost_equal(calls.args[0], station.temperature.data)
+    assert calls.args[1] == 0.5
+    assert calls.args[2] == "temperature"
+
+    calls = hist_mock.call_args_list[0]
+    np.testing.assert_almost_equal(calls.args[0], station.temperature.data)
+    np.testing.assert_almost_equal(calls.args[1], create_bins_mock.return_value)
+
+    fit_mock.assert_called_once()
+
+    # Will be max and min bin values for this set up.
+    assert config_dict["CLIMATOLOGICAL-temperature"]["1-uthresh"] == 3
+    assert config_dict["CLIMATOLOGICAL-temperature"]["1-lthresh"] == -3
+
+
+@patch("climatological.prepare_data")
+@patch("climatological.qc_utils.create_bins")
+@patch("climatological.np.histogram")
+@patch("climatological.qc_utils.fit_gaussian")
+@patch("climatological.qc_utils.gaussian")
+def test_find_month_thresholds_fitting(gauss_mock: Mock,
+                                       fit_mock: Mock,
+                                       hist_mock: Mock,
+                                       create_bins_mock: Mock,
+                                       prepare_mock: Mock) ->  None:
+
+
+    station = _setup_station(nyears=1)
+    config_dict = {}
+    # want data only for first month, so make something to generate that
+    prepare_mock.side_effect = [station.temperature.data if i==0 else np.ma.MaskedArray([10]) for i in range(12)]
+    # simple bins and histogram
+    bins = np.arange(-3., 3.5, 0.5)
+    create_bins_mock.return_value = bins
+    # only need this to fill unused variables
+    hist_mock.return_value = (np.arange(10), None)
+    # mocking this so that a simple Gaussian selected
+    fit_mock.return_value = np.array([1, 0, 1])
+
+    # mocking values for the fitted Gaussian
+    #    Bins < 0.1 flagged, but rounded down/up to be inclusive
+    #    so before (lower) or after (higher) the 0.05 values
+    gauss_mock.return_value = np.array([0.01, 0.05, 0.5, 0.5, 1, 3, 5, 3, 1, 0.5, 0.05, 0.01])
+
+    climatological.find_month_thresholds(station.temperature,
+                                         station, config_dict)
+
+    calls = gauss_mock.call_args_list[0]
+    np.testing.assert_almost_equal(calls.args[0], bins[1:]-0.25)
+    np.testing.assert_almost_equal(calls.args[1],fit_mock.return_value)
+
+    assert config_dict["CLIMATOLOGICAL-temperature"]["1-uthresh"] == 2.5
+    assert config_dict["CLIMATOLOGICAL-temperature"]["1-lthresh"] == -2.5
+
 
 
 @patch("climatological.find_month_thresholds")
