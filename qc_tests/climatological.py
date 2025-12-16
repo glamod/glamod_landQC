@@ -416,13 +416,17 @@ def find_month_thresholds(obs_var: utils.MeteorologicalVariable,
             # use bins and curve to find points where curve is < FREQUENCY_THRESHOLD
             #  round up or down to be fully encompassing
             try:
-                lower_threshold = bins[:-1][np.nonzero(np.logical_and(fitted_curve < FREQUENCY_THRESHOLD,
-                                                                    bincentres < 0))[0]][-1]
+                locs, = np.nonzero(np.logical_and(
+                    fitted_curve < FREQUENCY_THRESHOLD,
+                    bincentres < 0))
+                lower_threshold = bins[:-1][locs[-1]]  # get bin edge closest to the centre
             except IndexError:
                 lower_threshold = bins[0]
             try:
-                upper_threshold = bins[1:][np.nonzero(np.logical_and(fitted_curve < FREQUENCY_THRESHOLD,
-                                                                   bincentres > 0))[0]][0]
+                locs, = np.nonzero(np.logical_and(
+                    fitted_curve < FREQUENCY_THRESHOLD,
+                    bincentres > 0))
+                upper_threshold = bins[1:][locs[0]]  # get bin edge closest to the centre
             except IndexError:
                 upper_threshold = bins[-1]
 
@@ -447,10 +451,13 @@ def find_month_thresholds(obs_var: utils.MeteorologicalVariable,
     # find_month_thresholds
 
 #************************************************************************
-def monthly_clim(obs_var: utils.MeteorologicalVariable, station: utils.Station, config_dict: dict,
-                 logfile: str = "", plots: bool = False, diagnostics: bool = False, winsorize: bool = True):
+def monthly_clim(obs_var: utils.MeteorologicalVariable,
+                 station: utils.Station, config_dict: dict,
+                 logfile: str = "", plots: bool = False,
+                 diagnostics: bool = False, winsorize: bool = True) -> None:
     """
-    Run through the variables and pass to the Distributional Gap Checks
+    Run through the variables and find where monthly climatologies outside
+    of accepted bounds
 
     :param MetVar obs_var: meteorological variable object
     :param Station station: station object
@@ -480,7 +487,8 @@ def monthly_clim(obs_var: utils.MeteorologicalVariable, station: utils.Station, 
                 upper_threshold = float(config_dict[f"CLIMATOLOGICAL-{obs_var.name}"][f"{month}-uthresh"])
                 lower_threshold = float(config_dict[f"CLIMATOLOGICAL-{obs_var.name}"][f"{month}-lthresh"])
             except KeyError:
-                find_month_thresholds(obs_var, station, config_dict, plots=plots, diagnostics=diagnostics)
+                find_month_thresholds(obs_var, station, config_dict,
+                                      plots=plots, diagnostics=diagnostics)
                 upper_threshold = float(config_dict[f"CLIMATOLOGICAL-{obs_var.name}"][f"{month}-uthresh"])
                 lower_threshold = float(config_dict[f"CLIMATOLOGICAL-{obs_var.name}"][f"{month}-lthresh"])
 
@@ -489,24 +497,26 @@ def monthly_clim(obs_var: utils.MeteorologicalVariable, station: utils.Station, 
             lowercount = len(np.nonzero(normalised_anomalies < lower_threshold)[0])
 
             if uppercount > 0:
-                gap_start = qc_utils.find_gap(hist, bins, upper_threshold, GAP_SIZE)
+                gap_start = qc_utils.find_gap(hist, bins,
+                                              upper_threshold, GAP_SIZE)
 
                 if gap_start != 0:
-                    bad_locs, = np.ma.nonzero(normalised_anomalies > gap_start) # all years for one month
-
+                    # all years for one month
+                    bad_locs, = np.ma.nonzero(normalised_anomalies > gap_start)
                     # normalised_anomalies are for the whole record, just this month is unmasked
                     flags[bad_locs] = "C"
 
             if lowercount > 0:
-                gap_start = qc_utils.find_gap(hist, bins, lower_threshold, GAP_SIZE, upwards=False)
+                gap_start = qc_utils.find_gap(hist, bins,
+                                              lower_threshold, GAP_SIZE, upwards=False)
 
                 if gap_start != 0:
-                    bad_locs, = np.ma.nonzero(normalised_anomalies < gap_start) # all years for one month
-
+                    # all years for one month
+                    bad_locs, = np.ma.nonzero(normalised_anomalies < gap_start)
                     flags[bad_locs] = "C"
 
             # diagnostic plots
-            if plots:
+            if plots:  # pragma: no cover
                 bad_locs, = np.nonzero(flags[month_locs] == "C")
                 bad_hist, _ = np.histogram(normalised_anomalies[month_locs][bad_locs],
                                            bins)
