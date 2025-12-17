@@ -406,6 +406,7 @@ def test_find_month_thresholds_data(gauss_mock: Mock,
     assert config_dict["CLIMATOLOGICAL-temperature"]["1-lthresh"] == -3
 
 
+
 @patch("climatological.prepare_data")
 @patch("climatological.qc_utils.create_bins")
 @patch("climatological.np.histogram")
@@ -416,7 +417,8 @@ def test_find_month_thresholds_fitting(gauss_mock: Mock,
                                        hist_mock: Mock,
                                        create_bins_mock: Mock,
                                        prepare_mock: Mock) ->  None:
-
+    """Test how the thresholds are determined when selecting the
+    fitted curve falls below the set level"""
 
     station = _setup_station(nyears=1)
     config_dict = {}
