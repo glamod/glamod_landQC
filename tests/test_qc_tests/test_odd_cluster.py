@@ -43,14 +43,14 @@ def _generate_pd_times(length: int, start_dt: dt.datetime) -> pd.Series:
                           for i in range(length)])[0])
 
 
-def _generate_expected_flags(data: np.ndarray) -> np.ndarray:
+def _generate_expected_flags(data: np.ma.MaskedArray) -> np.ndarray:
     """ Generate the expected flags
     Use the fact that simulated odd cluster data is zeros, but
     non cluster data are ones
 
     Parameters
     ----------
-    data : np.ndarray
+    data : np.ma.MaskedArray
         length of the time dataframe to be generated
 
     Returns
@@ -60,6 +60,7 @@ def _generate_expected_flags(data: np.ndarray) -> np.ndarray:
     """
     expected_flags = np.array(["" for _ in data])
     expected_flags[data == 0] = "o"
+    expected_flags[data.mask == "True"] = ""
 
     return expected_flags
 
@@ -114,7 +115,7 @@ def test_flag_clusters_start() -> None:
     end_times = _generate_pd_times(len(INDATA), end_dt)
 
     all_times = pd.concat([oc_times, end_times])
-    all_data = np.append(OCDATA, INDATA)
+    all_data = np.ma.append(OCDATA, INDATA)
 
     temperature = common.example_test_variable("temperature", all_data)
 
@@ -125,6 +126,8 @@ def test_flag_clusters_start() -> None:
 
     expected_flags = _generate_expected_flags(all_data)
 
+    print(all_data)
+    print(all_times)
     np.testing.assert_array_equal(expected_flags, temperature.flags)
 
 
@@ -139,7 +142,7 @@ def test_flag_clusters_end() -> None:
     oc_times = _generate_pd_times(len(OCDATA), oc_dt)
 
     all_times = pd.concat([start_times, oc_times])
-    all_data = np.append(INDATA, OCDATA)
+    all_data = np.ma.append(INDATA, OCDATA)
 
     temperature = common.example_test_variable("temperature", all_data)
 
@@ -166,8 +169,8 @@ def test_flag_clusters_normal() -> None:
     end_times = _generate_pd_times(len(INDATA), end_dt)
 
     all_times = pd.concat([start_times, oc_times, end_times])
-    all_data = np.append(INDATA, OCDATA)
-    all_data = np.append(all_data, INDATA)
+    all_data = np.ma.append(INDATA, OCDATA)
+    all_data = np.ma.append(all_data, INDATA)
 
     temperature = common.example_test_variable("temperature", all_data)
 
