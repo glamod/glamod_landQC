@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-import matplotlib as mpl
+from matplotlib import axes
 import matplotlib.pyplot as plt
 
 import io_utils as io
@@ -81,7 +81,7 @@ assert len(VARS) == len(setup.obs_var_list)
 assert 2 * len(VARS) + 1 == len(RETAINED_COLUMNS)
 
 
-def plot_data_and_flags(ax: mpl.axes.Axes,
+def plot_data_and_flags(ax: axes.Axes,
                         df: pd.DataFrame,
                         varname: str) -> None:
     """Plot the data and flags
@@ -155,6 +155,7 @@ def main(station_id: str) -> None:
                             station_list.longitude[this_station],
                             station_list.elevation[this_station])
 
+    # TODO: to set this as a selectable choice
     if "internal" =="internal":
         station, station_df = io.read_station(setup.SUBDAILY_PROC_DIR /
                                                 "{:11s}{}{}".format(station_id,
