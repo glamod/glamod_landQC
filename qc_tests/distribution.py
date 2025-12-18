@@ -20,7 +20,8 @@ STORM_THRESHOLD = 5
 VALID_MONTHS = 5
 MIN_OBS = 28*2 # two obs per day for the month (minimum subdaily)
 SPREAD_LIMIT = 2 # two IQR/MAD/STD
-BIN_WIDTH = 0.25
+MONTHLY_BIN_WIDTH = 0.25  # for monthly test
+BIN_WIDTH = 1.0  # for all obs test
 LARGE_LIMIT = 5
 GAP_SIZE = 2
 FREQUENCY_THRESHOLD = 0.1
@@ -137,7 +138,7 @@ def monthly_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station, c
 
         standardised_months = (month_averages - climatology) / spread
 
-        bins = qc_utils.create_bins(standardised_months, BIN_WIDTH, obs_var.name)
+        bins = qc_utils.create_bins(standardised_months, MONTHLY_BIN_WIDTH, obs_var.name)
         hist, bin_edges = np.histogram(standardised_months, bins)
 
         # flag months with very large offsets
