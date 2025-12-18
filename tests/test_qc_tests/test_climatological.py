@@ -448,6 +448,47 @@ def test_find_month_thresholds_fitting(gauss_mock: Mock,
     assert config_dict["CLIMATOLOGICAL-temperature"]["1-lthresh"] == -2.5
 
 
+@patch("climatological.prepare_data")
+@patch("climatological.qc_utils.create_bins")
+@patch("climatological.np.histogram")
+@patch("climatological.qc_utils.find_gap")
+def test_monthly_clim(find_mock: Mock,
+                        hist_mock: Mock,
+                        create_bins_mock: Mock,
+                        prepare_mock: Mock) ->  None:
+    """Test how the thresholds are used to set flags"""
+
+    station = _setup_station(nyears=1)
+
+    # set up config dictionary
+    config_dict = {"CLIMATOLOGICAL-temperature": {"1-uthresh": 2.5}}
+    config_dict["CLIMATOLOGICAL-temperature"]["1-lthresh"] = -2.5
+
+    # generate some dummy anomalies, with values that can be flagged
+    anomalies = np.ma.zeros(station.temperature.data.shape[0])
+    anomalies[:10] = 100
+    anomalies[-10:] = -100
+    prepare_mock.side_effect = [anomalies if i==0 else np.ma.MaskedArray([10]) for i in range(12)]
+
+    # simple bins and histogram, so that routine flows
+    bins = np.arange(-3., 3.5, 0.5)
+    create_bins_mock.return_value = bins
+    # only need this to fill unused variables
+    hist_mock.return_value = (np.arange(10),
+                              None)
+
+    # gap check tested elsewhere, so return values which will act to flag
+    find_mock.side_effect = [10, -10]
+
+    climatological.monthly_clim(station.temperature, station, config_dict)
+
+    # build the expected array
+    expected_flags = np.array(["" for _ in station.times])
+    expected_flags[:10] = "C"
+    expected_flags[-10:] = "C"
+
+    np.testing.assert_equal(station.temperature.flags, expected_flags)
+
 
 @patch("climatological.find_month_thresholds")
 @patch("climatological.monthly_clim")

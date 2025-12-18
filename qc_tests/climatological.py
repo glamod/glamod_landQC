@@ -453,7 +453,7 @@ def find_month_thresholds(obs_var: utils.MeteorologicalVariable,
 #************************************************************************
 def monthly_clim(obs_var: utils.MeteorologicalVariable,
                  station: utils.Station, config_dict: dict,
-                 logfile: str = "", plots: bool = False,
+                 plots: bool = False,
                  diagnostics: bool = False, winsorize: bool = True) -> None:
     """
     Run through the variables and find where monthly climatologies outside
@@ -462,7 +462,6 @@ def monthly_clim(obs_var: utils.MeteorologicalVariable,
     :param MetVar obs_var: meteorological variable object
     :param Station station: station object
     :param str configfile: dictionary for configuration settings
-    :param str logfile: string for log file
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
@@ -492,7 +491,7 @@ def monthly_clim(obs_var: utils.MeteorologicalVariable,
                 upper_threshold = float(config_dict[f"CLIMATOLOGICAL-{obs_var.name}"][f"{month}-uthresh"])
                 lower_threshold = float(config_dict[f"CLIMATOLOGICAL-{obs_var.name}"][f"{month}-lthresh"])
 
-            # now to find the gaps
+            # now to find the gaps - no point looking if there's no data exceeding
             uppercount = len(np.nonzero(normalised_anomalies > upper_threshold)[0])
             lowercount = len(np.nonzero(normalised_anomalies < lower_threshold)[0])
 
