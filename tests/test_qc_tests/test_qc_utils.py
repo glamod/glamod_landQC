@@ -264,8 +264,8 @@ def test_create_bins_long() -> None:
     expected = np.arange(-190-2.5, 157+2.5, 0.5)
 
     np.testing.assert_array_equal(result, expected)
-      
-    
+
+
 def test_update_dataframe() -> None:
     """Test that DataFrame values are updated correctly"""
 
@@ -286,3 +286,95 @@ def test_update_dataframe() -> None:
     expected = np.array([10, 20, 300, 40, 50])
     np.testing.assert_array_equal(df["wind_direction"].to_numpy(),
                                   expected)
+
+
+def test_find_gap_none() -> None:
+    """Test that walking of histogram works as expected"""
+
+    hist = np.array([4, 3, 2, 1, 1, 1, 0])
+    bins = np.arange(hist.shape[0] + 1)
+
+    threshold = 3
+    gap_size = 2
+
+    result = qc_utils.find_gap(hist, bins, threshold, gap_size)
+
+    assert result == 0  #  no gap
+
+
+def test_find_gap_upper() -> None:
+    """Test that walking of histogram works as expected"""
+
+    hist = np.array([4, 3, 2, 1, 1, 0, 0, 1, 0])
+    bins = np.arange(hist.shape[0] + 1)
+
+    threshold = 3
+    gap_size = 2
+
+    result = qc_utils.find_gap(hist, bins, threshold, gap_size)
+
+    assert result == 6  #  beyond the 7th number (python counting)
+
+
+def test_find_gap_lower() -> None:
+    """Test that walking of histogram works as expected"""
+
+    hist = np.array([0, 1, 0, 0, 1, 2, 2, 3])
+    bins = np.arange(-hist.shape[0], 1)
+
+    threshold = -6
+    gap_size = 2
+
+    result = qc_utils.find_gap(hist, bins,
+                               threshold, gap_size, upwards=False)
+
+    assert result == -6  # sufficent gap found by -6th number (python counting)
+
+
+def test_gaussian() -> None:
+    """Test that a Gaussian is produced as expected"""
+
+    p = np.array([2, 0, 1])  # n, mu, s
+    x = np.arange(-2, 3, 1)
+
+    result = qc_utils.gaussian(x, p)
+
+    expected = np.array([0.2707, 1.2131, 2, 1.2131, 0.2707])
+
+    np.testing.assert_almost_equal(result, expected, decimal=4)
+
+
+def test_invert_gaussian() -> None:
+    """Test that a inversion of Gaussian is produced as expected"""
+
+    p = np.array([2, 0, 1])  # n, mu, s
+    y = np.array([2, 1.2131, 0.2707])
+
+    result = qc_utils.invert_gaussian(y, p)
+
+    expected = np.array([0, 1, 2])
+
+    np.testing.assert_almost_equal(result, expected, decimal=4)
+
+
+@patch("qc_utils.least_squares")
+def test_fit_gaussian(least_sq_mock: Mock) -> None:
+    """Test fitting routines called as expected"""
+
+    x = np.ma.arange(5)
+    y = np.ma.arange(5)
+    norm = 4
+
+    qc_utils.fit_gaussian(x, y, norm)
+
+    calls = least_sq_mock.call_args_list[0]
+
+    # were the calls correct
+    np.testing.assert_array_equal(calls.args[1], np.array([4, 2, np.sqrt(2)]))
+    np.testing.assert_array_equal(calls.kwargs["args"][0], y)
+    np.testing.assert_array_equal(calls.kwargs["args"][1], x)
+    assert calls.kwargs["max_nfev"] == 10000
+    assert calls.kwargs["method"] == "trf"
+    assert calls.kwargs["jac"] == "3-point"
+
+
