@@ -53,6 +53,32 @@ def _setup_station(varname: str = "temperature",
     return station
 
 
+def test_get_weights_none() -> None:
+    """Test that weights returned correctly"""
+
+    anoms = np.ones(5)  #  no difference between ceil and floor
+    subset = np.arange(5)
+    filter_subset = np.arange(5)
+
+    result = climatological.get_weights(anoms, subset, filter_subset)
+
+    assert result == 0  #  so no weights
+
+
+def test_get_weights_data() -> None:
+    """Test that weights returned correctly"""
+
+    anoms = np.arange(0, 2.5, 0.5)
+    subset = np.arange(5)
+    filter_subset = np.arange(5)
+
+    result = climatological.get_weights(anoms, subset, filter_subset)
+
+    expected = 9./4.
+
+    assert result == expected
+
+
 @pytest.mark.parametrize("year, month, filter", ([0, np.arange(0, 3), np.arange(2, 5)],
                                                  [1, np.arange(0, 4), np.arange(1, 5)],
                                                  [2, np.arange(0, 5), np.arange(5)],

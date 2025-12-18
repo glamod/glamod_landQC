@@ -90,12 +90,12 @@ def get_weights(anoms: np.ndarray,
 
     filterweights = np.array([1., 2., 3., 2., 1.])
 
-    if np.sum((filterweights[filter_subset] * np.ceil(anoms[subset]) -\
+    if np.sum(filterweights[filter_subset] * np.ceil(anoms[subset] -\
         np.floor(anoms[subset]))) == 0:
         weights = 0.
     else:
         weights = np.sum(filterweights[filter_subset] * anoms[subset]) / \
-            np.sum((filterweights[filter_subset] * np.ceil(anoms[subset]) -\
+            np.sum(filterweights[filter_subset] * np.ceil(anoms[subset] -\
                 np.floor(anoms[subset])))
 
     return weights # get_weights

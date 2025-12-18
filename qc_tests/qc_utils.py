@@ -479,7 +479,7 @@ def residuals_gaussian(p: np.ndarray, Y: np.ndarray, X: np.ndarray) -> np.ndarra
     return err # residuals_gaussian
 
 #*********************************************
-def fit_gaussian(x: np.ndarray, y: np.ndarray,
+def fit_gaussian(x: np.ma.MaskedArray, y: np.ma.MaskedArray,
                  norm: float,
                  mu: float = utils.MDI,
                  sig: float = utils.MDI,
@@ -510,10 +510,14 @@ def fit_gaussian(x: np.ndarray, y: np.ndarray,
     # call the appropriate fitting function and routine
     if skew == utils.MDI:
         p0 = np.array([norm, mu, sig])
-        result = least_squares(residuals_gaussian, p0, args=(y, x), max_nfev=10000, verbose=0, method="trf", jac="3-point")
+        result = least_squares(residuals_gaussian, p0, args=(y, x),
+                               max_nfev=10000, verbose=0,
+                               method="trf", jac="3-point")
     else:
         p0 = np.array([norm, mu, sig, skew])
-        result = least_squares(residuals_skew_gaussian, p0, args=(y, x), max_nfev=10000, verbose=0, method="trf", jac="3-point")
+        result = least_squares(residuals_skew_gaussian, p0, args=(y, x),
+                               max_nfev=10000, verbose=0,
+                               method="trf", jac="3-point")
     return result.x # fit_gaussian
 
 #************************************************************************
