@@ -43,14 +43,14 @@ def _generate_pd_times(length: int, start_dt: dt.datetime) -> pd.Series:
                           for i in range(length)])[0])
 
 
-def _generate_expected_flags(data: np.ndarray) -> np.ndarray:
+def _generate_expected_flags(data: np.ma.MaskedArray) -> np.ndarray:
     """ Generate the expected flags
     Use the fact that simulated odd cluster data is zeros, but
     non cluster data are ones
 
     Parameters
     ----------
-    data : np.ndarray
+    data : np.ma.MaskedArray
         length of the time dataframe to be generated
 
     Returns
@@ -60,6 +60,7 @@ def _generate_expected_flags(data: np.ndarray) -> np.ndarray:
     """
     expected_flags = np.array(["" for _ in data])
     expected_flags[data == 0] = "o"
+    expected_flags[data.mask == "True"] = ""
 
     return expected_flags
 
@@ -114,7 +115,7 @@ def test_flag_clusters_start() -> None:
     end_times = _generate_pd_times(len(INDATA), end_dt)
 
     all_times = pd.concat([oc_times, end_times])
-    all_data = np.append(OCDATA, INDATA)
+    all_data = np.ma.append(OCDATA, INDATA)
 
     temperature = common.example_test_variable("temperature", all_data)
 
@@ -126,6 +127,41 @@ def test_flag_clusters_start() -> None:
     expected_flags = _generate_expected_flags(all_data)
 
     np.testing.assert_array_equal(expected_flags, temperature.flags)
+
+
+def test_assess_start_cluster() -> None:
+    """Mock up a cluster of isolated data at the start of a run"""
+    # cluster (length 5), then standard data
+    oc_dt = dt.datetime(2000, 4, 1, 0, 0)
+    oc_times = _generate_pd_times(len(OCDATA), oc_dt)
+    # separation of two months
+    end_dt = dt.datetime(2000, 6, 1, 0, 0)
+    end_times = _generate_pd_times(len(INDATA), end_dt)
+
+    all_times = pd.concat([oc_times, end_times])
+    all_data = np.ma.append(OCDATA, INDATA)
+
+    temperature = common.example_test_variable("temperature", all_data)
+    flags = np.array(["" for i in range(temperature.data.shape[0])])
+
+    # make Station
+    station = common.example_test_station(temperature, times=all_times)
+
+    # identify the cluster, build up as per routine
+    these_times = np.ma.copy(station.times)
+    these_times.mask = temperature.data.mask
+    good_locs, = np.nonzero(these_times.mask == False)
+    time_differences = np.diff(these_times.compressed())/np.timedelta64(1, "m")
+    potential_cluster_ends, = np.nonzero(time_differences >= odd_cluster.MIN_SEPARATION * 60)
+
+    odd_cluster.assess_start_cluster(station, temperature, flags,
+                                     these_times[good_locs[0]: good_locs[potential_cluster_ends][0]+1:],
+                                     good_locs[0],
+                                     good_locs[potential_cluster_ends][0])
+
+    expected_flags = _generate_expected_flags(all_data)
+
+    np.testing.assert_array_equal(expected_flags, flags)
 
 
 def test_flag_clusters_end() -> None:
@@ -139,7 +175,7 @@ def test_flag_clusters_end() -> None:
     oc_times = _generate_pd_times(len(OCDATA), oc_dt)
 
     all_times = pd.concat([start_times, oc_times])
-    all_data = np.append(INDATA, OCDATA)
+    all_data = np.ma.append(INDATA, OCDATA)
 
     temperature = common.example_test_variable("temperature", all_data)
 
@@ -151,6 +187,41 @@ def test_flag_clusters_end() -> None:
     expected_flags = _generate_expected_flags(all_data)
 
     np.testing.assert_array_equal(expected_flags, temperature.flags)
+
+
+def test_assess_last_cluster() -> None:
+    """Mock up a cluster of isolated data at the end of a run"""
+
+    # standard data, then cluster (length 5)
+    start_dt = dt.datetime(2000, 4, 1, 0, 0)
+    start_times = _generate_pd_times(len(INDATA), start_dt)
+    # separation of 2 months
+    oc_dt = dt.datetime(2000, 6, 1, 0, 0)
+    oc_times = _generate_pd_times(len(OCDATA), oc_dt)
+
+    all_times = pd.concat([start_times, oc_times])
+    all_data = np.ma.append(INDATA, OCDATA)
+
+    temperature = common.example_test_variable("temperature", all_data)
+    flags = np.array(["" for i in range(temperature.data.shape[0])])
+
+    # make Station
+    station = common.example_test_station(temperature, times=all_times)
+
+    # identify the cluster, build up as per routine
+    these_times = np.ma.copy(station.times)
+    these_times.mask = temperature.data.mask
+    good_locs, = np.nonzero(these_times.mask == False)
+    time_differences = np.diff(these_times.compressed())/np.timedelta64(1, "m")
+    potential_cluster_ends, = np.nonzero(time_differences >= odd_cluster.MIN_SEPARATION * 60)
+
+    odd_cluster.assess_end_cluster(station, temperature, flags,
+                                   these_times[good_locs[potential_cluster_ends][0]+1:],
+                                   good_locs[potential_cluster_ends][0])
+
+    expected_flags = _generate_expected_flags(all_data)
+
+    np.testing.assert_array_equal(expected_flags, flags)
 
 
 def test_flag_clusters_normal() -> None:
@@ -166,8 +237,8 @@ def test_flag_clusters_normal() -> None:
     end_times = _generate_pd_times(len(INDATA), end_dt)
 
     all_times = pd.concat([start_times, oc_times, end_times])
-    all_data = np.append(INDATA, OCDATA)
-    all_data = np.append(all_data, INDATA)
+    all_data = np.ma.append(INDATA, OCDATA)
+    all_data = np.ma.append(all_data, INDATA)
 
     temperature = common.example_test_variable("temperature", all_data)
 
@@ -180,6 +251,47 @@ def test_flag_clusters_normal() -> None:
 
     np.testing.assert_array_equal(expected_flags, temperature.flags)
 
+
+def test_assess_mid_cluster() -> None:
+    """Mock up a cluster of isolated data in the middle of a run"""
+
+    start_dt = dt.datetime(2000, 2, 1, 0, 0)
+    start_times = _generate_pd_times(len(INDATA), start_dt)
+    # separated by two months, cluster length of 5
+    oc_dt = dt.datetime(2000, 4, 1, 0, 0)
+    oc_times = _generate_pd_times(len(OCDATA), oc_dt)
+    # separated by two months
+    end_dt = dt.datetime(2000, 6, 1, 0, 0)
+    end_times = _generate_pd_times(len(INDATA), end_dt)
+
+    all_times = pd.concat([start_times, oc_times, end_times])
+    all_data = np.ma.append(INDATA, OCDATA)
+    all_data = np.ma.append(all_data, INDATA)
+
+    temperature = common.example_test_variable("temperature", all_data)
+    flags = np.array(["" for i in range(temperature.data.shape[0])])
+
+    # make Station
+    station = common.example_test_station(temperature, times=all_times)
+
+    # identify the cluster, build up as per routine
+    these_times = np.ma.copy(station.times)
+    these_times.mask = temperature.data.mask
+    good_locs, = np.nonzero(these_times.mask == False)
+    time_differences = np.diff(these_times.compressed())/np.timedelta64(1, "m")
+    potential_cluster_ends, = np.nonzero(time_differences >= odd_cluster.MIN_SEPARATION * 60)
+
+    start = good_locs[potential_cluster_ends[0]]+1
+    end = good_locs[potential_cluster_ends][1]
+
+    odd_cluster.assess_mid_cluster(station, temperature, flags,
+                                   these_times[start: end+1],
+                                   good_locs[potential_cluster_ends[0]+1],
+                                   good_locs[potential_cluster_ends][1])
+
+    expected_flags = _generate_expected_flags(all_data)
+
+    np.testing.assert_array_equal(expected_flags, flags)
 
 @patch("odd_cluster.flag_clusters")
 def test_read_hcc(flag_clusters_mock: Mock) -> None:
