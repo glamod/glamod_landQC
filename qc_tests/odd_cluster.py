@@ -277,6 +277,5 @@ def occ(station: utils.Station, var_list: list, config_dict: dict,
         flag_clusters(obs_var, station, plots=plots, diagnostics=diagnostics)
 
 
-    # dgc
-
+    # occ
 

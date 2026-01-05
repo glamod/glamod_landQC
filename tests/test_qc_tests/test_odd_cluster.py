@@ -274,7 +274,7 @@ def test_assess_mid_cluster() -> None:
     np.testing.assert_array_equal(expected_flags, flags)
 
 @patch("odd_cluster.flag_clusters")
-def test_read_hcc(flag_clusters_mock: Mock) -> None:
+def test_occ(flag_clusters_mock: Mock) -> None:
     """check driving routine"""
     station = _setup_station(np.ma.arange(10))
 
