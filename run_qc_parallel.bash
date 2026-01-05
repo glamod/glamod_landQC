@@ -380,6 +380,8 @@ do
 
 done
 # and submit the final batch of stations.
+write_and_submit_bastion_script "${parallel_script}" "${batch}" "${SCREENEXIT}"
+
 
 
 echo "Once jobs are complete run:"

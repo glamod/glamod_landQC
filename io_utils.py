@@ -62,6 +62,10 @@ def read_psv(infile: Path, separator: str) -> pd.DataFrame:
         logger.warning(f"psv file not found: {str(e)}")
         print(str(e))
         raise FileNotFoundError(str(e))
+    except pd.errors.ParserError as e:
+        logger.warning(f"Parser Error: {str(e)}")
+        print(str(e))
+        raise pd.errors.ParserError(str(e))
     except ValueError as e:
         logger.warning(f"Error in psv rows: {str(e)}")
         print(str(e))
@@ -73,11 +77,6 @@ def read_psv(infile: Path, separator: str) -> pd.DataFrame:
         df = pd.read_csv(infile, sep=separator, compression="infer",
                          dtype=setup.DTYPE_DICT, na_values=("Null", " "), quoting=3,
                          index_col=False, skiprows=skip_rows)
-
-    except pd.errors.ParserError as e:
-        logger.warning(f"Parser Error: {str(e)}")
-        print(str(e))
-        raise pd.errors.ParserError(str(e))
     except EOFError as e:
         logger.warning(f"End of File Error (gzip): {str(e)}")
         print(str(e))
@@ -97,7 +96,7 @@ def read_psv(infile: Path, separator: str) -> pd.DataFrame:
 def read_pqt(infile: Path) -> pd.DataFrame:
     '''
 
-    :param PurePath infile: location and name of infile
+    :param Path infile: location and name of infile
 
     :returns: df - DataFrame
     '''
@@ -109,16 +108,16 @@ def read_pqt(infile: Path) -> pd.DataFrame:
         logger.warning(f"pqt file not found: {str(e)}")
         print(str(e))
         raise FileNotFoundError(str(e))
+    except pd.errors.ParserError as e:
+        logger.warning(f"Parser Error: {str(e)}")
+        print(str(e))
+        raise pd.errors.ParserError(str(e))
     except ValueError as e:
         logger.warning(f"Error in pqt rows: {str(e)}")
         print(str(e))
         # Presuming that there is an extra header line somewhere in the file
         # TODO: address if this comes up in testing
         raise ValueError
-    except pd.errors.ParserError as e:
-        logger.warning(f"Parser Error: {str(e)}")
-        print(str(e))
-        raise pd.errors.ParserError(str(e))
     except EOFError as e:
         logger.warning(f"End of File Error (gzip): {str(e)}")
         print(str(e))
@@ -143,14 +142,14 @@ def read(infile: Path) -> pd.DataFrame:
     """
 
     # for .psv
-    if setup.IN_FORMAT in ("psv", "csv"):
+    if infile.suffix in (".psv", ".csv"):
         # csv could be a legitmate format specifier, though must use pipe (|) as separator
         if infile.exists():
             df = read_psv(infile, "|")
         else:
             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), infile)
 
-    elif setup.IN_FORMAT in ("pqt", "parquet"):
+    elif infile.suffix in (".pqt", ".parquet"):
         if infile.exists():
             df = read_pqt(infile)
         else:
@@ -319,7 +318,8 @@ def integrity_check(infile: Path) -> bool:
 
 
 #************************************************************************
-def write(outfile: Path, df: pd.DataFrame, formatters: None | dict=None) -> None:
+def write(outfile: Path, df: pd.DataFrame,
+          formatters: None | dict=None) -> None:
     """
     Wrapper for write functions to allow remainder to be file format agnostic.
 
@@ -352,7 +352,8 @@ def write(outfile: Path, df: pd.DataFrame, formatters: None | dict=None) -> None
     return  # write
 
 #************************************************************************
-def flag_write(outfilename: Path, df: pd.DataFrame, diagnostics: bool = False) -> None:
+def flag_write(outfilename: Path, df: pd.DataFrame,
+               diagnostics: bool = False) -> None:
     """
     Write out flag summary files to enable quicker plotting
 
