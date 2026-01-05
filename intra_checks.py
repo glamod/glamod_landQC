@@ -218,9 +218,12 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
 
         if test in ["all", "distribution"]:
             if diagnostics: print("D", dt.datetime.now()-startT)
-            qc_tests.distribution.dgc(station, ["temperature", "dew_point_temperature",
-                                                "station_level_pressure", "sea_level_pressure"],
-                                      config_dict, full=full, plots=plots, diagnostics=diagnostics)
+            qc_tests.distribution_monthly.dgc(station, ["temperature", "dew_point_temperature",
+                                                        "station_level_pressure", "sea_level_pressure"],
+                                              config_dict, full=full, plots=plots, diagnostics=diagnostics)
+            qc_tests.distribution_all.dgc(station, ["temperature", "dew_point_temperature",
+                                                    "station_level_pressure", "sea_level_pressure"],
+                                          config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "world_records"]:
             if diagnostics: print("W", dt.datetime.now()-startT)

@@ -20,10 +20,12 @@ STORM_THRESHOLD = 5
 VALID_MONTHS = 5
 MIN_OBS = 28*2 # two obs per day for the month (minimum subdaily)
 SPREAD_LIMIT = 2 # two IQR/MAD/STD
-BIN_WIDTH = 0.25
+MONTHlY_BIN_WIDTH = 0.25
+BIN_WIDTH = 1.0
 LARGE_LIMIT = 5
 GAP_SIZE = 2
 FREQUENCY_THRESHOLD = 0.1
+
 #************************************************************************
 def prepare_monthly_data(obs_var: utils.MeteorologicalVariable, station: utils.Station,
                          month: int, diagnostics: bool = False) -> np.ma.MaskedArray:
@@ -137,8 +139,7 @@ def monthly_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station, c
 
         standardised_months = (month_averages - climatology) / spread
 
-        bins = qc_utils.create_bins(standardised_months, BIN_WIDTH, obs_var.name)
-        hist, bin_edges = np.histogram(standardised_months, bins)
+        bins = qc_utils.create_bins(standardised_months, MONTHlY_BIN_WIDTH, obs_var.name)
 
         # flag months with very large offsets
         bad, = np.where(np.abs(standardised_months) >= LARGE_LIMIT)
@@ -188,7 +189,7 @@ def monthly_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station, c
 
         if plots:
             import matplotlib.pyplot as plt
-
+            hist, _ = np.histogram(standardised_months, bins)
             plt.step(bins[1:], hist, color='k', where="pre")
             if len(bad) > 0:
                 bad_hist, dummy = np.histogram(standardised_months[bad], bins)
