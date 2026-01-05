@@ -65,6 +65,128 @@ def plot_cluster(times: pd.Series, obs_var: utils.MeteorologicalVariable,
 
     # plot_cluster
 
+
+def assess_start_cluster(station: utils.Station,
+                         obs_var: utils.MeteorologicalVariable,
+                         flags: np.ndarray,
+                         cluster: np.ma.MaskedArray,
+                         cluster_start: int,
+                         cluster_end: int,
+                         plots: bool = False) -> None:
+    """Assess whether initial data points are an odd cluster
+
+    Parameters
+    ----------
+    station : utils.Station
+        Station to assess (for plotting)
+    obs_var : utils.MeteorologicalVariable
+        Met Var to assess
+    flags : np.ndarray
+        Array to hold the flags, if set
+    cluster : np.ma.MaskedArray
+        The masked times corresponding to the cluster
+    cluster_start : int
+        The index of the first cluster point
+    cluster_end : int
+        The index of the last cluster point
+    plots : bool, optional
+        Plot this cluster, by default False
+    """
+
+    # check if cluster at start of series (long gap after a first few points)
+    cluster_length = cluster.compressed()[-1] - cluster.compressed()[0]
+
+    if cluster_length/np.timedelta64(1, "h") < MAX_LENGTH_TIME:
+        # could be a cluster, pull out only data locations
+        good_cluster_locs, = np.nonzero(cluster.mask == False)
+
+        if len(flags[good_cluster_locs + cluster_start]) < MAX_LENGTH_OBS:
+            flags[good_cluster_locs + cluster_start] = "o"
+
+            if plots:
+                plot_cluster(station.times, obs_var,
+                             0, cluster_end+1)
+
+
+def assess_mid_cluster(station: utils.Station,
+                         obs_var: utils.MeteorologicalVariable,
+                         flags: np.ndarray,
+                         cluster: np.ma.MaskedArray,
+                         cluster_start: int,
+                         cluster_end: int,
+                         plots: bool = False) -> None:
+    """Assess whether data points are an odd cluster
+
+    Parameters
+    ----------
+    station : utils.Station
+        Station to assess (for plotting)
+    obs_var : utils.MeteorologicalVariable
+        Met Var to assess
+    flags : np.ndarray
+        Array to hold the flags, if set
+    cluster : np.ma.MaskedArray
+        The masked times corresponding to the cluster
+    cluster_start : int
+        The index of the first cluster point
+    cluster_end : int
+        The index of the last cluster point
+    plots : bool, optional
+        Plot this cluster, by default False
+    """
+
+    # And determine length from the compressed array (if single point, length == 0)
+    cluster_length = cluster.compressed()[-1] - cluster.compressed()[0]
+
+    if cluster_length/np.timedelta64(1, "h") < MAX_LENGTH_TIME:
+        # could be a cluster, pull out only data locations
+        good_cluster_locs, = np.nonzero(cluster.mask == False)
+
+        if len(flags[good_cluster_locs + cluster_start]) < MAX_LENGTH_OBS:
+            flags[good_cluster_locs + cluster_start] = "o"
+
+            if plots:
+                plot_cluster(station.times, obs_var,
+                             cluster_start, cluster_end+1)
+
+
+def assess_end_cluster(station: utils.Station,
+                       obs_var: utils.MeteorologicalVariable,
+                       flags: np.ndarray,
+                       cluster: np.ma.MaskedArray,
+                       cluster_end: int,
+                       plots: bool = False) -> None:
+    """Assess whether final data points are an odd cluster
+
+    Parameters
+    ----------
+    station : utils.Station
+        Station to assess (for plotting)
+    obs_var : utils.MeteorologicalVariable
+        Met Var to assess
+    flags : np.ndarray
+        Array to hold the flags, if set
+    cluster : np.ma.MaskedArray
+        The masked times corresponding to the cluster
+    cluster_end : int
+        The final index of the previous cluster
+    plots : bool, optional
+        Plot this cluster, by default False
+    """
+    # And determine length from the compressed array (if single point, length == 0)
+    cluster_length = cluster.compressed()[-1] - cluster.compressed()[0]
+
+    if cluster_length/np.timedelta64(1, "h") < MAX_LENGTH_TIME:
+        # could be a cluster, pull out only data locations
+        good_cluster_locs, = np.nonzero(cluster.mask == False)
+
+        if len(flags[good_cluster_locs + cluster_end + 1]) < MAX_LENGTH_OBS:
+            flags[good_cluster_locs + cluster_end + 1] = "o"
+
+            if plots:
+                plot_cluster(station.times, obs_var, cluster_end, -1)
+
+
 #************************************************************************
 def flag_clusters(obs_var: utils.MeteorologicalVariable, station: utils.Station,
                   plots: bool = False, diagnostics: bool = False) -> None:
@@ -98,38 +220,21 @@ def flag_clusters(obs_var: utils.MeteorologicalVariable, station: utils.Station,
         cluster_start = good_locs[potential_cluster_ends[ce-1]+1]
 
         if ce == 0:
-            # Because of masks, pull data from cluster start through to end
+            # Check for cluster right at the beginning of the series
+            # Because of masks, pull data from data start through to end
             cluster = these_times[good_locs[0]: cluster_end+1]
-
-            # check if cluster at start of series (long gap after a first few points)
-            cluster_length = cluster.compressed()[-1] - cluster.compressed()[0]
-
-            if cluster_length/np.timedelta64(1, "h") < MAX_LENGTH_TIME:
-                # could be a cluster, pull out only data locations
-                good_cluster_locs, = np.nonzero(cluster.mask == False)
-                if len(flags[good_cluster_locs + good_locs[0]]) < MAX_LENGTH_OBS:
-                    flags[good_cluster_locs + good_locs[0]] = "o"
-
-                    if plots:
-                        plot_cluster(station.times, obs_var, 0, cluster_end+1)
+            assess_start_cluster(station, obs_var, flags,
+                                 cluster, good_locs[0], cluster_end,
+                                 plots=plots)
 
         elif ce > 0:
             # Check for cluster in middle of series.
 
             # Because of masks, pull data from cluster start through to end
             cluster = these_times[cluster_start: cluster_end+1]
-            # And determine length from the compressed array (if single point, length == 0)
-            cluster_length = cluster.compressed()[-1] - cluster.compressed()[0]
-
-            if cluster_length/np.timedelta64(1, "h") < MAX_LENGTH_TIME:
-                # could be a cluster, pull out only data locations
-                good_cluster_locs, = np.nonzero(cluster.mask == False)
-                if len(flags[good_cluster_locs + cluster_start]) < MAX_LENGTH_OBS:
-                    flags[good_cluster_locs + cluster_start] = "o"
-
-                    if plots:
-                        plot_cluster(station.times, obs_var,
-                                     cluster_start, cluster_end+1)
+            assess_mid_cluster(station, obs_var, flags,
+                               cluster, cluster_start, cluster_end,
+                               plots=plots)
 
 
         # Additionally
@@ -138,17 +243,9 @@ def flag_clusters(obs_var: utils.MeteorologicalVariable, station: utils.Station,
             # As end of the sequence there's no end to calculate the time-diff for
             # check if cluster at end of series (long gap before last few points)
             cluster = these_times[cluster_end+1: ]
-            # And determine length from the compressed array (if single point, length == 0)
-            cluster_length = cluster.compressed()[-1] - cluster.compressed()[0]
-
-            if cluster_length/np.timedelta64(1, "h") < MAX_LENGTH_TIME:
-                # could be a cluster, pull out only data locations
-                good_cluster_locs, = np.nonzero(cluster.mask == False)
-                if len(flags[good_cluster_locs + cluster_end + 1]) < MAX_LENGTH_OBS:
-                    flags[good_cluster_locs + cluster_end + 1] = "o"
-
-                    if plots:
-                        plot_cluster(station.times, obs_var, cluster_end, -1)
+            assess_end_cluster(station, obs_var, flags,
+                               cluster, cluster_end,
+                               plots=plots)
 
     # append flags to object
     obs_var.store_flags(utils.insert_flags(obs_var.flags, flags))
