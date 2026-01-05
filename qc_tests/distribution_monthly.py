@@ -15,16 +15,31 @@ logger = logging.getLogger(__name__)
 import qc_tests.qc_utils as qc_utils
 import utils
 #************************************************************************
-STORM_THRESHOLD = 5
 
 VALID_MONTHS = 5
 MIN_OBS = 28*2 # two obs per day for the month (minimum subdaily)
 SPREAD_LIMIT = 2 # two IQR/MAD/STD
 MONTHlY_BIN_WIDTH = 0.25
-BIN_WIDTH = 1.0
 LARGE_LIMIT = 5
-GAP_SIZE = 2
-FREQUENCY_THRESHOLD = 0.1
+
+def plot_monthly_distribution(indata: np.ndarray, bins: np.ndarray,
+                              bad: np.ndarray, xlabel: str,
+                              title: str) -> None:  # pragma: no cover
+    """Plot distribution and flagged values"""
+
+    import matplotlib.pyplot as plt
+    hist, _ = np.histogram(indata, bins)
+    plt.step(bins[1:], hist, color='k', where="pre")
+    if len(bad) > 0:
+        bad_hist, _ = np.histogram(indata[bad], bins)
+        plt.step(bins[1:], bad_hist, color='r', where="pre")
+
+    plt.ylabel("Number of Months")
+    plt.xlabel(xlabel)
+    plt.title(title)
+
+    plt.show()
+
 
 #************************************************************************
 def prepare_monthly_data(obs_var: utils.MeteorologicalVariable, station: utils.Station,
@@ -39,21 +54,20 @@ def prepare_monthly_data(obs_var: utils.MeteorologicalVariable, station: utils.S
 
     :returns: np.ma.MaskedArray
     """
+    all_years = np.unique(station.years)  # returns sorted values
 
-    all_years = np.unique(station.years)
-
-    month_averages = []
+    month_averages = np.ma.zeros(all_years.shape[0])
+    month_averages.mask = np.ones(month_averages.shape[0])
     # spin through each year to get average for the calendar month selected
-    for year in all_years:
+
+    for y, year in enumerate(all_years):
         locs, = np.where(np.logical_and(station.months == month, station.years == year))
 
         month_data = obs_var.data[locs]
 
         if np.ma.count(month_data) > MIN_OBS:
 
-            month_averages += [np.ma.mean(month_data)]
-
-    month_averages = np.ma.array(month_averages)
+            month_averages[y] = np.ma.mean(month_data)
 
     return month_averages # prepare_monthly_data
 
@@ -188,18 +202,9 @@ def monthly_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station, c
             flags[locs] = "D"
 
         if plots:
-            import matplotlib.pyplot as plt
-            hist, _ = np.histogram(standardised_months, bins)
-            plt.step(bins[1:], hist, color='k', where="pre")
-            if len(bad) > 0:
-                bad_hist, dummy = np.histogram(standardised_months[bad], bins)
-                plt.step(bins[1:], bad_hist, color='r', where="pre")
-
-            plt.ylabel("Number of Months")
-            plt.xlabel(obs_var.name.capitalize())
-            plt.title(f"{station.id} - month {month}")
-
-            plt.show()
+            plot_monthly_distribution(standardised_months, bins, bad,
+                                      obs_var.name.capitalize(),
+                                      f"{station.id} - month {month}")
 
     # append flags to object
     obs_var.store_flags(utils.insert_flags(obs_var.flags, flags))
