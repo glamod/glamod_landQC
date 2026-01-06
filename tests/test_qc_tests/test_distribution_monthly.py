@@ -84,6 +84,22 @@ def test_find_monthly_scaling_few_months(prepare_mock: Mock) -> None:
 
 
 @patch("distribution_monthly.prepare_monthly_data")
+def test_find_monthly_scaling_small_spread(prepare_mock: Mock) -> None:
+    """writing of config dictionary if data has small spread"""
+    prepare_mock.return_value = np.ma.array([2, 2, 2, 3, 3, 3])
+    station = _setup_station(np.ma.arange(10))
+    config_dict = {}
+
+    # Do the call
+    distribution_monthly.find_monthly_scaling(
+        station.temperature, station, config_dict)
+
+    # Mock to check call occurs as expected with right return
+    assert config_dict["MDISTRIBUTION-temperature"]["1-clim"] == 2.5
+    assert config_dict["MDISTRIBUTION-temperature"]["1-spread"] == 2
+
+
+@patch("distribution_monthly.prepare_monthly_data")
 def test_find_monthly_scaling(prepare_mock: Mock) -> None:
     """writing of config dictionary"""
     prepare_mock.return_value = np.ma.array([1, 2, 3, 4, 5])
@@ -97,27 +113,6 @@ def test_find_monthly_scaling(prepare_mock: Mock) -> None:
     # Mock to check call occurs as expected with right return
     assert config_dict["MDISTRIBUTION-temperature"]["1-clim"] == 3
     assert config_dict["MDISTRIBUTION-temperature"]["1-spread"] == qc_utils.spread(np.arange(1, 6))
-
-
-@patch("distribution_monthly.prepare_monthly_data")
-def test_monthly_gap_no_clim_no_spread(prepare_mock: Mock) -> None:
-    """Test gap finding if no climatology or spread available"""
-    prepare_mock.return_value = np.ma.array([1, 2, 3, 4, 5])
-    station = _setup_station(np.ma.arange(10))
-
-    # build up config_dict
-    temperature_values = [(f"{month}-clim", utils.MDI) for month in range(1, 13)]
-    temperature_values += [(f"{month}-spread", utils.MDI) for month in range(1, 13)]
-    config_dict = {"MDISTRIBUTION-temperature": dict(temperature_values)}
-
-    # Do the call
-    distribution_monthly.monthly_gap(
-        station.temperature, station, config_dict)
-
-    calls = [call(station.temperature, station,
-                  month, diagnostics=False) for month in range(1, 13)]
-
-    prepare_mock.assert_has_calls(calls)
 
 
 def test_flag_large_offsets() -> None:
@@ -166,7 +161,23 @@ def test_walk_distribution_some_zero() -> None:
     np.testing.assert_array_equal(result, expected)
 
 
-def test_walk_distribution_end_of_branch() -> None:
+def test_walk_distribution_odd_end_of_branch() -> None:
+    """Test that walking of distribution results in no flags if
+    values are not identical, or zero, but sufficiently symmetrical,
+    so that it reaches the end of the distribution arms, with no flags set"""
+    # symmetrical, but not identifical
+    standard_months = np.array([-0.55, -0.45, -0.35, -0.25, -0.15, 0,
+                                0.1, 0.2, 0.3, 0.4, 0.5])
+
+    result = distribution_monthly.walk_distribution(standard_months)
+
+    # no flags set, pair are close (though not identical)
+    expected = []
+
+    np.testing.assert_array_equal(result, expected)
+
+
+def test_walk_distribution_even_end_of_branch() -> None:
     """Test that walking of distribution results in no flags if
     values are not identical, or zero, but sufficiently symmetrical,
     so that it reaches the end of the distribution arms, with no flags set"""
@@ -182,11 +193,11 @@ def test_walk_distribution_end_of_branch() -> None:
     np.testing.assert_array_equal(result, expected)
 
 
-def test_walk_distribution_upper_long_min_small() -> None:
+def test_walk_distribution_odd_upper_long_min_small() -> None:
     """Test that walking of distribution results in no flags even
     if asymmetric, when min of pair is too close to zero"""
 
-    standard_months = np.array([-0.55, -0.45, -0.35, -0.25, -0.15,
+    standard_months = np.array([-0.55, -0.45, -0.35, -0.25, -0.15, 0,
                                 0.1, 0.2, 0.3, 1.0, 2.0])
 
     result = distribution_monthly.walk_distribution(standard_months)
@@ -197,22 +208,52 @@ def test_walk_distribution_upper_long_min_small() -> None:
     np.testing.assert_array_equal(result, expected)
 
 
-def test_walk_distribution_upper_long() -> None:
+def test_walk_distribution_odd_upper_long() -> None:
     """Test that walking of distribution results in expected flags
     for upper tail"""
 
-    standard_months = np.array([-1.55, -0.45, -0.35, -0.25, -0.15,
+    standard_months = np.array([-1.55, -0.45, -0.35, -0.25, -0.15, 0,
                                 0.1, 0.2, 0.3, 1.0, 4.0])
 
     result = distribution_monthly.walk_distribution(standard_months)
 
     # no flags set, as min of assymetric pair too small
-    expected = []
+    expected = [10]
 
     np.testing.assert_array_equal(result, expected)
 
 
-def test_walk_distribution_lower_long() -> None:
+def test_walk_distribution_even_upper_long() -> None:
+    """Test that walking of distribution results in expected flags
+    for upper tail"""
+
+    standard_months = np.array([-1.55, -0.45, -0.35, -0.25, -0.15, 0,
+                                0.1, 0.2, 0.3, 1.0, 4.0])
+
+    result = distribution_monthly.walk_distribution(standard_months)
+
+    # no flags set, as min of assymetric pair too small
+    expected = [10]
+
+    np.testing.assert_array_equal(result, expected)
+
+
+def test_walk_distribution_odd_lower_long() -> None:
+    """Test that walking of distribution results in expected flags
+    for lower tail"""
+
+    standard_months = np.array([-4, -3, -0.35, -0.25, -0.15, 0,
+                                0.1, 0.2, 0.3, 1.4, 1.6])
+
+    result = distribution_monthly.walk_distribution(standard_months)
+
+    # no flags set, as min of assymetric pair too small
+    expected = [0]
+
+    np.testing.assert_array_equal(result, expected)
+
+
+def test_walk_distribution_even_lower_long() -> None:
     """Test that walking of distribution results in expected flags
     for lower tail"""
 
@@ -222,9 +263,73 @@ def test_walk_distribution_lower_long() -> None:
     result = distribution_monthly.walk_distribution(standard_months)
 
     # no flags set, as min of assymetric pair too small
-    expected = []
+    expected = [0]
 
     np.testing.assert_array_equal(result, expected)
+
+
+@patch("distribution_monthly.prepare_monthly_data")
+def test_monthly_gap_no_clim_no_spread(prepare_mock: Mock) -> None:
+    """Test gap finding if no climatology or spread available"""
+    prepare_mock.return_value = np.ma.array([1, 2, 3, 4, 5])
+    station = _setup_station(np.ma.arange(10))
+
+    # build up config_dict
+    temperature_values = [(f"{month}-clim", utils.MDI) for month in range(1, 13)]
+    temperature_values += [(f"{month}-spread", utils.MDI) for month in range(1, 13)]
+    config_dict = {"MDISTRIBUTION-temperature": dict(temperature_values)}
+
+    # Do the call
+    distribution_monthly.monthly_gap(
+        station.temperature, station, config_dict)
+
+    calls = [call(station.temperature, station,
+                  month, diagnostics=False) for month in range(1, 13)]
+
+    prepare_mock.assert_has_calls(calls)
+
+
+@patch("distribution_monthly.walk_distribution")
+@patch("distribution_monthly.flag_large_offsets")
+@patch("distribution_monthly.prepare_monthly_data")
+def test_monthly_gap(prepare_mock: Mock,
+                     flag_large_mock: Mock,
+                     walk_mock: Mock) -> None:
+    """Test gap finding"""
+    prepare_mock.return_value = np.ma.array([1, 2, 3, 4, 5])
+    station = _setup_station(np.ma.arange(10))
+    flags = np.array(["" for i in range(10)])
+    walk_mock.return_value = [0] # which month to flag (all values given mocked station)
+
+    # build up config_dict, but values only for January
+    temperature_values = [("1-clim", 1)]
+    temperature_values += [(f"{month}-clim", utils.MDI) for month in range(2, 13)]
+    temperature_values += [("1-spread", 2)]
+    temperature_values += [(f"{month}-spread",   utils.MDI) for month in range(2, 13)]
+    config_dict = {"MDISTRIBUTION-temperature": dict(temperature_values)}
+
+    # Do the call
+    distribution_monthly.monthly_gap(
+        station.temperature, station, config_dict)
+
+
+    standard_months = np.ma.array([0, 0.5, 1, 1.5, 2])
+    expected_flags = np.array(["D" for i in range(10)])
+    # check call values for this routine
+    flag_large_mock.assert_called_once()  # only values for January
+    calls = flag_large_mock.call_args_list[0]
+    assert calls.args[0] == station
+    assert calls.args[1] == 1
+    np.testing.assert_array_equal(standard_months, calls.args[2])
+    np.testing.assert_array_equal(expected_flags, calls.args[3])
+
+    walk_mock.assert_called_once()  # only values for January
+    calls = walk_mock.call_args_list[0]
+    np.testing.assert_array_equal(standard_months, calls.args[0])
+
+    np.testing.assert_array_equal(station.temperature.flags,
+                                  expected_flags)
+
 
 
 @patch("distribution_monthly.find_monthly_scaling")

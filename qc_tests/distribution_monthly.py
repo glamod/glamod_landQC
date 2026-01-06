@@ -148,23 +148,30 @@ def walk_distribution(standardised_months) -> list:
 
 
     sort_order = standardised_months.argsort()
-    mid_point = len(standardised_months) // 2
+    mid_point = len(standardised_months) / 2
+    if len(standardised_months) % 2 == 0:
+        # Even number of months, so get the initial set of pairs
+        lhs = int(mid_point-1)
+        rhs = int(mid_point)
+    else:
+        # Odd number (don't test the middle value), and
+        #  get the initial set of pairs
+        lhs = int(mid_point-1.5)
+        rhs = int(mid_point+0.5)
     good = True
-    step = 1
+    step = 0
     bad = []
 
     # This walks the "distribution" starting at the centre
     #   However, it just compares pairs of values going outwards
     #   rather than actually making a histogram.
-
     while good:
-
-        if standardised_months[sort_order][mid_point - step] != standardised_months[sort_order][mid_point + step]:
+        if standardised_months[sort_order][lhs - step] != standardised_months[sort_order][rhs + step]:
             # if values aren't equal (i.e. totally symmetric), then do further checks
 
             # compare these two values, ignoring signs
-            suspect_months = [np.abs(standardised_months[sort_order][mid_point - step]),
-                              np.abs(standardised_months[sort_order][mid_point + step])]
+            suspect_months = [np.abs(standardised_months[sort_order][lhs - step]),
+                              np.abs(standardised_months[sort_order][rhs + step])]
 
             if min(suspect_months) != 0:
                 # don't check if values are == 0
@@ -174,15 +181,15 @@ def walk_distribution(standardised_months) -> list:
                     # flag everything further from this bin for that longer tail
                     if suspect_months[0] == max(suspect_months):
                         # LHS has issue (remember that have removed the sign)
-                        bad = sort_order[:mid_point - (step-1)] # need -1 given array indexing standards
+                        bad = sort_order[:lhs - (step-1)] # need -1 given array indexing standards
                     elif suspect_months[1] == max(suspect_months):
                         # RHS has issue
-                        bad = sort_order[mid_point + step:]
+                        bad = sort_order[rhs + step:]
 
                     good = False # escape from loop
 
         step += 1
-        if (mid_point - step) < 0 or (mid_point + step) == standardised_months.shape[0]:
+        if (lhs - step) < 0 or (rhs + step) == standardised_months.shape[0]:
             # reached end of one arm
             break
 
