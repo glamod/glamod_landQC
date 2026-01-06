@@ -1,9 +1,8 @@
 """
-Distributional Gap Checks
-=========================
+Distributional Gap Checks - All Observations
+============================================
 
-1. Check distribution of monthly values and look for assymmetry
-2. Check distribution of all observations and look for distinct populations
+Check distribution of all observations and look for distinct populations
 """
 #************************************************************************
 import copy
