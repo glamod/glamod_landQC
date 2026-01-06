@@ -144,6 +144,51 @@ def flag_large_offsets(station: utils.Station, month: int,
         flags[locs] = "D"
 
 
+def walk_distribution(standardised_months) -> list:
+
+
+    sort_order = standardised_months.argsort()
+    mid_point = len(standardised_months) // 2
+    good = True
+    step = 1
+    bad = []
+
+    # This walks the "distribution" starting at the centre
+    #   However, it just compares pairs of values going outwards
+    #   rather than actually making a histogram.
+
+    while good:
+
+        if standardised_months[sort_order][mid_point - step] != standardised_months[sort_order][mid_point + step]:
+            # if values aren't equal (i.e. totally symmetric), then do further checks
+
+            # compare these two values, ignoring signs
+            suspect_months = [np.abs(standardised_months[sort_order][mid_point - step]),
+                              np.abs(standardised_months[sort_order][mid_point + step])]
+
+            if min(suspect_months) != 0:
+                # don't check if values are == 0
+
+                if max(suspect_months)/min(suspect_months) >= 2. and min(suspect_months) >= 1.5:
+                    # at least 1.5x spread from centre and difference of two in location (longer tail)
+                    # flag everything further from this bin for that longer tail
+                    if suspect_months[0] == max(suspect_months):
+                        # LHS has issue (remember that have removed the sign)
+                        bad = sort_order[:mid_point - (step-1)] # need -1 given array indexing standards
+                    elif suspect_months[1] == max(suspect_months):
+                        # RHS has issue
+                        bad = sort_order[mid_point + step:]
+
+                    good = False # escape from loop
+
+        step += 1
+        if (mid_point - step) < 0 or (mid_point + step) == standardised_months.shape[0]:
+            # reached end of one arm
+            break
+
+    return bad
+
+
 #************************************************************************
 def monthly_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
                 config_dict: dict, plots: bool = False, diagnostics: bool = False) -> None:
@@ -184,36 +229,7 @@ def monthly_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
         flag_large_offsets(station, month, standardised_months, flags)
 
         # walk distribution from centre to find assymetry
-        sort_order = standardised_months.argsort()
-        mid_point = len(standardised_months) // 2
-        good = True
-        step = 1
-        bad = []
-        while good:
-
-            if standardised_months[sort_order][mid_point - step] != standardised_months[sort_order][mid_point + step]:
-
-                suspect_months = [np.abs(standardised_months[sort_order][mid_point - step]), \
-                                      np.abs(standardised_months[sort_order][mid_point + step])]
-
-                if min(suspect_months) != 0:
-                    # not all clustered at origin
-
-                    if max(suspect_months)/min(suspect_months) >= 2. and min(suspect_months) >= 1.5:
-                        # at least 1.5x spread from centre and difference of two in location (longer tail)
-                        # flag everything further from this bin for that tail
-                        if suspect_months[0] == max(suspect_months):
-                            # LHS has issue (remember that have removed the sign)
-                            bad = sort_order[:mid_point - (step-1)] # need -1 given array indexing standards
-                        elif suspect_months[1] == max(suspect_months):
-                            # RHS has issue
-                            bad = sort_order[mid_point + step:]
-                        good = False
-
-            step += 1
-            if (mid_point - step) < 0 or (mid_point + step) == standardised_months.shape[0]:
-                # reached end
-                break
+        bad = walk_distribution(standardised_months)
 
         # now follow flag locations back up through the process
         for bad_month_id in bad:
