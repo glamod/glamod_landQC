@@ -126,7 +126,7 @@ def test_flag_large_offsets() -> None:
     station = common.generate_station_for_clim_and_dist_tests()
     flags = np.array(["" for _ in station.temperature.data])
 
-    standard_months = [6, 5, 4, 3, 0, 0, -3, -4, -5, -6]
+    standard_months = np.array([6, 5, 4, 3, 0, 0, -3, -4, -5, -6])
 
     distribution_monthly.flag_large_offsets(station, 1, standard_months, flags)
 
@@ -138,16 +138,105 @@ def test_flag_large_offsets() -> None:
     np.testing.assert_array_equal(flags, expected)
 
 
+def test_walk_distribution_all_same() -> None:
+    """Test that walking of distribution results in no flags if all
+    standardised_months are zero"""
+
+    standard_months = np.array([0 for _ in range(10)])
+
+    result = distribution_monthly.walk_distribution(standard_months)
+
+    # no flags set
+    expected = []
+
+    np.testing.assert_array_equal(result, expected)
 
 
+def test_walk_distribution_some_zero() -> None:
+    """Test that walking of distribution results in no flags if all
+    standardised_months are zero"""
+    standard_months = np.array([0. for _ in range(10)])
+    standard_months[:4] = [0.1, 0.2, 0.15, 0.05]
 
+    result = distribution_monthly.walk_distribution(standard_months)
+
+    # no flags set, as one of pair always zero
+    expected = []
+
+    np.testing.assert_array_equal(result, expected)
+
+
+def test_walk_distribution_end_of_branch() -> None:
+    """Test that walking of distribution results in no flags if
+    values are not identical, or zero, but sufficiently symmetrical,
+    so that it reaches the end of the distribution arms, with no flags set"""
+    # symmetrical, but not identifical
+    standard_months = np.array([-0.55, -0.45, -0.35, -0.25, -0.15,
+                                0.1, 0.2, 0.3, 0.4, 0.5])
+
+    result = distribution_monthly.walk_distribution(standard_months)
+
+    # no flags set, pair are close (though not identical)
+    expected = []
+
+    np.testing.assert_array_equal(result, expected)
+
+
+def test_walk_distribution_upper_long_min_small() -> None:
+    """Test that walking of distribution results in no flags even
+    if asymmetric, when min of pair is too close to zero"""
+
+    standard_months = np.array([-0.55, -0.45, -0.35, -0.25, -0.15,
+                                0.1, 0.2, 0.3, 1.0, 2.0])
+
+    result = distribution_monthly.walk_distribution(standard_months)
+
+    # no flags set, as min of assymetric pair too small
+    expected = []
+
+    np.testing.assert_array_equal(result, expected)
+
+
+def test_walk_distribution_upper_long() -> None:
+    """Test that walking of distribution results in expected flags
+    for upper tail"""
+
+    standard_months = np.array([-1.55, -0.45, -0.35, -0.25, -0.15,
+                                0.1, 0.2, 0.3, 1.0, 4.0])
+
+    result = distribution_monthly.walk_distribution(standard_months)
+
+    # no flags set, as min of assymetric pair too small
+    expected = []
+
+    np.testing.assert_array_equal(result, expected)
+
+
+def test_walk_distribution_lower_long() -> None:
+    """Test that walking of distribution results in expected flags
+    for lower tail"""
+
+    standard_months = np.array([-4, -3, -0.35, -0.25, -0.15,
+                                0.1, 0.2, 0.3, 1.4, 1.6])
+
+    result = distribution_monthly.walk_distribution(standard_months)
+
+    # no flags set, as min of assymetric pair too small
+    expected = []
+
+    np.testing.assert_array_equal(result, expected)
+
+
+@patch("distribution_monthly.find_monthly_scaling")
 @patch("distribution_monthly.monthly_gap")
-def test_dgc(monthly_gap_mock: Mock) -> None:
+def test_dgc(monthly_gap_mock: Mock,
+             scaling_mock: Mock) -> None:
     """check driving routine"""
     station = _setup_station(np.ma.arange(10))
 
     # Do the call
-    distribution_monthly.dgc(station, ["temperature"], {})
+    distribution_monthly.dgc(station, ["temperature"], {}, full=True)
 
     # Mock to check call occurs as expected with right return
     monthly_gap_mock.assert_called_once()
+    scaling_mock.assert_called_once()
