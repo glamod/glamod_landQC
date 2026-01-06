@@ -99,6 +99,42 @@ def prepare_all_data(obs_var: utils.MeteorologicalVariable,
     else:
         return (all_month_data - climatology)/spread  # prepare_all_data
 
+
+def plot_thresholds(bins, hist, xlabel, title, upper_threshold, lower_threshold,
+                    bincentres: np.ndarray | None = None,
+                    fitted_curve: np.ndarray | None = None ,
+                    bad_hist: np.ndarray | None = None) -> None:  # pragma: no cover
+    """Plot the histogram and the threshold values"""
+    import matplotlib.pyplot as plt
+    plt.clf()
+    plt.step(bins[1:], hist, color='k', where="pre")
+    plt.yscale("log")
+
+    plt.ylabel("Number of Observations")
+    plt.xlabel(xlabel)
+    plt.title(title)
+
+    if bincentres is not None:
+        plt.plot(bincentres, fitted_curve)
+    plt.ylim([0.1, max(hist)*2])
+    plt.axvline(upper_threshold, c="r")
+    plt.axvline(lower_threshold, c="r")
+    plt.show()
+
+
+
+    plt.ylim([0.1, max(hist)*2])
+
+    plt.axvline(upper_threshold, c="r")
+    plt.axvline(lower_threshold, c="r")
+
+    if bad_hist is not None:
+        plt.step(bins[1:], bad_hist, color='r', where="pre")
+
+    plt.show()
+
+
+
 #************************************************************************
 def find_thresholds(obs_var: utils.MeteorologicalVariable, station: utils.Station,
                     config_dict: dict, plots: bool = False, diagnostics: bool = False) -> None:
@@ -148,20 +184,6 @@ def find_thresholds(obs_var: utils.MeteorologicalVariable, station: utils.Statio
 
         fitted_curve = qc_utils.skew_gaussian(bincentres, gaussian_fit)
 
-        # diagnostic plots
-        if plots:
-            import matplotlib.pyplot as plt
-            plt.clf()
-            plt.step(bins[1:], hist, color='k', where="pre")
-            plt.yscale("log")
-
-            plt.ylabel("Number of Observations")
-            plt.xlabel(f"Normalised {obs_var.name.capitalize()} anomalies")
-            plt.title(f"{station.id} - month {month}")
-
-            plt.plot(bincentres, fitted_curve)
-            plt.ylim([0.1, max(hist)*2])
-
         # use bins and curve to find points where curve is < FREQUENCY_THRESHOLD
         try:
             lower_threshold = bincentres[np.where(np.logical_and(fitted_curve < FREQUENCY_THRESHOLD, bincentres < bins[np.argmax(fitted_curve)]))[0]][-1]
@@ -177,10 +199,10 @@ def find_thresholds(obs_var: utils.MeteorologicalVariable, station: utils.Statio
             upper_threshold = bins[-1]
 
         if plots:
-            plt.axvline(upper_threshold, c="r")
-            plt.axvline(lower_threshold, c="r")
-            plt.show()
-
+            plot_thresholds(bins, hist, f"Normalised {obs_var.name.capitalize()} anomalies",
+                            f"Normalised {obs_var.name.capitalize()} anomalies",
+                            upper_threshold, lower_threshold,
+                            bincentres=bincentres, fitted_curve=fitted_curve)
         # add uthresh first, then lthresh
         try:
             config_dict[f"ADISTRIBUTION-{obs_var.name}"][f"{month}-uthresh"] = upper_threshold
@@ -352,24 +374,12 @@ def all_obs_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
 
         # diagnostic plots
         if plots:
-            import matplotlib.pyplot as plt
-            plt.step(bins[1:], hist, color='k', where="pre")
-            plt.yscale("log")
-
-            plt.ylabel("Number of Observations")
-            plt.xlabel(obs_var.name.capitalize())
-            plt.title(f"{station.id} - month {month}")
-
-            plt.ylim([0.1, max(hist)*2])
-
-            plt.axvline(upper_threshold, c="r")
-            plt.axvline(lower_threshold, c="r")
-
             bad_locs, = np.where(flags[month_locs] == "d")
-            bad_hist, dummy = np.histogram(normalised_anomalies[bad_locs], bins)
-            plt.step(bins[1:], bad_hist, color='r', where="pre")
-
-            plt.show()
+            bad_hist, _ = np.histogram(normalised_anomalies[bad_locs], bins)
+            plot_thresholds(bins, hist, f"Normalised {obs_var.name.capitalize()} anomalies",
+                            f"Normalised {obs_var.name.capitalize()} anomalies",
+                            upper_threshold, lower_threshold,
+                            bad_hist=bad_hist)
 
     # append flags to object
     obs_var.store_flags(utils.insert_flags(obs_var.flags, flags))
