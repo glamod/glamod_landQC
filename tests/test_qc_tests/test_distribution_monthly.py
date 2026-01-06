@@ -4,7 +4,7 @@ Contains tests for odd_cluster.py
 import numpy as np
 import datetime as dt
 import pandas as pd
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, call
 
 import distribution_monthly
 
@@ -97,6 +97,47 @@ def test_find_monthly_scaling(prepare_mock: Mock) -> None:
     # Mock to check call occurs as expected with right return
     assert config_dict["MDISTRIBUTION-temperature"]["1-clim"] == 3
     assert config_dict["MDISTRIBUTION-temperature"]["1-spread"] == qc_utils.spread(np.arange(1, 6))
+
+
+@patch("distribution_monthly.prepare_monthly_data")
+def test_monthly_gap_no_clim_no_spread(prepare_mock: Mock) -> None:
+    """Test gap finding if no climatology or spread available"""
+    prepare_mock.return_value = np.ma.array([1, 2, 3, 4, 5])
+    station = _setup_station(np.ma.arange(10))
+
+    # build up config_dict
+    temperature_values = [(f"{month}-clim", utils.MDI) for month in range(1, 13)]
+    temperature_values += [(f"{month}-spread", utils.MDI) for month in range(1, 13)]
+    config_dict = {"MDISTRIBUTION-temperature": dict(temperature_values)}
+
+    # Do the call
+    distribution_monthly.monthly_gap(
+        station.temperature, station, config_dict)
+
+    calls = [call(station.temperature, station,
+                  month, diagnostics=False) for month in range(1, 13)]
+
+    prepare_mock.assert_has_calls(calls)
+
+
+def test_flag_large_offsets() -> None:
+    """Test that large offsets are flagged"""
+    # 10 years of data for January
+    station = common.generate_station_for_clim_and_dist_tests()
+    flags = np.array(["" for _ in station.temperature.data])
+
+    standard_months = [6, 5, 4, 3, 0, 0, -3, -4, -5, -6]
+
+    distribution_monthly.flag_large_offsets(station, 1, standard_months, flags)
+
+    expected = np.array(["" for _ in station.temperature.data])
+    # first two and last two months should be flagged
+    expected[:24*31*2] = "D"
+    expected[-24*31*2:] = "D"
+
+    np.testing.assert_array_equal(flags, expected)
+
+
 
 
 

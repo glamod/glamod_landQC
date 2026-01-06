@@ -87,3 +87,41 @@ def generate_streaky_data(data: np.ma.MaskedArray,
         data[start: start+length] = data[start]
 
     return data
+
+
+def generate_station_for_clim_and_dist_tests(
+                    varname: str = "temperature",
+                    nyears: int = 10) -> utils.Station:
+    """Create a station with temperatures (or other metric) for 10 Januaries
+    :param str varname: name of variable to create
+    :param str varname: name to call variable
+    :param int nyears: number of years of data to generate
+    Returns
+    -------
+    utils.Station
+        Station object with data in temperature field
+    """
+
+    month_hours = 24*31
+    # 10 years of Januaries
+    indata = np.ma.array(np.tile(np.arange(24), 31*nyears))
+    indata.mask = np.zeros(len(indata))
+
+    # make MetVars
+    obsvar = example_test_variable(varname, indata)
+
+    for y in range(nyears):
+        start_dt = dt.datetime(2000+y, 1, 1, 0, 0)
+        month_times = pd.to_datetime(pd.DataFrame([start_dt + dt.timedelta(hours=i)\
+                                for i in range(month_hours)])[0])
+        if y == 0:
+            times = month_times.copy()
+        else:
+            times = pd.concat([times, month_times])
+    # check at this generation stage that have all Januaries
+    assert np.unique(times.dt.month) == 1
+
+    # make Station, by hand so can set times
+    station = example_test_station(obsvar, times)
+
+    return station

@@ -1,12 +1,10 @@
 """
-Distributional Gap Checks
-=========================
+Distributional Gap Checks - Monthly
+===================================
 
-1. Check distribution of monthly values and look for assymmetry
-2. Check distribution of all observations and look for distinct populations
+Check distribution of monthly values and look for assymmetry
 """
 #************************************************************************
-import copy
 import numpy as np
 from scipy.stats import skew
 import logging
@@ -23,7 +21,7 @@ MONTHlY_BIN_WIDTH = 0.25
 LARGE_LIMIT = 5
 
 def plot_monthly_distribution(indata: np.ndarray, bins: np.ndarray,
-                              bad: np.ndarray, xlabel: str,
+                              bad: list, xlabel: str,
                               title: str) -> None:  # pragma: no cover
     """Plot distribution and flagged values"""
 
@@ -117,9 +115,38 @@ def find_monthly_scaling(obs_var: utils.MeteorologicalVariable, station: utils.S
     # find_monthly_scaling
 
 
+def flag_large_offsets(station: utils.Station, month: int,
+                       standardised_months: np.ndarray,
+                       flags: np.ndarray) -> None:
+    """Flag those months which have large offsets (standardised values)
+
+    Parameters
+    ----------
+    station : utils.Station
+        Station to process
+    month : int
+        Month to process
+    standardised_months : np.ndarray
+        Array of standardised monthly anomalies [(value-clim)/spread],
+        For single calendar month, all years in record
+    flags : np.ndarray
+        Array to hold flags (edited in place)
+    """
+
+    all_years = np.unique(station.years)
+    # flag months with very large offsets
+    bad, = np.where(np.abs(standardised_months) >= LARGE_LIMIT)
+    # now follow flag locations back up through the process
+    for bad_month_id in bad:
+        # year ID for this set of calendar months
+        locs, = np.where(np.logical_and(station.months == month,
+                                        station.years == all_years[bad_month_id]))
+        flags[locs] = "D"
+
+
 #************************************************************************
-def monthly_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station, config_dict: dict,
-                plots: bool = False, diagnostics: bool = False) -> None:
+def monthly_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
+                config_dict: dict, plots: bool = False, diagnostics: bool = False) -> None:
     """
     Use distribution to identify assymetries.
 
@@ -153,15 +180,8 @@ def monthly_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station, c
 
         standardised_months = (month_averages - climatology) / spread
 
-        bins = qc_utils.create_bins(standardised_months, MONTHlY_BIN_WIDTH, obs_var.name)
-
         # flag months with very large offsets
-        bad, = np.where(np.abs(standardised_months) >= LARGE_LIMIT)
-        # now follow flag locations back up through the process
-        for bad_month_id in bad:
-            # year ID for this set of calendar months
-            locs, = np.where(np.logical_and(station.months == month, station.years == all_years[bad_month_id]))
-            flags[locs] = "D"
+        flag_large_offsets(station, month, standardised_months, flags)
 
         # walk distribution from centre to find assymetry
         sort_order = standardised_months.argsort()
@@ -198,10 +218,12 @@ def monthly_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station, c
         # now follow flag locations back up through the process
         for bad_month_id in bad:
             # year ID for this set of calendar months
-            locs, = np.where(np.logical_and(station.months == month, station.years == all_years[bad_month_id]))
+            locs, = np.where(np.logical_and(station.months == month,
+                                            station.years == all_years[bad_month_id]))
             flags[locs] = "D"
 
         if plots:
+            bins = qc_utils.create_bins(standardised_months, MONTHlY_BIN_WIDTH, obs_var.name)
             plot_monthly_distribution(standardised_months, bins, bad,
                                       obs_var.name.capitalize(),
                                       f"{station.id} - month {month}")
