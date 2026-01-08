@@ -128,14 +128,209 @@ def test_prepare_all_data_spread_nonzero() -> None:
                                    (np.ma.arange(10)-1)/2)
 
 
+def test_write_thresh_to_config_dict() -> None:
+    """Test that writing of dictionary works"""
+    config_dict = {}
 
+    distribution_all.write_thresh_to_config_dict(config_dict, "temperature",
+                                                 1, 10., -10.)
+
+    assert config_dict["ADISTRIBUTION-temperature"]["1-uthresh"] == 10
+    assert config_dict["ADISTRIBUTION-temperature"]["1-lthresh"] == -10
+
+
+def test_write_thresh_to_config_dict_with_exist() -> None:
+    """Test that writing of dictionary works"""
+    config_dict = {"ADISTRIBUTION-temperature" : {}}
+
+    distribution_all.write_thresh_to_config_dict(config_dict, "temperature",
+                                                 1, 10., -10.)
+
+    assert config_dict["ADISTRIBUTION-temperature"]["1-uthresh"] == 10
+    assert config_dict["ADISTRIBUTION-temperature"]["1-lthresh"] == -10
+
+
+@patch("distribution_all.prepare_all_data")
+def test_find_thresholds_mdi(prepare_mock: Mock) -> None:
+    """Test stored values correct if no scaling possible"""
+    station = _setup_station(np.ma.arange(10))
+    prepare_mock.return_value = np.ma.array([utils.MDI])
+    config_dict = {}
+
+    distribution_all.find_thresholds(station.temperature,
+                                     station, config_dict)
+
+    assert config_dict["ADISTRIBUTION-temperature"]["1-uthresh"] == utils.MDI
+    assert config_dict["ADISTRIBUTION-temperature"]["1-lthresh"] == utils.MDI
+
+
+@patch("distribution_all.prepare_all_data")
+def test_find_thresholds_single_value(prepare_mock: Mock) -> None:
+    """Test stored values correct if no fitting possible"""
+
+    station = _setup_station(np.ma.arange(10))
+    prepare_mock.return_value = np.ma.array([0, 0, 0, 0, 0, 0])
+    config_dict = {}
+
+    distribution_all.find_thresholds(station.temperature,
+                                     station, config_dict)
+
+    assert config_dict["ADISTRIBUTION-temperature"]["1-uthresh"] == utils.MDI
+    assert config_dict["ADISTRIBUTION-temperature"]["1-lthresh"] == utils.MDI
+
+
+@patch("distribution_all.prepare_all_data")
+@patch("distribution_all.qc_utils.create_bins")
+@patch("distribution_all.np.histogram")
+@patch("distribution_all.qc_utils.fit_gaussian")
+@patch("distribution_all.qc_utils.skew_gaussian")
+def test_find_month_thresholds_fitting_no_thresh(gauss_mock: Mock,
+                                                 fit_mock: Mock,
+                                                 hist_mock: Mock,
+                                                 create_bins_mock: Mock,
+                                                 prepare_mock: Mock) ->  None:
+    """Test thresholds set at extremal values
+    if curve doesn't fall below threshold"""
+
+    station = _setup_station(np.ma.arange(10))
+    config_dict = {}
+
+    # want data only for first month, so make something to generate that
+    prepare_mock.side_effect = [station.temperature.data if i==0 else np.ma.MaskedArray([10]) for i in range(12)]
+
+    # simple bins and histogram
+    bins = np.arange(-6., 7., 1)
+    create_bins_mock.return_value = bins
+
+    # only need this to fill unused variables
+    hist_mock.return_value = (np.arange(10), None)
+    # mocking this so that a skew Gaussian called correctly
+    fit_mock.return_value = np.array([1, 0, 1, 0.1])
+
+    # mocking values for the fitted Gaussian
+    #    Bins < 0.1 flagged, but rounded down/up to be inclusive
+    #    so before (lower) or after (higher) the 0.05 values
+    gauss_mock.return_value = np.array([0.15, 0.2, 0.5, 0.5, 1, 3, 5, 3, 1, 0.5, 0.2, 0.15])
+
+    distribution_all.find_thresholds(station.temperature,
+                                     station, config_dict)
+
+    calls = gauss_mock.call_args_list[0]
+    np.testing.assert_almost_equal(calls.args[0], bins[1:]-0.5)
+    np.testing.assert_almost_equal(calls.args[1],fit_mock.return_value)
+
+    assert config_dict["ADISTRIBUTION-temperature"]["1-uthresh"] == 6.
+    assert config_dict["ADISTRIBUTION-temperature"]["1-lthresh"] == -6.
+
+
+@patch("distribution_all.prepare_all_data")
+@patch("distribution_all.qc_utils.create_bins")
+@patch("distribution_all.np.histogram")
+@patch("distribution_all.qc_utils.fit_gaussian")
+@patch("distribution_all.qc_utils.skew_gaussian")
+def test_find_month_thresholds_fitting(gauss_mock: Mock,
+                                       fit_mock: Mock,
+                                       hist_mock: Mock,
+                                       create_bins_mock: Mock,
+                                       prepare_mock: Mock) ->  None:
+    """Test how the thresholds are determined when selecting the
+    fitted curve falls below the set level"""
+
+    station = _setup_station(np.ma.arange(10))
+    config_dict = {}
+
+    # want data only for first month, so make something to generate that
+    prepare_mock.side_effect = [station.temperature.data if i==0 else np.ma.MaskedArray([10]) for i in range(12)]
+
+    # simple bins and histogram
+    bins = np.arange(-6., 7., 1)
+    create_bins_mock.return_value = bins
+
+    # only need this to fill unused variables
+    hist_mock.return_value = (np.arange(10), None)
+    # mocking this so that a skew Gaussian called correctly
+    fit_mock.return_value = np.array([1, 0, 1, 0.1])
+
+    # mocking values for the fitted Gaussian
+    #    Bins < 0.1 flagged, but rounded down/up to be inclusive
+    #    so before (lower) or after (higher) the 0.05 values
+    gauss_mock.return_value = np.array([0.01, 0.05, 0.5, 0.5, 1, 3, 5, 3, 1, 0.5, 0.05, 0.01])
+
+    distribution_all.find_thresholds(station.temperature,
+                                     station, config_dict)
+
+    calls = gauss_mock.call_args_list[0]
+    np.testing.assert_almost_equal(calls.args[0], bins[1:]-0.5)
+    np.testing.assert_almost_equal(calls.args[1],fit_mock.return_value)
+
+    assert config_dict["ADISTRIBUTION-temperature"]["1-uthresh"] == 4.5
+    assert config_dict["ADISTRIBUTION-temperature"]["1-lthresh"] == -4.5
+
+
+
+@patch("distribution_all.prepare_all_data")
+@patch("distribution_all.qc_utils.create_bins")
+@patch("distribution_all.np.histogram")
+@patch("distribution_all.qc_utils.find_gap")
+def test_all_obs_gap(find_mock: Mock,
+                     hist_mock: Mock,
+                     create_bins_mock: Mock,
+                     prepare_mock: Mock) ->  None:
+    """Test how the thresholds are used to set flags"""
+
+    # get randomly distributed data
+    station = _setup_station(np.ma.ones(31*24))
+
+    # set up config dictionary
+    config_dict = {"ADISTRIBUTION-temperature": {"1-uthresh": 5.}}
+    config_dict["ADISTRIBUTION-temperature"]["1-lthresh"] = -5.
+
+    # generate some dummy anomalies, with values that can be flagged
+    anomalies = np.ma.array(np.random.normal(0.0, 1.0, station.temperature.data.shape[0]))
+    anomalies[:10] = 100
+    anomalies[-10:] = -100
+    prepare_mock.side_effect = [anomalies if i==0 else np.ma.MaskedArray([utils.MDI]) for i in range(12)]
+
+    # simple bins and histogram, so that routine flows
+    bins = np.arange(-6., 7, 1)
+    create_bins_mock.return_value = bins
+    # only need this to fill unused variables
+    hist_mock.return_value = (np.arange(10),
+                              None)
+
+    # gap check tested elsewhere, so return values which will act to flag
+    find_mock.side_effect = [10, -10]
+
+    distribution_all.all_obs_gap(station.temperature, station, config_dict)
+
+    # build the expected array
+    expected_flags = np.array(["" for _ in station.times])
+    expected_flags[:10] = "d"
+    expected_flags[-10:] = "d"
+
+    np.testing.assert_equal(station.temperature.flags, expected_flags)
+
+
+
+@patch("distribution_all.find_thresholds")
 @patch("distribution_all.all_obs_gap")
-def test_dgc(all_gap_mock: Mock) -> None:
+def test_dgc(all_gap_mock: Mock,
+             thresholds_mock: Mock) -> None:
     """check driving routine"""
     station = _setup_station(np.ma.arange(10))
 
     # Do the call
-    distribution_all.dgc(station, ["temperature"], {})
+    distribution_all.dgc(station, ["temperature"], {},
+                         full=True, plots=True)
 
     # Mock to check call occurs as expected with right return
-    all_gap_mock.assert_called_once()
+    thresholds_mock.assert_called_once_with(station.temperature,
+                                            station, {},
+                                            full=True,
+                                            plots=True,
+                                            diagnostics=False)
+
+    all_gap_mock.assert_called_once_with(station.temperature,
+                                         station, {},
+                                         plots=False,
+                                         diagnostics=False)
