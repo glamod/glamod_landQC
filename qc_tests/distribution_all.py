@@ -25,6 +25,47 @@ LARGE_LIMIT = 5
 GAP_SIZE = 2
 FREQUENCY_THRESHOLD = 0.1
 
+#************************************************************************
+def find_monthly_scaling(all_month_data: np.ma.MaskedArray,
+                         config_dict: dict,
+                         name: str,
+                         month: int) -> tuple[float, float]:
+    """Find climatology and spread to scale monthly data
+
+    Parameters
+    ----------
+    all_month_data : np.ma.MaskedArray
+        Data to characterise
+    config_dict : dict
+        Dictionary to store scaling
+    name : str
+        Name of variable
+    month : int
+        Month to run on
+
+    Returns
+    -------
+    tuple[float, float]
+        Returns climatology and spread
+    """
+
+    if len(all_month_data.compressed()) >= utils.DATA_COUNT_THRESHOLD:
+        # have data, now to standardise
+        climatology = qc_utils.average(all_month_data) # mean
+        spread = qc_utils.spread(all_month_data) # IQR currently
+    else:
+        climatology = utils.MDI
+        spread = utils.MDI
+
+    # write out the scaling...
+    try:
+        config_dict[f"ADISTRIBUTION-{name}"][f"{month}-clim"] = climatology
+    except KeyError:
+        CD_clim = {f"{month}-clim" : climatology}
+        config_dict[f"ADISTRIBUTION-{name}"] = CD_clim
+    config_dict[f"ADISTRIBUTION-{name}"][f"{month}-spread"] = spread
+
+    return climatology, spread
 
 
 #************************************************************************
@@ -50,61 +91,35 @@ def prepare_all_data(obs_var: utils.MeteorologicalVariable,
     all_month_data = obs_var.data[month_locs]
 
     if full:
-
-        if len(all_month_data.compressed()) >= utils.DATA_COUNT_THRESHOLD:
-            # have data, now to standardise
-            climatology = qc_utils.average(all_month_data) # mean
-            spread = qc_utils.spread(all_month_data) # IQR currently
-        else:
-            climatology = utils.MDI
-            spread = utils.MDI
-
-        # write out the scaling...
-        try:
-            config_dict[f"ADISTRIBUTION-{obs_var.name}"][f"{month}-clim"] = climatology
-        except KeyError:
-            CD_clim = {f"{month}-clim" : climatology}
-            config_dict[f"ADISTRIBUTION-{obs_var.name}"] = CD_clim
-        config_dict[f"ADISTRIBUTION-{obs_var.name}"][f"{month}-spread"] = spread
+        climatology, spread = find_monthly_scaling(all_month_data, config_dict,
+                                                   obs_var.name, month)
 
     else:
-
         try:
+            # read if available
             climatology = float(config_dict[f"ADISTRIBUTION-{obs_var.name}"][f"{month}-clim"])
             spread = float(config_dict[f"ADISTRIBUTION-{obs_var.name}"][f"{month}-spread"])
         except KeyError:
-
-            if len(all_month_data.compressed()) >= utils.DATA_COUNT_THRESHOLD:
-                # have data, now to standardise
-                climatology = qc_utils.average(all_month_data) # mean
-                spread = qc_utils.spread(all_month_data) # IQR currently
-            else:
-                climatology = utils.MDI
-                spread = utils.MDI
-
-            # write out the scaling...
-            try:
-                config_dict[f"ADISTRIBUTION-{obs_var.name}"][f"{month}-clim"] = climatology
-            except KeyError:
-                CD_clim = {f"{month}-clim" : climatology}
-                config_dict[f"ADISTRIBUTION-{obs_var.name}"] = CD_clim
-            config_dict[f"ADISTRIBUTION-{obs_var.name}"][f"{month}-spread"] = spread
+            climatology, spread = find_monthly_scaling(all_month_data, config_dict,
+                                                       obs_var.name, month)
 
     if climatology == utils.MDI and spread == utils.MDI:
         # these weren't calculable, move on
         return np.ma.array([utils.MDI])
     elif spread == 0:
-        # all the same value
+        # all observations have the same value (so all anomalies should be zero)
         return (all_month_data - climatology)  # prepare_all_data
     else:
         return (all_month_data - climatology)/spread  # prepare_all_data
 
 
+#************************************************************************
 def plot_thresholds(bins, hist, xlabel, title, upper_threshold, lower_threshold,
                     bincentres: np.ndarray | None = None,
                     fitted_curve: np.ndarray | None = None ,
                     bad_hist: np.ndarray | None = None) -> None:  # pragma: no cover
-    """Plot the histogram and the threshold values"""
+    """Plot the histogram and the threshold/flagged values"""
+
     import matplotlib.pyplot as plt
     plt.clf()
     plt.step(bins[1:], hist, color='k', where="pre")
@@ -114,17 +129,9 @@ def plot_thresholds(bins, hist, xlabel, title, upper_threshold, lower_threshold,
     plt.xlabel(xlabel)
     plt.title(title)
 
-    if bincentres is not None:
+    if bincentres is not None and fitted_curve is not None:
         plt.plot(bincentres, fitted_curve)
     plt.ylim([0.1, max(hist)*2])
-    plt.axvline(upper_threshold, c="r")
-    plt.axvline(lower_threshold, c="r")
-    plt.show()
-
-
-
-    plt.ylim([0.1, max(hist)*2])
-
     plt.axvline(upper_threshold, c="r")
     plt.axvline(lower_threshold, c="r")
 
@@ -134,10 +141,27 @@ def plot_thresholds(bins, hist, xlabel, title, upper_threshold, lower_threshold,
     plt.show()
 
 
+def write_config_dict(config_dict: dict,
+                      var_name: str,
+                      month: int,
+                      upper_threshold: float,
+                      lower_threshold: float) -> None:
+
+
+    # add uthresh first, then lthresh
+    try:
+        config_dict[f"ADISTRIBUTION-{var_name}"][f"{month}-uthresh"] = upper_threshold
+    except KeyError:
+        CD_uthresh = {f"{month}-uthresh" : upper_threshold}
+        config_dict[f"ADISTRIBUTION-{var_name}"] = CD_uthresh
+    config_dict[f"ADISTRIBUTION-{var_name}"][f"{month}-lthresh"] = lower_threshold
+
 
 #************************************************************************
-def find_thresholds(obs_var: utils.MeteorologicalVariable, station: utils.Station,
-                    config_dict: dict, plots: bool = False, diagnostics: bool = False) -> None:
+def find_thresholds(obs_var: utils.MeteorologicalVariable,
+                    station: utils.Station,
+                    config_dict: dict, plots: bool = False,
+                    diagnostics: bool = False) -> None:
     """
     Extract data for month and find thresholds in distribution and store.
 
@@ -148,32 +172,27 @@ def find_thresholds(obs_var: utils.MeteorologicalVariable, station: utils.Statio
     :param bool diagnostics: turn on diagnostic output
     """
 
+    # spin through each month
     for month in range(1, 13):
 
-        normalised_anomalies = prepare_all_data(obs_var, station, month, config_dict, full=True, diagnostics=diagnostics)
+        normalised_anomalies = prepare_all_data(obs_var, station, month,
+                                                config_dict, full=True,
+                                                diagnostics=diagnostics)
 
-        if len(normalised_anomalies.compressed()) == 1 and normalised_anomalies[0] == utils.MDI:
+        if len(normalised_anomalies.compressed()) == 1 and\
+            normalised_anomalies[0] == utils.MDI:
             # scaling not possible for this month
-            # add uthresh first, then lthresh
-            try:
-                config_dict[f"ADISTRIBUTION-{obs_var.name}"][f"{month}-uthresh"] = utils.MDI
-            except KeyError:
-                CD_uthresh = {f"{month}-uthresh" : utils.MDI}
-                config_dict[f"ADISTRIBUTION-{obs_var.name}"] = CD_uthresh
-            config_dict[f"ADISTRIBUTION-{obs_var.name}"][f"{month}-lthresh"] = utils.MDI
+            write_config_dict(config_dict, obs_var.name, month,
+                              utils.MDI, utils.MDI)
             continue
         elif len(np.unique(normalised_anomalies)) == 1:
             # all the same value, so won't be able to fit a histogram
-            # add uthresh first, then lthresh
-            try:
-                config_dict[f"ADISTRIBUTION-{obs_var.name}"][f"{month}-uthresh"] = utils.MDI
-            except KeyError:
-                CD_uthresh = {f"{month}-uthresh" : utils.MDI}
-                config_dict[f"ADISTRIBUTION-{obs_var.name}"] = CD_uthresh
-            config_dict[f"ADISTRIBUTION-{obs_var.name}"][f"{month}-lthresh"] = utils.MDI
+            write_config_dict(config_dict, obs_var.name, month,
+                              utils.MDI, utils.MDI)
             continue
 
-        bins = qc_utils.create_bins(normalised_anomalies, BIN_WIDTH, obs_var.name, anomalies=True)
+        bins = qc_utils.create_bins(normalised_anomalies, BIN_WIDTH,
+                                    obs_var.name, anomalies=True)
         bincentres = bins[1:] - (BIN_WIDTH/2)
         hist, bin_edges = np.histogram(normalised_anomalies, bins)
 
@@ -186,35 +205,39 @@ def find_thresholds(obs_var: utils.MeteorologicalVariable, station: utils.Statio
 
         # use bins and curve to find points where curve is < FREQUENCY_THRESHOLD
         try:
-            lower_threshold = bincentres[np.where(np.logical_and(fitted_curve < FREQUENCY_THRESHOLD, bincentres < bins[np.argmax(fitted_curve)]))[0]][-1]
+            lower_threshold = bincentres[np.where(
+                np.logical_and(fitted_curve < FREQUENCY_THRESHOLD,
+                               bincentres < bins[np.argmax(fitted_curve)]))[0]][-1]
         except:
             lower_threshold = bins[1]
         try:
             if len(np.unique(fitted_curve)) == 1:
-                # just a line of zeros perhaps (found on AFA00409906 station_level_pressure 20190913)
+                # just a line of zeros perhaps
+                #   (found on AFA00409906 station_level_pressure 20190913)
                 upper_threshold = bins[-1]
             else:
-                upper_threshold = bincentres[np.where(np.logical_and(fitted_curve < FREQUENCY_THRESHOLD, bincentres > bins[np.argmax(fitted_curve)]))[0]][0]
+                upper_threshold = bincentres[np.where(
+                    np.logical_and(fitted_curve < FREQUENCY_THRESHOLD,
+                                   bincentres > bins[np.argmax(fitted_curve)]))[0]][0]
         except:
             upper_threshold = bins[-1]
+
+        # and store:
+        write_config_dict(config_dict, obs_var.name, month,
+                          upper_threshold, lower_threshold)
 
         if plots:
             plot_thresholds(bins, hist, f"Normalised {obs_var.name.capitalize()} anomalies",
                             f"Normalised {obs_var.name.capitalize()} anomalies",
                             upper_threshold, lower_threshold,
                             bincentres=bincentres, fitted_curve=fitted_curve)
-        # add uthresh first, then lthresh
-        try:
-            config_dict[f"ADISTRIBUTION-{obs_var.name}"][f"{month}-uthresh"] = upper_threshold
-        except KeyError:
-            CD_uthresh = {f"{month}-uthresh" : upper_threshold}
-            config_dict[f"ADISTRIBUTION-{obs_var.name}"] = CD_uthresh
-        config_dict[f"ADISTRIBUTION-{obs_var.name}"][f"{month}-lthresh"] = lower_threshold
 
     # find_thresholds
 
+
 #************************************************************************
-def expand_around_storms(storms: np.ndarray, maximum: int, pad: int = 6) -> np.ndarray:
+def expand_around_storms(storms: np.ndarray, maximum: int,
+                         pad: int = 6) -> np.ndarray:
     """
     Pad storm signal by N=6 hours
 
@@ -227,6 +250,7 @@ def expand_around_storms(storms: np.ndarray, maximum: int, pad: int = 6) -> np.n
             storms = np.append(storms, storms[-1]+1)
 
     return np.unique(storms) # expand_around_storms
+
 
 #************************************************************************
 def all_obs_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
@@ -376,6 +400,7 @@ def all_obs_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
         if plots:
             bad_locs, = np.where(flags[month_locs] == "d")
             bad_hist, _ = np.histogram(normalised_anomalies[bad_locs], bins)
+
             plot_thresholds(bins, hist, f"Normalised {obs_var.name.capitalize()} anomalies",
                             f"Normalised {obs_var.name.capitalize()} anomalies",
                             upper_threshold, lower_threshold,
