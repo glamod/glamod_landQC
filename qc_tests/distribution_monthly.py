@@ -144,8 +144,21 @@ def flag_large_offsets(station: utils.Station, month: int,
         flags[locs] = "D"
 
 
-def walk_distribution(standardised_months) -> list:
+def walk_distribution(standardised_months: np.ndarray) -> list:
+    """Walk the anomalies from the central point (or pair)
+    outwards, comparing values until sufficient asymmetry
+    (or end of data) reached
 
+    Parameters
+    ----------
+    standardised_months : np.ndarray
+        Monthly values standardised by climatology and spread
+
+    Returns
+    -------
+    list
+        Indices of months to flag
+    """
 
     sort_order = standardised_months.argsort()
     mid_point = len(standardised_months) / 2
