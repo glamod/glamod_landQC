@@ -267,6 +267,91 @@ def test_find_month_thresholds_fitting(gauss_mock: Mock,
     assert config_dict["ADISTRIBUTION-temperature"]["1-lthresh"] == -4.5
 
 
+@patch("distribution_all.dist_monthly.prepare_monthly_data")
+def test_average_and_spread(prepare_mock: Mock) -> None:
+    """Test that values from mocked monthly averages are returned as expected"""
+    # dummy station
+    station = _setup_station(np.ma.arange(10))
+
+    prepare_mock.return_value = np.ma.arange(5)
+
+    av, sp = distribution_all.average_and_spread(station.temperature,
+                                                 station, 1)
+
+    assert av == qc_utils.average(np.ma.arange(5))
+    assert sp == qc_utils.spread(np.ma.arange(5))
+
+
+
+@patch("distribution_all.average_and_spread")
+def test_find_storms_few_data(av_and_sp_mock: Mock) -> None:
+    """Test routine exits when there's insufficient data"""
+    station = _setup_station(np.ma.arange(10))
+    wind_speed = common.example_test_variable("wind_speed",
+                                              np.ma.arange(10))
+    station_pressure = common.example_test_variable("station_level_pressure",
+                                                    np.ma.arange(10))
+
+    station.station_level_pressure = station_pressure
+    station.wind_speed = wind_speed
+
+    distribution_all.find_storms(station, station_pressure,
+                                    1, np.array([]))
+
+    # data are too short so routine should have exited
+    av_and_sp_mock.assert_not_called()
+
+
+@patch("distribution_all.average_and_spread")
+@patch("distribution_all.check_through_storms")
+def test_find_storms(storm_check_mock: Mock,
+                     av_and_sp_mock: Mock) -> None:
+    """Test routine finds single storm from wind and pressure values"""
+
+    # set up the station and data for a single January
+    indata = np.ma.ones(31*24)*2
+    station = _setup_station(indata)
+
+    # windier than normal on days 2 and 26
+    indata[24: 48] = 20
+    indata[25*24: 26*24] = 20
+    wind_speed = common.example_test_variable("wind_speed",
+                                              indata)
+    station.wind_speed = wind_speed
+
+    indata = np.ma.ones(31*24)*100
+    # lower pressure than normal on days 2 and 13
+    indata[24: 48] = 10
+    indata[12*24: 13*24] = 10
+    station_pressure = common.example_test_variable("station_level_pressure",
+                                                    indata)
+    station.station_level_pressure = station_pressure
+
+    # set initial flags for pressure, days 2 and 13
+    flags = np.array(["" for i in range(31*24)])
+    flags[24: 48] = "d"
+    flags[12*24: 13*24] = "d"
+
+    # mock return values for the average and spread; wind, then pressure
+    av_and_sp_mock.side_effect = [(2, 2), (80, 10)]
+
+    expected_storms = np.arange(24, 48)  # day 2 only
+    storm_check_mock.return_value = expected_storms
+
+    distribution_all.find_storms(station, station_pressure,
+                                    1, flags)
+
+    expected_flags = np.array(["" for i in range(31*24)])
+    expected_flags[12*24: 13*24] = "d"  # day 13 only
+
+    # test that routine called with appropriate info
+    calls = storm_check_mock.call_args_list[0]
+    np.testing.assert_array_equal(calls.args[0], expected_storms)
+    np.testing.assert_almost_equal(calls.args[1], wind_speed.data)
+
+    np.testing.assert_array_equal(flags, expected_flags)
+
+
 
 @patch("distribution_all.prepare_all_data")
 @patch("distribution_all.qc_utils.create_bins")
@@ -278,7 +363,7 @@ def test_all_obs_gap(find_mock: Mock,
                      prepare_mock: Mock) ->  None:
     """Test how the thresholds are used to set flags"""
 
-    # get randomly distributed data
+    # set up station
     station = _setup_station(np.ma.ones(31*24))
 
     # set up config dictionary
@@ -310,6 +395,56 @@ def test_all_obs_gap(find_mock: Mock,
 
     np.testing.assert_equal(station.temperature.flags, expected_flags)
 
+
+@patch("distribution_all.prepare_all_data")
+@patch("distribution_all.qc_utils.create_bins")
+@patch("distribution_all.np.histogram")
+@patch("distribution_all.qc_utils.find_gap")
+@patch("distribution_all.find_storms")
+def test_all_obs_gap_pressure(storms_mock: Mock,
+                              find_mock: Mock,
+                              hist_mock: Mock,
+                              create_bins_mock: Mock,
+                              prepare_mock: Mock) ->  None:
+    """Test how the thresholds are used to set flags"""
+
+    # make Station
+    slp = common.example_test_variable("sea_level_pressure", np.ma.ones(31*24))
+    station = common.example_test_station(slp)
+
+    # set up config dictionary
+    config_dict = {"ADISTRIBUTION-sea_level_pressure": {"1-uthresh": 5.}}
+    config_dict["ADISTRIBUTION-sea_level_pressure"]["1-lthresh"] = -5.
+
+    # generate some dummy anomalies, with values that can be flagged
+    anomalies = np.ma.array(np.random.normal(0.0, 1.0, station.sea_level_pressure.data.shape[0]))
+    anomalies[:10] = 100
+    anomalies[-10:] = -100
+    prepare_mock.side_effect = [anomalies if i==0 else np.ma.MaskedArray([utils.MDI]) for i in range(12)]
+
+    # simple bins and histogram, so that routine flows
+    bins = np.arange(-6., 7, 1)
+    create_bins_mock.return_value = bins
+    # only need this to fill unused variables
+    hist_mock.return_value = (np.arange(10),
+                              None)
+
+    # gap check tested elsewhere, so return values which will act to flag
+    find_mock.side_effect = [10, -10]
+
+    distribution_all.all_obs_gap(station.sea_level_pressure, station, config_dict)
+
+    # finally, test this was called
+    expected_flags = np.array(["" for _ in station.times])
+    expected_flags[:10] = "d"
+    expected_flags[-10:] = "d"
+
+    # Check that storms routine called as expected
+    calls = storms_mock.call_args_list[0]
+    assert calls.args[0] == station
+    assert calls.args[1] == station.sea_level_pressure
+    assert calls.args[2] == 1
+    np.testing.assert_array_equal(calls.args[3], expected_flags)
 
 
 @patch("distribution_all.find_thresholds")
