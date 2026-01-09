@@ -5,8 +5,8 @@ Distributional Gap Checks - All Observations
 Check distribution of all observations and look for distinct populations
 """
 #************************************************************************
-import copy
 import numpy as np
+import pandas as pd
 from scipy.stats import skew
 import logging
 logger = logging.getLogger(__name__)
@@ -222,25 +222,26 @@ def find_thresholds(obs_var: utils.MeteorologicalVariable,
 
         fitted_curve = qc_utils.skew_gaussian(bincentres, gaussian_fit)
 
-        # use bins and curve to find points where curve is < FREQUENCY_THRESHOLD
-        try:
-            lower_threshold = bincentres[np.where(
-                np.logical_and(fitted_curve < FREQUENCY_THRESHOLD,
-                               bincentres < bins[np.argmax(fitted_curve)]))[0]][-1]
-        except IndexError:
-            lower_threshold = bins[0]
-
-        try:
-            if len(np.unique(fitted_curve)) == 1:
-                # just a line of zeros perhaps
-                #   (found on AFA00409906 station_level_pressure 20190913)
-                upper_threshold = bins[-1]
-            else:
-                upper_threshold = bincentres[np.where(
-                    np.logical_and(fitted_curve < FREQUENCY_THRESHOLD,
-                                   bincentres > bins[np.argmax(fitted_curve)]))[0]][0]
-        except IndexError:
+        if len(np.unique(fitted_curve)) == 1:
+            # just a line of zeros perhaps
+            #   (found on AFA00409906 station_level_pressure 20190913)
             upper_threshold = bins[-1]
+            lower_threshold = bins[0]
+        else:
+            # use bins and curve to find points where curve is < FREQUENCY_THRESHOLD
+            try:
+                lower_threshold = bincentres[np.where(
+                    np.logical_and(fitted_curve < FREQUENCY_THRESHOLD,
+                                bincentres < bins[np.argmax(fitted_curve)]))[0]][-1]
+            except IndexError:
+                lower_threshold = bins[0]
+
+            try:
+                upper_threshold = bincentres[np.where(
+                        np.logical_and(fitted_curve < FREQUENCY_THRESHOLD,
+                                    bincentres > bins[np.argmax(fitted_curve)]))[0]][0]
+            except IndexError:
+                upper_threshold = bins[-1]
 
         # and store:
         write_thresh_to_config_dict(config_dict, obs_var.name, month,
@@ -256,11 +257,17 @@ def find_thresholds(obs_var: utils.MeteorologicalVariable,
 
 
 #************************************************************************
-def expand_around_storms(storms: np.ndarray, maximum: int,
-                         pad: int = 6) -> np.ndarray:
+def expand_around_storms(storms: np.ndarray,
+                         maximum: int,
+                         pad: int=6) -> np.ndarray:
     """
     Pad storm signal by N=6 hours
 
+    :param np.ndarray storms: the indices which need padding
+    :param int maximum: max length of the array to which these indices refer
+    :param int pad: by how much to pad
+
+    :returns: updated np.ndarray
     """
     for i in range(pad):
 
@@ -272,41 +279,49 @@ def expand_around_storms(storms: np.ndarray, maximum: int,
     return np.unique(storms) # expand_around_storms
 
 
-def check_through_storms(storms, wind_data) -> np.ndarray:
+def check_through_storms(storms: np.ndarray,
+                         times: pd.Series) -> np.ndarray:
+    print(storms)
 
+    # more than one location in this year-month combination
     if len(storms) >= 2:
         # find where separation more than the usual obs separation
-        storm_1diffs = np.ma.diff(storms)
-        separations, = np.where(storm_1diffs > np.ma.median(np.ma.diff(wind_data)))
+        storm_1diffs = np.ma.diff(times[storms])
+        separations, = np.where(storm_1diffs > np.ma.median(np.ma.diff(times)))
+        print(separations)
 
         if len(separations) != 0:
             # multiple storm signals
-            storm_start = 0
-            storm_finish = separations[0] + 1
-            first_storm = expand_around_storms(storms[storm_start: storm_finish], len(wind_data))
-            final_storm_locs = copy.deepcopy(first_storm)
+            # Get the the first one, and expand
+            final_storm_locs = expand_around_storms(
+                storms[0: separations[0] + 1],
+                len(times))
 
+            # then do the rest in a loop
             for j in range(len(separations)):
-                # then do the rest in a loop
-
                 if j+1 == len(separations):
                     # final one
-                    this_storm = expand_around_storms(storms[separations[j]+1: ], len(wind_data))
+                    this_storm = expand_around_storms(
+                        storms[separations[j]+1: ],
+                        len(times))
                 else:
-                    this_storm = expand_around_storms(storms[separations[j]+1: separations[j+1]+1], len(wind_data))
+                    this_storm = expand_around_storms(
+                        storms[separations[j]+1: separations[j+1]+1],
+                        len(times))
 
-                final_storm_locs = np.append(final_storm_locs, this_storm)
+                final_storm_locs = np.append(final_storm_locs,
+                                             this_storm)
 
         else:
             # locations separated at same interval as data
-            final_storm_locs = expand_around_storms(storms, len(wind_data))
+            final_storm_locs = expand_around_storms(storms, len(times))
 
-    # single entry
+    # single observation location identified
     elif len(storms) != 0:
         # expand around the storm signal (rather than
         #  just unflagging what could be the peak and
         #  leaving the entry/exit flagged)
-        final_storm_locs = expand_around_storms(storms, len(wind_data))
+        final_storm_locs = expand_around_storms(storms, len(times))
 
     return final_storm_locs
 
@@ -341,9 +356,9 @@ def average_and_spread(obs_var: utils.MeteorologicalVariable,
 
 #************************************************************************
 def find_storms(station: utils.Station,
-                   obs_var: utils.MeteorologicalVariable,
-                   month: int,
-                   flags: np.ndarray) -> None:
+                obs_var: utils.MeteorologicalVariable,
+                month: int,
+                flags: np.ndarray) -> None:
     """Find locations that could be from storms (low pressure systems),
     using wind speed and pressure data, and remove set flags from these
     as these data should be retained
@@ -395,7 +410,7 @@ def find_storms(station: utils.Station,
             ))
 
         # more than one entry - check if separate events
-        final_storm_locs = check_through_storms(storms, wind_data)
+        final_storm_locs = check_through_storms(storms, station.times)
 
         # unset the flags
         if len(storms) > 0:

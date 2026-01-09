@@ -184,11 +184,11 @@ def test_find_thresholds_single_value(prepare_mock: Mock) -> None:
 @patch("distribution_all.np.histogram")
 @patch("distribution_all.qc_utils.fit_gaussian")
 @patch("distribution_all.qc_utils.skew_gaussian")
-def test_find_month_thresholds_fitting_no_thresh(gauss_mock: Mock,
-                                                 fit_mock: Mock,
-                                                 hist_mock: Mock,
-                                                 create_bins_mock: Mock,
-                                                 prepare_mock: Mock) ->  None:
+def test_find_thresholds_fitting_no_thresh(gauss_mock: Mock,
+                                           fit_mock: Mock,
+                                           hist_mock: Mock,
+                                           create_bins_mock: Mock,
+                                           prepare_mock: Mock) ->  None:
     """Test thresholds set at extremal values
     if curve doesn't fall below threshold"""
 
@@ -228,11 +228,11 @@ def test_find_month_thresholds_fitting_no_thresh(gauss_mock: Mock,
 @patch("distribution_all.np.histogram")
 @patch("distribution_all.qc_utils.fit_gaussian")
 @patch("distribution_all.qc_utils.skew_gaussian")
-def test_find_month_thresholds_fitting(gauss_mock: Mock,
-                                       fit_mock: Mock,
-                                       hist_mock: Mock,
-                                       create_bins_mock: Mock,
-                                       prepare_mock: Mock) ->  None:
+def test_find_thresholds_fitting(gauss_mock: Mock,
+                                 fit_mock: Mock,
+                                 hist_mock: Mock,
+                                 create_bins_mock: Mock,
+                                 prepare_mock: Mock) ->  None:
     """Test how the thresholds are determined when selecting the
     fitted curve falls below the set level"""
 
@@ -267,6 +267,90 @@ def test_find_month_thresholds_fitting(gauss_mock: Mock,
     assert config_dict["ADISTRIBUTION-temperature"]["1-lthresh"] == -4.5
 
 
+def test_expand_around_storms_simple() -> None:
+    """Test that padding works"""
+
+    storms = np.array([10])
+    result = distribution_all.expand_around_storms(storms, 20, 6)
+    np.testing.assert_array_equal(result, np.arange(10-6, 10+1+6))
+
+
+def test_expand_around_storms_lower() -> None:
+    """Test that padding works when there's a lower bound"""
+
+    storms = np.array([3])
+    result = distribution_all.expand_around_storms(storms, 20, 6)
+    np.testing.assert_array_equal(result, np.arange(0, 3+1+6))
+
+
+def test_expand_around_storms_upper() -> None:
+    """Test that padding works when there's a higher bound"""
+
+    storms = np.array([18])
+    result = distribution_all.expand_around_storms(storms, 20, 6)
+    np.testing.assert_array_equal(result, np.arange(18-6, 20))
+
+
+def test_check_through_storms_single() -> None:
+    """Test processing of a single obs matching storm criteria"""
+    indata = np.ma.ones(31*24)
+    station = _setup_station(indata)
+    storms = np.arange(45, 46)
+    assert len(storms) == 1
+
+    result = distribution_all.check_through_storms(storms, station.times)
+
+    expected = np.arange(45-6, 46+6)
+    np.testing.assert_array_equal(result, expected)
+
+
+def test_check_through_storms_simple() -> None:
+    """Test processing of a continuous set of storm indices"""
+
+    indata = np.ma.ones(31*24)
+    station = _setup_station(indata)
+    storms = np.arange(24, 48)
+
+    result = distribution_all.check_through_storms(storms, station.times)
+
+    # all storm indices have the same sep as the underlying times
+    expected = np.arange(24-6, 48+6)
+    np.testing.assert_array_equal(result, expected)
+
+
+def test_check_through_storms_two() -> None:
+    """Test processing of a continuous set of storm indices"""
+
+    indata = np.ma.ones(31*24)
+    station = _setup_station(indata)
+    # two entries of storms, so can test the handling of the last storm
+    storms = np.append(np.arange(24, 48), np.arange(20*24, 21*24))
+
+    result = distribution_all.check_through_storms(storms, station.times)
+
+    # all storm indices have the same sep as the underlying times
+    expected = np.append(np.arange(24-6, 48+6), np.arange(20*24-6, 21*24+6))
+    np.testing.assert_array_equal(result, expected)
+
+
+def test_check_through_storms_three() -> None:
+    """Test processing of a continuous set of storm indices"""
+
+    indata = np.ma.ones(31*24)
+    station = _setup_station(indata)
+    # three entries of storms, so can test handling of the middle entry
+    storms = np.append(np.arange(24, 48),
+                       np.arange(10*24, 11*24))
+    storms = np.append(storms, np.arange(20*24, 21*24))
+
+    result = distribution_all.check_through_storms(storms, station.times)
+
+    # all storm indices have the same sep as the underlying times
+    expected = np.append(np.arange(24-6, 48+6), np.arange(10*24-6, 11*24+6))
+    expected = np.append(expected, np.arange(20*24-6, 21*24+6))
+    np.testing.assert_array_equal(result, expected)
+
+
 @patch("distribution_all.dist_monthly.prepare_monthly_data")
 def test_average_and_spread(prepare_mock: Mock) -> None:
     """Test that values from mocked monthly averages are returned as expected"""
@@ -280,7 +364,6 @@ def test_average_and_spread(prepare_mock: Mock) -> None:
 
     assert av == qc_utils.average(np.ma.arange(5))
     assert sp == qc_utils.spread(np.ma.arange(5))
-
 
 
 @patch("distribution_all.average_and_spread")
@@ -347,10 +430,10 @@ def test_find_storms(storm_check_mock: Mock,
     # test that routine called with appropriate info
     calls = storm_check_mock.call_args_list[0]
     np.testing.assert_array_equal(calls.args[0], expected_storms)
-    np.testing.assert_almost_equal(calls.args[1], wind_speed.data)
+    pd.testing.assert_series_equal(calls.args[1], station.times)
 
+    # check that flag array has been modified in place
     np.testing.assert_array_equal(flags, expected_flags)
-
 
 
 @patch("distribution_all.prepare_all_data")
@@ -394,6 +477,42 @@ def test_all_obs_gap(find_mock: Mock,
     expected_flags[-10:] = "d"
 
     np.testing.assert_equal(station.temperature.flags, expected_flags)
+
+
+@patch("distribution_all.prepare_all_data")
+@patch("distribution_all.qc_utils.create_bins")
+@patch("distribution_all.np.histogram")
+@patch("distribution_all.qc_utils.find_gap")
+def test_all_obs_gap_no_thresholds(find_mock: Mock,
+                                   hist_mock: Mock,
+                                   create_bins_mock: Mock,
+                                   prepare_mock: Mock) ->  None:
+    """Test how the thresholds are used to set flags"""
+
+    # set up station
+    station = _setup_station(np.ma.ones(31*24))
+
+    # set up config dictionary
+    config_dict = {"ADISTRIBUTION-temperature": {"1-uthresh": utils.MDI}}
+    config_dict["ADISTRIBUTION-temperature"]["1-lthresh"] = utils.MDI
+    config_dict["ADISTRIBUTION-temperature"]["2-uthresh"] = 5.
+    config_dict["ADISTRIBUTION-temperature"]["2-lthresh"] = -5.
+
+    # generate some dummy anomalies of all the same value
+    anomalies = np.ma.ones(100)
+    prepare_mock.side_effect = [anomalies if i in [0, 1] else np.ma.MaskedArray([utils.MDI]) for i in range(12)]
+
+    # simple bins and histogram, so that routine flows
+    bins = np.arange(-6., 7, 1)
+    create_bins_mock.return_value = bins
+    # only need this to fill unused variables
+    hist_mock.return_value = (np.arange(10),
+                              None)
+
+    distribution_all.all_obs_gap(station.temperature, station, config_dict)
+
+    # either threshold in dict is MDI or anomalies are all the same value
+    find_mock.assert_not_called()
 
 
 @patch("distribution_all.prepare_all_data")
