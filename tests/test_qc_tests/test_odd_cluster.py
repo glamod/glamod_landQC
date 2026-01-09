@@ -64,13 +64,13 @@ def _generate_expected_flags(data: np.ndarray) -> np.ndarray:
     return expected_flags
 
 
-def _setup_station(indata: np.ma.array) -> utils.Station:
+def _setup_station(indata: np.ma.MaskedArray) -> utils.Station:
     """Create a station object to hold the information enabling
     the QC test to be tested
 
     Parameters
     ----------
-    indata : np.ma.array
+    indata : np.ma.MaskedArray
         dummy temperature data
 
     Returns
@@ -182,7 +182,7 @@ def test_flag_clusters_normal() -> None:
 
 
 @patch("odd_cluster.flag_clusters")
-def test_read_hcc(flag_clusters_mock: Mock) -> None:
+def test_occ(flag_clusters_mock: Mock) -> None:
     """check driving routine"""
     station = _setup_station(np.ma.arange(10))
 
