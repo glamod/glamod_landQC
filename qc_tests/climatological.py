@@ -77,7 +77,7 @@ def plot_clims(hist: np.ndarray, bins: np.ndarray,
 #************************************************************************
 def get_weights(anoms: np.ndarray,
                 subset: np.ndarray,
-                filter_subset: np.ndarray) -> float:
+                filter_subset: np.ndarray) -> float | np.float64:
     '''
     Get the weights for the low pass filter.
 
@@ -85,7 +85,7 @@ def get_weights(anoms: np.ndarray,
     :param array subset: which values to take
     :param array filter_subset: which values to take
     :returns:
-        weights - float
+        weights - float | float64
     '''
 
     filterweights = np.array([1., 2., 3., 2., 1.])
@@ -144,8 +144,8 @@ def get_filter_ranges(year_index: int,
     return (monthly_range, filter_range)
 
 #************************************************************************
-def low_pass_filter(normed_anomalies: np.ndarray, station: utils.Station,
-                    annual_anoms: np.ndarray, month: int) -> np.ndarray:
+def low_pass_filter(normed_anomalies: np.ma.MaskedArray, station: utils.Station,
+                    annual_anoms: np.ndarray, month: int) -> np.ma.MaskedArray:
     '''
     Run the low pass filter - get suitable ranges, get weights, and apply
 

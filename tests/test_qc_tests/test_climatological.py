@@ -123,14 +123,14 @@ def test_get_filter_ranges_single() -> None:
     if only a single year is selected"""
     # expected values
     month = np.array([0]) # first and only entry
-    filter = np.array([2]) #  centre of 5 point array
+    exp_filter = np.array([2]) #  centre of 5 point array
 
     all_years = np.arange(2000, 2001, 1)
 
     month_range, filter_range = climatological.get_filter_ranges(0, all_years)
 
     np.testing.assert_almost_equal(month_range, month)
-    np.testing.assert_almost_equal(filter_range, filter)
+    np.testing.assert_almost_equal(filter_range, exp_filter)
 
 
 @patch("climatological.get_filter_ranges")
