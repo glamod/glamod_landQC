@@ -213,7 +213,7 @@ def find_thresholds(obs_var: utils.MeteorologicalVariable,
         bins = qc_utils.create_bins(normalised_anomalies, BIN_WIDTH,
                                     obs_var.name, anomalies=True)
         bincentres = bins[1:] - (BIN_WIDTH/2)
-        hist, bin_edges = np.histogram(normalised_anomalies, bins)
+        hist, _ = np.histogram(normalised_anomalies, bins)
 
         gaussian_fit = qc_utils.fit_gaussian(bincentres, hist, 0.5*max(hist),
                                           mu=np.ma.median(normalised_anomalies),
@@ -269,7 +269,7 @@ def expand_around_storms(storms: np.ndarray,
 
     :returns: updated np.ndarray
     """
-    for i in range(pad):
+    for _ in range(pad):
 
         if storms[0]-1 >= 0:
             storms = np.insert(storms, 0, storms[0]-1)

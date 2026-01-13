@@ -6,7 +6,6 @@ Check distribution of monthly values and look for assymmetry
 """
 #************************************************************************
 import numpy as np
-from scipy.stats import skew
 import logging
 logger = logging.getLogger(__name__)
 
@@ -21,7 +20,7 @@ MONTHlY_BIN_WIDTH = 0.25
 LARGE_LIMIT = 5
 
 def plot_monthly_distribution(indata: np.ndarray, bins: np.ndarray,
-                              bad: list, xlabel: str,
+                              bad: np.ndarray, xlabel: str,
                               title: str) -> None:  # pragma: no cover
     """Plot distribution and flagged values"""
 
@@ -144,7 +143,7 @@ def flag_large_offsets(station: utils.Station, month: int,
         flags[locs] = "D"
 
 
-def walk_distribution(standardised_months: np.ndarray) -> list:
+def walk_distribution(standardised_months: np.ndarray) -> np.ndarray:
     """Walk the anomalies from the central point (or pair)
     outwards, comparing values until sufficient asymmetry
     (or end of data) reached
@@ -156,7 +155,7 @@ def walk_distribution(standardised_months: np.ndarray) -> list:
 
     Returns
     -------
-    list
+    array
         Indices of months to flag
     """
 
@@ -173,7 +172,7 @@ def walk_distribution(standardised_months: np.ndarray) -> list:
         rhs = int(mid_point+0.5)
     good = True
     step = 0
-    bad = []
+    bad = np.array([])
 
     # This walks the "distribution" starting at the centre
     #   However, it just compares pairs of values going outwards

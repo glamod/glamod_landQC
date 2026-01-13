@@ -2,8 +2,6 @@
 Contains tests for odd_cluster.py
 """
 import numpy as np
-import datetime as dt
-import pandas as pd
 from unittest.mock import patch, Mock, call
 
 import distribution_monthly
@@ -301,7 +299,7 @@ def test_monthly_gap(prepare_mock: Mock,
     """Test gap finding routine logic and calls to other routines"""
     prepare_mock.return_value = np.ma.array([1, 2, 3, 4, 5])
     station = _setup_station(np.ma.arange(10))
-    flags = np.array(["" for i in range(10)])
+
     walk_mock.return_value = [0] # which month to flag (all values given mocked station)
 
     # build up config_dict, but values only for January
