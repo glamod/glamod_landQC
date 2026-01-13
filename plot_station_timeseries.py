@@ -175,7 +175,7 @@ def main(station_id: str) -> None:
 
     all_years = np.unique(station.years)
 
-    for y, year in enumerate(all_years):
+    for year in all_years:
 
         this_year_df = station_df[station_df["Year"] == year][RETAINED_COLUMNS]
         # remove empty rows
