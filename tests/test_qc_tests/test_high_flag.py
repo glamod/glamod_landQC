@@ -128,7 +128,7 @@ def test_high_flag_rate_humidity() -> None:
     flags[:3] = "n"
 
     # and set humidity flags
-    dewpoint.flags[:int(dewpoint.data.shape[0]*utils.HIGH_FLAGGING) + 1] = "h"
+    dewpoint.flags[:int(dewpoint.data.shape[0]*utils.HIGH_FLAGGING) + 1] = "m"
     dewpoint.flags = np.char.add(dewpoint.flags, flags)
     # set flags so that when discounting the precision and humidity flags
     #  then the high-flag threshold not reached
@@ -151,14 +151,14 @@ def test_high_flag_rate_humidity_set() -> None:
     flags[:3] = "n"
 
     # the rest are humidity
-    dewpoint.flags[:int(dewpoint.data.shape[0]*utils.HIGH_FLAGGING) + 5] = "h"
+    dewpoint.flags[:int(dewpoint.data.shape[0]*utils.HIGH_FLAGGING) + 5] = "m"
     # set enough to be both humidity and precision so that high-flag threshold reached
     dewpoint.flags = np.char.add(dewpoint.flags, flags)
 
     new_flags, flags_set = high_flag.high_flag_rate(dewpoint)
     # expecting flag from high_flag routine to be set.
     expected_flags = np.array(["" for _ in range(dewpoint.data.shape[0])])
-    expected_flags[int(dewpoint.data.shape[0]*utils.HIGH_FLAGGING) + 5:] = "H"
+    expected_flags[int(dewpoint.data.shape[0]*utils.HIGH_FLAGGING) + 5:] = "h"
 
     assert flags_set is True
     np.testing.assert_array_equal(new_flags, expected_flags)
