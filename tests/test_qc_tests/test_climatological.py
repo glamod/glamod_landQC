@@ -79,16 +79,16 @@ def test_get_weights_data() -> None:
     assert result == expected
 
 
-@pytest.mark.parametrize("year, month, filter", ([0, np.arange(0, 3), np.arange(2, 5)],
-                                                 [1, np.arange(0, 4), np.arange(1, 5)],
-                                                 [2, np.arange(0, 5), np.arange(5)],
-                                                 [4, np.arange(2, 7), np.arange(5)],
-                                                 [7, np.arange(5, 10), np.arange(5)],
-                                                 [8, np.arange(-4, 0), np.arange(0, 4)],
-                                                 [9, np.arange(-3, 0), np.arange(0, 3)]))
+@pytest.mark.parametrize("year, month, exp_filter", ([0, np.arange(0, 3), np.arange(2, 5)],
+                                                     [1, np.arange(0, 4), np.arange(1, 5)],
+                                                     [2, np.arange(0, 5), np.arange(5)],
+                                                     [4, np.arange(2, 7), np.arange(5)],
+                                                     [7, np.arange(5, 10), np.arange(5)],
+                                                     [8, np.arange(-4, 0), np.arange(0, 4)],
+                                                     [9, np.arange(-3, 0), np.arange(0, 3)]))
 def test_get_filter_ranges(year: int,
                            month: np.ndarray,
-                           filter: np.ndarray) -> None:
+                           exp_filter: np.ndarray) -> None:
     """Test that the array ranges are generated correctly"""
 
     all_years = np.arange(2000, 2010, 1)
@@ -96,15 +96,15 @@ def test_get_filter_ranges(year: int,
     month_range, filter_range = climatological.get_filter_ranges(year, all_years)
 
     np.testing.assert_almost_equal(month_range, month)
-    np.testing.assert_almost_equal(filter_range, filter)
+    np.testing.assert_almost_equal(filter_range, exp_filter)
 
 
-@pytest.mark.parametrize("year, month, filter", ([0, np.arange(0, 3), np.arange(2, 5)],
-                                                 [1, np.arange(0, 3), np.arange(1, 4)],
-                                                 [2, np.arange(-3, 0), np.arange(0, 3)]))
+@pytest.mark.parametrize("year, month, exp_filter", ([0, np.arange(0, 3), np.arange(2, 5)],
+                                                     [1, np.arange(0, 3), np.arange(1, 4)],
+                                                     [2, np.arange(-3, 0), np.arange(0, 3)]))
 def test_get_filter_ranges_short(year: int,
                            month: np.ndarray,
-                           filter: np.ndarray) -> None:
+                           exp_filter: np.ndarray) -> None:
     """Test that the array ranges are generated correctly
     if there are shorter than 5 years of data"""
 
@@ -115,7 +115,7 @@ def test_get_filter_ranges_short(year: int,
     # compared to test on a longer run of data, the returned values
     #   are trunctated by the available amount of data
     np.testing.assert_almost_equal(month_range, month)
-    np.testing.assert_almost_equal(filter_range, filter)
+    np.testing.assert_almost_equal(filter_range, exp_filter)
 
 
 def test_get_filter_ranges_single() -> None:
@@ -342,9 +342,9 @@ def test_prepare_data(calc_anoms_mock: Mock,
     norm_anoms_mock.return_value = np.arange(mlocs.shape[0])
     ann_anoms_mock.return_value = np.arange(np.unique(station.years).shape[0])
 
-    result = climatological.prepare_data(station,
-                                         station.temperature,
-                                         1)
+    _ = climatological.prepare_data(station,
+                                    station.temperature,
+                                    1)
 
     # anomalies will have been modified in place, changing mask
     expected_anoms = np.ma.zeros(station.temperature.data.shape[0])
