@@ -344,9 +344,21 @@ def spread(data: np.ndarray) -> float:
     # spread
 
 #*********************************************
-def winsorize(data: np.ndarray, percent: float) -> np.ndarray:
-    """
-    Replace data greater/less than upper/lower percentile with percentile value
+def winsorize(data: np.ma.MaskedArray,
+              percent: float) -> np.ma.MaskedArray:
+    """Replace data greater/less than upper/lower percentile with percentile value
+
+    Parameters
+    ----------
+    data : np.ma.MaskedArray
+        input data
+    percent : float
+        percentile at which to cut
+
+    Returns
+    -------
+    np.ma.MaskedARray
+        updated data
     """
 
     for pct in [percent, 100-percent]:

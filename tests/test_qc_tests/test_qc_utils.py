@@ -203,6 +203,22 @@ def test_gcv_calculate_binmax_large() -> None:
     assert binmax == 2000
 
 
+def test_winsorize() -> None:
+    """Test application of winsorizing routine"""
+
+    indata = np.ma.arange(100)+1
+    percent = 5.
+
+    result = qc_utils.winsorize(np.ma.copy(indata),
+                                percent)
+
+    lower, = np.nonzero(indata < 5)
+    assert np.all(result[lower] == 5)
+
+    upper, = np.nonzero(indata > 95)
+    assert np.all(result[upper] == 95)
+    
+    
 def test_reporting_accuracy_1() -> None:
 
     indata = np.ma.arange(10)
