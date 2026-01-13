@@ -434,7 +434,8 @@ def create_bins(data: np.ndarray, width: float,
     return bins # create_bins
 
 #*********************************************
-def gaussian(X: np.ndarray, p: np.ndarray) -> np.ndarray:
+def gaussian(X: np.ndarray,
+             p: np.ndarray) -> np.ndarray:
     '''
     Gaussian function for line fitting
     p[0]=norm
@@ -445,7 +446,8 @@ def gaussian(X: np.ndarray, p: np.ndarray) -> np.ndarray:
     return (norm*(np.exp(-((X-mu)*(X-mu))/(2.0*sig*sig)))) # gaussian
 
 #*********************************************
-def skew_gaussian(X: np.ndarray, p: np.ndarray) -> np.ndarray:
+def skew_gaussian(X: np.ndarray,
+                  p: np.ndarray) -> np.ndarray:
     '''
     Gaussian function for line fitting
     p[0]=norm
@@ -458,7 +460,9 @@ def skew_gaussian(X: np.ndarray, p: np.ndarray) -> np.ndarray:
         (1 + scipy.special.erf(skew*(X-mu)/(sig*np.sqrt(2)))) # skew_gaussian
 
 #*********************************************
-def residuals_skew_gaussian(p: np.ndarray, Y: np.ndarray, X: np.ndarray) -> np.ndarray:
+def residuals_skew_gaussian(p: np.ndarray,
+                            Y: np.ndarray,
+                            X: np.ndarray) -> np.ndarray:
     '''
     Least squared residuals from linear trend
     '''
@@ -487,9 +491,11 @@ def residuals_gaussian(p: np.ndarray, Y: np.ndarray, X: np.ndarray) -> np.ndarra
     return err # residuals_gaussian
 
 #*********************************************
-def fit_gaussian(x: np.ndarray, y: np.ndarray,
-                 norm: float, mu: float = utils.MDI,
-                 sig: float = utils.MDI, skew: float = utils.MDI) -> np.ndarray:
+def fit_gaussian(x: np.ma.MaskedArray, y: np.ma.MaskedArray,
+                 norm: float,
+                 mu: float = utils.MDI,
+                 sig: float = utils.MDI,
+                 skew: float = utils.MDI) -> np.ndarray:
     '''
     Fit a gaussian to the data provided
     Inputs:
@@ -509,20 +515,27 @@ def fit_gaussian(x: np.ndarray, y: np.ndarray,
         sig = 3.*np.unique(np.diff(x))[0]
 
     if np.isnan(skew):
-        # calculation of skew hasn't worked for some reason (e.g. no variation in values, all==0)
+        # calculation of skew hasn't worked for some reason
+        # (e.g. no variation in values, all==0)
         skew = 0
 
     # call the appropriate fitting function and routine
     if skew == utils.MDI:
         p0 = np.array([norm, mu, sig])
-        result = least_squares(residuals_gaussian, p0, args=(y, x), max_nfev=10000, verbose=0, method="trf", jac="3-point")
+        result = least_squares(residuals_gaussian, p0, args=(y, x),
+                               max_nfev=10000, verbose=0,
+                               method="trf", jac="3-point")
     else:
         p0 = np.array([norm, mu, sig, skew])
-        result = least_squares(residuals_skew_gaussian, p0, args=(y, x), max_nfev=10000, verbose=0, method="trf", jac="3-point")
+        result = least_squares(residuals_skew_gaussian, p0, args=(y, x),
+                               max_nfev=10000, verbose=0,
+                               method="trf", jac="3-point")
     return result.x # fit_gaussian
 
 #************************************************************************
-def find_gap(hist: np.ndarray, bins: np.ndarray, threshold: float, gap_size: int, upwards: bool = True) -> float:
+def find_gap(hist: np.ndarray, bins: np.ndarray,
+             threshold: float, gap_size: int,
+             upwards: bool = True) -> float:
     '''
     Walk the bins of the distribution to find a gap and return where it starts
 
@@ -534,6 +547,7 @@ def find_gap(hist: np.ndarray, bins: np.ndarray, threshold: float, gap_size: int
     :returns:
         flt: gap_start
     '''
+    assert len(hist)+1 == len(bins)
 
     # start in the centre
     start = np.argmax(hist)
