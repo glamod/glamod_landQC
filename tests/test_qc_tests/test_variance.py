@@ -542,7 +542,7 @@ def test_variance_check_no_storm(storm_mock: Mock,
              call(f"   Cumulative number of flags set: {24*31}")]
     logger_mock.info.assert_has_calls(calls)
 
-    # As storm is False, first month is a bad year, flags should be set
+    # As storm is False, first month is a bad year but flags SHOULD be set
     assert np.all(station.sea_level_pressure.flags[:744] == "V")
     assert np.all(station.sea_level_pressure.flags[744:] == "")
 
@@ -553,7 +553,7 @@ def test_variance_check_no_storm(storm_mock: Mock,
 def test_variance_check_storm_found(storm_mock: Mock,
                                     identify_mock: Mock,
                                     logger_mock: Mock) -> None:
-    """Test that flow handled if storm checking called, but no storm found"""
+    """Test that flow handled if storm checking called, but storm found"""
     station = _setup_station(varname = "sea_level_pressure")
     config_dict = {}
 
@@ -566,7 +566,8 @@ def test_variance_check_storm_found(storm_mock: Mock,
              call("   Cumulative number of flags set: 0")]
     logger_mock.info.assert_has_calls(calls)
 
-    # As storm is True (returns array), first month is a bad year, flags should NOT be set
+    # As storm is True (returns array), although first month is a bad year,
+    #    but flags should NOT be set
     assert np.all(station.sea_level_pressure.flags[:744] == "")
     assert np.all(station.sea_level_pressure.flags[744:] == "")
 

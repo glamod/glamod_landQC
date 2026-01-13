@@ -4,6 +4,15 @@ Excess Variance Checks
 
 Checks for months with higher/lower variance than expected
 
+On a calendar month basis, get anomalies for each hour of the day
+[For across all Januaries find difference of 15h00 obs from average of all January-15h00 obs].
+Normalise hourly anomalies for this month by their spread.  Store
+annual variance of these normalised anomalies (still per calendar month)
+and compare with _their_ average and spread.  Find locations where average
+exceeded by 8x spread. Check for locations where wind/pressure suggests
+intense low pressure system has occurred (which would inflate the variance)
+to retain these.
+
 """
 #************************************************************************
 import numpy as np
@@ -13,11 +22,11 @@ logger = logging.getLogger(__name__)
 import qc_tests.qc_utils as qc_utils
 import utils
 #************************************************************************
-STORM_THRESHOLD = 4
-MIN_VARIANCES = 10
-MIN_SPREAD = 1.5
-SPREAD_THRESHOLD = 8.
-MIN_VALUES = 30
+STORM_THRESHOLD = 4  # how much the wind/pressure needs to be greater/smaller than the average
+MIN_VARIANCES = 10  # number of anomalies to enable calculation of spread for that month
+MIN_SPREAD = 1.5  # minimum value for spread of anomalies
+SPREAD_THRESHOLD = 8.  # how much the variance needs to exceed the average spread.
+MIN_VALUES = 30  # minimum number of obs needed to get annual variance
 
 
 def plot_variance_distribution(scaled_variances: np.ndarray,
@@ -77,8 +86,8 @@ def calculate_climatology(hour_data: np.ma.MaskedArray,
         return 0, True
 
 
-def calculate_hourly_anomalies(hours: np.ndarray[int],
-                               month_data: np.ndarray,
+def calculate_hourly_anomalies(hours: np.ndarray,
+                               month_data: np.ma.MaskedArray,
                                winsorize: bool=False) -> np.ma.MaskedArray:
     """Calculate anomaly values, using climatology for each hour in
     24, for this calendar month (i.e. all Januaries)
@@ -87,7 +96,7 @@ def calculate_hourly_anomalies(hours: np.ndarray[int],
     ----------
     hours : np.ndarray
         Array of hours of the day for each observation in this month of the year
-    month_data : np.ndarray
+    month_data : np.ma.MaskedArray
         Data for all of this calendar month
     winsorize : bool, optional
         Apply the winsorization, by default False
@@ -123,7 +132,7 @@ def calculate_hourly_anomalies(hours: np.ndarray[int],
     return anomalies
 
 
-def normalise_hourly_anomalies(anomalies: np.ma.MaskedArray) -> np.ndarray:
+def normalise_hourly_anomalies(anomalies: np.ma.MaskedArray) -> np.ma.MaskedArray:
     """Normalise the anomalies by their spread (e.g. variance)
 
     Parameters
@@ -133,7 +142,7 @@ def normalise_hourly_anomalies(anomalies: np.ma.MaskedArray) -> np.ndarray:
 
     Returns
     -------
-    np.ndarray
+    np.ma.MaskedArray
         Normalised anomalies
     """
 
@@ -150,7 +159,7 @@ def normalise_hourly_anomalies(anomalies: np.ma.MaskedArray) -> np.ndarray:
 
 def calculate_yearly_variances(stn_years: np.ndarray,
                                anomalies: np.ma.MaskedArray,
-                               month_locs: np.ndarray) -> np.ndarray:
+                               month_locs: np.ndarray) -> np.ma.MaskedArray:
     """Calculate the variance for each year in the station
     for the calendar month selected in parent routine
 
@@ -165,7 +174,7 @@ def calculate_yearly_variances(stn_years: np.ndarray,
 
     Returns
     -------
-    np.ndarray
+    np.ma.MaskedArray
         Array of variances for each year for this calendar month
     """
 
@@ -190,7 +199,7 @@ def calculate_yearly_variances(stn_years: np.ndarray,
 def prepare_data(obs_var: utils.MeteorologicalVariable,
                  station: utils.Station, month:int,
                  diagnostics: bool = False,
-                 winsorize: bool = True) -> np.ndarray:
+                 winsorize: bool = True) -> np.ma.MaskedArray:
     """
     Calculate the monthly variances (each year for a given calendar month)
 
@@ -257,7 +266,6 @@ def find_thresholds(obs_var: utils.MeteorologicalVariable,
         config_dict[f"VARIANCE-{obs_var.name}"][f"{month}-spread"] = variance_spread
 
     # find_thresholds
-
 
 
 def identify_bad_years(obs_var: utils.MeteorologicalVariable,
