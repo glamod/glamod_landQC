@@ -447,7 +447,7 @@ def all_obs_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
             continue
 
         bins = qc_utils.create_bins(normalised_anomalies, BIN_WIDTH, obs_var.name, anomalies=True)
-        hist, bin_edges = np.histogram(normalised_anomalies, bins)
+        hist, _ = np.histogram(normalised_anomalies, bins)
 
         try:
             upper_threshold = float(config_dict[f"ADISTRIBUTION-{obs_var.name}"][f"{month}-uthresh"])
