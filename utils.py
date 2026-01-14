@@ -239,13 +239,13 @@ def get_station_list(restart_id: str = "", end_id: str = "") -> pd.DataFrame:
 
     # work from the end to save messing up the start indexing
     if end_id != "":
-        endindex, = np.nonzero(station_IDs == end_id)
-        station_list = station_list.iloc[: endindex[0]+1]
+        endindex, = station_IDs.index[station_IDs == end_id].to_list()
+        station_list = station_list.iloc[: endindex+1]
 
     # and do the front
     if restart_id != "":
-        startindex, = np.nonzero(station_IDs == restart_id)
-        station_list = station_list.iloc[startindex[0]:]
+        startindex, = station_IDs.index[station_IDs == restart_id].to_list()
+        station_list = station_list.iloc[startindex:]
 
     return station_list.reset_index(drop=True) # get_station_list
 
