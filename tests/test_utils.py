@@ -99,6 +99,23 @@ def test_get_station_list_fwf() -> None:
     assert df["wmo"].iloc[-1] == 72743
 
 
+example_stn_list = Path(__file__).parent / "example_data/station_list_fwf.txt"
+@patch("utils.setup.STATION_LIST", example_stn_list)
+def test_get_station_list_fwf_endid() -> None:
+    """Test reading of fixed-width format station list with end_id"""
+
+    df = utils.get_station_list(end_id="USW00094849")
+
+    expected_columns = np.array(['id', 'latitude', 'longitude',
+                                 'elevation', 'state', 'name', 'wmo'])
+    np.testing.assert_array_equal(df.columns,
+                                  expected_columns)
+    assert df.shape == (3, 7)
+    assert df["id"].iloc[-1] == "USW00094849"
+    assert df["name"].iloc[-1] == "ALPENA CO RGNL AP"
+    assert df["wmo"].iloc[-1] == 72639
+
+
 example_stn_list = Path(__file__).parent / "example_data/station_list_csv.txt"
 @patch("utils.setup.STATION_LIST", example_stn_list)
 def test_get_station_list_csv() -> None:
@@ -114,6 +131,23 @@ def test_get_station_list_csv() -> None:
     assert df["id"].iloc[0] == "USW00094846"
     assert df["name"].iloc[-1] == "MARQUETTE"
     assert df["wmo"].iloc[-1] == ""
+
+
+example_stn_list = Path(__file__).parent / "example_data/station_list_csv.txt"
+@patch("utils.setup.STATION_LIST", example_stn_list)
+def test_get_station_list_csv_restart_id() -> None:
+    """Test reading of "csv" format station list"""
+
+    df = utils.get_station_list(restart_id="USW00094847")
+
+    expected_columns = np.array(['id', 'latitude', 'longitude',
+                                 'elevation', 'state', 'name', 'wmo'])
+    np.testing.assert_array_equal(df.columns,
+                                  expected_columns)
+    assert df.shape == (3, 7)
+    assert df["id"].iloc[0] == "USW00094847"
+    assert df["name"].iloc[0] == "DETROIT METRO AP"
+    assert df["wmo"].iloc[0] == ""
 
 
 # the mask ("expected") is inverted before application
