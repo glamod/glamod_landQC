@@ -86,7 +86,7 @@ def prepare_all_data(obs_var: utils.MeteorologicalVariable,
     :returns: np.ma.MaskedArray
     """
 
-    month_locs, = np.where(station.months == month)
+    month_locs, = np.nonzero(station.months == month)
 
     all_month_data = obs_var.data[month_locs]
 
@@ -230,14 +230,14 @@ def find_thresholds(obs_var: utils.MeteorologicalVariable,
         else:
             # use bins and curve to find points where curve is < FREQUENCY_THRESHOLD
             try:
-                lower_threshold = bincentres[np.where(
+                lower_threshold = bincentres[np.nonzero(
                     np.logical_and(fitted_curve < FREQUENCY_THRESHOLD,
                                 bincentres < bins[np.argmax(fitted_curve)]))[0]][-1]
             except IndexError:
                 lower_threshold = bins[0]
 
             try:
-                upper_threshold = bincentres[np.where(
+                upper_threshold = bincentres[np.nonzero(
                         np.logical_and(fitted_curve < FREQUENCY_THRESHOLD,
                                     bincentres > bins[np.argmax(fitted_curve)]))[0]][0]
             except IndexError:
@@ -281,14 +281,32 @@ def expand_around_storms(storms: np.ndarray,
 
 def check_through_storms(storms: np.ndarray,
                          times: pd.Series) -> np.ndarray:
-    print(storms)
+    """Want to pad locations where pressure and wind speed suggest
+    a low pressure system, where observations should be retained.
+    Split into contiguous runs of when this is the case and pad either
+    side.  Use the average reporting frequency for the station.
+
+    Parameters
+    ----------
+    storms : np.ndarray
+        Indices where pressure and wind speed are sufficiently
+        anomalous to suggest a low pressure system
+    times : pd.Series
+        Station time points
+
+    Returns
+    -------
+    np.ndarray
+        Locations which could be a storm (plus a little bit)
+        for flags to be removed from
+    """
+
 
     # more than one location in this year-month combination
     if len(storms) >= 2:
         # find where separation more than the usual obs separation
         storm_1diffs = np.ma.diff(times[storms])
-        separations, = np.where(storm_1diffs > np.ma.median(np.ma.diff(times)))
-        print(separations)
+        separations, = np.nonzero(storm_1diffs > np.ma.median(np.ma.diff(times)))
 
         if len(separations) != 0:
             # multiple storm signals
@@ -409,11 +427,11 @@ def find_storms(station: utils.Station,
             (((pressure_monthly_average - pressure_data)/pressure_monthly_spread) > STORM_THRESHOLD)
             ))
 
-        # more than one entry - check if separate events
-        final_storm_locs = check_through_storms(storms, station.times)
-
-        # unset the flags
+        # potentially unset the flags
         if len(storms) > 0:
+            # maybe more than one entry - check if separate events
+            final_storm_locs = check_through_storms(storms, station.times)
+
             year_flags = flags[this_year_locs]
             year_flags[final_storm_locs] = ""
             flags[this_year_locs] = year_flags
@@ -468,8 +486,8 @@ def all_obs_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
             continue
 
         # now to find the gaps
-        uppercount = len(np.where(normalised_anomalies > upper_threshold)[0])
-        lowercount = len(np.where(normalised_anomalies < lower_threshold)[0])
+        uppercount = np.count_nonzero(normalised_anomalies > upper_threshold)
+        lowercount = np.count_nonzero(normalised_anomalies < lower_threshold)
 
 
         month_locs, = np.nonzero(station.months == month) # append should keep year order
@@ -503,7 +521,7 @@ def all_obs_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
 
         # diagnostic plots
         if plots:
-            bad_locs, = np.where(flags[month_locs] == "d")
+            bad_locs, = np.nonzero(flags[month_locs] == "d")
             bad_hist, _ = np.histogram(normalised_anomalies[bad_locs], bins)
 
             plot_thresholds(bins, hist, f"Normalised {obs_var.name.capitalize()} anomalies",
@@ -516,7 +534,7 @@ def all_obs_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
 
 
     logger.info(f"Distribution (all) {obs_var.name}")
-    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
+    logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
     # all_obs_gap
 

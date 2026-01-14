@@ -386,6 +386,50 @@ def test_find_storms_few_data(av_and_sp_mock: Mock) -> None:
 
 @patch("distribution_all.average_and_spread")
 @patch("distribution_all.check_through_storms")
+def test_find_storms_none(storm_check_mock: Mock,
+                          av_and_sp_mock: Mock) -> None:
+    """Test routine checks flow with no storm from wind and pressure values"""
+
+    # set up the station and data for a single January
+    indata = np.ma.ones(31*24)*2
+    station = _setup_station(indata)
+
+    # windier is normal (all the same)
+    wind_speed = common.example_test_variable("wind_speed",
+                                              indata)
+    station.wind_speed = wind_speed
+
+    indata = np.ma.ones(31*24)*100
+    # lower pressure is normal
+    station_pressure = common.example_test_variable("station_level_pressure",
+                                                    indata)
+    station.station_level_pressure = station_pressure
+
+    # set single flag so storm checking doesn't exit
+    flags = np.array(["" for i in range(31*24)])
+    flags[0] = "d"
+
+    # mock return values for the average and spread; wind, then pressure
+    av_and_sp_mock.side_effect = [(2, 2), (80, 10)]
+
+    expected_storms = np.array([])  # none
+    storm_check_mock.return_value = expected_storms
+
+    distribution_all.find_storms(station, station_pressure,
+                                    1, flags)
+
+    expected_flags = np.array(["" for i in range(31*24)])
+    expected_flags[0] = "d"  # first one only
+
+    # test that routine not called
+    storm_check_mock.assert_not_called()
+
+    # check that flag array has been modified in place
+    np.testing.assert_array_equal(flags, expected_flags)
+
+
+@patch("distribution_all.average_and_spread")
+@patch("distribution_all.check_through_storms")
 def test_find_storms(storm_check_mock: Mock,
                      av_and_sp_mock: Mock) -> None:
     """Test routine finds single storm from wind and pressure values"""
