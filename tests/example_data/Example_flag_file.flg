@@ -40,9 +40,7 @@ temperature : w : 0.4
 temperature : w_counts : 2
 temperature : x : 0.0
 temperature : x_counts : 0
-temperature : . : 0.8
-temperature : ._counts : 4
-temperature : , : 0.0
-temperature : ,_counts : 0
+temperature : z : 0.0
+temperature : z_counts : 0
 temperature : All : 0.8
 temperature : All_counts : 4

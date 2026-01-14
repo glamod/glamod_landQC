@@ -504,8 +504,8 @@ def test_find_storms(storm_check_mock: Mock,
 
     # set initial flags for pressure, days 2 and 13
     flags = np.array(["" for i in range(31*24)])
-    flags[24: 48] = "d"
-    flags[12*24: 13*24] = "d"
+    flags[24: 48] = "b"
+    flags[12*24: 13*24] = "b"
 
     # mock return values for the average and spread; wind, then pressure
     av_and_sp_mock.side_effect = [(2, 2), (80, 10)]
@@ -517,7 +517,7 @@ def test_find_storms(storm_check_mock: Mock,
                                     1, flags)
 
     expected_flags = np.array(["" for i in range(31*24)])
-    expected_flags[12*24: 13*24] = "d"  # day 13 only
+    expected_flags[12*24: 13*24] = "b"  # day 13 only
 
     # test that routine called with appropriate info
     calls = storm_check_mock.call_args_list[0]
@@ -565,8 +565,8 @@ def test_all_obs_gap(find_mock: Mock,
 
     # build the expected array
     expected_flags = np.array(["" for _ in station.times])
-    expected_flags[:10] = "d"
-    expected_flags[-10:] = "d"
+    expected_flags[:10] = "b"
+    expected_flags[-10:] = "b"
 
     np.testing.assert_equal(station.temperature.flags, expected_flags)
 
@@ -647,8 +647,8 @@ def test_all_obs_gap_pressure(storms_mock: Mock,
 
     # finally, test this was called
     expected_flags = np.array(["" for _ in station.times])
-    expected_flags[:10] = "d"
-    expected_flags[-10:] = "d"
+    expected_flags[:10] = "b"
+    expected_flags[-10:] = "b"
 
     # Check that storms routine called as expected
     calls = storms_mock.call_args_list[0]

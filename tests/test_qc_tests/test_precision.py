@@ -13,7 +13,7 @@ import utils
 import common
 
 # not testing plotting
-all_flagged = np.array(["n" for _ in range(120)])
+all_flagged = np.array(["i" for _ in range(120)])
 none_flagged = np.array(["" for _ in range(120)])
 
 def _make_station(temps: np.ndarray, dewps: np.ndarray) -> utils.Station:

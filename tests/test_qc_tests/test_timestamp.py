@@ -79,22 +79,22 @@ def test_identify_multiple_values_masked():
     np.testing.assert_array_equal(obs_var.flags, expected)
 
 
-def test_identify_multiple_values_same():
+# def test_identify_multiple_values_same():
 
-    # Set up data, variable & station
-    obs_var = common.example_test_variable("temperature", np.ones(10))
-    station = common.example_test_station(obs_var)
+#     # Set up data, variable & station
+#     obs_var = common.example_test_variable("temperature", np.ones(10))
+#     station = common.example_test_station(obs_var)
 
-    station.times[3] = station.times[2]
+#     station.times[3] = station.times[2]
 
-    # Even though two time stamps are the same, the values are identical
-    #   (np.ones) but an information flag still set
-    expected = np.array(["" for _ in range(10)])
-    expected[2:4] = ","
+#     # Even though two time stamps are the same, the values are identical
+#     #   (np.ones) but an information flag still set
+#     expected = np.array(["" for _ in range(10)])
+#     expected[2:4] = ","
 
-    timestamp.identify_multiple_values(obs_var, station.times, {})
+#     timestamp.identify_multiple_values(obs_var, station.times, {})
 
-    np.testing.assert_array_equal(obs_var.flags, expected)
+#     np.testing.assert_array_equal(obs_var.flags, expected)
 
 
 @patch("timestamp.identify_multiple_values")

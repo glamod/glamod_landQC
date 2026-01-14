@@ -46,7 +46,7 @@ def logical_checks(speed: utils.MeteorologicalVariable,
         if diagnostics:
             print("  Zero direction : {}".format(len(fix_zero_direction)))
     else:
-        dflags[fix_zero_direction] = "."
+        dflags[fix_zero_direction] = "z"
         if diagnostics:
             print("  Zero direction : {}".format(len(fix_zero_direction)))
         # and set to empty as can be used in parent to copy values to dataframe

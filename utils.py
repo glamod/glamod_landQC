@@ -24,17 +24,17 @@ UNIT_DICT = {"temperature" : "degrees C", \
 # Punctuation for information flags:
 #   the data are valid, but not necessarily adhering to conventions
 QC_TESTS = {"a" : "Repeated Day streaks",  # repeAted day streaks
-            "b" : "Neighbour",  # neighBour
+            "b" : "Distribution - all",  # distriBution (all)
             "c" : "Climatological",  # Climatological
             "d" : "Distribution - monthly",  # Distribution (monthly)
             "e" : "Clean Up",  # clEan up
             "f" : "Frequent Value",  # Frequent value
             "h" : "High Flag Rate",  # High flag rate
-            "i" : "Distribution - all",  # dIstribution (all)
+            "i" : "Precision",  # precIsion
             "k" : "Repeating Streaks",  # repeating streaKs
             "l" : "Logic",  # Logic
             "m" : "Humidity",  # huMidity
-            "n" : "Precision",  # precisioN
+            "n" : "Neighbour",  # Neighbour
             "o" : "Odd Cluster",  # Odd cluster
             "p" : "Pressure",  # Pressure
             "r" : "World Records",  # world Records
@@ -44,8 +44,8 @@ QC_TESTS = {"a" : "Repeated Day streaks",  # repeAted day streaks
             "v" : "Variance",  # Variance
             "w" : "Winds",  # Winds
             "x" : "Excess streak proportion",  # eXcess streak proportion
-            "." : "Wind logical - calm, masked direction",
-            "," : "Timestamp - identical observation values",
+            "z" : "Wind logical - calm, masked zero direction",
+#            "," : "Timestamp - identical observation values",
             }
 
 
