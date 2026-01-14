@@ -58,7 +58,7 @@ def prepare_monthly_data(obs_var: utils.MeteorologicalVariable, station: utils.S
     # spin through each year to get average for the calendar month selected
 
     for y, year in enumerate(all_years):
-        locs, = np.where(np.logical_and(station.months == month, station.years == year))
+        locs, = np.nonzero(np.logical_and(station.months == month, station.years == year))
 
         month_data = obs_var.data[locs]
 
@@ -134,11 +134,11 @@ def flag_large_offsets(station: utils.Station, month: int,
 
     all_years = np.unique(station.years)
     # flag months with very large offsets
-    bad, = np.where(np.abs(standardised_months) >= LARGE_LIMIT)
+    bad, = np.nonzero(np.abs(standardised_months) >= LARGE_LIMIT)
     # now follow flag locations back up through the process
     for bad_month_id in bad:
         # year ID for this set of calendar months
-        locs, = np.where(np.logical_and(station.months == month,
+        locs, = np.nonzero(np.logical_and(station.months == month,
                                         station.years == all_years[bad_month_id]))
         flags[locs] = "D"
 
@@ -253,7 +253,7 @@ def monthly_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
         # now follow flag locations back up through the process
         for bad_month_id in bad:
             # year ID for this set of calendar months
-            locs, = np.where(np.logical_and(station.months == month,
+            locs, = np.nonzero(np.logical_and(station.months == month,
                                             station.years == all_years[bad_month_id]))
             flags[locs] = "D"
 
@@ -267,7 +267,7 @@ def monthly_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
     obs_var.store_flags(utils.insert_flags(obs_var.flags, flags))
 
     logger.info(f"Distribution (monthly) {obs_var.name}")
-    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
+    logger.info(f"   Cumulative number of flags set: {len(np.nonzero(flags != '')[0])}")
 
     # monthly_gap
 

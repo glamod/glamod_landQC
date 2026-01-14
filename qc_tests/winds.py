@@ -38,8 +38,8 @@ def logical_checks(speed: utils.MeteorologicalVariable,
     dflags = np.array(["" for i in range(speed.data.shape[0])])
 
     # recover direction information where the speed is Zero
-    fix_zero_direction, = np.ma.where(np.logical_and(speed.data == 0,
-                                                     direction.data.mask == True))
+    fix_zero_direction, = np.ma.nonzero(np.logical_and(speed.data == 0,
+                                                       direction.data.mask == True))
     if fix:
         direction.data[fix_zero_direction] = 0
         direction.data.mask[fix_zero_direction] = False
@@ -68,7 +68,7 @@ def logical_checks(speed: utils.MeteorologicalVariable,
     logger.info(f"  Wrapped direction : {len(wrapped_direction[0])}")
 
     # no direction possible if speed == 0
-    bad_direction = np.ma.where(np.logical_and(speed.data == 0,
+    bad_direction = np.ma.nonzero(np.logical_and(speed.data == 0,
                                                direction.data != 0))
     dflags[bad_direction] = "w"
     logger.info(f"  Bad direction : {len(bad_direction[0])}")

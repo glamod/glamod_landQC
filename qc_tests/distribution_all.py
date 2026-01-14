@@ -422,7 +422,7 @@ def find_storms(station: utils.Station,
         pressure_data = obs_var.data[this_year_locs]
 
         # find where windier and lower pressure than normal
-        storms, = np.ma.where(np.logical_and(
+        storms, = np.ma.nonzero(np.logical_and(
             (((wind_data - wind_monthly_average)/wind_monthly_spread) > STORM_THRESHOLD),
             (((pressure_monthly_average - pressure_data)/pressure_monthly_spread) > STORM_THRESHOLD)
             ))
@@ -495,7 +495,7 @@ def all_obs_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
             gap_start = qc_utils.find_gap(hist, bins, upper_threshold, GAP_SIZE)
 
             if gap_start != 0:
-                bad_locs, = np.ma.where(normalised_anomalies > gap_start) # all years for one month
+                bad_locs, = np.ma.nonzero(normalised_anomalies > gap_start) # all years for one month
 
                 month_flags = flags[month_locs]
                 month_flags[bad_locs] = "d"
@@ -505,7 +505,7 @@ def all_obs_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
             gap_start = qc_utils.find_gap(hist, bins, lower_threshold, GAP_SIZE, upwards=False)
 
             if gap_start != 0:
-                bad_locs, = np.ma.where(normalised_anomalies < gap_start) # all years for one month
+                bad_locs, = np.ma.nonzero(normalised_anomalies < gap_start) # all years for one month
 
                 month_flags = flags[month_locs]
                 month_flags[bad_locs] = "d"

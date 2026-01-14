@@ -71,14 +71,14 @@ def high_flag_rate(obs_var: utils.MeteorologicalVariable,
             # This test has been run before on this variable, so don't do again.
             return new_flags, any_flags_set
 
-        flagged, = np.where(old_flags[obs_locs] != "")
+        flagged, = np.nonzero(old_flags[obs_locs] != "")
         flagged_fraction = flagged.shape[0] / obs_locs.shape[0]
 
         # precision issues can cause excess dewpoint temperature flags from humidity check
         if obs_var.name == "dewpoint_temperature":
             # find the locations where *ONLY* humidity *AND* precision set [either order]
-            hum_and_prec_locs, = np.where((old_flags[obs_locs] == "nh") |
-                                          (old_flags[obs_locs] == "hn"))
+            hum_and_prec_locs, = np.nonzero((old_flags[obs_locs] == "nh") |
+                                            (old_flags[obs_locs] == "hn"))
 
             # if both have been set, adjust the flagged_fraction
             if hum_and_prec_locs.shape[0] > 0:
