@@ -390,6 +390,51 @@ def test_find_storms_few_data(av_and_sp_mock: Mock) -> None:
 
 @patch("distribution_all.average_and_spread")
 @patch("distribution_all.check_through_storms")
+def test_find_storms_few_monthly_data(storm_check_mock: Mock,
+                                      av_and_sp_mock: Mock) -> None:
+    """Test routine exits when there's insufficient monthly average data
+
+    Pass in data that should result in storm checking and adjustment of
+    flags, but mocked monthly returns will result in early exit
+    """
+
+    # set up the station and data for a single January
+    indata = np.ma.ones(31*24)*2
+    station = _setup_station(indata)
+
+    # windier than normal on day 2
+    indata[24: 48] = 20
+    wind_speed = common.example_test_variable("wind_speed",
+                                              indata)
+    station.wind_speed = wind_speed
+
+    indata = np.ma.ones(31*24)*100
+    # lower pressure than normal on day 2
+    indata[24: 48] = 10
+    station_pressure = common.example_test_variable("station_level_pressure",
+                                                    indata)
+    station.station_level_pressure = station_pressure
+
+    # set initial flags for pressure, day 2
+    flags = np.array(["" for i in range(31*24)])
+    flags[24: 48] = "d"
+
+    # but insufficient monthly data, so routine exits
+    av_and_sp_mock.return_value = (1, -1)
+
+    distribution_all.find_storms(station, station_pressure,
+                                    1, np.array([]))
+
+    # storm finding not done, so flags unchanged
+    expected_flags = np.array(["" for i in range(31*24)])
+    expected_flags[24: 48] = "d"
+
+    np.testing.assert_array_equal(flags, expected_flags)
+    storm_check_mock.assert_not_called()
+
+
+@patch("distribution_all.average_and_spread")
+@patch("distribution_all.check_through_storms")
 def test_find_storms_none(storm_check_mock: Mock,
                           av_and_sp_mock: Mock) -> None:
     """Test routine checks flow with no storm from wind and pressure values"""
