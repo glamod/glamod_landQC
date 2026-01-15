@@ -119,7 +119,8 @@ def plot_data_and_flags(ax: axes.Axes,
     ax.set_ylabel(" ".join([i.capitalize() for i in varname.split("_")]))
 
 
-def plot_year(df: pd.DataFrame, year: int) -> None:
+def plot_year(df: pd.DataFrame, year: int,
+              save: bool=False) -> None:
     """Plot a single year from the dataframe
 
     Parameters
@@ -141,10 +142,15 @@ def plot_year(df: pd.DataFrame, year: int) -> None:
     fig.tight_layout(h_pad=0)
 
     fig.suptitle(str(year))
-    plt.show()
+    if save:
+        plt.savefig(f"{year}.png")
+    else:
+        plt.show()
+    plt.close()
 
 
-def main(station_id: str) -> None:
+def main(station_id: str,
+         save: bool) -> None:
     # process the station list
     station_list = utils.get_station_list()
     station_IDs = station_list.id
@@ -185,7 +191,7 @@ def main(station_id: str) -> None:
         if this_year_df.shape[0] == 0:
             continue
 
-        plot_year(this_year_df, year)
+        plot_year(this_year_df, year, save=save)
 
 
 
@@ -199,10 +205,17 @@ if __name__ == "__main__":
 
     # set up keyword arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('--station_id', dest='station_id', action='store', default="UKI0000EGPL",
-                        help='RStation ID to plot, default="UKI0000EGPL"')
+    parser.add_argument('--station_id', dest='station_id', action='store', default="",
+                        help='Station ID to plot, default=""')
+    parser.add_argument('--save', dest='save', action='store_true', default=False,
+                        help='Save output files, default is for interactive')
+    
 
     args = parser.parse_args()
-    main(station_id=args.station_id)
+
+    if args.station_id == "":
+        print("Please enter ID to plot")
+    else:
+        main(station_id=args.station_id, save=args.save)
 
 #*******************************************************
