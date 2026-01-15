@@ -409,8 +409,6 @@ def flag_write(outfilename: Path, df: pd.DataFrame,
             if diagnostics:
                 print(f"{var} - {flagged.shape[0]} [{100*proportion_flagged:.1f}%]")
 
-            print("waves")
-
     # flag_write
 
 
