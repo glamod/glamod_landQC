@@ -22,7 +22,7 @@ def test_logical_checks_zero_direction() -> None:
 
     # if not fixing, then setting flag
     expected_direction_flags = np.array(["" for _ in speed_data])
-    expected_direction_flags[1] = "1"
+    expected_direction_flags[1] = "z"
 
     speeds = common.example_test_variable("wind_speed", speed_data)
     directions = common.example_test_variable("wind_direction", direction_data)
@@ -162,7 +162,7 @@ def test_logical_checks_all() -> None:
     expected_direction_flags[7] = "w"
     expected_direction_flags[8] = "w"
     expected_speed_flags[9] = "w"
-    expected_direction_flags[10] = "1"
+    expected_direction_flags[10] = "z"
 
     speeds = common.example_test_variable("wind_speed", speed_data)
     directions = common.example_test_variable("wind_direction", direction_data)

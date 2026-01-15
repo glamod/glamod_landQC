@@ -347,7 +347,7 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.ndar
     # flag if large enough fraction (>0.66)
     sufficient, = np.ma.nonzero(dubious_count > DUBIOUS_FRACTION*neighbour_count)
 
-    flags[sufficient] = "N"
+    flags[sufficient] = "n"
 
     if plots:
         for flag in sufficient:

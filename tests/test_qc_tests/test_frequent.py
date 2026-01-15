@@ -218,7 +218,7 @@ def test_frequent_values() -> None:
     assert config_dict["FREQUENT-temperature"]["1"] == [0]
 
     # assert flags set correctly
-    flag_locs = np.nonzero(temperature.flags == "F")
+    flag_locs = np.nonzero(temperature.flags == "f")
     zero_locs = np.nonzero(np.logical_and(temperature.data >= 0,
                                           temperature.data < 0.5))
 

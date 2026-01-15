@@ -87,7 +87,7 @@ def precision_cross_check(station: utils.Station, primary: utils.MeteorologicalV
             if primary_precision != secondary_precision:
                 # flag secondary only
                 locs, = np.nonzero(secondary.data[month_locs].mask == False)
-                flags[month_locs[locs]] = "n"
+                flags[month_locs[locs]] = "i"
 
                 # diagnostic plots
                 if plots:

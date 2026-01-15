@@ -146,8 +146,9 @@ def monthly_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station, c
         # now follow flag locations back up through the process
         for bad_month_id in bad:
             # year ID for this set of calendar months
-            locs, = np.nonzero((station.months == month) & (station.years == all_years[bad_month_id]))
-            flags[locs] = "D"
+            locs, = np.nonzero(np.logical_and(station.months == month,
+                                              station.years == all_years[bad_month_id]))
+            flags[locs] = "d"
 
         # walk distribution from centre to find assymetry
         sort_order = standardised_months.argsort()
@@ -184,8 +185,8 @@ def monthly_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station, c
         # now follow flag locations back up through the process
         for bad_month_id in bad:
             # year ID for this set of calendar months
-            locs, = np.nonzero((station.months == month) & (station.years == all_years[bad_month_id]))
-            flags[locs] = "D"
+            locs, = np.nonzero(np.logical_and(station.months == month, station.years == all_years[bad_month_id]))
+            flags[locs] = "d"
 
         if plots:
             import matplotlib.pyplot as plt

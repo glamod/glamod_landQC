@@ -194,7 +194,7 @@ def test_repeating_value() -> None:
     this_var = getattr(station, "temperature")
 
     expected_flags = np.array(["" for _ in this_var.data])
-    expected_flags[50:70] = "K" # same range as in _make_repeating_value_station
+    expected_flags[50:70] ="k" # same range as in _make_repeating_value_station
 
     # set up dictionary
     config_dict = {}
@@ -250,7 +250,7 @@ def test_repeating_value_wind() -> None:
     # streak of zeros [calms] at the end, which should be ignored
     this_var.data[160:180] = 0
     expected_flags = np.array(["" for _ in this_var.data])
-    expected_flags[50:70] = "K"  # same range as in _make_repeating_value_station
+    expected_flags[50:70] = "k"  # same range as in _make_repeating_value_station
 
     # set up dictionary
     config_dict = {}
@@ -322,7 +322,7 @@ def test_repeating_day() -> None:
     # add a streak of 3 repeated days (days 2-5)
     indata[72:96] = indata[48:72]
     indata[96:120] = indata[48:72]
-    expected_flags[48:120] = "y"
+    expected_flags[48:120] = "a"
 
     # make station and MetVar
     obs_var = common.example_test_variable("temperature", indata)
@@ -353,12 +353,12 @@ def test_repeating_day_multiple() -> None:
     # add a streak of 3 repeated days (days 2-5)
     indata[72:96] = indata[48:72]
     indata[96:120] = indata[48:72]
-    expected_flags[48:120] = "y"
+    expected_flags[48:120] = "a"
 
     # add another streak of 3 repeated days (days 9-11)
     indata[216:240] = indata[192:216]
     indata[240:264] = indata[192:216]
-    expected_flags[192:264] = "y"
+    expected_flags[192:264] = "a"
 
     # make station and MetVar
     obs_var = common.example_test_variable("temperature", indata)

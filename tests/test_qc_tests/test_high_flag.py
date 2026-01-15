@@ -15,7 +15,7 @@ def test_set_synergistic_flags_short_record() -> None:
 
     slp = common.example_test_variable("sea_level_pressure",
                                        np.arange(10))
-    slp.flags[:] = "H"
+    slp.flags[:] = "h"
 
     stnlp = common.example_test_variable("station_level_pressure",
                                          np.arange(10))
@@ -34,7 +34,7 @@ def test_set_synergistic_flags() -> None:
 
     slp = common.example_test_variable("sea_level_pressure",
                                        np.arange(11*utils.DATA_COUNT_THRESHOLD))
-    slp.flags[:] = "H"
+    slp.flags[:] = "h"
 
     stnlp = common.example_test_variable("station_level_pressure",
                                          np.arange(11*utils.DATA_COUNT_THRESHOLD))
@@ -45,7 +45,7 @@ def test_set_synergistic_flags() -> None:
     high_flag.set_synergistic_flags(station, "station_level_pressure")
 
     # flag all values in the record for this part of this test
-    expected_flags = np.array(["H" for _ in range(stnlp.data.shape[0])])
+    expected_flags = np.array(["h" for _ in range(stnlp.data.shape[0])])
 
     np.testing.assert_array_equal(station.station_level_pressure.flags, expected_flags)
 
@@ -76,9 +76,9 @@ def test_high_flag_rate_prior_run() -> None:
 
     temperatures = common.example_test_variable("temperature",
                                                 np.arange(11*utils.DATA_COUNT_THRESHOLD))
-    temperatures.flags[:10] = "H"
+    temperatures.flags[:10] = "h"
     # Set a large number of other flags, so should trigger check
-    temperatures.flags[2*utils.DATA_COUNT_THRESHOLD:] = "L"
+    temperatures.flags[2*utils.DATA_COUNT_THRESHOLD:] = "l"
     new_flags, flags_set = high_flag.high_flag_rate(temperatures)
     expected_flags = np.array(["" for _ in range(temperatures.data.shape[0])])
 
@@ -92,7 +92,7 @@ def test_high_flag_rate_low_fraction() -> None:
                                                 np.arange(11*utils.DATA_COUNT_THRESHOLD))
 
     # set many flags but too few to trigger the test
-    temperatures.flags[:int(temperatures.data.shape[0]*utils.HIGH_FLAGGING) -1] = "L"
+    temperatures.flags[:int(temperatures.data.shape[0]*utils.HIGH_FLAGGING) -1] = "l"
     new_flags, flags_set = high_flag.high_flag_rate(temperatures)
     expected_flags = np.array(["" for _ in range(temperatures.data.shape[0])])
 
@@ -106,10 +106,10 @@ def test_high_flag_rate_high_fraction() -> None:
                                                 np.arange(11*utils.DATA_COUNT_THRESHOLD))
 
     # set many flags to trigger the test
-    temperatures.flags[:int(temperatures.data.shape[0]*utils.HIGH_FLAGGING) + 1] = "L"
+    temperatures.flags[:int(temperatures.data.shape[0]*utils.HIGH_FLAGGING) + 1] = "l"
 
     expected_flags = np.array(["" for _ in range(temperatures.data.shape[0])])
-    expected_flags[int(temperatures.data.shape[0]*utils.HIGH_FLAGGING) + 1:] = "H"
+    expected_flags[int(temperatures.data.shape[0]*utils.HIGH_FLAGGING) + 1:] = "h"
 
     new_flags, flags_set = high_flag.high_flag_rate(temperatures)
 
@@ -128,7 +128,7 @@ def test_high_flag_rate_humidity() -> None:
     flags[:3] = "n"
 
     # and set humidity flags
-    dewpoint.flags[:int(dewpoint.data.shape[0]*utils.HIGH_FLAGGING) + 1] = "h"
+    dewpoint.flags[:int(dewpoint.data.shape[0]*utils.HIGH_FLAGGING) + 1] = "m"
     dewpoint.flags = np.char.add(dewpoint.flags, flags)
     # set flags so that when discounting the precision and humidity flags
     #  then the high-flag threshold not reached
@@ -151,14 +151,14 @@ def test_high_flag_rate_humidity_set() -> None:
     flags[:3] = "n"
 
     # the rest are humidity
-    dewpoint.flags[:int(dewpoint.data.shape[0]*utils.HIGH_FLAGGING) + 5] = "h"
+    dewpoint.flags[:int(dewpoint.data.shape[0]*utils.HIGH_FLAGGING) + 5] = "m"
     # set enough to be both humidity and precision so that high-flag threshold reached
     dewpoint.flags = np.char.add(dewpoint.flags, flags)
 
     new_flags, flags_set = high_flag.high_flag_rate(dewpoint)
     # expecting flag from high_flag routine to be set.
     expected_flags = np.array(["" for _ in range(dewpoint.data.shape[0])])
-    expected_flags[int(dewpoint.data.shape[0]*utils.HIGH_FLAGGING) + 5:] = "H"
+    expected_flags[int(dewpoint.data.shape[0]*utils.HIGH_FLAGGING) + 5:] = "h"
 
     assert flags_set is True
     np.testing.assert_array_equal(new_flags, expected_flags)
@@ -171,7 +171,7 @@ def test_pcc(high_flag_rate_mock: Mock) -> None:
     temperatures = common.example_test_variable("temperature", np.arange(5))
     station = common.example_test_station(temperatures)
 
-    expected_flags = np.array(["H" for _ in range(temperatures.data.shape[0])])
+    expected_flags = np.array(["h" for _ in range(temperatures.data.shape[0])])
     high_flag_rate_mock.return_value = (expected_flags, True)
 
     set_vars = high_flag.hfr(station, ["temperature"])
@@ -198,7 +198,7 @@ def test_pcc_synergistic(high_flag_rate_mock: Mock,
     var = common.example_test_variable(name, np.arange(5))
     station = common.example_test_station(var)
 
-    expected_flags = np.array(["H" for _ in range(var.data.shape[0])])
+    expected_flags = np.array(["h" for _ in range(var.data.shape[0])])
     high_flag_rate_mock.return_value = (expected_flags, True)
 
     set_vars = high_flag.hfr(station, [name])

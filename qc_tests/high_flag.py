@@ -38,7 +38,7 @@ def set_synergistic_flags(station: utils.Station, var: str) -> None:
         # require sufficient observations to make a flagged fraction useful.
 
         # As synergistically flagged, add to all flags.
-        new_flags[obs_locs] = "H"
+        new_flags[obs_locs] = "h"
 
     obs_var.store_flags(utils.insert_flags(obs_var.flags, new_flags))
 
@@ -67,7 +67,7 @@ def high_flag_rate(obs_var: utils.MeteorologicalVariable,
         # If already flagged on internal run, return with dummy results.
         flag_set = np.unique(old_flags[obs_locs]) # Flags per obs.
         unique_flags = set("".join(flag_set)) # Unique set of flag letters.
-        if "H" in unique_flags:
+        if "h" in unique_flags:
             # This test has been run before on this variable, so don't do again.
             return new_flags, any_flags_set
 
@@ -77,8 +77,8 @@ def high_flag_rate(obs_var: utils.MeteorologicalVariable,
         # precision issues can cause excess dewpoint temperature flags from humidity check
         if obs_var.name == "dewpoint_temperature":
             # find the locations where *ONLY* humidity *AND* precision set [either order]
-            hum_and_prec_locs, = np.nonzero((old_flags[obs_locs] == "nh") |
-                                            (old_flags[obs_locs] == "hn"))
+            hum_and_prec_locs, = np.nonzero((old_flags[obs_locs] == "nm") |
+                                            (old_flags[obs_locs] == "mn"))
 
             # if both have been set, adjust the flagged_fraction
             if hum_and_prec_locs.shape[0] > 0:
@@ -94,11 +94,11 @@ def high_flag_rate(obs_var: utils.MeteorologicalVariable,
                 print(f"   Flagging remaining {obs_var.name} obs")
             # Set flags only obs currently unflagged.
             unflagged, = np.nonzero(old_flags[obs_locs] == "")
-            new_flags[obs_locs[unflagged]] = "H"
+            new_flags[obs_locs[unflagged]] = "h"
             any_flags_set = True
 
     logger.info(f"High Flag Rate {obs_var.name}")
-    logger.info(f"   Cumulative number of flags set: {np.count_nonzero(new_flags == 'H')}")
+    logger.info(f"   Cumulative number of flags set: {np.count_nonzero(new_flags == 'h')}")
 
     return new_flags, any_flags_set # high_flag_rate
 

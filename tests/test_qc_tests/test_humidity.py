@@ -91,7 +91,7 @@ def test_super_saturation_check() -> None:
     # manually trigger the super saturation
     station.dew_point_temperature.data[:3] = station.temperature.data[:3]+1
 
-    expected = np.array(["h", "h", "h", "", "", "", "", "", "", ""])
+    expected = np.array(["m", "m", "m", "", "", "", "", "", "", ""])
 
     humidity.super_saturation_check(station, station.temperature, station.dew_point_temperature)
 
@@ -108,7 +108,7 @@ def test_super_saturation_check_w_mask() -> None:
     station.dew_point_temperature.data = np.ma.masked_where(station.temperature.data <= 3,
                                                             station.dew_point_temperature.data)
     station.dew_point_temperature.data[-3:] = station.temperature.data[-3:]+1
-    expected = np.array(["", "", "", "", "", "", "", "h", "h", "h"])
+    expected = np.array(["", "", "", "", "", "", "", "m", "m", "m"])
 
     humidity.super_saturation_check(station, station.temperature, station.dew_point_temperature)
 
@@ -122,7 +122,7 @@ def test_super_saturation_check_proportion() -> None:
     # of the 10 element array set over 40% as Super Saturated
     station.dew_point_temperature.data[:5] = station.temperature.data[:5]+1
 
-    expected = np.array(["h", "h", "h", "h", "h", "h", "h", "h", "h", "h"])
+    expected = np.array(["m", "m", "m", "m", "m", "m", "m", "m", "m", "m"])
 
     humidity.super_saturation_check(station, station.temperature, station.dew_point_temperature)
 
@@ -148,7 +148,7 @@ def test_dew_point_depression_streak() -> None:
                      70])
 
     expected = np.array(["" for _ in range(75)])
-    expected[10:16] = "h"
+    expected[10:16] = "m"
 
     # create the DPD=0
     dewps[locs] = temps[locs]

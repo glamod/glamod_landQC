@@ -510,8 +510,8 @@ def test_monthly_clim(find_mock: Mock,
 
     # build the expected array
     expected_flags = np.array(["" for _ in station.times])
-    expected_flags[:10] = "C"
-    expected_flags[-10:] = "C"
+    expected_flags[:10] = "c"
+    expected_flags[-10:] = "c"
 
     np.testing.assert_equal(station.temperature.flags, expected_flags)
 

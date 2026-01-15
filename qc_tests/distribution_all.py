@@ -403,7 +403,7 @@ def find_storms(station: utils.Station,
         Calendar month being processed
     mflags : np.ndarray
         Flag array of calenar month to check
-        (contains flags ["d"], which may be removed)
+        (contains flags ["b"], which may be removed)
     """
 
     # need sufficient data to work with for storm check to work, else can't tell
@@ -430,7 +430,7 @@ def find_storms(station: utils.Station,
         month_locs,  = np.nonzero(station.months == month)
         this_year_locs, = np.nonzero(station.years[month_locs] == year)
 
-        if "d" not in mflags[this_year_locs]:
+        if "b" not in mflags[this_year_locs]:
             # skip to next year if you get the chance
             continue
 
@@ -518,7 +518,7 @@ def all_obs_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
                 bad_locs, = np.ma.nonzero(normalised_anomalies > gap_start) # all years for one month
 
                 month_flags = flags[month_locs]
-                month_flags[bad_locs] = "d"
+                month_flags[bad_locs] = "b"
                 flags[month_locs] = month_flags
 
         if lowercount > 0:
@@ -528,7 +528,7 @@ def all_obs_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
                 bad_locs, = np.ma.nonzero(normalised_anomalies < gap_start) # all years for one month
 
                 month_flags = flags[month_locs]
-                month_flags[bad_locs] = "d"
+                month_flags[bad_locs] = "b"
 
                 # for pressure data, see if the flagged obs correspond with high winds
                 # could be a storm signal
@@ -541,7 +541,7 @@ def all_obs_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
 
         # diagnostic plots
         if plots:
-            bad_locs, = np.nonzero(flags[month_locs] == "d")
+            bad_locs, = np.nonzero(flags[month_locs] == "b")
             bad_hist, _ = np.histogram(normalised_anomalies[bad_locs], bins)
 
             plot_thresholds(bins, hist, f"Normalised {obs_var.name.capitalize()} anomalies",

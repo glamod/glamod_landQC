@@ -603,7 +603,7 @@ def diurnal_cycle_check(obs_var: utils.MeteorologicalVariable, station: utils.St
             # only set flag on where there's data
             data_locs, = np.nonzero(obs_var.data[locs].mask == False)
 
-            flags[locs[data_locs]] = "U"
+            flags[locs[data_locs]] = "u"
 
         # append flags to object (temperature)
         obs_var.store_flags(utils.insert_flags(obs_var.flags, flags))
