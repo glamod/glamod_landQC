@@ -105,7 +105,7 @@ def gcv_zeros_in_central_section(histogram: np.ndarray, inner_n: int) -> int:
     :returns: n_zeros   how many n_zeros within limit bins of the centre
     """
 
-    if len(np.nonzero(histogram == 0)[0]) == 0:
+    if np.count_nonzero(histogram == 0) == 0:
         # No zero bins, so central section is the whole histogram
         return 0
 
@@ -365,10 +365,10 @@ def winsorize(data: np.ma.MaskedArray,
 
         if pct < 50:
             percentile = np.percentile(data.compressed(), pct)
-            locs = np.ma.where(data < percentile)
+            locs = np.ma.nonzero(data < percentile)
         else:
             percentile = np.percentile(data.compressed(), pct)
-            locs = np.ma.where(data > percentile)
+            locs = np.ma.nonzero(data > percentile)
 
         data[locs] = percentile
 

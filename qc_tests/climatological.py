@@ -491,9 +491,9 @@ def monthly_clim(obs_var: utils.MeteorologicalVariable,
                 upper_threshold = float(config_dict[f"CLIMATOLOGICAL-{obs_var.name}"][f"{month}-uthresh"])
                 lower_threshold = float(config_dict[f"CLIMATOLOGICAL-{obs_var.name}"][f"{month}-lthresh"])
 
-            # now to find the gaps - no point looking if there's no data exceeding
-            uppercount = len(np.nonzero(normalised_anomalies > upper_threshold)[0])
-            lowercount = len(np.nonzero(normalised_anomalies < lower_threshold)[0])
+            # now to find the gaps
+            uppercount = np.count_nonzero(normalised_anomalies > upper_threshold)
+            lowercount = np.count_nonzero(normalised_anomalies < lower_threshold)
 
             if uppercount > 0:
                 gap_start = qc_utils.find_gap(hist, bins,

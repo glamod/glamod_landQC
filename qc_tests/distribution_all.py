@@ -280,7 +280,8 @@ def expand_around_storms(storms: np.ndarray,
 
 
 def check_through_storms(storms: np.ndarray,
-                         times: pd.Series) -> np.ndarray:
+                         times: pd.Series,
+                         maximum: int) -> np.ndarray:
     """Want to pad locations where pressure and wind speed suggest
     a low pressure system, where observations should be retained.
     Split into contiguous runs of when this is the case and pad either
@@ -293,6 +294,8 @@ def check_through_storms(storms: np.ndarray,
         anomalous to suggest a low pressure system
     times : pd.Series
         Station time points
+    maximum : int
+        Maximum index for expansion
 
     Returns
     -------
@@ -313,7 +316,7 @@ def check_through_storms(storms: np.ndarray,
             # Get the the first one, and expand
             final_storm_locs = expand_around_storms(
                 storms[0: separations[0] + 1],
-                len(times))
+                maximum)
 
             # then do the rest in a loop
             for j in range(len(separations)):
@@ -321,25 +324,25 @@ def check_through_storms(storms: np.ndarray,
                     # final one
                     this_storm = expand_around_storms(
                         storms[separations[j]+1: ],
-                        len(times))
+                        maximum)
                 else:
                     this_storm = expand_around_storms(
                         storms[separations[j]+1: separations[j+1]+1],
-                        len(times))
+                        maximum)
 
                 final_storm_locs = np.append(final_storm_locs,
                                              this_storm)
 
         else:
             # locations separated at same interval as data
-            final_storm_locs = expand_around_storms(storms, len(times))
+            final_storm_locs = expand_around_storms(storms, maximum)
 
     # single observation location identified
     elif len(storms) != 0:
         # expand around the storm signal (rather than
         #  just unflagging what could be the peak and
         #  leaving the entry/exit flagged)
-        final_storm_locs = expand_around_storms(storms, len(times))
+        final_storm_locs = expand_around_storms(storms, maximum)
 
     return final_storm_locs
 
@@ -366,8 +369,17 @@ def average_and_spread(obs_var: utils.MeteorologicalVariable,
 
     monthly_data = dist_monthly.prepare_monthly_data(obs_var, station, month)
 
-    average = qc_utils.average(monthly_data)
-    spread = qc_utils.spread(monthly_data)
+    if len(monthly_data.compressed()) > 1:
+        average = qc_utils.average(monthly_data)
+        spread = qc_utils.spread(monthly_data)
+
+        if spread == 0.0:
+            # likely only single month
+            spread = 0.5
+
+    else:
+        average = 0.0
+        spread = -1.0
 
     return (average, spread)
 
@@ -376,7 +388,7 @@ def average_and_spread(obs_var: utils.MeteorologicalVariable,
 def find_storms(station: utils.Station,
                 obs_var: utils.MeteorologicalVariable,
                 month: int,
-                flags: np.ndarray) -> None:
+                mflags: np.ndarray) -> None:
     """Find locations that could be from storms (low pressure systems),
     using wind speed and pressure data, and remove set flags from these
     as these data should be retained
@@ -389,8 +401,9 @@ def find_storms(station: utils.Station,
         Variable being processed
     month : int
         Calendar month being processed
-    flags : np.ndarray
-        Flag array to check (contains flags ["d"], which may be removed)
+    mflags : np.ndarray
+        Flag array of calenar month to check
+        (contains flags ["d"], which may be removed)
     """
 
     # need sufficient data to work with for storm check to work, else can't tell
@@ -406,23 +419,27 @@ def find_storms(station: utils.Station,
     pressure_monthly_average, pressure_monthly_spread = average_and_spread(obs_var,
                                                                            station, month)
 
+    if wind_monthly_spread == -1. or pressure_monthly_spread == -1.:
+        # Insufficient data to get monthly averages
+        return
+
     # already a single calendar month, so go through each year
     all_years = np.unique(station.years)
     for year in all_years:
         # For this calendar month, for this year
-        this_year_locs = np.nonzero(np.logical_and(station.years == year,
-                                                   station.months == month))
+        month_locs,  = np.nonzero(station.months == month)
+        this_year_locs, = np.nonzero(station.years[month_locs] == year)
 
-        if "d" not in flags[this_year_locs]:
+        if "d" not in mflags[this_year_locs]:
             # skip to next year if you get the chance
             continue
 
         # get data for this calendar year/month
-        wind_data = station.wind_speed.data[this_year_locs]
-        pressure_data = obs_var.data[this_year_locs]
+        wind_data = station.wind_speed.data[month_locs[this_year_locs]]
+        pressure_data = obs_var.data[month_locs[this_year_locs]]
 
         # find where windier and lower pressure than normal
-        storms, = np.ma.where(np.logical_and(
+        storms, = np.ma.nonzero(np.logical_and(
             (((wind_data - wind_monthly_average)/wind_monthly_spread) > STORM_THRESHOLD),
             (((pressure_monthly_average - pressure_data)/pressure_monthly_spread) > STORM_THRESHOLD)
             ))
@@ -430,11 +447,14 @@ def find_storms(station: utils.Station,
         # potentially unset the flags
         if len(storms) > 0:
             # maybe more than one entry - check if separate events
-            final_storm_locs = check_through_storms(storms, station.times)
+            # Note - this only works within the month, if spans a month or
+            #    year boundary, then can't undo flags beyond that
+            final_storm_locs = check_through_storms(storms, station.times,
+                                                    len(this_year_locs))
 
-            year_flags = flags[this_year_locs]
+            year_flags = mflags[this_year_locs]
             year_flags[final_storm_locs] = ""
-            flags[this_year_locs] = year_flags
+            mflags[this_year_locs] = year_flags
 
 
 
@@ -495,7 +515,7 @@ def all_obs_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
             gap_start = qc_utils.find_gap(hist, bins, upper_threshold, GAP_SIZE)
 
             if gap_start != 0:
-                bad_locs, = np.ma.where(normalised_anomalies > gap_start) # all years for one month
+                bad_locs, = np.ma.nonzero(normalised_anomalies > gap_start) # all years for one month
 
                 month_flags = flags[month_locs]
                 month_flags[bad_locs] = "d"
@@ -505,7 +525,7 @@ def all_obs_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
             gap_start = qc_utils.find_gap(hist, bins, lower_threshold, GAP_SIZE, upwards=False)
 
             if gap_start != 0:
-                bad_locs, = np.ma.where(normalised_anomalies < gap_start) # all years for one month
+                bad_locs, = np.ma.nonzero(normalised_anomalies < gap_start) # all years for one month
 
                 month_flags = flags[month_locs]
                 month_flags[bad_locs] = "d"
@@ -513,7 +533,7 @@ def all_obs_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
                 # for pressure data, see if the flagged obs correspond with high winds
                 # could be a storm signal
                 if obs_var.name in ["station_level_pressure", "sea_level_pressure"]:
-                    find_storms(station, obs_var, month, flags)
+                    find_storms(station, obs_var, month, month_flags)
 
                 # having checked for storms now store final flags
                 flags[month_locs] = month_flags

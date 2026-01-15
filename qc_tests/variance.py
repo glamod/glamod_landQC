@@ -120,7 +120,7 @@ def calculate_hourly_anomalies(hours: np.ndarray,
     for hour in range(24):
 
         # calculate climatology
-        hlocs, = np.where(hours == hour)
+        hlocs, = np.nonzero(hours == hour)
 
         (hourly_clims[hour],
          hourly_clims.mask[hour]) = calculate_climatology(month_data[hlocs],
@@ -185,7 +185,7 @@ def calculate_yearly_variances(stn_years: np.ndarray,
     variances.mask = np.ones(all_years.shape[0])
     for y, year in enumerate(all_years):
 
-        ymlocs, = np.where(stn_years[month_locs] == year)
+        ymlocs, = np.nonzero(stn_years[month_locs] == year)
         this_year = anomalies[ymlocs]
 
         # HadISD used M.A.D.
@@ -316,7 +316,7 @@ def identify_bad_years(obs_var: utils.MeteorologicalVariable,
 
     scaled_variances = ((variances - average_variance) / variance_spread)
 
-    bad_years_locs, = np.where(np.abs(scaled_variances) > SPREAD_THRESHOLD)
+    bad_years_locs, = np.nonzero(np.abs(scaled_variances) > SPREAD_THRESHOLD)
 
     return bad_years_locs, scaled_variances
 
@@ -361,8 +361,8 @@ def high_wind_low_pressure_match(scaled_wind: np.ma.MaskedArray,
         else False
     """
 
-    high_winds, = np.ma.where(scaled_wind > STORM_THRESHOLD)
-    low_pressures, = np.ma.where(scaled_pressure > STORM_THRESHOLD)
+    high_winds, = np.ma.nonzero(scaled_wind > STORM_THRESHOLD)
+    low_pressures, = np.ma.nonzero(scaled_pressure > STORM_THRESHOLD)
 
     match = np.in1d(high_winds, low_pressures)
 
@@ -539,14 +539,14 @@ def variance_check(obs_var: utils.MeteorologicalVariable,
         if len(bad_years_locs) == 0 and len(scaled_variances) == 0:
             continue
 
-        month_locs, = np.where(station.months == month)
+        month_locs, = np.nonzero(station.months == month)
         # go through each bad year for this month
         all_years = np.unique(station.years)  #  unique returns sorted elements
 
         for year in bad_years_locs:
 
             # corresponding locations
-            ym_locs, = np.where(station.years[month_locs] == all_years[year])
+            ym_locs, = np.nonzero(station.years[month_locs] == all_years[year])
 
             # if pressure or wind speed, need to do some
             # # further checking before applying flags

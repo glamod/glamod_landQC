@@ -44,7 +44,7 @@ def prepare_monthly_data(obs_var: utils.MeteorologicalVariable, station: utils.S
     month_averages = []
     # spin through each year to get average for the calendar month selected
     for year in all_years:
-        locs, = np.where(np.logical_and(station.months == month, station.years == year))
+        locs, = np.nonzero((station.months == month) & (station.years == year))
 
         month_data = obs_var.data[locs]
 
@@ -142,11 +142,11 @@ def monthly_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station, c
         hist, bin_edges = np.histogram(standardised_months, bins)
 
         # flag months with very large offsets
-        bad, = np.where(np.abs(standardised_months) >= LARGE_LIMIT)
+        bad, = np.nonzero(np.abs(standardised_months) >= LARGE_LIMIT)
         # now follow flag locations back up through the process
         for bad_month_id in bad:
             # year ID for this set of calendar months
-            locs, = np.where(np.logical_and(station.months == month, station.years == all_years[bad_month_id]))
+            locs, = np.nonzero((station.months == month) & (station.years == all_years[bad_month_id]))
             flags[locs] = "D"
 
         # walk distribution from centre to find assymetry
@@ -184,7 +184,7 @@ def monthly_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station, c
         # now follow flag locations back up through the process
         for bad_month_id in bad:
             # year ID for this set of calendar months
-            locs, = np.where(np.logical_and(station.months == month, station.years == all_years[bad_month_id]))
+            locs, = np.nonzero((station.months == month) & (station.years == all_years[bad_month_id]))
             flags[locs] = "D"
 
         if plots:
@@ -205,7 +205,7 @@ def monthly_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station, c
     obs_var.store_flags(utils.insert_flags(obs_var.flags, flags))
 
     logger.info(f"Distribution (monthly) {obs_var.name}")
-    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
+    logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
     # monthly_gap
 
@@ -228,7 +228,7 @@ def prepare_all_data(obs_var: utils.MeteorologicalVariable,
     :returns: np.ma.MaskedArray
     """
 
-    month_locs, = np.where(station.months == month)
+    month_locs, = np.nonzero(station.months == month)
 
     all_month_data = obs_var.data[month_locs]
 
@@ -347,7 +347,7 @@ def find_thresholds(obs_var: utils.MeteorologicalVariable, station: utils.Statio
 
         # use bins and curve to find points where curve is < FREQUENCY_THRESHOLD
         try:
-            lower_threshold = bincentres[np.where(np.logical_and(fitted_curve < FREQUENCY_THRESHOLD, bincentres < bins[np.argmax(fitted_curve)]))[0]][-1]
+            lower_threshold = bincentres[np.nonzero((fitted_curve < FREQUENCY_THRESHOLD) & (bincentres < bins[np.argmax(fitted_curve)]))[0]][-1]
         except:
             lower_threshold = bins[1]
         try:
@@ -355,7 +355,7 @@ def find_thresholds(obs_var: utils.MeteorologicalVariable, station: utils.Statio
                 # just a line of zeros perhaps (found on AFA00409906 station_level_pressure 20190913)
                 upper_threshold = bins[-1]
             else:
-                upper_threshold = bincentres[np.where(np.logical_and(fitted_curve < FREQUENCY_THRESHOLD, bincentres > bins[np.argmax(fitted_curve)]))[0]][0]
+                upper_threshold = bincentres[np.nonzero((fitted_curve < FREQUENCY_THRESHOLD) & (bincentres > bins[np.argmax(fitted_curve)]))[0]][0]
         except:
             upper_threshold = bins[-1]
 
@@ -432,15 +432,15 @@ def all_obs_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
             continue
 
         # now to find the gaps
-        uppercount = len(np.where(normalised_anomalies > upper_threshold)[0])
-        lowercount = len(np.where(normalised_anomalies < lower_threshold)[0])
+        uppercount = np.count_nonzero(normalised_anomalies > upper_threshold)
+        lowercount = np.count_nonzero(normalised_anomalies < lower_threshold)
 
-        month_locs, = np.where(station.months == month) # append should keep year order
+        month_locs, = np.nonzero(station.months == month) # append should keep year order
         if uppercount > 0:
             gap_start = qc_utils.find_gap(hist, bins, upper_threshold, GAP_SIZE)
 
             if gap_start != 0:
-                bad_locs, = np.ma.where(normalised_anomalies > gap_start) # all years for one month
+                bad_locs, = np.ma.nonzero(normalised_anomalies > gap_start) # all years for one month
 
                 month_flags = flags[month_locs]
                 month_flags[bad_locs] = "d"
@@ -450,7 +450,7 @@ def all_obs_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
             gap_start = qc_utils.find_gap(hist, bins, lower_threshold, GAP_SIZE, upwards=False)
 
             if gap_start != 0:
-                bad_locs, = np.ma.where(normalised_anomalies < gap_start) # all years for one month
+                bad_locs, = np.ma.nonzero(normalised_anomalies < gap_start) # all years for one month
 
                 month_flags = flags[month_locs]
                 month_flags[bad_locs] = "d"
@@ -479,7 +479,7 @@ def all_obs_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
                         for year in all_years:
 
                             # what's best - extract only when necessary but repeatedly if so, or always, but once
-                            this_year_locs = np.where(station.years[month_locs] == year)
+                            this_year_locs = np.nonzero(station.years[month_locs] == year)
 
                             if "d" not in month_flags[this_year_locs]:
                                 # skip if you get the chance
@@ -488,13 +488,14 @@ def all_obs_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
                             wind_data = station.wind_speed.data[month_locs][this_year_locs]
                             pressure_data = obs_var.data[month_locs][this_year_locs]
 
-                            storms, = np.ma.where(np.logical_and((((wind_data - wind_monthly_average)/wind_monthly_spread) > STORM_THRESHOLD), (((pressure_monthly_average - pressure_data)/pressure_monthly_spread) > STORM_THRESHOLD)))
+                            storms, = np.ma.nonzero(np.logical_and((((wind_data - wind_monthly_average)/wind_monthly_spread) > STORM_THRESHOLD),
+                                                                   (((pressure_monthly_average - pressure_data)/pressure_monthly_spread) > STORM_THRESHOLD)))
 
                             # more than one entry - check if separate events
                             if len(storms) >= 2:
                                 # find where separation more than the usual obs separation
                                 storm_1diffs = np.ma.diff(storms)
-                                separations, = np.where(storm_1diffs > np.ma.median(np.ma.diff(wind_data)))
+                                separations, = np.nonzero(storm_1diffs > np.ma.median(np.ma.diff(wind_data)))
 
                                 if len(separations) != 0:
                                     # multiple storm signals
@@ -548,7 +549,7 @@ def all_obs_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
             plt.axvline(upper_threshold, c="r")
             plt.axvline(lower_threshold, c="r")
 
-            bad_locs, = np.where(flags[month_locs] == "d")
+            bad_locs, = np.nonzero(flags[month_locs] == "d")
             bad_hist, dummy = np.histogram(normalised_anomalies[bad_locs], bins)
             plt.step(bins[1:], bad_hist, color='r', where="pre")
 
@@ -559,7 +560,7 @@ def all_obs_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
 
 
     logger.info(f"Distribution (all) {obs_var.name}")
-    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
+    logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
     # all_obs_gap
 

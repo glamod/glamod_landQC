@@ -41,14 +41,14 @@ def clean_up(obs_var: utils.MeteorologicalVariable,
 
         for month in range(1, 13):
 
-            month_locs, = np.where(np.logical_and(station.years == year, station.months == month))
+            month_locs, = np.nonzero((station.years == year) & (station.months == month))
 
             this_month = obs_var.data[month_locs]
-            obs_locs, = np.where(this_month.mask == False)
+            obs_locs, = np.nonzero(this_month.mask == False)
             n_obs = np.ma.count(this_month)
 
-            flagged, = np.where(old_flags[month_locs][obs_locs] != "")
-            unflagged, = np.where(old_flags[month_locs][obs_locs] == "")
+            flagged, = np.nonzero(old_flags[month_locs][obs_locs] != "")
+            unflagged, = np.nonzero(old_flags[month_locs][obs_locs] == "")
 
             if unflagged.shape[0] < low_counts:
                 # insufficient unflagged observations left
@@ -67,7 +67,7 @@ def clean_up(obs_var: utils.MeteorologicalVariable,
 
 
     logger.info(f"Clean Up {obs_var.name}")
-    logger.info(f"   Cumulative number of flags set: {len(np.where(new_flags != '')[0])}")
+    logger.info(f"   Cumulative number of flags set: {np.count_nonzero(new_flags != '')}")
 
     return new_flags # clean_up
 

@@ -77,9 +77,9 @@ def mask_calms(this_var: utils.MeteorologicalVariable) -> None:
     #   resolution (even if good) may get the odd 0.5m/s as part of a long
     #   calm spell
     if reporting_resolution > 0.5: # nearest 1/2 or whole value
-        calms, = np.ma.where(this_var.data <= 1.0)
+        calms, = np.ma.nonzero(this_var.data <= 1.0)
     else: # nearest 1/10
-        calms, = np.ma.where(this_var.data <= 0.5)
+        calms, = np.ma.nonzero(this_var.data <= 0.5)
 
     this_var.data[calms] = utils.MDI
     this_var.data.mask[calms] = True
@@ -220,7 +220,7 @@ def get_excess_streak_threshold(obs_var: utils.MeteorologicalVariable,
 
         proportions[y] = np.sum(year_repeated_streak_lengths[long_enough_locs])/len(this_var.data[locs].compressed())
 
-    if len(np.nonzero(proportions != 0)[0]) >= 5:
+    if np.count_nonzero(proportions != 0) >= 5:
         # If at least 5 years have sufficient data that can calculate a fraction
 
         # bin width is 0.005 (0.5%) as dealing in fractions
@@ -319,7 +319,7 @@ def repeating_value(obs_var: utils.MeteorologicalVariable,
     obs_var.store_flags(utils.insert_flags(obs_var.flags, flags))
 
     logger.info(f"Repeated streaks {this_var.name}")
-    logger.info(f"   Cumulative number of flags set: {len(np.nonzero(flags != '')[0])}")
+    logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
     # repeating_value
 
@@ -525,7 +525,7 @@ def repeating_day(obs_var: utils.MeteorologicalVariable, station: utils.Station,
         obs_var.store_flags(utils.insert_flags(obs_var.flags, flags))
 
         logger.info(f"Repeated Day streaks {obs_var.name}")
-        logger.info(f"   Cumulative number of flags set: {len(np.nonzero(flags != '')[0])}")
+        logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
     # repeating_day
 

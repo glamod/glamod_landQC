@@ -60,12 +60,12 @@ def read_neighbours(restart_id: str = "", end_id: str = "") -> np.ndarray:
 
     # work from the end to save messing up the start indexing
     if end_id != "":
-        endindex, = np.where(all_entries[:, 0] == end_id)
+        endindex, = np.nonzero(all_entries[:, 0] == end_id)
         all_entries = all_entries[: endindex[0]+1]
 
     # and do the front
     if restart_id != "":
-        startindex, = np.where(station_IDs == restart_id)
+        startindex, = np.nonzero(station_IDs == restart_id)
         all_entries = all_entries[startindex[0]:]
 
     all_entries = all_entries.reshape((all_entries.shape[0], utils.MAX_N_NEIGHBOURS, 2))
@@ -151,7 +151,7 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
             continue
 
         # extract neighbours for this station
-        nloc, = np.where(all_neighbours[:, 0, 0] == target_station_id)
+        nloc, = np.nonzero(all_neighbours[:, 0, 0] == target_station_id)
         initial_neighbours = all_neighbours[nloc].squeeze()
 
         #*************************

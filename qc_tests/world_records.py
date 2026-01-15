@@ -67,20 +67,20 @@ def record_check(obs_var: utils.MeteorologicalVariable, continent: str,
 
     if continent in ["africa", "asia", "samerica", "namerica", "europe", "oceania", "antarctica", "row"]:
         # masked arrays allows ignoring missing data
-        too_high, = np.ma.where(obs_var.data > maxes[obs_var.name][continent])
-        too_low, = np.ma.where(obs_var.data < mins[obs_var.name][continent])
+        too_high, = np.ma.nonzero(obs_var.data > maxes[obs_var.name][continent])
+        too_low, = np.ma.nonzero(obs_var.data < mins[obs_var.name][continent])
 
     else:
         # Use ROW for "none" or any other result.
         # masked arrays allows ignoring missing data
-        too_high, = np.ma.where(obs_var.data > maxes[obs_var.name]["row"])
-        too_low, = np.ma.where(obs_var.data < mins[obs_var.name]["row"])
+        too_high, = np.ma.nonzero(obs_var.data > maxes[obs_var.name]["row"])
+        too_low, = np.ma.nonzero(obs_var.data < mins[obs_var.name]["row"])
 
     flags[too_high] = "W"
     flags[too_low] = "W"
 
     logger.info(f"World Records {obs_var.name} ({continent})")
-    logger.info(f"   Cumulative number of flags set: {len(np.where(flags != '')[0])}")
+    logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
     return flags # record_check
 

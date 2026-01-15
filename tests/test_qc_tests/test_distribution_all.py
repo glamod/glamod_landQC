@@ -297,7 +297,8 @@ def test_check_through_storms_single() -> None:
     storms = np.arange(45, 46)
     assert len(storms) == 1
 
-    result = distribution_all.check_through_storms(storms, station.times)
+    result = distribution_all.check_through_storms(storms, station.times,
+                                                   len(indata))
 
     expected = np.arange(45-6, 46+6)
     np.testing.assert_array_equal(result, expected)
@@ -310,7 +311,8 @@ def test_check_through_storms_simple() -> None:
     station = _setup_station(indata)
     storms = np.arange(24, 48)
 
-    result = distribution_all.check_through_storms(storms, station.times)
+    result = distribution_all.check_through_storms(storms, station.times,
+                                                   len(indata))
 
     # all storm indices have the same sep as the underlying times
     expected = np.arange(24-6, 48+6)
@@ -325,7 +327,8 @@ def test_check_through_storms_two() -> None:
     # two entries of storms, so can test the handling of the last storm
     storms = np.append(np.arange(24, 48), np.arange(20*24, 21*24))
 
-    result = distribution_all.check_through_storms(storms, station.times)
+    result = distribution_all.check_through_storms(storms, station.times,
+                                                   len(indata))
 
     # all storm indices have the same sep as the underlying times
     expected = np.append(np.arange(24-6, 48+6), np.arange(20*24-6, 21*24+6))
@@ -342,7 +345,8 @@ def test_check_through_storms_three() -> None:
                        np.arange(10*24, 11*24))
     storms = np.append(storms, np.arange(20*24, 21*24))
 
-    result = distribution_all.check_through_storms(storms, station.times)
+    result = distribution_all.check_through_storms(storms, station.times,
+                                                   len(indata))
 
     # all storm indices have the same sep as the underlying times
     expected = np.append(np.arange(24-6, 48+6), np.arange(10*24-6, 11*24+6))
@@ -382,6 +386,51 @@ def test_find_storms_few_data(av_and_sp_mock: Mock) -> None:
 
     # data are too short so routine should have exited
     av_and_sp_mock.assert_not_called()
+
+
+@patch("distribution_all.average_and_spread")
+@patch("distribution_all.check_through_storms")
+def test_find_storms_few_monthly_data(storm_check_mock: Mock,
+                                      av_and_sp_mock: Mock) -> None:
+    """Test routine exits when there's insufficient monthly average data
+
+    Pass in data that should result in storm checking and adjustment of
+    flags, but mocked monthly returns will result in early exit
+    """
+
+    # set up the station and data for a single January
+    indata = np.ma.ones(31*24)*2
+    station = _setup_station(indata)
+
+    # windier than normal on day 2
+    indata[24: 48] = 20
+    wind_speed = common.example_test_variable("wind_speed",
+                                              indata)
+    station.wind_speed = wind_speed
+
+    indata = np.ma.ones(31*24)*100
+    # lower pressure than normal on day 2
+    indata[24: 48] = 10
+    station_pressure = common.example_test_variable("station_level_pressure",
+                                                    indata)
+    station.station_level_pressure = station_pressure
+
+    # set initial flags for pressure, day 2
+    flags = np.array(["" for i in range(31*24)])
+    flags[24: 48] = "d"
+
+    # but insufficient monthly data, so routine exits
+    av_and_sp_mock.return_value = (1, -1)
+
+    distribution_all.find_storms(station, station_pressure,
+                                    1, np.array([]))
+
+    # storm finding not done, so flags unchanged
+    expected_flags = np.array(["" for i in range(31*24)])
+    expected_flags[24: 48] = "d"
+
+    np.testing.assert_array_equal(flags, expected_flags)
+    storm_check_mock.assert_not_called()
 
 
 @patch("distribution_all.average_and_spread")

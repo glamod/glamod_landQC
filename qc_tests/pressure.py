@@ -234,8 +234,8 @@ def pressure_offset(sealp: utils.MeteorologicalVariable,
 
             pass
         else:
-            high, = np.ma.where(difference > (average + (THRESHOLD*spread)))
-            low, = np.ma.where(difference < (average - (THRESHOLD*spread)))
+            high, = np.ma.nonzero(difference > (average + (THRESHOLD*spread)))
+            low, = np.ma.nonzero(difference < (average - (THRESHOLD*spread)))
 
             # diagnostic plots
             if plots:
@@ -288,7 +288,7 @@ def calc_slp_factor(elevation: float,
     filled_temperature = np.ma.copy(temperature)
 
     # find locations where we could calculate the SLP, but temperatures are missing
-    missing_Ts, = np.where(filled_temperature.mask == True)
+    missing_Ts, = np.nonzero(filled_temperature.mask == True)
     if len(missing_Ts) > 0:
         filled_temperature[missing_Ts] = 15.0
 
@@ -350,7 +350,7 @@ def pressure_station_theory(stnlp: utils.MeteorologicalVariable,
     difference = stnlp.data - theoretical_stnlp_value
 
     if len(difference.compressed()) > 0:
-        bad_locs, = np.ma.where(np.ma.abs(difference) > STNLP_THEORY_THRESHOLD)
+        bad_locs, = np.ma.nonzero(np.ma.abs(difference) > STNLP_THEORY_THRESHOLD)
 
         # diagnostic plots
         if plots:
@@ -406,7 +406,7 @@ def pressure_consistency_theory(sealp: utils.MeteorologicalVariable,
     difference = sealp.data - theoretical_value
 
     if len(difference.compressed()) > 0:
-        bad_locs, = np.ma.where(np.ma.abs(difference) > SLP_THEORY_THRESHOLD)
+        bad_locs, = np.ma.nonzero(np.ma.abs(difference) > SLP_THEORY_THRESHOLD)
 
         # diagnostic plots
         if plots:

@@ -85,7 +85,7 @@ def main(restart_id: str = "", end_id: str = "", clobber: bool = False) -> None:
                 this_year_count = np.zeros(13)
                 for month in range(1, 13):
 
-                    locs, = np.where(np.logical_and(station.years==year, station.months==month))
+                    locs, = np.nonzero((station.years==year) & (station.months==month))
 
                     this_year_count[month] = len(locs)
 
