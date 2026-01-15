@@ -142,7 +142,18 @@ def read(infile: Path) -> pd.DataFrame:
     """
 
     # for .psv
-    if infile.suffix in (".psv", ".csv"):
+    if infile.suffix in (".gz", ".zip"):
+        if Path(infile.stem).suffix in (".psv", ".csv"):
+            # csv could be a legitmate format specifier, though must use pipe (|) as separator
+            if infile.exists():
+                df = read_psv(infile, "|")
+            else:
+                raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), infile)
+        else:
+            # Placeholder for better error handling
+            raise NotImplementedError
+
+    elif infile.suffix in (".psv", ".csv"):
         # csv could be a legitmate format specifier, though must use pipe (|) as separator
         if infile.exists():
             df = read_psv(infile, "|")
