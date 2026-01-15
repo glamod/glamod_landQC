@@ -98,7 +98,7 @@ def high_flag_rate(obs_var: utils.MeteorologicalVariable,
             any_flags_set = True
 
     logger.info(f"High Flag Rate {obs_var.name}")
-    logger.info(f"   Cumulative number of flags set: {len(np.where(new_flags == 'h')[0])}")
+    logger.info(f"   Cumulative number of flags set: {np.count_nonzero(new_flags == 'h')}")
 
     return new_flags, any_flags_set # high_flag_rate
 

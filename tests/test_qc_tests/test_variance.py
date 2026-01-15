@@ -519,7 +519,7 @@ def test_variance_check(identify_mock: Mock,
              call(f"   Cumulative number of flags set: {24*31}")]
     logger_mock.info.assert_has_calls(calls)
 
-    assert np.all(station.temperature.flags[:744] =="v")
+    assert np.all(station.temperature.flags[:744] == "v")
     assert np.all(station.temperature.flags[744:] == "")
 
 

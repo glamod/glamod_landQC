@@ -287,7 +287,6 @@ def test_flag_write(setup_mock: Mock,
                     tmp_path) -> None:
 
     outfilename = tmp_path / "DMY01234567.flg"
-    print(outfilename)
     setup_mock.obs_var_list = ["temperature"]
 
     data = {"temperature" : [1, 2, 3, 4, 5],

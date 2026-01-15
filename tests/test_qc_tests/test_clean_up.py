@@ -39,7 +39,7 @@ def test_clean_up_low_count() -> None:
 
     # these are just the flags set by clean_up.py
     expected_flags = np.array(["" for _ in range(temperatures.data.shape[0])])
-    expected_flags[:3] ="e"
+    expected_flags[:3] = "e"
 
     np.testing.assert_array_equal(new_flags, expected_flags)
 

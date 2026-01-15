@@ -21,8 +21,7 @@ UNIT_DICT = {"temperature" : "degrees C", \
              "station_level_pressure" : "hPa hectopascals"}
 
 # Lowercase letters for flags which should exclude data
-# Punctuation for information flags:
-#   the data are valid, but not necessarily adhering to conventions
+# No information flags (the data are valid, but not necessarily adhering to conventions)
 QC_TESTS = {"a" : "Repeated Day streaks",  # repeAted day streaks
             "b" : "Distribution - all",  # distriBution (all)
             "c" : "Climatological",  # Climatological
