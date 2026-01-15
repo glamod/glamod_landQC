@@ -297,7 +297,8 @@ def test_check_through_storms_single() -> None:
     storms = np.arange(45, 46)
     assert len(storms) == 1
 
-    result = distribution_all.check_through_storms(storms, station.times)
+    result = distribution_all.check_through_storms(storms, station.times,
+                                                   len(indata))
 
     expected = np.arange(45-6, 46+6)
     np.testing.assert_array_equal(result, expected)
@@ -310,7 +311,8 @@ def test_check_through_storms_simple() -> None:
     station = _setup_station(indata)
     storms = np.arange(24, 48)
 
-    result = distribution_all.check_through_storms(storms, station.times)
+    result = distribution_all.check_through_storms(storms, station.times,
+                                                   len(indata))
 
     # all storm indices have the same sep as the underlying times
     expected = np.arange(24-6, 48+6)
@@ -325,7 +327,8 @@ def test_check_through_storms_two() -> None:
     # two entries of storms, so can test the handling of the last storm
     storms = np.append(np.arange(24, 48), np.arange(20*24, 21*24))
 
-    result = distribution_all.check_through_storms(storms, station.times)
+    result = distribution_all.check_through_storms(storms, station.times,
+                                                   len(indata))
 
     # all storm indices have the same sep as the underlying times
     expected = np.append(np.arange(24-6, 48+6), np.arange(20*24-6, 21*24+6))
@@ -342,7 +345,8 @@ def test_check_through_storms_three() -> None:
                        np.arange(10*24, 11*24))
     storms = np.append(storms, np.arange(20*24, 21*24))
 
-    result = distribution_all.check_through_storms(storms, station.times)
+    result = distribution_all.check_through_storms(storms, station.times,
+                                                   len(indata))
 
     # all storm indices have the same sep as the underlying times
     expected = np.append(np.arange(24-6, 48+6), np.arange(10*24-6, 11*24+6))

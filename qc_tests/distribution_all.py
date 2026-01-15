@@ -280,7 +280,8 @@ def expand_around_storms(storms: np.ndarray,
 
 
 def check_through_storms(storms: np.ndarray,
-                         times: pd.Series) -> np.ndarray:
+                         times: pd.Series,
+                         maximum: int) -> np.ndarray:
     """Want to pad locations where pressure and wind speed suggest
     a low pressure system, where observations should be retained.
     Split into contiguous runs of when this is the case and pad either
@@ -293,6 +294,8 @@ def check_through_storms(storms: np.ndarray,
         anomalous to suggest a low pressure system
     times : pd.Series
         Station time points
+    maximum : int
+        Maximum index for expansion
 
     Returns
     -------
@@ -313,7 +316,7 @@ def check_through_storms(storms: np.ndarray,
             # Get the the first one, and expand
             final_storm_locs = expand_around_storms(
                 storms[0: separations[0] + 1],
-                len(times))
+                maximum)
 
             # then do the rest in a loop
             for j in range(len(separations)):
@@ -321,25 +324,25 @@ def check_through_storms(storms: np.ndarray,
                     # final one
                     this_storm = expand_around_storms(
                         storms[separations[j]+1: ],
-                        len(times))
+                        maximum)
                 else:
                     this_storm = expand_around_storms(
                         storms[separations[j]+1: separations[j+1]+1],
-                        len(times))
+                        maximum)
 
                 final_storm_locs = np.append(final_storm_locs,
                                              this_storm)
 
         else:
             # locations separated at same interval as data
-            final_storm_locs = expand_around_storms(storms, len(times))
+            final_storm_locs = expand_around_storms(storms, maximum)
 
     # single observation location identified
     elif len(storms) != 0:
         # expand around the storm signal (rather than
         #  just unflagging what could be the peak and
         #  leaving the entry/exit flagged)
-        final_storm_locs = expand_around_storms(storms, len(times))
+        final_storm_locs = expand_around_storms(storms, maximum)
 
     return final_storm_locs
 
@@ -410,7 +413,7 @@ def find_storms(station: utils.Station,
     all_years = np.unique(station.years)
     for year in all_years:
         # For this calendar month, for this year
-        this_year_locs = np.nonzero(np.logical_and(station.years == year,
+        this_year_locs, = np.nonzero(np.logical_and(station.years == year,
                                                    station.months == month))
 
         if "d" not in flags[this_year_locs]:
@@ -430,7 +433,10 @@ def find_storms(station: utils.Station,
         # potentially unset the flags
         if len(storms) > 0:
             # maybe more than one entry - check if separate events
-            final_storm_locs = check_through_storms(storms, station.times)
+            # Note - this only works within the month, if spans a month or
+            #    year boundary, then can't undo flags beyond that
+            final_storm_locs = check_through_storms(storms, station.times,
+                                                    len(this_year_locs))
 
             year_flags = flags[this_year_locs]
             year_flags[final_storm_locs] = ""
