@@ -44,10 +44,6 @@ shift
 shift
 
 #**************************************
-# other settings
-STATIONS_PER_BATCH=10000
-N_JOBS=10
-
 SCRIPT_DIR="$(pwd)/parallel_scripts/"
 if [ ! -d "${SCRIPT_DIR}" ]; then
     mkdir "${SCRIPT_DIR}"
@@ -116,6 +112,25 @@ OUT_SUFFIX="$(grep "out_suffix " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 if [ ! -d "${ROOTDIR}${LOG_DIR}" ]; then
     mkdir "${ROOTDIR}${LOG_DIR}"
 fi
+
+
+#**************************************
+# Job settings - currently for psv/qff only
+if [ "${STAGE}" == "I" ]; then
+    STATIONS_PER_BATCH=5000
+    N_JOBS=10
+    # 35,000 stations, 5000/batch => 7 batches
+    #      7 batches with 10 jobs each => 70 processors
+    # have 80 CPUs to play with.
+elif [ "${STAGE}" == "N" ]; then
+    STATIONS_PER_BATCH=7000
+    N_JOBS=10
+    # 35,000 stations, 7000/batch => 5 batches
+    #      5 batches with 10 jobs each => 50 processors
+    #      But each needs more memory than internal checks
+    # have 80 to play with.
+fi
+
 
 #**************************************
 # if neighbour checks make sure all files in place
@@ -365,6 +380,8 @@ do
 
 done
 # and submit the final batch of stations.
+write_and_submit_bastion_script "${parallel_script}" "${batch}" "${SCREENEXIT}"
+
 
 
 echo "Once jobs are complete run:"

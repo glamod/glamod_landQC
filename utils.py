@@ -104,7 +104,7 @@ LOGICFILE = Path(__file__).parent / "configs" / config.get("FILES", "logic")
 MAX_NEIGHBOUR_DISTANCE = config.getint("NEIGHBOURS", "max_distance")
 MAX_NEIGHBOUR_VERTICAL_SEP = config.getint("NEIGHBOURS", "max_vertical_separation")
 MAX_N_NEIGHBOURS = config.getint("NEIGHBOURS", "max_number")
-NEIGHBOUR_FILE = config.get("NEIGHBOURS", "filename")
+NEIGHBOUR_FILE = setup.SUBDAILY_CONFIG_DIR / config.get("NEIGHBOURS", "filename")
 MIN_NEIGHBOURS = config.getint("NEIGHBOURS", "minimum_number")
 
 #*********************************************
