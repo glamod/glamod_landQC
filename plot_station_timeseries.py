@@ -52,7 +52,7 @@ FLAG_COLOURS = {"c" : "b",
                 "z" : "orange",
 }
 
-FLAG_LOCS = {"a" : 0.1,
+FLAG_LOCS = {"c" : 0.1,
             "d" : 0.3,
             "e" : 0.5,
             "f" : 0.7,
