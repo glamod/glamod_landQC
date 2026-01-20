@@ -23,7 +23,7 @@ TESTS_FOR_VARS = {"temperature": ["All", "a","b", "c", "d", "e", "f", "h", "k", 
                                                'n', 'o', 'p', 's', 't', 'v', 'x', ],
                   "wind_speed" : ['All', 'a', 'e', 'h', 'k', 'l', 'n', 'o', 'r', 's',
                                   't', 'v', 'w', 'x', ],
-                  "wind_direction" : ['All', 'a', 'e', 'h', 'k', 'l', 'r', 'x', 'z',]}
+                  "wind_direction" : ['All', 'a', 'e', 'h', 'k', 'l', 'w', 'x', 'z',]}
 
 UNITS = {"" : "%", "_counts" : "cts"}
 
@@ -71,6 +71,7 @@ def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False) -> N
     station_IDs = station_list.id
 
     all_stations = {}
+    missing_stations = {}
 
     # now spin through each ID in the curtailed list
     for st, station_id in enumerate(station_IDs):
@@ -88,6 +89,7 @@ def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False) -> N
             flag_summary = flag_read(setup.SUBDAILY_FLAG_DIR / f"{station_id}.flg")
         except IOError:
             print(f"flag file missing for {station_id}")
+            missing_stations[station_id] = station
             continue
 
         #*************************
@@ -141,9 +143,11 @@ def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False) -> N
 
             for suffix in ["", "_counts"]:
 
-                lats, lons, flag_fraction = np.zeros(station_IDs.shape[0]), np.zeros(station_IDs.shape[0]), np.zeros(station_IDs.shape[0])
+                (lats, lons, flag_fraction) = (np.zeros(all_stations.shape[0]),
+                                               np.zeros(all_stations.shape[0]),
+                                               np.zeros(all_stations.shape[0]))
 
-                for st, (ID, station) in enumerate(all_stations.items()):
+                for st, (_, station) in enumerate(all_stations.items()):
                     lats[st] = station.lat
                     lons[st] = station.lon
                     obs_var = getattr(station, var)
@@ -166,7 +170,7 @@ def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False) -> N
                     ax.gridlines()
 
                 # colors are the exact same RBG codes as in IDL
-                colors = [(150, 150, 150), (41, 10, 216), (63, 160, 255), (170, 247, 255), \
+                colors = [(150, 150, 150), (41, 10, 216), (63, 160, 255), (170, 247, 255),
                           (255, 224, 153), (247, 109, 94), (165, 0, 33), (0, 0, 0)]
                 if suffix == "":
                     limits = [0.0, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 100.]
@@ -187,19 +191,21 @@ def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False) -> N
                         upper_label = f'{limits[u-1]:.0f}' if suffix == "_counts" else f'{limits[u-1]:0.1f}'
                         label = f'>{upper_label}{UNITS[suffix]}: {len(locs)}'
                     else:
-                        locs, = np.nonzero(np.logical_and(flag_fraction <= upper, \
-                                                        flag_fraction > limits[u-1]))
+                        locs, = np.nonzero(np.logical_and(flag_fraction <= upper,
+                                                          flag_fraction > limits[u-1]))
                         lower_label = f'{limits[u-1]:.0f}' if suffix == "_counts" else f'{limits[u-1]:0.1f}'
                         upper_label = f'{upper:.0f}' if suffix == "_counts" else f'{upper:0.1f}'
                         label = f'>{lower_label} to {upper_label}{UNITS[suffix]}: {len(locs)}'
 
                     # and plot
                     if len(locs) > 0:
-                        ax.scatter(lons[locs], lats[locs], transform=ccrs.PlateCarree(), s=15, color=tuple([float(c)/255 for c in colors[u]]), \
+                        ax.scatter(lons[locs], lats[locs], transform=ccrs.PlateCarree(),
+                                   s=15, color=tuple([float(c)/255 for c in colors[u]]),
                                    edgecolors="none", label=label)
 
                     else:
-                        ax.scatter([0], [-90], transform=ccrs.PlateCarree(), s=15, color=tuple([float(c)/255 for c in colors[u]]), \
+                        ax.scatter([0], [-90], transform=ccrs.PlateCarree(),
+                                   s=15, color=tuple([float(c)/255 for c in colors[u]]),
                                    edgecolors="none", label=label)
 
                 if test == "All":
@@ -207,15 +213,46 @@ def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False) -> N
                 else:
                     plt.title(f"{' '.join([v.capitalize() for v in var.split('_')])} - {utils.QC_TESTS[test]}")
 
-                watermarkstring = Path(__file__).name+"   "+dt.datetime.strftime(dt.datetime.now(), "%d-%b-%Y %H:%M")
-                plt.figtext(0.01,0.01,watermarkstring,size=5)
+                watermarkstring = Path(__file__).name+"   "+\
+                    dt.datetime.strftime(dt.datetime.now(), "%d-%b-%Y %H:%M")
+                plt.figtext(0.01,0.01,watermarkstring, size=5)
+                plt.figtext(0.01,0.95, f"Total station count: {len(all_stations)}", size=10)
 
-                plt.legend(loc='lower center', ncol=4, bbox_to_anchor=(0.5, -0.12), frameon=False, title='', prop={'size':9}, \
+                plt.legend(loc='lower center', ncol=4, bbox_to_anchor=(0.5, -0.12),
+                           frameon=False, title='', prop={'size':9},
                                labelspacing=0.15, columnspacing=0.5, numpoints=1)
 
                 print(IMAGE_LOCS / f"All_fails_{var}-{test}{suffix}_{start_time_string}.png")
                 plt.savefig(IMAGE_LOCS /f"All_fails_{var}-{test}{suffix}_{start_time_string}.png")
                 plt.close()
+
+
+    # Plot missing/withheld stations
+    (mlats, mlons) = (np.zeros(missing_stations.shape[0]),
+                      np.zeros(missing_stations.shape[0]))
+    for st, (_, station) in enumerate(missing_stations.items()):
+        mlats[st] = station.lat
+        mlons[st] = station.lon
+
+    plt.figure(figsize=(8, 5))
+    plt.clf()
+    ax = plt.axes([0.02, 0.02, 0.96, 0.96], projection=ccrs.Robinson())
+    ax.set_global()
+    ax.coastlines('50m')
+
+    ax.scatter(mlons, mlats, transform=ccrs.PlateCarree(),
+                s=15, color=tuple([float(c)/255 for c in colors[u]]),
+                edgecolors="none", label=label)
+
+    plt.title("Missing & withheld ststions")
+    watermarkstring = Path(__file__).name+"   "+dt.datetime.strftime(dt.datetime.now(), "%d-%b-%Y %H:%M")
+    plt.figtext(0.01,0.01,watermarkstring, size=5)
+    plt.figtext(0.01,0.95, f"Total station count: {len(missing_stations)}", size=10)
+
+    print(IMAGE_LOCS / f"Missing_stations_{start_time_string}.png")
+    plt.savefig(IMAGE_LOCS /f"Missing_stations_{start_time_string}.png")
+    plt.close()
+
     # main
 
 #************************************************************************
