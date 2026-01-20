@@ -115,11 +115,13 @@ echo "Total errors ${errors} ${error_dir}"
 (( out_stations=processed+withheld+errors ))
 echo "Total output stations ${out_stations}"
 echo ""
+echo "Unprocessed stations ${unprocessed}"
+echo ""
 missing_file="${ROOTDIR}${CONFIG_DIR}${VERSION}missing_${STAGE}.txt"
 missing=$(wc "${missing_file}" | awk -F' ' '{print $1}')
 echo "Upstream missing stations ${missing}"
 (( unprocessed=unprocessed-missing ))
-echo "Unprocessed stations (job failures?) ${unprocessed}"
+echo "Unprocessed stations excluding missing (job failures?) ${unprocessed}"
 
 (( out_stations=processed+withheld+errors+unprocessed ))
 echo "Total stations (excl upstream missing) ${out_stations}"
