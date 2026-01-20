@@ -143,9 +143,9 @@ def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False) -> N
 
             for suffix in ["", "_counts"]:
 
-                (lats, lons, flag_fraction) = (np.zeros(all_stations.shape[0]),
-                                               np.zeros(all_stations.shape[0]),
-                                               np.zeros(all_stations.shape[0]))
+                (lats, lons, flag_fraction) = (np.zeros(len(all_stations)),
+                                               np.zeros(len(all_stations)),
+                                               np.zeros(len(all_stations)))
 
                 for st, (_, station) in enumerate(all_stations.items()):
                     lats[st] = station.lat
@@ -228,8 +228,8 @@ def main(restart_id: str = "", end_id: str = "", diagnostics: bool = False) -> N
 
 
     # Plot missing/withheld stations
-    (mlats, mlons) = (np.zeros(missing_stations.shape[0]),
-                      np.zeros(missing_stations.shape[0]))
+    (mlats, mlons) = (np.zeros(len(missing_stations)),
+                      np.zeros(len(missing_stations)))
     for st, (_, station) in enumerate(missing_stations.items()):
         mlats[st] = station.lat
         mlons[st] = station.lon
