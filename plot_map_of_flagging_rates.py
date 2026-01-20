@@ -13,17 +13,17 @@ import setup
 #************************************************************************
 
 
-TESTS_FOR_VARS = {"temperature": ["All", "c", "d", "e", "f", "h", "k", "l", "n", "t",
-                                  "s", "u", "v", "r", "b", "o", "x", "a",],
-                  "dew_point_temperature": ['All', 'c', 'd', 'e', 'f', 'h', 'k', 'l', 'n', 's',
-                                            't', 'v', 'r', 'b', 'm', 'i', 'o', 'x', 'a',],
-                  "sea_level_pressure" : ['All', 'd', 'e', 'f', 'h', 'k', 'l', 'n', 's',
-                                          't', 'v', 'r', 'b', 'o', 'p', 'x', 'a',],
-                  "station_level_pressure" : ['All', 'd', 'e', 'f', 'h', 'k', 'l', 'n',
-                                              's', 't', 'v', 'b', 'o', 'p', 'x', 'a',],
-                  "wind_speed" : ['All', 'e', 'h', 'k', 'l', 'n', 's', 't', 'v',
-                                  'r', 'o', 'w', 'x', 'a',],
-                  "wind_direction" : ['All', 'e', 'h', 'k', 'l', 'r', 'x', 'a', 'z',]}
+TESTS_FOR_VARS = {"temperature": ["All", "a","b", "c", "d", "e", "f", "h", "k", "l", "n",
+                                  "o", "r", "t","s", "u", "v", "x", ],
+                  "dew_point_temperature": ['All', 'a','b', 'c', 'd', 'e', 'f', 'h', 'i',
+                                            'k', 'l', 'm', 'n', 'o', 'r', 's','t', 'v', 'x', ],
+                  "sea_level_pressure" : ['All', 'a', 'b', 'd', 'e', 'f', 'h', 'k', 'l', 'n',
+                                          'o', 'p', 'r', 's', 't', 'v', 'x', ],
+                  "station_level_pressure" : ['All', 'a', 'b', 'd', 'e', 'f', 'h', 'k', 'l',
+                                               'n', 'o', 'p', 's', 't', 'v', 'x', ],
+                  "wind_speed" : ['All', 'a', 'e', 'h', 'k', 'l', 'n', 'o', 'r', 's',
+                                  't', 'v', 'w', 'x', ],
+                  "wind_direction" : ['All', 'a', 'e', 'h', 'k', 'l', 'r', 'x', 'z',]}
 
 UNITS = {"" : "%", "_counts" : "cts"}
 

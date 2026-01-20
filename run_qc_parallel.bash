@@ -124,11 +124,11 @@ if [ "${STAGE}" == "I" ]; then
     # have 80 CPUs to play with.
 elif [ "${STAGE}" == "N" ]; then
     STATIONS_PER_BATCH=7000
-    N_JOBS=10
+    N_JOBS=8
     # 35,000 stations, 7000/batch => 5 batches
-    #      5 batches with 10 jobs each => 50 processors
+    #      5 batches with 8 jobs each => 40 processors
     #      But each needs more memory than internal checks
-    # have 80 to play with.
+    # have 80 to play with, so this gives 2/process
 fi
 
 
