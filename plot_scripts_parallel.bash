@@ -12,7 +12,7 @@ function write_and_submit_bastion_script {
 
     # run the parallel script in this detached screen
     #  restrict to 1 job so that these are done in sequence
-    screen -r "plots" -X stuff $"parallel --jobs 1 < ${parallel_script}"
+    screen -r "plots" -X stuff $"parallel --jobs 1 < ${parallel_script}\n"
 
 } # write_and_submit_bastion_script
 

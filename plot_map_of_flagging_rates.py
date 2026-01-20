@@ -13,17 +13,17 @@ import setup
 #************************************************************************
 
 
-TESTS_FOR_VARS = {"temperature": ["All", "C", "D", "E", "F", "H", "K", "L", "N", "T",
-                                  "S", "U", "V", "W", "d", "o", "x", "y", "2",],
-                  "dew_point_temperature": ['All', 'C', 'D', 'E', 'F', 'H', 'K', 'L', 'N', 'S',
-                                            'T', 'V', 'W', 'd', 'h', 'n', 'o', 'x', 'y', "2",],
-                  "sea_level_pressure" : ['All', 'D', 'E', 'F', 'H', 'K', 'L', 'N', 'S',
-                                          'T', 'V', 'W', 'd', 'o', 'p', 'x', 'y', "2",],
-                  "station_level_pressure" : ['All', 'D', 'E', 'F', 'H', 'K', 'L', 'N',
-                                              'S', 'T', 'V', 'd', 'o', 'p', 'x', 'y', "2",],
-                  "wind_speed" : ['All', 'E', 'H', 'K', 'L', 'N', 'S', 'T', 'V',
-                                  'W', 'o', 'w', 'x', 'y', "2",],
-                  "wind_direction" : ['All', 'E', 'H', 'K', 'L', 'w', 'x', 'y', "1", "2",]}
+TESTS_FOR_VARS = {"temperature": ["All", "c", "d", "e", "f", "h", "k", "l", "n", "t",
+                                  "s", "u", "v", "r", "b", "o", "x", "a",],
+                  "dew_point_temperature": ['All', 'c', 'd', 'e', 'f', 'h', 'k', 'l', 'n', 's',
+                                            't', 'v', 'r', 'b', 'm', 'i', 'o', 'x', 'a',],
+                  "sea_level_pressure" : ['All', 'd', 'e', 'f', 'h', 'k', 'l', 'n', 's',
+                                          't', 'v', 'r', 'b', 'o', 'p', 'x', 'a',],
+                  "station_level_pressure" : ['All', 'd', 'e', 'f', 'h', 'k', 'l', 'n',
+                                              's', 't', 'v', 'b', 'o', 'p', 'x', 'a',],
+                  "wind_speed" : ['All', 'e', 'h', 'k', 'l', 'n', 's', 't', 'v',
+                                  'r', 'o', 'w', 'x', 'a',],
+                  "wind_direction" : ['All', 'e', 'h', 'k', 'l', 'r', 'x', 'a', 'z',]}
 
 UNITS = {"" : "%", "_counts" : "cts"}
 
