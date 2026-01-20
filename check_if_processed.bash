@@ -27,7 +27,7 @@ ROOTDIR=$(grep "root " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
 # extract remaining locations [same construct as in run scripts]
 # MFF=$(grep "mff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
 # MFF_VER=$(grep "mff_version " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
-#MFF_ZIP="$(grep "in_compression " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
+# MFF_ZIP="$(grep "in_compression " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 PROC_DIR=$(grep "proc " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
 QFF_DIR=$(grep "qff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
 QFF_ZIP="$(grep "out_compression " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
@@ -73,7 +73,7 @@ do
         elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}${OUT_SUFFIX}${QFF_ZIP}" ]; then
             # internal checks led to station being withheld
             (( withheld=withheld+1 ))
-        elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}.err" ]; then
+        elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}_int.err" ]; then
             # internal checks led to station being withheld
             (( errors=errors+1 ))
         else
@@ -87,10 +87,10 @@ do
             # external checks completed
             (( processed=processed+1 ))
         elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}${OUT_SUFFIX}${QFF_ZIP}" ]; then
-            # internal checks led to station being withheld
+            # external checks led to station being withheld
             (( withheld=withheld+1 ))
-        elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}.err" ]; then
-            # internal checks led to station being withheld
+        elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}*.err" ]; then
+            # external checks led to station being withheld
             (( errors=errors+1 ))
         else
             # this shouldn't happen!
