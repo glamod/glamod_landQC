@@ -153,7 +153,7 @@ def read(infile: Path) -> pd.DataFrame:
             # Placeholder for better error handling
             raise NotImplementedError
 
-    elif infile.suffix in (".psv", ".csv"):
+    elif infile.suffix in (".psv", ".csv", ".qff"):
         # csv could be a legitmate format specifier, though must use pipe (|) as separator
         if infile.exists():
             df = read_psv(infile, "|")
