@@ -113,18 +113,26 @@ if [ ! -d "${ROOTDIR}${LOG_DIR}" ]; then
     mkdir "${ROOTDIR}${LOG_DIR}"
 fi
 
-
+N_STATIONS=40000
 #**************************************
 # Job settings - currently for psv/qff only
 if [ "${STAGE}" == "I" ]; then
-    STATIONS_PER_BATCH=5000
+    N_PROCESSORS=70
     N_JOBS=10
+    N_BATCHES=$((N_PROCESSORS/N_JOBS))
+    STATIONS_PER_BATCH=$((N_STATIONS/N_BATCHES))
+
+    # Logic from R8 station counts then testing processor limits
     # 35,000 stations, 5000/batch => 7 batches
     #      7 batches with 10 jobs each => 70 processors
     # have 80 CPUs to play with.
 elif [ "${STAGE}" == "N" ]; then
-    STATIONS_PER_BATCH=7000
+    N_PROCESSORS=40
     N_JOBS=8
+    N_BATCHES=$((N_PROCESSORS/N_JOBS))
+    STATIONS_PER_BATCH=$((N_STATIONS/N_BATCHES))
+
+    # Logic from R8 station counts testing buddy limits
     # 35,000 stations, 7000/batch => 5 batches
     #      5 batches with 8 jobs each => 40 processors
     #      But each needs more memory than internal checks

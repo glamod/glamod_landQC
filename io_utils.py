@@ -153,7 +153,7 @@ def read(infile: Path) -> pd.DataFrame:
             # Placeholder for better error handling
             raise NotImplementedError
 
-    elif infile.suffix in (".psv", ".csv", ".qff"):
+    elif infile.suffix in (".psv", ".csv", ".qff", ".mff"):
         # csv could be a legitmate format specifier, though must use pipe (|) as separator
         if infile.exists():
             df = read_psv(infile, "|")
@@ -165,6 +165,9 @@ def read(infile: Path) -> pd.DataFrame:
             df = read_pqt(infile)
         else:
             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), infile)
+
+    else:
+        raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), infile)
 
     # check there was a header row
     if df.columns[0] != "STATION":
