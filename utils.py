@@ -222,8 +222,8 @@ def get_station_list(restart_id: str = "", end_id: str = "") -> pd.DataFrame:
         station_list = pd.read_fwf(setup.STATION_LIST, widths=(11, 9, 10, 7, 3, 40, 5, 3),
                                 header=None, names=("id", "latitude", "longitude", "elevation", "state",
                                                     "name", "wmo", "iso-country"))
-            # add extra columns (despite being empty) so these are available to later stages
-        #  use insert for "state" so that order of columns is the same
+        # add extra columns (despite being empty) so these are available to later stages
+        #     use insert so that order of columns is the same
         station_list.insert(6, "gsn", ["" for i in range(len(station_list))])
         station_list.insert(7, "hcn/crn", ["" for i in range(len(station_list))])
         station_list.insert(9, "icao", ["" for i in range(len(station_list))])
@@ -234,9 +234,9 @@ def get_station_list(restart_id: str = "", end_id: str = "") -> pd.DataFrame:
         station_list = pd.read_csv(setup.STATION_LIST, delim_whitespace=False, delimiter=",",
                                 header=None, names=("id", "latitude", "longitude", "elevation", "state",
                                                     "name", "gsn", "hcn/crn", "wmo", "icao", "iso-country"),
-                                quotechar='"')
+                                quotechar='"', skiprows=[0])
         # add extra columns (despite being empty) so these are available to later stages
-        #  use insert for "state" so that order of columns is the same
+        #     use insert so that order of columns is the same
         #station_list.insert(4, "state", ["" for i in range(len(station_list))])
         #station_list["wmo"] = ["" for i in range(len(station_list))]
 
