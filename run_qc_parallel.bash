@@ -173,10 +173,11 @@ station_list_file="${STATION_LIST}"
 
 wc -l "${station_list_file}"
 
-# if fixed width format station list
 if [ "${station_list_file: -4}" == ".txt" ]; then
+    # if fixed width format station list
     stn_ids=$(awk -F" " '{print $1}' "${station_list_file}")
 elif [ "${station_list_file: -4}" == ".csv" ]; then
+    # if comma separted format station list
     stn_ids=$(awk -F"," '{print $1}' "${station_list_file}")
 else
     echo "Unknown station list file type.  Expecting fixed width (.txt) or comma separated (.csv)"
@@ -250,7 +251,13 @@ parallel_script="$(prepare_parallel_script "${batch}")"
 # Spin through each in turn, creating a job
 # Mix up the stations, so that not all the big/long ones (USA etc)
 #   Are in the same jobs
-shuffled_stns=$(awk -F" " '{print $1}' "${station_list_file}" | shuf)
+if [ "${station_list_file: -4}" == ".txt" ]; then
+    # if fixed width format station list
+    shuffled_stns=$(awk -F" " '{print $1}' "${station_list_file}" | shuf)
+elif [ "${station_list_file: -4}" == ".csv" ]; then
+    # if comma separted format station list
+    shuffled_stns=$(awk -F"," '{print $1}' "${station_list_file}" | shuf)
+fi
 
 scnt=1
 for stn in ${shuffled_stns}
