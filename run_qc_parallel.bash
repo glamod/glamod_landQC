@@ -1,5 +1,6 @@
 #!/bin/bash
 #set -x
+set -euo pipefail
 #******************************************************************
 # Script to process all the stations.  Runs through station list
 #   and submits each as a separate jobs on Bastion
@@ -171,7 +172,15 @@ STATION_LIST="$(grep "station_list " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
 station_list_file="${STATION_LIST}"
 
 wc -l "${station_list_file}"
-stn_ids=$(awk -F" " '{print $1}' "${station_list_file}")
+
+# if fixed width format station list
+if [ "${station_list_file: -4}" == ".txt" ]; then
+    stn_ids=$(awk -F" " '{print $1}' "${station_list_file}")
+elif [ "${station_list_file: -4}" == ".csv" ]; then
+    stn_ids=$(awk -F"," '{print $1}' "${station_list_file}")
+else
+    echo "Unknown station list file type.  Expecting fixed width (.txt) or comma separated (.csv)"
+fi
 
 #**************************************
 echo "Check all upstream stations present"
