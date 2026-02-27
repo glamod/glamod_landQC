@@ -46,18 +46,17 @@ do
     station_file="${MFF_DIR}${MFF_VER}${stn}${IN_SUFFIX}${MFF_ZIP}"
     if [ -f "${MFF_DIR}${MFF_VER}${stn}${IN_SUFFIX}${MFF_ZIP}" ]; then
 
-        start_year=$(head -2 ${station_file} | tail -1 | awk -F'|' '{print $4}' | bc)
-        start_mnth=$(head -2 ${station_file} | tail -1 | awk -F'|' '{print $5}' | bc)
-        start_day=$(head -2 ${station_file} | tail -1 | awk -F'|' '{print $6}' | bc)
+        start_year=$(head -2 ${station_file} | tail -1 | awk -F'|' '{print int($4)}')
+        start_mnth=$(head -2 ${station_file} | tail -1 | awk -F'|' '{print int($5)}')
+        start_day=$(head -2 ${station_file} | tail -1 | awk -F'|' '{print int($6)}')
 
 
-        end_year=$(tail -2 ${station_file} | head -1 | awk -F'|' '{print $4}' | bc)
-        end_mnth=$(tail -2 ${station_file} | head -1 | awk -F'|' '{print $5}' | bc)
-        end_day=$(tail -2 ${station_file} | head -1 | awk -F'|' '{print $6}' | bc)
+        end_year=$(tail -2 ${station_file} | head -1 | awk -F'|' '{print int($4)}')
+        end_mnth=$(tail -2 ${station_file} | head -1 | awk -F'|' '{print int($5)}')
+        end_day=$(tail -2 ${station_file} | head -1 | awk -F'|' '{print int($6)}')
 
         n_records=$(wc -l ${station_file} | awk -F' ' '{print $1}')
         echo ${stn} ${n_records} ${start_year} ${start_mnth} ${start_day} ${end_year} ${end_mnth} ${end_day}
-
         printf "%14s\t%10d\t%8d\t%8d\t%8d\t%8d\t%8d\t%8d \n" ${stn} ${n_records} ${start_year} ${start_mnth} ${start_day} ${end_year} ${end_mnth} ${end_day} >> ${OUTFILE}
 
     fi
