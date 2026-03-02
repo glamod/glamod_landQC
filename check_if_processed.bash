@@ -42,7 +42,15 @@ STATION_LIST=$(grep "station_list " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
 station_list_file="${STATION_LIST}"
 #echo $station_list_file
 wc -l "${station_list_file}"
-stn_ids=$(awk -F" " '{print $1}' "${station_list_file}")
+if [ "${station_list_file: -4}" == ".txt" ]; then
+    # if fixed width format station list
+    stn_ids=$(awk -F" " '{print $1}' "${station_list_file}")
+elif [ "${station_list_file: -4}" == ".csv" ]; then
+    # if comma separted format station list
+    stn_ids=$(awk -F"," '{print $1}' "${station_list_file}")
+else
+    echo "Unknown station list file type.  Expecting fixed width (.txt) or comma separated (.csv)"
+fi
 
 # set up lists
 processed=0
