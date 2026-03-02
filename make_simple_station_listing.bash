@@ -38,7 +38,7 @@ fi
 
 
 OUTFILE="${VERSION::-1}_simple_summary.txt"
-printf "%14s\t%10s\t%8s\t%8s\t%8s\t%8s\t%8s\t%8s \n" "GHCN ID" "N Record" "start Y" "start M" "start D" "end Y" "end M" "end D" > ${OUTFILE}
+printf "%11s\t%10s\t%8s\t%8s\t%8s\t%8s\t%8s\t%8s\n" "GHCN_ID" "N_Record" "start_Y" "start_M" "start_D" "end_Y" "end_M" "end_D" > ${OUTFILE}
 
 for stn in ${stn_ids}
 do
@@ -65,7 +65,7 @@ do
 
         n_records=$(wc -l ${station_file} | awk -F' ' '{print $1}')
         echo ${stn} ${n_records} ${start_year} ${start_mnth} ${start_day} ${end_year} ${end_mnth} ${end_day}
-        printf "%14s\t%10d\t%8d\t%8d\t%8d\t%8d\t%8d\t%8d \n" ${stn} ${n_records} ${start_year} ${start_mnth} ${start_day} ${end_year} ${end_mnth} ${end_day} >> ${OUTFILE}
+        printf "%11s\t%10d\t%8d\t%8d\t%8d\t%8d\t%8d\t%8d \n" ${stn} ${n_records} ${start_year} ${start_mnth} ${start_day} ${end_year} ${end_mnth} ${end_day} >> ${OUTFILE}
 
         if [ "${MFF_ZIP}" != "" ]; then
             # need to re-zip the file
