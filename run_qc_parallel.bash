@@ -15,23 +15,33 @@ set -euo pipefail
 #******************************************************************
 
 #**************************************
+if [ "$#" -lt 3 ]; then
+    echo "Run script as:"
+    echo "    bash run_qc.bash STAGE WAIT CLOBBER [SCREENEXIT]"
+    echo
+    echo "     STAGE = I [internal] or N [neighbour]"
+    echo "      WAIT = T [true] or F [false]"
+    echo "   CLOBBER = C [clobber] or S [skip]"
+    echo "SCREENEXIT = E [Exit] (optional)"
+fi
+
 # manage the input arguments
-STAGE=$1
+STAGE=${1:-}
 if [ "${STAGE}" != "I" ] && [ "${STAGE}" != "N" ]; then
     echo "Please enter valid switch. I (internal) or N (neighbour)"
     exit
 fi
-WAIT=$2
+WAIT=${2:-}
 if [ "${WAIT}" != "T" ] && [ "${WAIT}" != "F" ]; then
     echo "Please enter valid waiting option. T (true - wait for upstream files) or F (false - skip missing files)"
     exit
 fi
-CLOBBER=$3
+CLOBBER=${3:-}
 if [ "${CLOBBER}" != "C" ] && [ "${CLOBBER}" != "S" ]; then
     echo "Please enter valid clobber option. C (clobber - overwrite existing outputs) or S (skip - keep existing outputs)"
     exit
 fi
-SCREENEXIT=$4
+SCREENEXIT=${4:-}
 if [ "${SCREENEXIT}" == "E" ]; then
     echo "Screen instances will exit after runs are complete"
 else

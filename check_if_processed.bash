@@ -1,5 +1,6 @@
 #!/bin/bash
 #set -x
+set -euo pipefail
 #******************************************************************
 # Script to cross check after each run to find all outputs and double
 #    check that everything has run
@@ -9,9 +10,9 @@
 #
 #    STAGE = I [internal] or N [neighbour]
 #******************************************************************
-STAGE=$1
+STAGE=${1:-}
 if [ "${STAGE}" != "I" ] && [ "${STAGE}" != "N" ]; then
-    echo Please enter valid switch. I [internal] or N [neighbour]
+    echo "Please enter valid switch. I [internal] or N [neighbour]"
     exit
 fi
 
