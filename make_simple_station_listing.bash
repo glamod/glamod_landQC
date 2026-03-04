@@ -59,9 +59,10 @@ do
         start_day=$(head -2 ${station_file} | tail -1 | awk -F'|' '{print int($6)}')
 
 
-        end_year=$(tail -2 ${station_file} | head -1 | awk -F'|' '{print int($4)}')
-        end_mnth=$(tail -2 ${station_file} | head -1 | awk -F'|' '{print int($5)}')
-        end_day=$(tail -2 ${station_file} | head -1 | awk -F'|' '{print int($6)}')
+        # tail-grep-tail is to avoid a potential final blank line
+        end_year=$(tail ${station_file} | grep ${stn} | tail -1 | head -1 | awk -F'|' '{print int($4)}')
+        end_mnth=$(tail ${station_file} | grep ${stn} | tail -1 | head -1 | awk -F'|' '{print int($5)}')
+        end_day=$(tail ${station_file} | grep ${stn} | tail -1 | head -1 | awk -F'|' '{print int($6)}')
 
         n_records=$(wc -l ${station_file} | awk -F' ' '{print $1}')
         echo ${stn} ${n_records} ${start_year} ${start_mnth} ${start_day} ${end_year} ${end_mnth} ${end_day}
