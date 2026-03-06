@@ -139,7 +139,7 @@ def process_inventory(candidate_stations: list, data_start: int, data_end: int) 
 
     # read in the inventory
     try:
-        inventory = np.genfromtxt(setup.INVENTORY,
+        inventory = np.genfromtxt(setup.SUBDAILY_METADATA_DIR / setup.INVENTORY,
                                   skip_header=8, dtype=str)
     except OSError:
         pass

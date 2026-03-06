@@ -69,7 +69,7 @@ def main() -> None:
     station_list["begins"] = begins
     station_list["ends"] = ends
 
-    station_list.to_string(setup.STATION_FULL_LIST,
+    station_list.to_string(setup.SUBDAILY_METADATA_DIR / setup.STATION_FULL_LIST,
                            index=False, header=False, index_names=False,
                            formatters={"wmo": "{:5s}".format,
                                        "name": "{:<40s}".format}, na_rep="")
