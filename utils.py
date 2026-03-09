@@ -195,12 +195,14 @@ class Station(object):
 #************************************************************************
 # Subroutines
 #************************************************************************
-def get_station_list(restart_id: str = "", end_id: str = "") -> pd.DataFrame:
+def get_station_list(restart_id: str = "", end_id: str = "",
+                     sort: bool=True) -> pd.DataFrame:
     """
     Read in station list file(s) and return dataframe
 
     :param str restart_id: which station to start on
     :param str end_id: which station to end on
+    :param bool sort: sort alphabetically
 
     :returns: dataframe of station list
     """
@@ -242,6 +244,10 @@ def get_station_list(restart_id: str = "", end_id: str = "") -> pd.DataFrame:
 
     # fill empty entries (default NaN) with blank strings
     station_list = station_list.fillna("")
+
+    if sort:
+        station_list.sort_values(by="id", axis=0, inplace=True)
+        station_list.reset_index(drop=True, inplace=True)
 
     station_IDs = station_list.id
 
