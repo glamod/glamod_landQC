@@ -26,7 +26,7 @@ def get_full_station_list() -> pd.DataFrame:
     """
 
     # process the station list
-    station_list = pd.read_fwf(setup.STATION_FULL_LIST,
+    station_list = pd.read_fwf(setup.SUBDAILY_METADATA_DIR / setup.STATION_FULL_LIST,
                                widths=(11, 9, 10, 7, 3, 40, 7, 9, 9),
                                header=None, names=("id", "latitude", "longitude", "elevation",
                                                    "state", "name", "wmo", "begins", "ends"))

@@ -1,5 +1,6 @@
 #!/bin/bash
 #set -x
+set -euo pipefail
 #******************************************************************
 # Script to process all the stations.  Runs through station list
 #   and submits each as a separate jobs on Bastion
@@ -14,23 +15,33 @@
 #******************************************************************
 
 #**************************************
+if [ "$#" -lt 3 ]; then
+    echo "Run script as:"
+    echo "    bash run_qc.bash STAGE WAIT CLOBBER [SCREENEXIT]"
+    echo
+    echo "     STAGE = I [internal] or N [neighbour]"
+    echo "      WAIT = T [true] or F [false]"
+    echo "   CLOBBER = C [clobber] or S [skip]"
+    echo "SCREENEXIT = E [Exit] (optional)"
+fi
+
 # manage the input arguments
-STAGE=$1
+STAGE=${1:-}
 if [ "${STAGE}" != "I" ] && [ "${STAGE}" != "N" ]; then
     echo "Please enter valid switch. I (internal) or N (neighbour)"
     exit
 fi
-WAIT=$2
+WAIT=${2:-}
 if [ "${WAIT}" != "T" ] && [ "${WAIT}" != "F" ]; then
     echo "Please enter valid waiting option. T (true - wait for upstream files) or F (false - skip missing files)"
     exit
 fi
-CLOBBER=$3
+CLOBBER=${3:-}
 if [ "${CLOBBER}" != "C" ] && [ "${CLOBBER}" != "S" ]; then
     echo "Please enter valid clobber option. C (clobber - overwrite existing outputs) or S (skip - keep existing outputs)"
     exit
 fi
-SCREENEXIT=$4
+SCREENEXIT=${4:-}
 if [ "${SCREENEXIT}" == "E" ]; then
     echo "Screen instances will exit after runs are complete"
 else
@@ -44,10 +55,6 @@ shift
 shift
 
 #**************************************
-# other settings
-STATIONS_PER_BATCH=10000
-N_JOBS=10
-
 SCRIPT_DIR="$(pwd)/parallel_scripts/"
 if [ ! -d "${SCRIPT_DIR}" ]; then
     mkdir "${SCRIPT_DIR}"
@@ -117,6 +124,33 @@ if [ ! -d "${ROOTDIR}${LOG_DIR}" ]; then
     mkdir "${ROOTDIR}${LOG_DIR}"
 fi
 
+N_STATIONS=40000
+#**************************************
+# Job settings - currently for psv/qff only
+if [ "${STAGE}" == "I" ]; then
+    N_PROCESSORS=70
+    N_JOBS=10
+    N_BATCHES=$((N_PROCESSORS/N_JOBS))
+    STATIONS_PER_BATCH=$((N_STATIONS/N_BATCHES))
+
+    # Logic from R8 station counts then testing processor limits
+    # 35,000 stations, 5000/batch => 7 batches
+    #      7 batches with 10 jobs each => 70 processors
+    # have 80 CPUs to play with.
+elif [ "${STAGE}" == "N" ]; then
+    N_PROCESSORS=40
+    N_JOBS=8
+    N_BATCHES=$((N_PROCESSORS/N_JOBS))
+    STATIONS_PER_BATCH=$((N_STATIONS/N_BATCHES))
+
+    # Logic from R8 station counts testing buddy limits
+    # 35,000 stations, 7000/batch => 5 batches
+    #      5 batches with 8 jobs each => 40 processors
+    #      But each needs more memory than internal checks
+    # have 80 to play with, so this gives 2/process
+fi
+
+
 #**************************************
 # if neighbour checks make sure all files in place
 if [ "${STAGE}" == "N" ]; then
@@ -131,6 +165,7 @@ if [ "${STAGE}" == "N" ]; then
     if [ "${run_neighbours}" == "Y" ] || [ "${run_neighbours}" == "y" ]; then
 	echo "Running neighbour finding routine"
 	# module load conda
+    eval "$(conda shell.bash hook)"
 	conda activate glamod_QC
     python "$(pwd)/find_neighbours.py"
 
@@ -148,7 +183,16 @@ STATION_LIST="$(grep "station_list " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
 station_list_file="${STATION_LIST}"
 
 wc -l "${station_list_file}"
-stn_ids=$(awk -F" " '{print $1}' "${station_list_file}")
+
+if [ "${station_list_file: -4}" == ".txt" ]; then
+    # if fixed width format station list
+    stn_ids=$(awk -F" " '{print $1}' "${station_list_file}")
+elif [ "${station_list_file: -4}" == ".csv" ]; then
+    # if comma separted format station list
+    stn_ids=$(awk -F"," '{print $1}' "${station_list_file}")
+else
+    echo "Unknown station list file type.  Expecting fixed width (.txt) or comma separated (.csv)"
+fi
 
 #**************************************
 echo "Check all upstream stations present"
@@ -218,7 +262,13 @@ parallel_script="$(prepare_parallel_script "${batch}")"
 # Spin through each in turn, creating a job
 # Mix up the stations, so that not all the big/long ones (USA etc)
 #   Are in the same jobs
-shuffled_stns=$(awk -F" " '{print $1}' "${station_list_file}" | shuf)
+if [ "${station_list_file: -4}" == ".txt" ]; then
+    # if fixed width format station list
+    shuffled_stns=$(awk -F" " '{print $1}' "${station_list_file}" | shuf)
+elif [ "${station_list_file: -4}" == ".csv" ]; then
+    # if comma separted format station list
+    shuffled_stns=$(awk -F"," '{print $1}' "${station_list_file}" | shuf)
+fi
 
 scnt=1
 for stn in ${shuffled_stns}
@@ -365,6 +415,8 @@ do
 
 done
 # and submit the final batch of stations.
+write_and_submit_bastion_script "${parallel_script}" "${batch}" "${SCREENEXIT}"
+
 
 
 echo "Once jobs are complete run:"

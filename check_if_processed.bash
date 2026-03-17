@@ -1,5 +1,6 @@
 #!/bin/bash
 #set -x
+set -euo pipefail
 #******************************************************************
 # Script to cross check after each run to find all outputs and double
 #    check that everything has run
@@ -9,9 +10,9 @@
 #
 #    STAGE = I [internal] or N [neighbour]
 #******************************************************************
-STAGE=$1
+STAGE=${1:-}
 if [ "${STAGE}" != "I" ] && [ "${STAGE}" != "N" ]; then
-    echo Please enter valid switch. I [internal] or N [neighbour]
+    echo "Please enter valid switch. I [internal] or N [neighbour]"
     exit
 fi
 
@@ -27,7 +28,7 @@ ROOTDIR=$(grep "root " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
 # extract remaining locations [same construct as in run scripts]
 # MFF=$(grep "mff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
 # MFF_VER=$(grep "mff_version " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
-#MFF_ZIP="$(grep "in_compression " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
+# MFF_ZIP="$(grep "in_compression " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
 PROC_DIR=$(grep "proc " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
 QFF_DIR=$(grep "qff " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
 QFF_ZIP="$(grep "out_compression " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')"
@@ -42,7 +43,15 @@ STATION_LIST=$(grep "station_list " "${CONFIG_FILE}" | awk -F'= ' '{print $2}')
 station_list_file="${STATION_LIST}"
 #echo $station_list_file
 wc -l "${station_list_file}"
-stn_ids=$(awk -F" " '{print $1}' "${station_list_file}")
+if [ "${station_list_file: -4}" == ".txt" ]; then
+    # if fixed width format station list
+    stn_ids=$(awk -F" " '{print $1}' "${station_list_file}")
+elif [ "${station_list_file: -4}" == ".csv" ]; then
+    # if comma separted format station list
+    stn_ids=$(awk -F"," '{print $1}' "${station_list_file}")
+else
+    echo "Unknown station list file type.  Expecting fixed width (.txt) or comma separated (.csv)"
+fi
 
 # set up lists
 processed=0
@@ -73,7 +82,7 @@ do
         elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}${OUT_SUFFIX}${QFF_ZIP}" ]; then
             # internal checks led to station being withheld
             (( withheld=withheld+1 ))
-        elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}.err" ]; then
+        elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}_int.err" ]; then
             # internal checks led to station being withheld
             (( errors=errors+1 ))
         else
@@ -87,10 +96,10 @@ do
             # external checks completed
             (( processed=processed+1 ))
         elif [ -f "${ROOTDIR}${QFF_DIR}${VERSION}bad_stations/${stn}${OUT_SUFFIX}${QFF_ZIP}" ]; then
-            # internal checks led to station being withheld
+            # external checks led to station being withheld
             (( withheld=withheld+1 ))
-        elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}.err" ]; then
-            # internal checks led to station being withheld
+        elif [ -f "${ROOTDIR}${ERR_DIR}${VERSION}${stn}*.err" ]; then
+            # external checks led to station being withheld
             (( errors=errors+1 ))
         else
             # this shouldn't happen!
@@ -115,11 +124,13 @@ echo "Total errors ${errors} ${error_dir}"
 (( out_stations=processed+withheld+errors ))
 echo "Total output stations ${out_stations}"
 echo ""
+echo "Unprocessed stations ${unprocessed}"
+echo ""
 missing_file="${ROOTDIR}${CONFIG_DIR}${VERSION}missing_${STAGE}.txt"
 missing=$(wc "${missing_file}" | awk -F' ' '{print $1}')
 echo "Upstream missing stations ${missing}"
 (( unprocessed=unprocessed-missing ))
-echo "Unprocessed stations (job failures?) ${unprocessed}"
+echo "Unprocessed stations excluding missing (job failures?) ${unprocessed}"
 
 (( out_stations=processed+withheld+errors+unprocessed ))
 echo "Total stations (excl upstream missing) ${out_stations}"

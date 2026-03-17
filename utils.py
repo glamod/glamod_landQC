@@ -104,7 +104,7 @@ LOGICFILE = Path(__file__).parent / "configs" / config.get("FILES", "logic")
 MAX_NEIGHBOUR_DISTANCE = config.getint("NEIGHBOURS", "max_distance")
 MAX_NEIGHBOUR_VERTICAL_SEP = config.getint("NEIGHBOURS", "max_vertical_separation")
 MAX_N_NEIGHBOURS = config.getint("NEIGHBOURS", "max_number")
-NEIGHBOUR_FILE = config.get("NEIGHBOURS", "filename")
+NEIGHBOUR_FILE = setup.SUBDAILY_CONFIG_DIR / config.get("NEIGHBOURS", "filename")
 MIN_NEIGHBOURS = config.getint("NEIGHBOURS", "minimum_number")
 
 #*********************************************
@@ -195,12 +195,14 @@ class Station(object):
 #************************************************************************
 # Subroutines
 #************************************************************************
-def get_station_list(restart_id: str = "", end_id: str = "") -> pd.DataFrame:
+def get_station_list(restart_id: str = "", end_id: str = "",
+                     sort: bool=True) -> pd.DataFrame:
     """
     Read in station list file(s) and return dataframe
 
     :param str restart_id: which station to start on
     :param str end_id: which station to end on
+    :param bool sort: sort alphabetically
 
     :returns: dataframe of station list
     """
@@ -219,20 +221,33 @@ def get_station_list(restart_id: str = "", end_id: str = "") -> pd.DataFrame:
     if fwf:
         # Fixed width format
         # If station-ID has format "ID-START-END" then width is 29
-        station_list = pd.read_fwf(setup.STATION_LIST, widths=(11, 9, 10, 7, 3, 40, 5),
+        station_list = pd.read_fwf(setup.STATION_LIST, widths=(11, 9, 10, 7, 3, 40, 5, 3),
                                 header=None, names=("id", "latitude", "longitude", "elevation", "state",
-                                                    "name", "wmo"))
+                                                    "name", "wmo", "iso-country"))
+        # add extra columns (despite being empty) so these are available to later stages
+        #     use insert so that order of columns is the same
+        station_list.insert(6, "gsn", ["" for i in range(len(station_list))])
+        station_list.insert(7, "hcn/crn", ["" for i in range(len(station_list))])
+        station_list.insert(9, "icao", ["" for i in range(len(station_list))])
+
+
     else:
         # Comma separated
-        station_list = pd.read_csv(setup.STATION_LIST, delim_whitespace=True,
-                                header=None, names=("id", "latitude", "longitude", "elevation", "name"))
+        station_list = pd.read_csv(setup.STATION_LIST, delim_whitespace=False, delimiter=",",
+                                header=None, names=("id", "latitude", "longitude", "elevation", "state",
+                                                    "name", "gsn", "hcn/crn", "wmo", "icao", "iso-country"),
+                                quotechar='"', skiprows=[0])
         # add extra columns (despite being empty) so these are available to later stages
-        #  use insert for "state" so that order of columns is the same
-        station_list.insert(4, "state", ["" for i in range(len(station_list))])
-        station_list["wmo"] = ["" for i in range(len(station_list))]
+        #     use insert so that order of columns is the same
+        #station_list.insert(4, "state", ["" for i in range(len(station_list))])
+        #station_list["wmo"] = ["" for i in range(len(station_list))]
 
     # fill empty entries (default NaN) with blank strings
     station_list = station_list.fillna("")
+
+    if sort:
+        station_list.sort_values(by="id", axis=0, inplace=True)
+        station_list.reset_index(drop=True, inplace=True)
 
     station_IDs = station_list.id
 

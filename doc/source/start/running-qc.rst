@@ -92,6 +92,10 @@ some summary information of the processing run, with station counts
 and locations.  This can be called separately as
 ``check_if_processed.bash`` using the ``I`` / ``N`` switches.
 
+It is useful to do this checking to ensure that no processes have failed because of memory
+issues or other problems.  If they have then you can re-run the script to call the
+QC steps on the stations, but remember to set to **Skip** rather than **Clobber**.
+
 The python scripts called by bash scripts have their
 own options which can be set.  For the moment, the one which allows stored
 values and thresholds from a previous run to be used (rather than calculated afresh) is

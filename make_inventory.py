@@ -34,7 +34,7 @@ def main(restart_id: str = "", end_id: str = "", clobber: bool = False) -> None:
 
 
     # write the headers
-    with open(setup.INVENTORY, "w") as outfile:
+    with open(setup.SUBDAILY_METADATA_DIR / setup.INVENTORY, "w") as outfile:
 
         outfile.write("              *** GLOBAL HISTORICAL CLIMATE NETWORK HOURLY DATA INVENTORY ***\n")
         outfile.write("\n")
@@ -45,7 +45,6 @@ def main(restart_id: str = "", end_id: str = "", clobber: bool = False) -> None:
         month_string = " ".join([f"{c:<6s}" for c in month_names])
         outfile.write(f"{'STATION':11s} {'YEAR':4s} {month_string:84s}\n")
         outfile.write("\n")
-
 
 
         # read in the station list

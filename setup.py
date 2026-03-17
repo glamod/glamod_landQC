@@ -65,7 +65,7 @@ if not SUBDAILY_FLAG_DIR.exists():
 
 SUBDAILY_LOG_DIR = ROOT_DIR / config.get("PATHS", "logs") / DATESTAMP
 if not SUBDAILY_LOG_DIR.exists():
-    SUBDAILY_LOG_DIR.exists()
+    SUBDAILY_LOG_DIR.mkdir()
 
 SUBDAILY_ERROR_DIR = ROOT_DIR / config.get("PATHS", "errors") / DATESTAMP
 if not SUBDAILY_ERROR_DIR.exists():

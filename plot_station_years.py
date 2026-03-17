@@ -34,8 +34,7 @@ def read_stations() -> np.ndarray:
 
     try:
         # process the station list
-        station_list = pd.read_fwf(setup.STATION_LIST, widths=(11, 9, 10, 7, 3, 40, 5),
-                               header=None, names=("id", "latitude", "longitude", "elevation", "state", "name", "wmo"))
+        station_list = utils.get_station_list(sort=True)
 
         station_IDs = station_list.id
         for st, station_id in enumerate(station_IDs):

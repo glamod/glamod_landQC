@@ -38,8 +38,7 @@ def read_stations() -> None:
 
     try:
         # process the station list
-        station_list = pd.read_fwf(setup.STATION_LIST, widths=(11, 9, 10, 7, 3, 40, 5),
-                               header=None, names=("id", "latitude", "longitude", "elevation", "state", "name", "wmo"))
+        station_list = utils.get_station_list()
 
         station_IDs = station_list.id
         for st, station_id in enumerate(station_IDs):
@@ -139,7 +138,7 @@ def process_inventory(candidate_stations: list, data_start: int, data_end: int) 
 
     # read in the inventory
     try:
-        inventory = np.genfromtxt(setup.INVENTORY,
+        inventory = np.genfromtxt(setup.SUBDAILY_METADATA_DIR / setup.INVENTORY,
                                   skip_header=8, dtype=str)
     except OSError:
         pass

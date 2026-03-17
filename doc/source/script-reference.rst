@@ -28,7 +28,7 @@ The top-level QC-check functions are documented below:
    :members: rsc
 
 .. automodule:: qc_tests.climatological
-   :members: coc
+   :members: clim_outlier
 
 .. automodule:: qc_tests.timestamp
    :members: tsc
