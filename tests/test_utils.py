@@ -95,9 +95,9 @@ def test_get_station_list_fwf() -> None:
     np.testing.assert_array_equal(df.columns,
                                   expected_columns)
     assert df.shape == (5, 11)
-    assert df["id"].iloc[0] == "USW00094846"
-    assert df["name"].iloc[-1] == "GARRUCHA, PUERTO"
-    assert df["wmo"].iloc[0] == 72530
+    assert df["id"].iloc[0] == "SPU0006340X"
+    assert df["name"].iloc[0] == "GARRUCHA, PUERTO"
+    assert df["wmo"].iloc[-1] == 72743
 
 
 example_stn_list = Path(__file__).parent / "example_data/station_list_fwf.txt"
@@ -112,7 +112,7 @@ def test_get_station_list_fwf_endid() -> None:
                                  'hcn/crn', 'wmo', 'icao', 'iso-country'])
     np.testing.assert_array_equal(df.columns,
                                   expected_columns)
-    assert df.shape == (3, 11)
+    assert df.shape == (4, 11)
     assert df["id"].iloc[-1] == "USW00094849"
     assert df["name"].iloc[-1] == "ALPENA CO RGNL AP"
     assert df["wmo"].iloc[-1] == 72639
@@ -131,9 +131,10 @@ def test_get_station_list_csv() -> None:
     np.testing.assert_array_equal(df.columns,
                                   expected_columns)
     assert df.shape == (5, 11)
-    assert df["id"].iloc[0] == "USW00094846"
-    assert df["name"].iloc[-1] == "GARRUCHA, PUERTO"
-    assert df["wmo"].iloc[-1] == ""
+    # sorting moves SPU station to the front
+    assert df["id"].iloc[0] == "SPU0006340X"
+    assert df["name"].iloc[-1] == "MARQUETTE"
+    assert df["wmo"].iloc[-1] == 72743
 
 
 example_stn_list = Path(__file__).parent / "example_data/station_list_csv.txt"
@@ -141,7 +142,8 @@ example_stn_list = Path(__file__).parent / "example_data/station_list_csv.txt"
 def test_get_station_list_csv_restart_id() -> None:
     """Test reading of "csv" format station list"""
 
-    df = utils.get_station_list(restart_id="USW00094847")
+    df = utils.get_station_list(restart_id="USW00094847",
+                                sort=False)
 
     expected_columns = np.array(['id', 'latitude', 'longitude',
                                  'elevation', 'state', 'name', 'gsn',
@@ -149,8 +151,10 @@ def test_get_station_list_csv_restart_id() -> None:
     np.testing.assert_array_equal(df.columns,
                                   expected_columns)
     assert df.shape == (4, 11)
+    # no sorting, so last station is SPU
     assert df["id"].iloc[0] == "USW00094847"
     assert df["name"].iloc[0] == "DETROIT METRO AP"
+    assert df["id"].iloc[-1] == "SPU0006340X"
     assert df["wmo"].iloc[-1] == ""
 
 
