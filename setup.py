@@ -34,6 +34,7 @@ SUBDAILY_MFF_DIR = SUBDAILY_MINGLE_DIR / config.get("PATHS", "mff_version")
 # base dir to run on - GWS or scratch
 ROOT_DIR = Path(config.get("PATHS", "root"))
 DATESTAMP = config.get("PATHS", "version")
+PREV_VERSION = config.get("PATHS", "previous_version")
 
 
 # set up suitable paths
