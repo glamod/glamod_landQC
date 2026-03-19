@@ -23,13 +23,14 @@ TODAY = dt.datetime.strftime(dt.datetime.now(), "%Y%m%d")
 
 
 #*********************************************
-def read_stations() -> None:
+def read_stations(previous: bool=False) -> None:
     """
     Process the GHCNH history file
 
     Select stations which have defined lat, lon and elevation;
-    at least N years of data (using start/end dates).  Also do additional
-    processing for Canadian (71*) and German (09* and 10*) stations.
+    at least N years of data (using start/end dates).
+
+    :param bool previous: read previous version station list
 
     :returns: list of station objects
     """
@@ -38,7 +39,7 @@ def read_stations() -> None:
 
     try:
         # process the station list
-        station_list = utils.get_station_list()
+        station_list = utils.get_station_list(previous=previous)
 
         station_IDs = station_list.id
         for st, station_id in enumerate(station_IDs):
@@ -124,7 +125,10 @@ def extract_inventory(station: utils.Station, inventory: np.ndarray, data_start:
 
 
 #*********************************************
-def process_inventory(candidate_stations: list, data_start: int, data_end: int) -> None:
+def process_inventory(candidate_stations: list,
+                      data_start: int, data_end: int,
+                      changed: bool=False,
+                      removed: bool=False) -> None:
 
     """
     Process the ISD inventory file
@@ -132,13 +136,22 @@ def process_inventory(candidate_stations: list, data_start: int, data_end: int) 
     :param list candidate_stations: list of station objects to match up
     :param int data_start: first year of data
     :param int data_end: last year of data
+    :param bool change: plot changes between versions
+    :param bool removed: plot removals from previous version
     """
 
     print("reading GHCNH inventory")
 
     # read in the inventory
     try:
-        inventory = np.genfromtxt(setup.SUBDAILY_METADATA_DIR / setup.INVENTORY,
+        if changed:
+            inventory = np.genfromtxt(setup.SUBDAILY_METADATA_DIR / setup.CHANGED,
+                                 skip_header=8, dtype=str)
+        elif removed:
+            inventory = np.genfromtxt(setup.SUBDAILY_METADATA_DIR / setup.REMOVED,
+                                 skip_header=8, dtype=str)
+        else:
+            inventory = np.genfromtxt(setup.SUBDAILY_METADATA_DIR / setup.INVENTORY,
                                   skip_header=8, dtype=str)
     except OSError:
         pass
@@ -156,7 +169,9 @@ def process_inventory(candidate_stations: list, data_start: int, data_end: int) 
             print(last_station)
 
         # extract the observations in each month for this station
-        monthly_obs = extract_inventory(station, inventory, data_start, data_end, do_mergers=True)
+        monthly_obs = extract_inventory(station, inventory,
+                                        data_start, data_end,
+                                        do_mergers=True)
 
         if len(monthly_obs) != 0:
             all_counts[s, :] = monthly_obs.reshape(-1)
@@ -164,7 +179,7 @@ def process_inventory(candidate_stations: list, data_start: int, data_end: int) 
 #        if s > 1000: break
 
     # hide the zero-count months
-    all_counts = np.ma.masked_where(all_counts <= 0, all_counts)
+    all_counts = np.ma.masked_where(all_counts == 0, all_counts)
 
     name_labels = np.array(name_labels)
 
@@ -176,12 +191,22 @@ def process_inventory(candidate_stations: list, data_start: int, data_end: int) 
     plt.figure(figsize=(8, 25))
     plt.clf()
     ax1 = plt.axes([0.1, 0.02, 0.84, 0.95])
-    plt.pcolormesh(years, station_counter, all_counts, cmap=plt.cm.viridis,
-                   norm=mpl.colors.Normalize(vmin=0, vmax=1000))
-    plt.colorbar(orientation="horizontal", label="Monthly obs counts",
-                 extend="max", ticks=np.arange(0, 1100, 100),
-                 pad=0.02, aspect=30, fraction=0.02)
-
+    if changed or removed:
+        bounds = np.arange(-500, 600, 100)
+        norm = mpl.cm.colors.BoundaryNorm(bounds, plt.cm.PiYG.N)
+        plt.pcolormesh(years, station_counter, all_counts, cmap=plt.cm.PiYG,
+                    norm=norm)
+        plt.colorbar(orientation="horizontal", label="Monthly obs counts",
+                    extend="both", ticks=bounds,
+                    pad=0.02, aspect=30, fraction=0.02)
+    else:
+        bounds = np.arange(0, 1000, 100)
+        norm = mpl.cm.colors.BoundaryNorm(bounds, plt.cm.viridis.N)
+        plt.pcolormesh(years, station_counter, all_counts, cmap=plt.cm.viridis,
+                    norm=norm)
+        plt.colorbar(orientation="horizontal", label="Monthly obs counts",
+                    extend="max", ticks=bounds,
+                    pad=0.02, aspect=30, fraction=0.02)
     plt.ylabel("Station sequence number")
 
     ax2 = ax1.twinx()
@@ -189,17 +214,41 @@ def process_inventory(candidate_stations: list, data_start: int, data_end: int) 
     ax2.set_yticks(name_labels[:, 1].astype(int), name_labels[:, 0])
     ax2.set_ylabel("Station start letter")
 
-    plt.savefig(setup.SUBDAILY_IMAGE_DIR / f"station_plot_{setup.DATESTAMP[:-1]}.png", dpi=300)
+    if changed:
+        plt.savefig(setup.SUBDAILY_IMAGE_DIR /f"change_plot_{setup.PREV_VERSION[:-1]}_{setup.DATESTAMP[:-1]}.png", dpi=300)
+    elif removed:
+        plt.savefig(setup.SUBDAILY_IMAGE_DIR / f"removed_plot_{setup.PREV_VERSION[:-1]}_{setup.DATESTAMP[:-1]}.png", dpi=300)
+    else:
+        plt.savefig(setup.SUBDAILY_IMAGE_DIR / f"station_plot_{setup.DATESTAMP[:-1]}.png", dpi=300)
 
     # process_inventory
 
 
 if __name__ == "__main__":
 
+    import argparse
+
+    # set up keyword arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--changed', dest='changed', action='store_true', default=False,
+                        help='Plot changes in current version')
+    parser.add_argument('--removed', dest='removed', action='store_true', default=False,
+                        help='Plot removals from previous version')
+
+    args = parser.parse_args()
+
     # parse text file into candidate list, with lat, lon, elev and time span limits applied
-    all_stations = read_stations()
+    if args.removed:
+        # want to show which stations were removed from the previous version
+        all_stations = read_stations(previous=True)
+    else:
+        # read in current version
+        all_stations = read_stations()
 
     data_start = 1800
     data_end = dt.datetime.now().year
 
-    process_inventory(all_stations, data_start, data_end)
+    process_inventory(all_stations, data_start, data_end,
+                      changed=args.changed, removed=args.removed)
+
+

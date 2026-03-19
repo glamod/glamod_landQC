@@ -34,6 +34,7 @@ SUBDAILY_MFF_DIR = SUBDAILY_MINGLE_DIR / config.get("PATHS", "mff_version")
 # base dir to run on - GWS or scratch
 ROOT_DIR = Path(config.get("PATHS", "root"))
 DATESTAMP = config.get("PATHS", "version")
+PREV_VERSION = config.get("PATHS", "previous_version")
 
 
 # set up suitable paths
@@ -77,8 +78,11 @@ if not SUBDAILY_METADATA_DIR.exists():
 
 # name of station list
 STATION_LIST = Path(config.get("FILES", "station_list"))
+PREVIOUS_STATION_LIST = Path(config.get("FILES", "previous_station_list"))
 STATION_FULL_LIST = Path(config.get("FILES", "station_full_list"))
 INVENTORY = Path(config.get("FILES", "inventory"))
+CHANGED = Path(config.get("FILES", "changed"))
+REMOVED = Path(config.get("FILES", "removed"))
 
 # Check and set compression options
 IN_COMPRESSION = config.get("FILES", "in_compression")
