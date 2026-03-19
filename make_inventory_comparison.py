@@ -75,7 +75,7 @@ def process_inventories() -> None:
     update_addition[["ANN","JAN", "FEB", "MAR", "APR", "MAY", "JUN",
              "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]] = update_addition[["ANN","JAN", "FEB", "MAR", "APR", "MAY", "JUN",
              "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]].astype(int)
-    outname = setup.SUBDAILY_METADATA_DIR / setup.CHANGED.stem + "_compressed" + setup.CHANGED.suffix
+    outname = setup.SUBDAILY_METADATA_DIR / f"{setup.CHANGED.stem}_compressed{setup.CHANGED.suffix}"
     with open(outname, "w") as outfile:
         outfile.write("              *** GLOBAL HISTORICAL CLIMATE NETWORK HOURLY DATA INVENTORY ***\n")
         outfile.write("\n")

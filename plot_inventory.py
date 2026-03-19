@@ -145,7 +145,7 @@ def process_inventory(candidate_stations: list,
     # read in the inventory
     try:
         if changed:
-            inventory = np.genfromtxt(setup.SUBDAILY_METADATA_DIR / setup.CHANGE,
+            inventory = np.genfromtxt(setup.SUBDAILY_METADATA_DIR / setup.CHANGED,
                                  skip_header=8, dtype=str)
         elif removed:
             inventory = np.genfromtxt(setup.SUBDAILY_METADATA_DIR / setup.REMOVED,
@@ -214,7 +214,7 @@ def process_inventory(candidate_stations: list,
     ax2.set_yticks(name_labels[:, 1].astype(int), name_labels[:, 0])
     ax2.set_ylabel("Station start letter")
 
-    if change:
+    if changed:
         plt.savefig(setup.SUBDAILY_IMAGE_DIR /f"change_plot_{setup.PREV_VERSION[:-1]}_{setup.DATESTAMP[:-1]}.png", dpi=300)
     elif removed:
         plt.savefig(setup.SUBDAILY_IMAGE_DIR / f"removed_plot_{setup.PREV_VERSION[:-1]}_{setup.DATESTAMP[:-1]}.png", dpi=300)
