@@ -5,6 +5,8 @@ import numpy as np
 
 import setup
 
+import setup
+
 month_names = [c.upper() for c in calendar.month_abbr[:]]
 month_names[0] = "ANN"
 
@@ -22,9 +24,8 @@ def process_inventories() -> None:
         pass
 
     try:
-        previous_inventory = pd.read_csv(
-            setup.SUBDAILY_METADATA_DIR.parent / setup.PREV_VERSION  / setup.INVENTORY,
-                                            delim_whitespace=True, skiprows=6, header=0
+        previous_inventory = pd.read_csv(setup.SUBDAILY_METADATA_DIR.parent / setup.PREV_VERSION / setup.INVENTORY,
+                                delim_whitespace=True, skiprows=6, header=0
             )
     except OSError:
         pass
