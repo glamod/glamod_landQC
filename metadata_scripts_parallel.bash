@@ -25,13 +25,13 @@ if [ -e "${parallel_script}" ]; then
     rm "${parallel_script}"
 fi
 
-echo "python make_inventory.py" >> ${parallel_script}
-echo "python plot_inventory.py" >> ${parallel_script}
-echo "python make_station_listing.py" >> ${parallel_script}
-echo "python plot_station_years.py" >> ${parallel_script}
-echo "python plot_station_record_map.py" >> ${parallel_script}
-echo "python make_inventory_comparison.py" >> ${parallel_script}
-echo "python plot_inventory.py --removed" >> ${parallel_script}
-echo "python plot_inventory.py --changed" >> ${parallel_script}
+echo "python make_inventory.py" >> "${parallel_script}"
+echo "python plot_inventory.py" >> "${parallel_script}"
+echo "python make_station_listing.py" >> "${parallel_script}"
+echo "python plot_station_years.py" >> "${parallel_script}"
+echo "python plot_station_record_map.py" >> "${parallel_script}"
+echo "python make_inventory_comparison.py" >> "${parallel_script}"
+echo "python plot_inventory.py --removed" >> "${parallel_script}"
+echo "python plot_inventory.py --changed" >> "${parallel_script}"
 
 write_and_submit_bastion_script "${parallel_script}"
