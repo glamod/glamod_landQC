@@ -5,8 +5,6 @@ import numpy as np
 
 import setup
 
-import setup
-
 month_names = [c.upper() for c in calendar.month_abbr[:]]
 month_names[0] = "ANN"
 

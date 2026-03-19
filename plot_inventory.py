@@ -127,7 +127,7 @@ def extract_inventory(station: utils.Station, inventory: np.ndarray, data_start:
 #*********************************************
 def process_inventory(candidate_stations: list,
                       data_start: int, data_end: int,
-                      change: bool=False,
+                      changed: bool=False,
                       removed: bool=False) -> None:
 
     """
@@ -144,7 +144,7 @@ def process_inventory(candidate_stations: list,
 
     # read in the inventory
     try:
-        if change:
+        if changed:
             inventory = np.genfromtxt(setup.SUBDAILY_METADATA_DIR / setup.CHANGE,
                                  skip_header=8, dtype=str)
         elif removed:
@@ -191,7 +191,7 @@ def process_inventory(candidate_stations: list,
     plt.figure(figsize=(8, 25))
     plt.clf()
     ax1 = plt.axes([0.1, 0.02, 0.84, 0.95])
-    if change or removed:
+    if changed or removed:
         bounds = np.arange(-500, 600, 100)
         norm = mpl.cm.colors.BoundaryNorm(bounds, plt.cm.PiYG.N)
         plt.pcolormesh(years, station_counter, all_counts, cmap=plt.cm.PiYG,
@@ -230,7 +230,7 @@ if __name__ == "__main__":
 
     # set up keyword arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('--change', dest='change', action='store_true', default=False,
+    parser.add_argument('--changed', dest='changed', action='store_true', default=False,
                         help='Plot changes in current version')
     parser.add_argument('--removed', dest='removed', action='store_true', default=False,
                         help='Plot removals from previous version')
@@ -249,6 +249,6 @@ if __name__ == "__main__":
     data_end = dt.datetime.now().year
 
     process_inventory(all_stations, data_start, data_end,
-                      change=args.change, removed=args.removed)
+                      changed=args.changed, removed=args.removed)
 
 
