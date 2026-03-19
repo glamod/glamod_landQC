@@ -196,7 +196,7 @@ class Station(object):
 # Subroutines
 #************************************************************************
 def get_station_list(restart_id: str = "", end_id: str = "",
-                     sort: bool=True) -> pd.DataFrame:
+                     sort: bool=True, previous: bool=False) -> pd.DataFrame:
     """
     Read in station list file(s) and return dataframe
 
@@ -206,10 +206,16 @@ def get_station_list(restart_id: str = "", end_id: str = "",
 
     :returns: dataframe of station list
     """
+    if previous:
+        station_list_file = setup.PREVIOUS_STATION_LIST
+    else:
+        station_list_file = setup.STATION_LIST
+
+
     # Test if station list fixed-width format or comma separated
     #  [Initially supplied nonFWF format for Release 8 processing]
     fwf = True
-    with open(setup.STATION_LIST, "r") as infile:
+    with open(station_list_file, "r") as infile:
         lines = infile.readlines()
         for row in lines:
             # The non FWF version had double quotes present around the station names
@@ -221,9 +227,9 @@ def get_station_list(restart_id: str = "", end_id: str = "",
     if fwf:
         # Fixed width format
         # If station-ID has format "ID-START-END" then width is 29
-        station_list = pd.read_fwf(setup.STATION_LIST, widths=(11, 9, 10, 7, 3, 40, 5, 3),
-                                header=None, names=("id", "latitude", "longitude", "elevation", "state",
-                                                    "name", "wmo", "iso-country"))
+        station_list = pd.read_fwf(station_list_file, widths=(11, 9, 10, 7, 3, 40, 5, 3),
+                                   header=None, names=("id", "latitude", "longitude", "elevation", "state",
+                                                       "name", "wmo", "iso-country"))
         # add extra columns (despite being empty) so these are available to later stages
         #     use insert so that order of columns is the same
         station_list.insert(6, "gsn", ["" for i in range(len(station_list))])
@@ -233,10 +239,10 @@ def get_station_list(restart_id: str = "", end_id: str = "",
 
     else:
         # Comma separated
-        station_list = pd.read_csv(setup.STATION_LIST, delim_whitespace=False, delimiter=",",
-                                header=None, names=("id", "latitude", "longitude", "elevation", "state",
-                                                    "name", "gsn", "hcn/crn", "wmo", "icao", "iso-country"),
-                                quotechar='"', skiprows=[0])
+        station_list = pd.read_csv(station_list_file, delim_whitespace=False, delimiter=",",
+                                   header=None, names=("id", "latitude", "longitude", "elevation", "state",
+                                                       "name", "gsn", "hcn/crn", "wmo", "icao", "iso-country"),
+                                   quotechar='"', skiprows=[0])
         # add extra columns (despite being empty) so these are available to later stages
         #     use insert so that order of columns is the same
         #station_list.insert(4, "state", ["" for i in range(len(station_list))])

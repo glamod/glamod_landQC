@@ -77,8 +77,11 @@ if not SUBDAILY_METADATA_DIR.exists():
 
 # name of station list
 STATION_LIST = Path(config.get("FILES", "station_list"))
+PREVIOUS_STATION_LIST = Path(config.get("FILES", "previous_station_list"))
 STATION_FULL_LIST = Path(config.get("FILES", "station_full_list"))
 INVENTORY = Path(config.get("FILES", "inventory"))
+CHANGED = Path(config.get("FILES", "changed"))
+REMOVED = Path(config.get("FILES", "removed"))
 
 # Check and set compression options
 IN_COMPRESSION = config.get("FILES", "in_compression")
