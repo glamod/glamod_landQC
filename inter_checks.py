@@ -160,16 +160,24 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
         if test in ["all", "outlier"]:
             if diagnostics: print("N", dt.datetime.now()-startT)
             qc_tests.neighbour_outlier.noc(target_station, initial_neighbours, \
-                                               ["temperature", "dew_point_temperature", "wind_speed", "station_level_pressure", "sea_level_pressure"], full=full, plots=plots, diagnostics=diagnostics)
+                                               ["temperature", "dew_point_temperature", "wet_bulb_temperature", "wind_speed",
+                                                "station_level_pressure", "sea_level_pressure"],
+                                               full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "clean_up"]:
             if diagnostics: print("U", dt.datetime.now()-startT)
-            qc_tests.clean_up.mcu(target_station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed", "wind_direction"], full=full, plots=plots, diagnostics=diagnostics)
+            qc_tests.clean_up.mcu(target_station, ["temperature", "dew_point_temperature", "wet_bulb_temperature",
+                                                   "station_level_pressure", "sea_level_pressure",
+                                                   "wind_speed", "wind_direction"],
+                                  full=full, plots=plots, diagnostics=diagnostics)
 
 
         if test in ["all", "high_flag"]:
             if diagnostics: print("H", dt.datetime.now()-startT)
-            hfr_vars_set = qc_tests.high_flag.hfr(target_station, ["temperature", "dew_point_temperature", "station_level_pressure", "sea_level_pressure", "wind_speed", "wind_direction"], full=full, plots=plots, diagnostics=diagnostics)
+            hfr_vars_set = qc_tests.high_flag.hfr(target_station, ["temperature", "dew_point_temperature", "wet_bulb_temperature",
+                                                                   "station_level_pressure", "sea_level_pressure",
+                                                                   "wind_speed", "wind_direction"],
+                                                  full=full, plots=plots, diagnostics=diagnostics)
 
         # write in the flag information
         for var in setup.obs_var_list:

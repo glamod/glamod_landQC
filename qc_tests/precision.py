@@ -106,12 +106,14 @@ def precision_cross_check(station: utils.Station, primary: utils.MeteorologicalV
 
 
 #************************************************************************
-def pcc(station: utils.Station, config_dict: dict, full: bool = False,
+def pcc(station: utils.Station, pairs: list[tuple],
+        config_dict: dict, full: bool = False,
         plots: bool = False, diagnostics: bool = False) -> None:
     """
     Extract the variables and pass to the Precision Cross Check
 
     :param Station station: Station Object for the station
+    :param list[tuple] pairs: pairs of (primary, secondary) variables
     :param str config_dict: dictionary for configuration settings (unused here)
     :param bool full: run a full update (unused here)
     :param bool plots: turn on plots
@@ -119,12 +121,12 @@ def pcc(station: utils.Station, config_dict: dict, full: bool = False,
     """
 
     # Temperature/Dewpoint check
-    temperatures = getattr(station, "temperature")
-    dewpoints = getattr(station, "dew_point_temperature")
 
-    precision_cross_check(station, temperatures, dewpoints, plots=plots, diagnostics=diagnostics)
-
-    # other pairs will appear here
+    for (primary_var, secondary_var) in pairs:
+        primary = getattr(station, primary_var)
+        secondary = getattr(station, secondary_var)
+        precision_cross_check(station, primary, secondary,
+                              plots=plots, diagnostics=diagnostics)
 
     # pcc
 

@@ -298,7 +298,7 @@ def plot_log_distribution(edges: np.ndarray, hist: np.ndarray,
     plt.yscale("log")
 
     # sort axes formats
-    ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda y, _: '{:g}'.format(y)))
+    ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda y, _: f'{y:g}'))
     if max(edges) > 2:
         ax.xaxis.set_major_locator(mticker.MultipleLocator(2))
     else:
