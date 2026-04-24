@@ -20,7 +20,7 @@ TOLERANCE = 1.e-10
 
 #************************************************************************
 def get_repeating_dpd_threshold(temperatures: utils.MeteorologicalVariable,
-                                dewpoints: utils.MeteorologicalVariable,
+                                wet_temperatures: utils.MeteorologicalVariable,
                                 config_dict: dict,
                                 plots: bool = False,
                                 diagnostics: bool = False) -> None:
@@ -28,21 +28,23 @@ def get_repeating_dpd_threshold(temperatures: utils.MeteorologicalVariable,
     Use distribution to determine threshold values.  Then also store in config dictionary.
 
     :param MetVar temperatures: temperatures object
-    :param MetVar dewpoints: dewpoints object
+    :param MetVar wet_temperatures: dewpoint or wet-bulb object
     :param str config_dict: configuration dictionary to store critical values
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
 
     # identical equality
-    dpd = temperatures.data - dewpoints.data
+    dpd = temperatures.data - wet_temperatures.data
 
     # find only the DPD=0 locations, and then see if there are streaks
     locs, = np.ma.nonzero(dpd == 0)
 
     # only process further if there are enough locations
     if len(locs) > 1:
-        repeated_streak_lengths, _, _ = qc_utils.prepare_data_repeating_streak(locs, diff=1, plots=plots, diagnostics=diagnostics)
+        (repeated_streak_lengths, _,
+         _) = qc_utils.prepare_data_repeating_streak(locs, diff=1,
+                                                     plots=plots, diagnostics=diagnostics)
 
         # bin width is 1 as dealing with the index.
         # minimum bin value is 2 as this is the shortest streak possible
@@ -80,7 +82,7 @@ def plot_humidities(T: utils.MeteorologicalVariable,
     Plot each observation of SSS or DPD against surrounding data
 
     :param MetVar T: Meteorological variable object - temperatures
-    :param MetVar D: Meteorological variable object - dewpoints
+    :param MetVar D: Meteorological variable object - dewpoints/wetbulb
     :param Series times: datetime array
     :param int bad: the location of SSS
     '''
@@ -95,8 +97,10 @@ def plot_humidities(T: utils.MeteorologicalVariable,
 
     # simple plot
     plt.clf()
-    plt.plot(times[pad_start : pad_end], T.data[pad_start : pad_end], 'k-', marker=".", label=T.name.capitalize())
-    plt.plot(times[pad_start : pad_end], D.data[pad_start : pad_end], 'b-', marker=".", label=D.name.capitalize())
+    plt.plot(times[pad_start : pad_end], T.data[pad_start : pad_end], 'k-',
+             marker=".", label=T.name.capitalize())
+    plt.plot(times[pad_start : pad_end], D.data[pad_start : pad_end], 'b-',
+             marker=".", label=D.name.capitalize())
     plt.plot(times[bad], D.data[bad], 'r*', ms=10)
 
     plt.legend(loc="upper right")
@@ -116,7 +120,7 @@ def plot_humidity_streak(times: pd.Series,
 
     :param Series times: datetime array
     :param MetVar T: Meteorological variable object - temperatures
-    :param MetVar D: Meteorological variable object - dewpoints
+    :param MetVar D: Meteorological variable object - dewpoints/wetbulb
     :param array streak_locs: locations of points in the DPD streak
 
     :returns:
@@ -150,21 +154,21 @@ def plot_humidity_streak(times: pd.Series,
 #************************************************************************
 def super_saturation_check(station: utils.Station,
                            temperatures: utils.MeteorologicalVariable,
-                           dewpoints: utils.MeteorologicalVariable,
+                           wet_temperatures: utils.MeteorologicalVariable,
                            plots: bool = False, diagnostics: bool = False) -> None:
     """
-    Flag locations where dewpoint is greater than air temperature
+    Flag locations where dewpoint or wet-bulb is greater than air temperature
 
     :param Station station: Station Object for the station
     :param MetVar temperatures: temperatures object
-    :param MetVar dewpoints: dewpoints object
+    :param MetVar wet_temperatures: dewpoints object
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
 
     flags = np.array(["" for i in range(temperatures.data.shape[0])])
 
-    sss, = np.ma.nonzero(dewpoints.data > (temperatures.data + TOLERANCE))
+    sss, = np.ma.nonzero(wet_temperatures.data > (temperatures.data + TOLERANCE))
 
     flags[sss] = "m"
 
@@ -173,21 +177,21 @@ def super_saturation_check(station: utils.Station,
         for month in range(1, 13):
             month_locs, = np.nonzero(np.logical_and(station.years == year,
                                                     station.months == month,
-                                                    dewpoints.data.mask == True))
+                                                    wet_temperatures.data.mask == True))
             if month_locs.shape[0] != 0:
                 flagged, = np.nonzero(flags[month_locs] == "m")
                 if (flagged.shape[0]/month_locs.shape[0]) > HIGH_FLAGGING_THRESHOLD:
                     flags[month_locs] = "m"
 
     # only flag the dewpoints
-    dewpoints.store_flags(utils.insert_flags(dewpoints.flags, flags))
+    wet_temperatures.store_flags(utils.insert_flags(wet_temperatures.flags, flags))
 
     # diagnostic plots
     if plots:
         for bad in sss:
-            plot_humidities(temperatures, dewpoints, station.times, bad)
+            plot_humidities(temperatures, wet_temperatures, station.times, bad)
 
-    logger.info(f"Supersaturation {dewpoints.name}")
+    logger.info(f"Supersaturation: {wet_temperatures.name}")
     logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
     # super_saturation_check
@@ -195,16 +199,16 @@ def super_saturation_check(station: utils.Station,
 #************************************************************************
 def dew_point_depression_streak(times: pd.Series,
                                 temperatures: utils.MeteorologicalVariable,
-                                dewpoints: utils.MeteorologicalVariable,
+                                wet_temperatures: utils.MeteorologicalVariable,
                                 config_dict: dict,
                                 plots: bool = False,
                                 diagnostics: bool = False) -> None:
     """
-    Flag locations where dewpoint equals air temperature
+    Flag locations where dewpoint or wet-bulb equals air temperature
 
     :param Series times: datetime array
     :param MetVar temperatures: temperatures object
-    :param MetVar dewpoints: dewpoints object
+    :param MetVar wet_temperatures: dewpoints or wet-bulb temperatures object
     :param str config_dict: configuration dictionary to store critical values
     :param bool plots: turn on plots
     :param bool diagnostics: turn on diagnostic output
@@ -218,19 +222,22 @@ def dew_point_depression_streak(times: pd.Series,
         threshold = float(th)
     except KeyError:
         # no threshold set
-        get_repeating_dpd_threshold(temperatures, dewpoints, config_dict, plots=plots, diagnostics=diagnostics)
+        get_repeating_dpd_threshold(temperatures, wet_temperatures, config_dict,
+                                    plots=plots, diagnostics=diagnostics)
         th = config_dict["HUMIDITY"]["DPD"]
         threshold = float(th)
 
 
-    dpd = temperatures.data - dewpoints.data
+    dpd = temperatures.data - wet_temperatures.data
 
     # find only the DPD=0 locations, and then see if there are streaks
     locs, = np.ma.nonzero(dpd == 0)
 
     # only process further if there are enough locations
     if len(locs) > 1:
-        repeated_streak_lengths, grouped_diffs, streaks = qc_utils.prepare_data_repeating_streak(locs, diff=1, plots=plots, diagnostics=diagnostics)
+        (repeated_streak_lengths, grouped_diffs,
+         streaks) = qc_utils.prepare_data_repeating_streak(locs, diff=1,
+                                                           plots=plots, diagnostics=diagnostics)
 
         # above threshold
         bad, = np.nonzero(repeated_streak_lengths >= threshold)
@@ -242,12 +249,12 @@ def dew_point_depression_streak(times: pd.Series,
             flags[locs[start : end]] = "m"
 
             if plots:
-                plot_humidity_streak(times, temperatures, dewpoints, locs[start: end])
+                plot_humidity_streak(times, temperatures, wet_temperatures, locs[start: end])
 
         # only flag the dewpoints
-        dewpoints.store_flags(utils.insert_flags(dewpoints.flags, flags))
+        wet_temperatures.store_flags(utils.insert_flags(wet_temperatures.flags, flags))
 
-    logger.info(f"Dewpoint Depression {dewpoints.name}")
+    logger.info(f"Dewpoint Depression: {wet_temperatures.name}")
     logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
     # dew_point_depression_streak
@@ -267,17 +274,23 @@ def hcc(station: utils.Station, config_dict: dict,
     """
 
     temperatures = getattr(station, "temperature")
-    dewpoints = getattr(station, "dew_point_temperature")
 
-    # Super Saturation
-    super_saturation_check(station, temperatures, dewpoints, plots=plots, diagnostics=diagnostics)
+    for var in ("dew_point_temperature", "wet_bulb_temperature"):
+        comparison_temperatures = getattr(station, var)
 
-    # Dew Point Depression
-    #    Note, won't have cloud-base or past-significant-weather
-    #    Note, currently don't have precipitation information
-    if full:
-        get_repeating_dpd_threshold(temperatures, dewpoints, config_dict, plots=plots, diagnostics=diagnostics)
-    dew_point_depression_streak(station.times, temperatures, dewpoints, config_dict, plots=plots, diagnostics=diagnostics)
+        # Super Saturation check
+        super_saturation_check(station, temperatures, comparison_temperatures,
+                               plots=plots, diagnostics=diagnostics)
+
+        # Dew Point Depression
+        #    Note, won't have cloud-base or past-significant-weather
+        #    Note, currently don't have precipitation information
+
+        if full:
+            get_repeating_dpd_threshold(temperatures, comparison_temperatures,
+                                        config_dict, plots=plots, diagnostics=diagnostics)
+        dew_point_depression_streak(station.times, temperatures, comparison_temperatures,
+                                    config_dict, plots=plots, diagnostics=diagnostics)
 
     # dew point cut-offs (HadISD) not run
     #  greater chance of removing good observations

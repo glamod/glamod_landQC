@@ -251,7 +251,9 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
 
         if test in ["all", "precision"]:
             if diagnostics: print("n", dt.datetime.now()-startT)
-            qc_tests.precision.pcc(station, config_dict, full=full, plots=plots, diagnostics=diagnostics)
+            qc_tests.precision.pcc(station, [("temperature", "dew_point_temperature"),
+                                             ("temperature", "wet_bulb_temperature")],
+                                   config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "spike"]:
             if diagnostics: print("S", dt.datetime.now()-startT)
