@@ -4,6 +4,7 @@
          "temperature",
          "dew_point_temperature",
 		 "wet_bulb_temperature",
+		 "relative_humidity",
 		 "station_level_pressure",
          "sea_level_pressure",
          "wind_speed",
@@ -12,7 +13,6 @@
       "not_process_vars":[
 		"wind_gust",
 		"precipitation",
-		"relative_humidity",
 		"pres_wx_MW1",
 		"pres_wx_MW2",
 		"pres_wx_MW3",

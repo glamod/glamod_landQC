@@ -12,6 +12,10 @@
            -75,
            75
        ],
+       "relative_humidity":[
+           0,
+           100
+       ],
        "station_level_pressure":[
            300,
            1200

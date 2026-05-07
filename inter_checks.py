@@ -158,23 +158,27 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
         # TODO: refine neighbours [quadrants, correlation?]
 
         if test in ["all", "outlier"]:
-            if diagnostics: print("N", dt.datetime.now()-startT)
+            if diagnostics: print("Neighbour [n]", dt.datetime.now()-startT)
             qc_tests.neighbour_outlier.noc(target_station, initial_neighbours, \
-                                               ["temperature", "dew_point_temperature", "wet_bulb_temperature", "wind_speed",
+                                               ["temperature",
+                                                "dew_point_temperature", "wet_bulb_temperature", "relative_humidity",
+                                                "wind_speed",
                                                 "station_level_pressure", "sea_level_pressure"],
                                                full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "clean_up"]:
-            if diagnostics: print("U", dt.datetime.now()-startT)
-            qc_tests.clean_up.mcu(target_station, ["temperature", "dew_point_temperature", "wet_bulb_temperature",
+            if diagnostics: print("CleanUp [e]", dt.datetime.now()-startT)
+            qc_tests.clean_up.mcu(target_station, ["temperature",
+                                                   "dew_point_temperature", "wet_bulb_temperature", "relative_humidity",
                                                    "station_level_pressure", "sea_level_pressure",
                                                    "wind_speed", "wind_direction"],
                                   full=full, plots=plots, diagnostics=diagnostics)
 
 
         if test in ["all", "high_flag"]:
-            if diagnostics: print("H", dt.datetime.now()-startT)
-            hfr_vars_set = qc_tests.high_flag.hfr(target_station, ["temperature", "dew_point_temperature", "wet_bulb_temperature",
+            if diagnostics: print("HighFlg [h]", dt.datetime.now()-startT)
+            hfr_vars_set = qc_tests.high_flag.hfr(target_station, ["temperature",
+                                                                   "dew_point_temperature", "wet_bulb_temperature", "relative_humidity",
                                                                    "station_level_pressure", "sea_level_pressure",
                                                                    "wind_speed", "wind_direction"],
                                                   full=full, plots=plots, diagnostics=diagnostics)
@@ -192,16 +196,19 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
             if diagnostics: print(f"{target_station.id} withheld as too high flagging")
             logging.info(f"{target_station.id} withheld as too high flagging")
             io.write(setup.SUBDAILY_BAD_DIR / f"{target_station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}",
-                     target_station_df, formatters={"LATITUDE" : "{:7.4f}", "LONGITUDE" : "{:7.4f}", "Month": "{:02d}", "Day": "{:02d}", "Hour" : "{:02d}", "Minute" : "{:02d}"})
+                     target_station_df, formatters={"LATITUDE" : "{:7.4f}", "LONGITUDE" : "{:7.4f}",
+                                                    "Month": "{:02d}", "Day": "{:02d}", "Hour" : "{:02d}", "Minute" : "{:02d}"})
 
         else:
             io.write(setup.SUBDAILY_OUT_DIR / f"{target_station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}",
-                     target_station_df, formatters={"LATITUDE" : "{:7.4f}", "LONGITUDE" : "{:7.4f}", "Month": "{:02d}", "Day": "{:02d}", "Hour" : "{:02d}", "Minute" : "{:02d}"})
+                     target_station_df, formatters={"LATITUDE" : "{:7.4f}", "LONGITUDE" : "{:7.4f}",
+                                                    "Month": "{:02d}", "Day": "{:02d}", "Hour" : "{:02d}", "Minute" : "{:02d}"})
 
 
         #*************************
         # Output flagging summary file
-        io.flag_write(setup.SUBDAILY_FLAG_DIR / f"{target_station_id:11s}.flg", target_station_df, diagnostics=diagnostics)
+        io.flag_write(setup.SUBDAILY_FLAG_DIR / f"{target_station_id:11s}.flg",
+                      target_station_df, diagnostics=diagnostics)
 
         if diagnostics or plots:
             input(f"Stop after {dt.datetime.now()-startT} of processing")
