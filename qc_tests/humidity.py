@@ -17,7 +17,10 @@ import qc_tests.qc_utils as qc_utils
 HIGH_FLAGGING_THRESHOLD = 0.4
 TOLERANCE = 1.e-10
 
+MIN_RH_DIFF_SPREAD = 1
+MIN_TWET_DIFF_SPREAD = 1
 RH_THRESHOLD = 2  # x IQR difference offset
+TWET_THRESHOLD = 2
 
 #************************************************************************
 def get_repeating_dpd_threshold(temperatures: utils.MeteorologicalVariable,
@@ -262,7 +265,8 @@ def dew_point_depression_streak(times: pd.Series,
 
 
 #************************************************************************
-def _calculate_e_v_wrt_water(temperature, pressure):
+def _calculate_e_v_wrt_water(temperature: np.ma.MaskedArray,
+                             pressure: np.ma.MaskedArray) -> np.ma.MaskedArray:
     '''
     Calculate vapour pressure wrt water
 
@@ -283,7 +287,8 @@ def _calculate_e_v_wrt_water(temperature, pressure):
     return e_v # calculate_e_v_wrt_water
 
 #************************************************************************
-def _calculate_e_v_wrt_ice(temperature, pressure):
+def _calculate_e_v_wrt_ice(temperature: np.ma.MaskedArray,
+                           pressure: np.ma.MaskedArray) -> np.ma.MaskedArray:
     '''
     Calculate vapour pressure wrt ice
 
@@ -306,7 +311,9 @@ def _calculate_e_v_wrt_ice(temperature, pressure):
 
 
 #************************************************************************
-def _calculate_Tw(e_v, e_s, temperature):
+def _calculate_Tw(e_v: np.ma.MaskedArray,
+                  e_s: np.ma.MaskedArray,
+                  temperature: np.ma.MaskedArray) -> np.ma.MaskedArray:
     '''
     Calculate the pseudo wetbulb temperature
 
@@ -330,8 +337,10 @@ def _calculate_Tw(e_v, e_s, temperature):
     return Tw # calculate_Tw
 
 #************************************************************************
-def get_vapor_pressures(temperatures, dewpoints, station_pressure) -> tuple[np.ndarray,
-                                                                            np.ndarray]:
+def get_vapor_pressures(temperatures: np.ma.MaskedArray,
+                        dewpoints: np.ma.MaskedArray,
+                        station_pressure: np.ma.MaskedArray) -> tuple[np.ma.MaskedArray,
+                                                                      np.ma.MaskedArray]:
     '''
     Calculate the vapour pressures and wet-bulb temperatures, adjusting
     for an ice- or water-bulb as appropriate from the calculated Tw
@@ -360,6 +369,75 @@ def get_vapor_pressures(temperatures, dewpoints, station_pressure) -> tuple[np.n
     e_s[calc_Tw <= 0] = e_s_ice[calc_Tw <= 0]
 
     return e_v, e_s
+
+
+def get_noaa_rh(temperatures: np.ma.MaskedArray,
+                dewpoints: np.ma.MaskedArray) -> np.ma.MaskedArray:
+    """NOAA formula to calculate rh
+
+    Parameters
+    ----------
+    temperatures : np.ma.MaskedArray
+        Air temperature array
+    dewpoints : np.ma.MaskedArray
+        Dewpoint temperature array
+
+    Returns
+    -------
+    np.ma.MaskedArray
+        Relative Humidity array
+    """
+
+    return (((112.0 - (0.1 *temperatures) + dewpoints) /
+             (112.0 + (0.9 * temperatures)))**8) * 100.0
+
+
+def to_fahrenheit(indata: np.ma.MaskedArray) -> np.ma.MaskedArray:
+
+    return (1.8 * indata) + 32.
+
+
+def to_celsius(indata: np.ma.MaskedArray) -> np.ma.MaskedArray:
+
+    return (indata - 32) * (5./9.)
+
+
+def to_mmhg(indata: np.ma.MaskedArray) -> np.ma.MaskedArray:
+
+    return indata / 100 / 133.322387415
+
+
+def get_noaa_twet(temperatures: np.ma.MaskedArray,
+                  dewpoints: np.ma.MaskedArray,
+                  station_pressure: np.ma.MaskedArray) -> np.ma.MaskedArray:
+
+
+    temperatureF = to_fahrenheit(temperatures).astype(int)
+    dewpointF = to_fahrenheit(dewpoints).astype(int)
+    mercury_stnp = to_mmhg(station_pressure)
+
+    wetbulbF = np.ma.zeros(temperatures.data.shape)
+    wetbulbF.mask = np.ones(wetbulbF.shape)
+
+    a = (temperatureF - dewpointF) * 0.1
+    b = a - 1.0
+    c = a**2
+
+    below_zeroF, = np.nonzero(temperatureF < 0.)
+    above_zeroF, = np.nonzero(temperatureF >= 0.)
+
+    if len(below_zeroF > 0):
+        wetbulbF[below_zeroF] = (temperatureF[below_zeroF] -
+                                 ((0.034 * a[above_zeroF]) - (0.006 * c[below_zeroF])) *
+                                 ((0.6 * (temperatureF[below_zeroF] + dewpointF[below_zeroF])) -
+                                  ((2.0 * mercury_stnp[below_zeroF]) + 108.0)))
+    else:
+        wetbulbF[above_zeroF] = (temperatureF[above_zeroF] -
+                                 ((0.034 * a[above_zeroF]) - (0.00072 * a[above_zeroF] * b[above_zeroF])) *
+                                 ((temperatureF[above_zeroF] + dewpointF[above_zeroF]) -
+                                  (2.0 * mercury_stnp[above_zeroF]) + 108.0))
+
+    return to_celsius(wetbulbF)
 
 
 def rh_consistency_check(station: utils.Station,
@@ -395,19 +473,93 @@ def rh_consistency_check(station: utils.Station,
 
     # calculate rh from T & Td, and differences to observed
     calc_rh = (e_v / e_s) * 100.
+    noaa_rh = get_noaa_rh(temperatures.data, dewpoints.data)
 
+    # differences between calculated (both methods) and observed
     rh_diffs = obs_rh.data - calc_rh
+    noaa_diffs = obs_rh.data - noaa_rh
 
     # find locations where rh differences are > N x spread
+    #    increase spread if too small
     spread = qc_utils.spread(rh_diffs)
+    if spread < MIN_RH_DIFF_SPREAD:
+        spread = MIN_RH_DIFF_SPREAD
+
     bad_locs, = np.nonzero(np.abs(rh_diffs) > RH_THRESHOLD * spread)
+
+    if True:
+        from qc_tests.pressure import plot_pressure_distribution
+
+        plot_pressure_distribution(noaa_diffs, "RH Differences",
+                                   vmin=-RH_THRESHOLD * spread,
+                                   vmax=RH_THRESHOLD * spread,
+                                   units='%rh')
 
     if len(bad_locs) != 0 :
         flags[bad_locs] = "m"
         obs_rh.store_flags(utils.insert_flags(obs_rh.flags, flags))
+    input("stop")
 
     logger.info(f"Relative Humidity Consistency: {obs_rh.name}")
     logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
+
+
+def twet_consistency_check(station: utils.Station,
+                         plots: bool, diagnostics: bool) -> None:
+    """Compare recorded twet against that calculated from other metrics
+
+    Parameters
+    ----------
+    station : utils.Station
+        Station object
+    plots : bool
+        turn on plots
+    diagnostics : bool
+        turn on diagnostic output
+    """
+
+    # pull out the relative humidity information
+    obs_twet = getattr(station, "wet_bulb_temperature")
+    if len(obs_twet.data.compressed()) == 0:
+        return
+
+    flags = np.array(["" for i in range(obs_twet.data.shape[0])])
+
+    # pull out the remaining variables
+    temperatures = getattr(station, "temperature")
+    dewpoints = getattr(station, "dew_point_temperature")
+    stnp = getattr(station, "station_level_pressure")
+
+    # calculate twet from T & Td, and differences to observed
+    noaa_twet = get_noaa_twet(temperatures.data, dewpoints.data, stnp.data)
+
+    # differences between calculated (both methods) and observed
+    noaa_diffs = obs_twet.data - noaa_twet
+
+    # find locations where rh differences are > N x spread
+    #    increase spread if too small
+    spread = qc_utils.spread(noaa_diffs)
+    if spread < MIN_TWET_DIFF_SPREAD:
+        spread = MIN_TWET_DIFF_SPREAD
+
+    bad_locs, = np.nonzero(np.abs(noaa_diffs) > TWET_THRESHOLD * spread)
+
+    if True:
+        from qc_tests.pressure import plot_pressure_distribution
+
+        plot_pressure_distribution(noaa_diffs, "T_wet Differences",
+                                   vmin=-TWET_THRESHOLD * spread,
+                                   vmax=TWET_THRESHOLD * spread,
+                                   units='C')
+
+    if len(bad_locs) != 0 :
+        flags[bad_locs] = "m"
+        obs_twet.store_flags(utils.insert_flags(obs_twet.flags, flags))
+    input("stop")
+
+    logger.info(f"Wet Bulb Temperature Consistency: {obs_twet.name}")
+    logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
+
 
 
 #************************************************************************
@@ -451,6 +603,7 @@ def hcc(station: utils.Station, config_dict: dict,
     #    use T, Td (and Tw?) to check rh is consistent
 
     rh_consistency_check(station, plots=plots, diagnostics=diagnostics)
+    twet_consistency_check(station, plots=plots, diagnostics=diagnostics)
 
 
     # hcc
