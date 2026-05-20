@@ -184,6 +184,17 @@ def test_dew_point_depression_streak_dict() -> None:
     assert config_dict["HUMIDITY"]["DPD"] == -utils.MDI
 
 
+# def test_calculate_e_v_wrt_water() -> None:
+# def test_calculate_e_v_wrt_ice() -> None:
+# def test_calculate_Tw() -> None:
+
+# def test_get_vapor_pressures() -> None:
+
+# def test_rh_consistency_check() -> None:
+
+
+
+
 @pytest.mark.parametrize("full", [True, False])
 @patch("humidity.get_repeating_dpd_threshold")
 @patch("humidity.dew_point_depression_streak")

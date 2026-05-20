@@ -32,6 +32,10 @@ D_X = {"africa" : 55.0, "asia" : 53.9, "samerica" : 48.9, "namerica" : 56.7, "eu
        "oceania" : 50.7, "antarctica" : 18.3, "row" : 56.7}
 D_N = {"africa" : -50., "asia" : -100., "samerica" : -60., "namerica" : -100., "europe" : -100.,
        "oceania" : -50., "antarctica" : -100., "row" : -100.}
+TW_X = {"africa" : 55.0, "asia" : 53.9, "samerica" : 48.9, "namerica" : 56.7, "europe" : 48.0,
+       "oceania" : 50.7, "antarctica" : 18.3, "row" : 56.7}
+TW_N = {"africa" : -50., "asia" : -100., "samerica" : -60., "namerica" : -100., "europe" : -100.,
+       "oceania" : -50., "antarctica" : -100., "row" : -100.}
 W_X = {"africa" : 113.2, "asia" : 113.2, "samerica" : 113.2, "namerica" : 113.2, "europe" : 113.2,
        "oceania" : 113.2, "antarctica" : 113.2, "row" : 113.2}
 W_N = {"africa" : 0., "asia" : 0., "samerica" : 0., "namerica" : 0., "europe" : 0., "oceania" : 0.,
@@ -42,8 +46,16 @@ S_N = {"africa" : 870., "asia" : 870., "samerica" : 870., "namerica" : 870., "eu
        "oceania" : 870., "antarctica" : 870., "row" : 870.}
 
 #
-maxes = {"temperature" : T_X, "dew_point_temperature" : D_X, "wind_speed" : W_X, "sea_level_pressure" : S_X}
-mins = {"temperature" : T_N, "dew_point_temperature" : D_N, "wind_speed" : W_N, "sea_level_pressure" : S_N}
+maxes = {"temperature" : T_X,
+         "dew_point_temperature" : D_X,
+         "wet_bulb_temperature" : TW_X,
+         "wind_speed" : W_X,
+         "sea_level_pressure" : S_X}
+mins = {"temperature" : T_N,
+        "dew_point_temperature" : D_N,
+        "wet_bulb_temperature" : TW_N,
+        "wind_speed" : W_N,
+        "sea_level_pressure" : S_N}
 
 
 
