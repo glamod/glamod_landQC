@@ -125,8 +125,8 @@ def test_flag_large_offsets() -> None:
 
     expected = np.array(["" for _ in station.temperature.data])
     # first two and last two months should be flagged
-    expected[:24*31*2] = "D"
-    expected[-24*31*2:] = "D"
+    expected[:24*31*2] = "d"
+    expected[-24*31*2:] = "d"
 
     np.testing.assert_array_equal(flags, expected)
 
@@ -315,7 +315,7 @@ def test_monthly_gap(prepare_mock: Mock,
 
     # expected values
     standard_months = np.ma.array([0, 0.5, 1, 1.5, 2])
-    expected_flags = np.array(["D" for i in range(10)])
+    expected_flags = np.array(["d" for i in range(10)])
 
     # check call values for this routine
     flag_large_mock.assert_called_once()  # only values for January

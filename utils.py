@@ -46,6 +46,7 @@ QC_TESTS = {"a" : "Repeated Day streaks",  # repeAted day streaks
             "z" : "Wind logical - calm, masked zero direction",
 #            "," : "Timestamp - identical observation values",
             }
+QC_TEST_FLAGS = {v: k for k, v in QC_TESTS.items()}
 
 
 MDI = -1.e30

@@ -101,7 +101,7 @@ def assess_start_cluster(station: utils.Station,
         good_cluster_locs, = np.nonzero(cluster.mask == False)
 
         if len(flags[good_cluster_locs + cluster_start]) < MAX_LENGTH_OBS:
-            flags[good_cluster_locs + cluster_start] = "o"
+            flags[good_cluster_locs + cluster_start] = utils.QC_TEST_FLAGS["Odd Cluster"]
 
             if plots:
                 plot_cluster(station.times, obs_var,
@@ -143,7 +143,7 @@ def assess_mid_cluster(station: utils.Station,
         good_cluster_locs, = np.nonzero(cluster.mask == False)
 
         if len(flags[good_cluster_locs + cluster_start]) < MAX_LENGTH_OBS:
-            flags[good_cluster_locs + cluster_start] = "o"
+            flags[good_cluster_locs + cluster_start] = utils.QC_TEST_FLAGS["Odd Cluster"]
 
             if plots:
                 plot_cluster(station.times, obs_var,
@@ -181,7 +181,7 @@ def assess_end_cluster(station: utils.Station,
         good_cluster_locs, = np.nonzero(cluster.mask == False)
 
         if len(flags[good_cluster_locs + cluster_end + 1]) < MAX_LENGTH_OBS:
-            flags[good_cluster_locs + cluster_end + 1] = "o"
+            flags[good_cluster_locs + cluster_end + 1] = utils.QC_TEST_FLAGS["Odd Cluster"]
 
             if plots:
                 plot_cluster(station.times, obs_var, cluster_end, -1)

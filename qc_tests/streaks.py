@@ -309,7 +309,7 @@ def repeating_value(obs_var: utils.MeteorologicalVariable,
         start = int(np.sum(grouped_diffs[:streaks[streak], 1]))
         end = start + int(grouped_diffs[streaks[streak], 1]) + 1
 
-        compressed_flags[start : end] = "k"
+        compressed_flags[start : end] = utils.QC_TEST_FLAGS["Repeating Streaks"]
 
         if plots:
             plot_streak(masked_times, this_var.data, obs_var.units, start, end)
@@ -401,7 +401,7 @@ def excess_repeating_value(obs_var: utils.MeteorologicalVariable, times: pd.Seri
             start = int(np.sum(grouped_diffs[:streaks[streak], 1]))
             end = start + int(grouped_diffs[streaks[streak], 1]) + 1
 
-            year_flags[unmasked[start : end]] = "x"
+            year_flags[unmasked[start : end]] = utils.QC_TEST_FLAGS["Excess streak proportion"]
 
             if plots:
                 plot_streak(masked_times, this_var.data[locs], obs_var.units, start, end)
@@ -494,7 +494,7 @@ def repeating_day(obs_var: utils.MeteorologicalVariable, station: utils.Station,
                     if streak_length != 0:
                         if set_flags and streak_length > threshold:
                             # Apply the flags
-                            flags[streak_locs] = "a"
+                            flags[streak_locs] = utils.QC_TEST_FLAGS["Repeated Day streaks"]
 
                         all_lengths += [streak_length]
                         streak_length = 0
