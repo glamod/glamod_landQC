@@ -408,9 +408,7 @@ def flag_write(outfilename: Path, df: pd.DataFrame,
             outfile.write(f"{var} : All : {proportion_flagged}\n")
             outfile.write(f"{var} : All_counts : {flagged.shape[0]}\n")
 
-            logging.info(f"{var} - {flagged.shape[0]}")
-            if diagnostics:
-                print(f"{var} - {flagged.shape[0]} [{100*proportion_flagged:.1f}%]")
+            logging.info(f"{var} - {flagged.shape[0]} [{100*proportion_flagged:.1f}%]")
 
     # flag_write
 

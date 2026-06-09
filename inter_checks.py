@@ -121,7 +121,7 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
         logfile = setup.SUBDAILY_LOG_DIR / f"{target_station_id}_external_checks.log"
         if logfile.exists():
             logfile.unlink()
-        logger = utils.custom_logger(logfile)
+        logger = utils.custom_logger(logfile, diagnostics=diagnostics)
         logger.info(f"External (Buddy) Checks on {target_station_id}")
         logger.info("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
 

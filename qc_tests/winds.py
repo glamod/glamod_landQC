@@ -43,12 +43,10 @@ def logical_checks(speed: utils.MeteorologicalVariable,
     if fix:
         direction.data[fix_zero_direction] = 0
         direction.data.mask[fix_zero_direction] = False
-        if diagnostics:
-            print("  Zero direction : {}".format(len(fix_zero_direction)))
+        logger.info("  Zero direction fixed : {}".format(len(fix_zero_direction)))
     else:
         dflags[fix_zero_direction] = utils.QC_TEST_FLAGS["Wind logical - calm, masked zero direction"]
-        if diagnostics:
-            print("  Zero direction : {}".format(len(fix_zero_direction)))
+        logger.info("  Zero direction : {}".format(len(fix_zero_direction)))
         # and set to empty as can be used in parent to copy values to dataframe
         fix_zero_direction = np.array([])
 
@@ -81,13 +79,6 @@ def logical_checks(speed: utils.MeteorologicalVariable,
     # copy flags into attribute
     speed.store_flags(utils.insert_flags(speed.flags, sflags))
     direction.store_flags(utils.insert_flags(direction.flags, dflags))
-
-    if diagnostics:
-
-        print("Wind Logical")
-        print(f"   Cumulative number of {speed.name} flags set: {np.count_nonzero(sflags != '')}")
-        print(f"   Cumulative number of {direction.name} flags set: {np.count_nonzero(dflags == 'w')}")
-        print(f"   Cumulative number of {direction.name} convention flags set: {np.count_nonzero(dflags == '1')}")
 
     logger.info("Wind Logical")
     logger.info(f"   Cumulative number of {speed.name} flags set: {np.count_nonzero(sflags != '')}")
