@@ -53,7 +53,7 @@ def plot_flags(primary: utils. MeteorologicalVariable,
 
 #************************************************************************
 def precision_cross_check(station: utils.Station, primary: utils.MeteorologicalVariable,
-                          secondary: utils.MeteorologicalVariable, plots: bool=False,
+                          secondary: utils.MeteorologicalVariable, tsplots: bool=False,
                           diagnostics: bool=False) -> None:
     """
     Flag locations where precision of secondary is different from primary
@@ -61,7 +61,7 @@ def precision_cross_check(station: utils.Station, primary: utils.MeteorologicalV
     :param Station station: Station Object for the station
     :param MetVar primary: primary meteorological variable object
     :param MetVar secondary: secondary meteorological variable object
-    :param bool plots: turn on plots
+    :param bool tsplots: turn on timeseries plots
     :param bool diagnostics: turn on diagnostic output
     """
 
@@ -90,7 +90,7 @@ def precision_cross_check(station: utils.Station, primary: utils.MeteorologicalV
                 flags[month_locs[locs]] = "i"
 
                 # diagnostic plots
-                if plots:
+                if tsplots:
                     plot_flags(primary, secondary, station.times, month_locs)
                 if diagnostics:
                     print(f" Precision stats for {year}/{month} : {primary_precision} vs {secondary_precision} : {len(locs)}")
@@ -107,14 +107,14 @@ def precision_cross_check(station: utils.Station, primary: utils.MeteorologicalV
 
 #************************************************************************
 def pcc(station: utils.Station, config_dict: dict, full: bool = False,
-        plots: bool = False, diagnostics: bool = False) -> None:
+        tsplots: bool = False, diagnostics: bool = False) -> None:
     """
     Extract the variables and pass to the Precision Cross Check
 
     :param Station station: Station Object for the station
     :param str config_dict: dictionary for configuration settings (unused here)
     :param bool full: run a full update (unused here)
-    :param bool plots: turn on plots
+    :param bool tsplots: turn on timeseries plots
     :param bool diagnostics: turn on diagnostic output
     """
 
@@ -122,7 +122,7 @@ def pcc(station: utils.Station, config_dict: dict, full: bool = False,
     temperatures = getattr(station, "temperature")
     dewpoints = getattr(station, "dew_point_temperature")
 
-    precision_cross_check(station, temperatures, dewpoints, plots=plots, diagnostics=diagnostics)
+    precision_cross_check(station, temperatures, dewpoints, tsplots=tsplots, diagnostics=diagnostics)
 
     # other pairs will appear here
 

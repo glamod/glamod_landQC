@@ -53,15 +53,18 @@ import qc_tests
 import setup
 
 #************************************************************************
-def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False, plots: bool = False,
-               full: bool = False, test: str = "all", clobber: bool = False) -> None:
+def run_checks(restart_id: str="", end_id: str="",
+               diagnostics: bool=False, plots: bool=False,
+               tsplots: bool=False, full: bool=False,
+               test: str="all", clobber: bool=False) -> None:
     """
     Main script.  Reads in station data, populates internal objects and passes to the tests.
 
     :param str restart_id: which station to start on
     :param str end_id: which station to end on
     :param bool diagnostics: print extra material to screen
-    :param bool plots: create plots from each test
+    :param bool plots: create plots from each test of distributions etc
+    :param bool plots: show plots of flagged values in timeseries
     :param bool full: run full reprocessing rather than using stored values.
     :param str test: specify a single test to run (useful for diagnostics) [climatological/distribution/diurnal
                      frequent/humidity/odd_cluster/pressure/spike/streaks/timestamp/variance/winds/world_records/precision]
@@ -201,7 +204,7 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
             qc_tests.odd_cluster.occ(station, ["temperature", "dew_point_temperature",
                                                "station_level_pressure", "sea_level_pressure",
                                                "wind_speed"],
-                                     config_dict, full=full, plots=plots, diagnostics=diagnostics)
+                                     config_dict, full=full, tsplots=tsplots, diagnostics=diagnostics)
 
         if test in ["all", "frequent"]:
             if diagnostics: print("F", dt.datetime.now()-startT)
@@ -235,7 +238,8 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
             if diagnostics: print("K", dt.datetime.now()-startT)
             qc_tests.streaks.rsc(station, ["temperature", "dew_point_temperature", "station_level_pressure",
                                            "sea_level_pressure", "wind_speed", "wind_direction"],
-                                 config_dict, full=full, plots=plots, diagnostics=diagnostics)
+                                 config_dict, full=full, plots=plots, tsplots=tsplots,
+                                 diagnostics=diagnostics)
 
         # not run on pressure data in HadISD.
         if test in ["all", "climatological"]:
@@ -251,17 +255,18 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
 
         if test in ["all", "precision"]:
             if diagnostics: print("n", dt.datetime.now()-startT)
-            qc_tests.precision.pcc(station, config_dict, full=full, plots=plots, diagnostics=diagnostics)
+            qc_tests.precision.pcc(station, config_dict, full=full, tsplots=tsplots, diagnostics=diagnostics)
 
         if test in ["all", "spike"]:
             if diagnostics: print("S", dt.datetime.now()-startT)
             qc_tests.spike.sc(station, ["temperature", "dew_point_temperature", "station_level_pressure",
                                         "sea_level_pressure", "wind_speed"],
-                              config_dict, full=full, plots=plots, diagnostics=diagnostics)
+                              config_dict, full=full, plots=plots, tsplots=tsplots, diagnostics=diagnostics)
 
         if test in ["all", "humidity"]:
             if diagnostics: print("h", dt.datetime.now()-startT)
-            qc_tests.humidity.hcc(station, config_dict, full=full, plots=plots, diagnostics=diagnostics)
+            qc_tests.humidity.hcc(station, config_dict, full=full, plots=plots, tsplot=tsplots,
+                                  diagnostics=diagnostics)
 
         if test in ["all", "variance"]:
             if diagnostics: print("V", dt.datetime.now()-startT)
@@ -375,7 +380,9 @@ if __name__ == "__main__":
     parser.add_argument('--diagnostics', dest='diagnostics', action='store_true', default=False,
                         help='Run diagnostics (will not write out file)')
     parser.add_argument('--plots', dest='plots', action='store_true', default=False,
-                        help='Run plots (will not write out file)')
+                        help='Run summary plots of tests (will not write out file)')
+    parser.add_argument('--tsplots', dest='plots', action='store_true', default=False,
+                        help='Show timeseries plots of flagged values (will not write out file)')
     parser.add_argument('--test', dest='test', action='store', default="all",
                         help='Select single test [climatological/distribution/diurnal/frequent/humidity/odd_cluster/pressure/spike/streaks/timestamp/variance/winds/world_records]')
     parser.add_argument('--clobber', dest='clobber', action='store_true', default=False,
@@ -387,6 +394,7 @@ if __name__ == "__main__":
                end_id=args.end_id,
                diagnostics=args.diagnostics,
                plots=args.plots,
+               tsplots=args.tsplots,
                full=args.full,
                test=args.test,
                clobber=args.clobber,

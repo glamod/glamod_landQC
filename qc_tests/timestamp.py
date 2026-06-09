@@ -44,8 +44,6 @@ def plot_multiple(times: pd.DataFrame,
     plt.ylabel(obs_var.name.capitalize())
     plt.show()
 
-    # plot_spike
-
 
 #************************************************************************
 def identify_multiple_values(obs_var: utils.MeteorologicalVariable, times: pd.Series,
