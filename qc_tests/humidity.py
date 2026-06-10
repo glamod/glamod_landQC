@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 import utils
 import qc_tests.qc_utils as qc_utils
+from qc_tests.pressure import plot_pressure_distribution
 
 HIGH_FLAGGING_THRESHOLD = 0.4
 TOLERANCE = 1.e-10
@@ -393,18 +394,51 @@ def get_noaa_rh(temperatures: np.ma.MaskedArray,
 
 
 def to_fahrenheit(indata: np.ma.MaskedArray) -> np.ma.MaskedArray:
+    """Convert Celsius to Fahrenheit
 
+    Parameters
+    ----------
+    indata : np.ma.MaskedArray
+        Array of Celsius data
+
+    Returns
+    -------
+    np.ma.MaskedArray
+        Array of Fahrenheit data
+    """
     return (1.8 * indata) + 32.
 
 
 def to_celsius(indata: np.ma.MaskedArray) -> np.ma.MaskedArray:
+    """Convert Fahrenheit to Celsius
 
+    Parameters
+    ----------
+    indata : np.ma.MaskedArray
+        Array of Fahrenheit data
+
+    Returns
+    -------
+    np.ma.MaskedArray
+        Array of Celsius data
+    """
     return (indata - 32) * (5./9.)
 
 
-def to_mmhg(indata: np.ma.MaskedArray) -> np.ma.MaskedArray:
+def to_inches_hg(indata: np.ma.MaskedArray) -> np.ma.MaskedArray:
+    """Convert hPa to inches of mercury
 
-    return indata / 100 / 133.322387415
+    Parameters
+    ----------
+    indata : np.ma.MaskedArray
+        Pressure in hPa
+
+    Returns
+    -------
+    np.ma.MaskedArray
+        Pressure in inchesHg
+    """
+    return indata * 0.02953
 
 
 def get_noaa_twet(temperatures: np.ma.MaskedArray,
@@ -412,9 +446,9 @@ def get_noaa_twet(temperatures: np.ma.MaskedArray,
                   station_pressure: np.ma.MaskedArray) -> np.ma.MaskedArray:
 
 
-    temperatureF = to_fahrenheit(temperatures).astype(int)
-    dewpointF = to_fahrenheit(dewpoints).astype(int)
-    mercury_stnp = to_mmhg(station_pressure)
+    temperatureF = np.round(to_fahrenheit(temperatures))
+    dewpointF = np.round(to_fahrenheit(dewpoints))
+    mercury_stnp = np.round(to_inches_hg(station_pressure), 2)
 
     wetbulbF = np.ma.zeros(temperatures.data.shape)
     wetbulbF.mask = np.ones(wetbulbF.shape)
@@ -428,7 +462,7 @@ def get_noaa_twet(temperatures: np.ma.MaskedArray,
 
     if len(below_zeroF > 0):
         wetbulbF[below_zeroF] = (temperatureF[below_zeroF] -
-                                 ((0.034 * a[above_zeroF]) - (0.006 * c[below_zeroF])) *
+                                 ((0.034 * a[below_zeroF]) - (0.006 * c[below_zeroF])) *
                                  ((0.6 * (temperatureF[below_zeroF] + dewpointF[below_zeroF])) -
                                   ((2.0 * mercury_stnp[below_zeroF]) + 108.0)))
     else:
@@ -437,7 +471,7 @@ def get_noaa_twet(temperatures: np.ma.MaskedArray,
                                  ((temperatureF[above_zeroF] + dewpointF[above_zeroF]) -
                                   (2.0 * mercury_stnp[above_zeroF]) + 108.0))
 
-    return to_celsius(wetbulbF)
+    return np.round(to_celsius(wetbulbF), 1)  #  to 1dp
 
 
 def rh_consistency_check(station: utils.Station,
@@ -487,9 +521,7 @@ def rh_consistency_check(station: utils.Station,
 
     bad_locs, = np.nonzero(np.abs(rh_diffs) > RH_THRESHOLD * spread)
 
-    if True:
-        from qc_tests.pressure import plot_pressure_distribution
-
+    if plots:
         plot_pressure_distribution(noaa_diffs, "RH Differences",
                                    vmin=-RH_THRESHOLD * spread,
                                    vmax=RH_THRESHOLD * spread,
@@ -498,14 +530,13 @@ def rh_consistency_check(station: utils.Station,
     if len(bad_locs) != 0 :
         flags[bad_locs] = "m"
         obs_rh.store_flags(utils.insert_flags(obs_rh.flags, flags))
-    input("stop")
 
     logger.info(f"Relative Humidity Consistency: {obs_rh.name}")
     logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
 
 def twet_consistency_check(station: utils.Station,
-                         plots: bool, diagnostics: bool) -> None:
+                           plots: bool, diagnostics: bool) -> None:
     """Compare recorded twet against that calculated from other metrics
 
     Parameters
@@ -544,9 +575,7 @@ def twet_consistency_check(station: utils.Station,
 
     bad_locs, = np.nonzero(np.abs(noaa_diffs) > TWET_THRESHOLD * spread)
 
-    if True:
-        from qc_tests.pressure import plot_pressure_distribution
-
+    if plots:
         plot_pressure_distribution(noaa_diffs, "T_wet Differences",
                                    vmin=-TWET_THRESHOLD * spread,
                                    vmax=TWET_THRESHOLD * spread,
@@ -555,7 +584,6 @@ def twet_consistency_check(station: utils.Station,
     if len(bad_locs) != 0 :
         flags[bad_locs] = "m"
         obs_twet.store_flags(utils.insert_flags(obs_twet.flags, flags))
-    input("stop")
 
     logger.info(f"Wet Bulb Temperature Consistency: {obs_twet.name}")
     logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")

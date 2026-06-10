@@ -190,18 +190,63 @@ def test_dew_point_depression_streak_dict() -> None:
 
 # def test_get_vapor_pressures() -> None:
 
+# def test_get_noaa_rh() -> None:
+
+@pytest.mark.parametrize("celsius, fahrenheit", ((0, 32),
+                                                 (37.8, 100),
+                                                 (100, 212)))
+def test_to_fahrenheit(celsius: float,
+                       fahrenheit: float) -> None:
+    """Test implementation of fahrenheit conversion"""
+
+    result = humidity.to_fahrenheit(celsius)
+
+    assert np.isclose(result, fahrenheit, atol=0.1)
+
+
+@pytest.mark.parametrize("celsius, fahrenheit", ((0, 32),
+                                                 (37.8, 100),
+                                                 (100, 212)))
+def test_to_celsius(celsius: float,
+                    fahrenheit: float) -> None:
+    """Test implementation of celsius conversion"""
+
+    result = humidity.to_celsius(fahrenheit)
+
+    assert np.isclose(result, celsius, atol=0.1)
+
+
+@pytest.mark.parametrize("hpa, inches", ((1000, 29.5301),
+                                         (900, 26.5771),
+                                         (1100, 32.4831)))
+def test_to_inches_hg(hpa: float,
+                      inches: float) -> None:
+    """Test conversion of hPa to inches mercury"""
+    # https://convertlive.com/u/convert/hectopascals/to/inches-of-mercury
+    result = humidity.to_inches_hg(hpa)
+
+    assert np.isclose(result, inches, atol=0.1)
+
+
+# def test_get_noaa_twet() -> None:
+
+
 # def test_rh_consistency_check() -> None:
 
-
+# def test_twet_consistency_check() -> None:
 
 
 @pytest.mark.parametrize("full", [True, False])
+@patch("humidity.twet_consistency_check")
+@patch("humidity.rh_consistency_check")
 @patch("humidity.get_repeating_dpd_threshold")
 @patch("humidity.dew_point_depression_streak")
 @patch("humidity.super_saturation_check")
 def test_read_hcc(supersat_check_mock: Mock,
                   dpd_check_mock: Mock,
                   get_threshold_mock: Mock,
+                  rh_consistency_mock: Mock,
+                  twet_consistency_mock: Mock,
                   full: bool) -> None:
 
     station = _setup_station()
@@ -209,9 +254,12 @@ def test_read_hcc(supersat_check_mock: Mock,
     # Do the call
     humidity.hcc(station, {}, full=full)
 
-    # Mock to check call occurs as expected with right return
-    supersat_check_mock.assert_called_once()
-    dpd_check_mock.assert_called_once()
+    # Mock to check calls occur as expected (dew T and wet T)
+    assert supersat_check_mock.call_count == 2
+    assert dpd_check_mock.call_count == 2
 
     if full:
-        get_threshold_mock.assert_called_once()
+        assert get_threshold_mock.call_count == 2
+
+    rh_consistency_mock.assert_called_once()
+    twet_consistency_mock.assert_called_once()
