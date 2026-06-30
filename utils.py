@@ -18,7 +18,16 @@ UNIT_DICT = {"temperature" : "degrees C", \
              "wind_direction" :  "degrees", \
              "wind_speed" : "meters per second", \
              "sea_level_pressure" : "hPa hectopascals", \
-             "station_level_pressure" : "hPa hectopascals"}
+             "station_level_pressure" : "hPa hectopascals",
+             "sky_cover_layer_1" : "",
+             "sky_cover_layer_baseht_1" : "",
+             "sky_cover_layer_2" : "",
+             "sky_cover_layer_baseht_2" : "",
+             "sky_cover_layer_3" : "",
+             "sky_cover_layer_baseht_3" : "",
+             "sky_cover_layer_4" : "",
+             "sky_cover_layer_baseht_4" : "",
+             }
 
 # Lowercase letters for flags which should exclude data
 # No information flags (the data are valid, but not necessarily adhering to conventions)
@@ -28,14 +37,17 @@ QC_TESTS = {"a" : "Repeated Day streaks",  # repeAted day streaks
             "d" : "Distribution - monthly",  # Distribution (monthly)
             "e" : "Clean Up",  # clEan up
             "f" : "Frequent Value",  # Frequent value
+            #"g" :
             "h" : "High Flag Rate",  # High flag rate
             "i" : "Precision",  # precIsion
+            #"j" :
             "k" : "Repeating Streaks",  # repeating streaKs
             "l" : "Logic",  # Logic
             "m" : "Humidity",  # huMidity
             "n" : "Neighbour",  # Neighbour
             "o" : "Odd Cluster",  # Odd cluster
             "p" : "Pressure",  # Pressure
+            #"q" :
             "r" : "World Records",  # world Records
             "s" : "Spike",  # Spike
             "t" : "Timestamp",  # Timestamp
@@ -43,6 +55,7 @@ QC_TESTS = {"a" : "Repeated Day streaks",  # repeAted day streaks
             "v" : "Variance",  # Variance
             "w" : "Winds",  # Winds
             "x" : "Excess streak proportion",  # eXcess streak proportion
+            "y" : "Clouds",  # CloudY
             "z" : "Wind logical - calm, masked zero direction",
 #            "," : "Timestamp - identical observation values",
             }
@@ -350,7 +363,17 @@ def populate_station(station: Station, df: pd.DataFrame, obs_var_list: list, rea
                                           "float")
 
         # store the data
-        indata = df[variable].fillna(MDI).to_numpy()
+        if variable in ("sky_cover_layer_1",
+                        "sky_cover_layer_2",
+                        "sky_cover_layer_3",
+                        "sky_cover_layer_4"):
+            # For tests, just need to keep the numerical Okta values
+            # split the string on the ":" into two new columns, take the second
+            indata_df = df[variable].str.split(":", n=1, expand=True)[1]
+        else:
+            indata_df = df[variable]
+
+        indata = indata_df.fillna(MDI).to_numpy()
         indata = indata.astype(float)
 
         # For wind direction and speed only, account for some measurement flags
