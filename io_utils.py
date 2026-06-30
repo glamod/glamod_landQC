@@ -232,6 +232,26 @@ def convert_wind_flags(station_df: pd.DataFrame,
             station_df.loc[combined_mask, variable_name] = np.nan
 
 
+def replace_999s(station_df: pd.DataFrame,
+                 variable_name: str) -> None:
+    """Converts data equalling 999 to NaNs (missing)
+
+    Parameters
+    ----------
+    station_df : pd.DataFrame
+        Dataframe for whole station, changed in situ
+    variable_name : str, optional
+        Variable name to process, by default "wind_direction"
+    """
+      # allow for easy expansion to others in the future
+    missing_data_indicators = [999]
+
+    # explicitly remove any missing data indicators
+    for mdi in missing_data_indicators:
+        mask = (station_df[variable_name] == mdi)
+        station_df.loc[mask, variable_name] = np.nan
+
+
 #************************************************************************
 def read_station(stationfile: Path, station: Station,
                  read_flags: bool = False) -> tuple[Station, pd.DataFrame]:
@@ -259,8 +279,15 @@ def read_station(stationfile: Path, station: Station,
     # calculate datetime series
     datetimes = calculate_datetimes(station_df)
 
-    # convert any remaining wind flags
-    convert_wind_flags(station_df)
+    # catch any remaining 999 values
+    for var_name in setup.obs_var_list:
+        # wind direction corrections done depending on measurement code
+        if var_name in ("wind_direction"):
+            # convert any remaining wind flags
+            convert_wind_flags(station_df)
+        else:
+            # all other metrics just a blanket replacement
+            replace_999s(station_df, var_name)
 
     # convert dataframe to station and MetVar objects for internal processing
     populate_station(station, station_df, setup.obs_var_list, read_flags=read_flags)
