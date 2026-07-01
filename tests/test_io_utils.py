@@ -201,7 +201,6 @@ def test_process_any_mdis() -> None:
     pd.testing.assert_frame_equal(expected_df, df)
 
 
-
 def test_read_station() -> None:
 
     # Not ideal, but as setup is used to determine other
@@ -239,7 +238,7 @@ def test_read_station_mdi_replacement(replace_mdis_mock: Mock,
 
     station = utils.Station("DUM00000004", 39.6500, 46.5330, 1099.0)
 
-    station, station_df = io_utils.read_station(infile, station)
+    station, _ = io_utils.read_station(infile, station)
 
     # single wind_direction call
     wind_flags_mock.assert_called_once()

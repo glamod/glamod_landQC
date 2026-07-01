@@ -230,6 +230,8 @@ def convert_wind_flags(station_df: pd.DataFrame,
             combined_mask = (station_df[f"{variable_name}_Measurement_Code"] == flag) &\
                             (station_df[variable_name] == mdi)
             station_df.loc[combined_mask, variable_name] = np.nan
+            if len(combined_mask) > 0:
+                logger.warning(f"Replacing {mdi} in {variable_name}")
 
 
 def replace_mdis(station_df: pd.DataFrame,
@@ -248,6 +250,9 @@ def replace_mdis(station_df: pd.DataFrame,
     """
     mask = (station_df[variable_name] == mdi)
     station_df.loc[mask, variable_name] = np.nan
+
+    if len(mask) > 0:
+        logger.warning(f"Replacing {mdi} in {variable_name}")
 
 
 def process_any_mdis(station_df: pd.DataFrame) -> None:
@@ -392,7 +397,7 @@ def write(outfile: Path, df: pd.DataFrame,
         df[column] = pd.Series([fmt.format(val) for val in df[column]], index = df.index)
 
         # Latitude & Longitude = {:7.4f}
-        # Monthy, Day, Hour, & Minute = {:0.2d}
+        # Month, Day, Hour, & Minute = {:0.2d}
 
     print(outfile)
     # for .psv
