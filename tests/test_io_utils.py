@@ -148,6 +148,59 @@ def test_convert_wind_flags() -> None:
     pd.testing.assert_frame_equal(df, expected_df)
 
 
+def test_replace_mdis() -> None:
+    # test to ensure replacing 999s with NaN done as expected
+
+    data = {"Year" : [2020, 2021, 2022, 2023, 2024],
+            "Month" : [1, 2, 3, 4, 5],
+            "Day" : [10, 11, 12, 13, 14],
+            "temperature" : [0., np.nan, -999., 10., 20.]}
+    df = pd.DataFrame(data)
+
+    # set directions to NaN if C-Calm or V-Variable _and_ value = 999
+    expected_data = {"Year" : [2020, 2021, 2022, 2023, 2024],
+            "Month" : [1, 2, 3, 4, 5],
+            "Day" : [10, 11, 12, 13, 14],
+            "temperature" : [0., np.nan, np.nan, 10., 20.]}
+    expected_df = pd.DataFrame(expected_data)
+
+    io_utils.replace_mdis(df, "temperature")
+
+    pd.testing.assert_frame_equal(df, expected_df)
+
+
+@patch("setup.obs_var_list", ["temperature",
+                              "sea_level_pressure",
+                              "wind_direction"])
+def test_process_any_mdis() -> None:
+    """Test that handling of MDI replacement done as expected across variables"""
+
+    data = {"Year" : [2020, 2021, 2022, 2023, 2024],
+            "Month" : [1, 2, 3, 4, 5],
+            "Day" : [10, 11, 12, 13, 14],
+            "temperature" : [0., np.nan, -999., 10., 20.],
+            "sea_level_pressure" : [1013., -999., np.nan, 1023.4, 999.0],
+            "wind_direction" : [999., 999., 0., 90., 360.],
+            "wind_direction_Measurement_Code" : ["C-Calm", "DUMMY",
+                                                 "N-Normal", "N-Normal", "N-Normal"]}
+    df = pd.DataFrame(data)
+
+    expected_data = {"Year" : [2020, 2021, 2022, 2023, 2024],
+            "Month" : [1, 2, 3, 4, 5],
+            "Day" : [10, 11, 12, 13, 14],
+            "temperature" : [0., np.nan, np.nan, 10., 20.],
+            "sea_level_pressure" : [1013., -np.nan, np.nan, 1023.4, 999.0],
+            "wind_direction" : [np.nan, 999., 0., 90., 360.],
+            "wind_direction_Measurement_Code" : ["C-Calm", "DUMMY",
+                                                 "N-Normal", "N-Normal", "N-Normal"]}
+    #  Use of "DUMMY" Measurement Code should ensure that 999 isn't touched
+    expected_df = pd.DataFrame(expected_data)
+
+    io_utils.process_any_mdis(df)
+
+    pd.testing.assert_frame_equal(expected_df, df)
+
+
 
 def test_read_station() -> None:
 
@@ -170,6 +223,42 @@ def test_read_station() -> None:
     assert station.times[0] == dt.datetime(1979, 8, 14, 0, 0)
 
     assert station_df.shape == (144, 329+len(setup.obs_var_list))
+
+
+@patch("io_utils.convert_wind_flags")
+@patch("io_utils.replace_mdis")
+def test_read_station_mdi_replacement(replace_mdis_mock: Mock,
+                                      wind_flags_mock: Mock) -> None:
+    """Test to see that replacement of mdi done on expected variables only"""
+
+    # As above
+    if setup.IN_FORMAT in ["psv", "csv"]:
+        infile = Path(__file__).parent / "example_data" / "DUM00000004.qff"
+    elif setup.IN_FORMAT in ["pqt", "parquet"]:
+        infile = Path(__file__).parent / "example_data" / "DUM00000004.pqt"
+
+    station = utils.Station("DUM00000004", 39.6500, 46.5330, 1099.0)
+
+    station, station_df = io_utils.read_station(infile, station)
+
+    # single wind_direction call
+    wind_flags_mock.assert_called_once()
+
+    # pull out the variables used in that call
+    calls = replace_mdis_mock.call_args_list
+    vars_in_calls = [call[0][1] for call in calls]
+
+    # generate the expected variables to have been used in the call
+    #    from the obs_var_list
+    all_vars = setup.obs_var_list[:]
+    expected_var = []
+    for var in all_vars:
+        if var == "wind_direction":
+            continue
+
+        expected_var += [var]
+
+    assert expected_var == vars_in_calls
 
 
 def test_read_station_error() -> None:
