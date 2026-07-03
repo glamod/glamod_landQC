@@ -11,6 +11,8 @@ import common
 
 
 def test_get_heights_and_oktas() -> None:
+    """Check that processing of height and okta information
+    into arrays happens as intended"""
 
     layer_1 = common.example_test_variable("sky_cover_layer_1", np.ma.arange(5))
     station = common.example_test_station(layer_1)
@@ -53,6 +55,8 @@ def test_get_heights_and_oktas() -> None:
 
 
 def test_orphan_values() -> None:
+    """Check to see that test identifies heights or okta values
+    which do not have a corresponding value in the other quantity"""
 
     # set up example arrays
     heights = np.array([[50, 100, 150, 200],   # normal
@@ -93,6 +97,8 @@ def test_orphan_values() -> None:
 
 
 def test_obscured_heights() ->  None:
+    """Check to see if routine identify height values
+    which should not be possible given obscured okta code"""
 
     # set up example arrays
     heights = np.array([[50, 100, 150, -200],
@@ -118,6 +124,11 @@ def test_obscured_heights() ->  None:
 
 
 def test_process_erroneous_clouds() -> None:
+    """Check to see that test picks up cloud measurements
+    above a full sky (okta=8) value.
+
+    This routine expects height ordered data, so looking for
+    values to the right of an 8"""
 
     # set up example arrays
     oktas = np.array([[1, 2, 8, -1],
@@ -151,7 +162,12 @@ def test_process_erroneous_clouds() -> None:
 
 @patch("clouds.process_erroneous_clouds")
 def test_process_multiple_layers_calls(process_clouds_mock: Mock) -> None:
+    """To test the functionality of this routine, need to see what the child
+    is called with, hence the mocking.
 
+    The okta values are ordered by the height values, and then
+    used to call, so check these are done corretly
+    """
     # set up example arrays
     oktas = np.array([[1, 2, 3, 4],
                       [1, 2, 3, 4],
@@ -179,11 +195,13 @@ def test_process_multiple_layers_calls(process_clouds_mock: Mock) -> None:
                                   expected_oktas)
 
 
-
-
 @patch("clouds.process_multiple_layers")
 def test_logical_cross_check_calls(proc_layers_mock: Mock) -> None:
-    """Test that call to child def has correct arguments"""
+    """To test the functionality of this routine, need to see
+    what the child is called with, hence the mocking.
+
+    Test that only timestamps with multiple cloud layers are
+    passed into child"""
 
     # set up example arrays
     oktas = np.array([[1, -1, -1, -1], #  1 layer only
@@ -214,6 +232,8 @@ def test_logical_cross_check_calls(proc_layers_mock: Mock) -> None:
 
 
 def test_logical_cross_check() -> None:
+    """Full test of logical cross check in clouds to
+    ensure that flags set correctly."""
 
     # set up example arrays
     oktas = np.array([[1, -1, -1, -1], #  1 layer only
@@ -253,3 +273,17 @@ def test_logical_cross_check() -> None:
 
     np.testing.assert_array_equal(hflags, expected_hflags)
     np.testing.assert_array_equal(oflags, expected_oflags)
+
+
+def test_insert_cloud_flags() -> None:
+    """Test to ensure that flags being stored as expected"""
+
+    layer_1 = common.example_test_variable("sky_cover_layer_1", np.ma.arange(5))
+    layer_1.store_flags(np.array(["", "", "", "", ""]))
+    station = common.example_test_station(layer_1)
+
+    flags = np.array([0, 1, 0, 1, 0])
+    clouds.insert_cloud_flags(station, "sky_cover_layer_1", flags)
+
+    np.testing.assert_array_equal(station.sky_cover_layer_1.flags,
+                                  np.array(["", "y", "", "y", ""]))
