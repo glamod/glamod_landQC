@@ -105,7 +105,7 @@ def logical_gust(speed: utils.MeteorologicalVariable,
     diagnostics : bool, optional
         Diagnostic output, by default False
     """
-    print(gust.data)
+
     gflags = np.array(["" for i in range(gust.data.shape[0])])
     sflags = np.array(["" for i in range(speed.data.shape[0])])
 

@@ -368,9 +368,15 @@ def populate_station(station: Station, df: pd.DataFrame, obs_var_list: list, rea
                         "sky_cover_layer_2",
                         "sky_cover_layer_3",
                         "sky_cover_layer_4"):
-            # For tests, just need to keep the numerical Okta values
-            # split the string on the ":" into two new columns, take the second
-            indata_df = df[variable].str.split(":", n=1, expand=True)[1]
+            layer_series = df[variable]
+            if layer_series.dropna().shape[0] > 0:
+                # If there is cloud information, process to just retain okta values
+
+                # For QC tests, just need to keep the numerical Okta values
+                # split the string on the ":" into two new columns, take the second
+                indata_df = df[variable].str.split(":", n=1, expand=True)[1]
+            else:
+                indata_df = df[variable]
         else:
             indata_df = df[variable]
 
