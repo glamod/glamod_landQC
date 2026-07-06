@@ -13,20 +13,21 @@ import logging
 import setup
 
 
-UNIT_DICT = {"temperature" : "degrees C", \
-             "dew_point_temperature" :  "degrees C", \
-             "wind_direction" :  "degrees", \
-             "wind_speed" : "meters per second", \
-             "sea_level_pressure" : "hPa hectopascals", \
+UNIT_DICT = {"temperature" : "degrees C",
+             "dew_point_temperature" :  "degrees C",
+             "wind_direction" :  "degrees",
+             "wind_speed" : "meters per second",
+             "wind_gust" : "meters per second",
+             "sea_level_pressure" : "hPa hectopascals",
              "station_level_pressure" : "hPa hectopascals",
-             "sky_cover_layer_1" : "",
-             "sky_cover_layer_baseht_1" : "",
-             "sky_cover_layer_2" : "",
-             "sky_cover_layer_baseht_2" : "",
-             "sky_cover_layer_3" : "",
-             "sky_cover_layer_baseht_3" : "",
-             "sky_cover_layer_4" : "",
-             "sky_cover_layer_baseht_4" : "",
+             "sky_cover_layer_1" : "oktas",
+             "sky_cover_layer_baseht_1" : "meters",
+             "sky_cover_layer_2" : "oktas",
+             "sky_cover_layer_baseht_2" : "meters",
+             "sky_cover_layer_3" : "oktas",
+             "sky_cover_layer_baseht_3" : "meters",
+             "sky_cover_layer_4" : "oktas",
+             "sky_cover_layer_baseht_4" : "meters",
              }
 
 # Lowercase letters for flags which should exclude data

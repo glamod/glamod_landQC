@@ -7,6 +7,7 @@
          "sea_level_pressure",
          "wind_speed",
          "wind_direction",
+		 "wind_gust",
 		 "sky_cover_layer_1",
 		 "sky_cover_layer_baseht_1",
 		 "sky_cover_layer_2",
@@ -17,7 +18,6 @@
 		 "sky_cover_layer_baseht_4"
       ],
       "not_process_vars":[
-		"wind_gust",
 		"precipitation",
 		"relative_humidity",
 		"wet_bulb_temperature",

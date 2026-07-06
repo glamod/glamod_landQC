@@ -232,7 +232,7 @@ def run_checks(restart_id: str="", end_id: str="",
         if test in ["all", "world_records"]:
             if diagnostics: print("W", dt.datetime.now()-startT)
             qc_tests.world_records.wrc(station, ["temperature", "dew_point_temperature",
-                                                 "sea_level_pressure", "wind_speed"],
+                                                 "sea_level_pressure", "wind_speed", "wind_gust"],
                                        full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "streaks"]:
@@ -284,7 +284,7 @@ def run_checks(restart_id: str="", end_id: str="",
             fixed_locs = qc_tests.winds.wcc(station, config_dict, fix=setup.FIX_WINDDIR, full=full,
                                             plots=plots, diagnostics=diagnostics)
 
-            # Fix within winds routines only applies to obs_var within station,
+            # Fix within winds routines only applies to obs_var within station obj,
             #   not to dataframe, hence needing to copy over for wind directions
             if setup.FIX_WINDDIR and len(fixed_locs) > 0:
                 # take copy so could revert missing and other details if necessary in the future

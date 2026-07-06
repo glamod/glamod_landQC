@@ -85,8 +85,47 @@ def logical_checks(speed: utils.MeteorologicalVariable,
     logger.info(f"   Cumulative number of {direction.name} flags set: {np.count_nonzero(dflags == 'w')}")
     logger.info(f"   Cumulative number of {direction.name} convention flags set: {np.count_nonzero(dflags == '1')}")
 
-
     return fix_zero_direction # logical_checks
+
+
+def logical_gust(speed: utils.MeteorologicalVariable,
+                 gust: utils.MeteorologicalVariable,
+                 plots: bool=False,
+                 diagnostics: bool=False) -> None:
+    """Logical checks on wind gust compared tow ind speed
+
+    Parameters
+    ----------
+    speed : utils.MeteorologicalVariable
+        Wind speed data
+    gust : utils.MeteorologicalVariable
+        Wind gust data
+    plots : bool, optional
+        Do plots, by default False
+    diagnostics : bool, optional
+        Diagnostic output, by default False
+    """
+    print(gust.data)
+    gflags = np.array(["" for i in range(gust.data.shape[0])])
+    sflags = np.array(["" for i in range(speed.data.shape[0])])
+
+    # any gusts below zero
+    below_zero = np.ma.nonzero(gust.data < 0)
+    gflags[below_zero] = "w"
+    logger.info(f"  Negative wind gust : {len(below_zero[0])}")
+
+    # any gusts above speed - not clear which is at fault
+    low_gust = np.ma.nonzero(speed.data > gust.data)
+    gflags[low_gust] = "w"
+    sflags[low_gust] = "w"
+    logger.info(f"  Wind gust below wind speed: {len(low_gust[0])}")
+
+    gust.store_flags(utils.insert_flags(gust.flags, gflags))
+    speed.store_flags(utils.insert_flags(speed.flags, sflags))
+
+    logger.info("Wind Logical - Gust")
+    logger.info(f"   Cumulative number of {gust.name} flags set: {np.count_nonzero(gflags != '')}")
+
 
 #************************************************************************
 def wcc(station: utils.Station, config_dict: dict,
@@ -107,8 +146,11 @@ def wcc(station: utils.Station, config_dict: dict,
 
     speed = getattr(station, "wind_speed")
     direction = getattr(station, "wind_direction")
+    gust = getattr(station, "wind_gust")
 
     corrected_locs = logical_checks(speed, direction, fix=fix,
                                     plots=plots, diagnostics=diagnostics)
+
+    logical_gust(speed, gust, plots=plots, diagnostics=diagnostics)
 
     return corrected_locs # pcc
