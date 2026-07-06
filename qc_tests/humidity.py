@@ -363,7 +363,7 @@ def get_vapor_pressures(temperatures: np.ma.MaskedArray,
 
     # get pseudo wet-bulb temperatures
     calc_Tw = _calculate_Tw(e_v, e_s, temperatures)
-    calc_Tw_ice = _calculate_Tw(e_v_ice, e_s_ice, temperatures)
+    #   calc_Tw_ice = _calculate_Tw(e_v_ice, e_s_ice, temperatures)
 
     # adjust for ice-bulbs
     e_v[calc_Tw <= 0] = e_v_ice[calc_Tw <= 0]
