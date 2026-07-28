@@ -18,17 +18,21 @@ import utils
 # Fixed values at the moment.
 
 # row = Rest Of World.
-# updated from https://wmo.asu.edu/content/world-meteorological-organization-global-weather-climate-extremes-archive
+# updated from https://wmo.int/site/world-weather-and-climate-extremes-archive
+# (old site https://wmo.asu.edu/content/world-meteorological-organization-global-weather-climate-extremes-archive )
 #   augmented by local knowledge from extreme events in these cases:
 #   T_X : europe : 48.8 (Syracuse, Sicily, August 2021) beating previous 48.0 [WMO still to validate]
 
-# last check 27 Jul 2022, RJHD
+# last check 28 July 2026, RJHD
+# previous check: 27 July 2022 RJHD
 
+# Europe is continental only.  Greenland falls under North America, Middle East is Asia
+#   See iso_country_codes.json for mapping
 T_X = {"africa" : 55.0, "asia" : 53.9, "samerica" : 48.9, "namerica" : 56.7, "europe" : 48.8,
        "oceania" : 50.7, "antarctica" : 18.3, "row" : 56.7}
 T_N = {"africa" : -23.9, "asia" : -67.8, "samerica" : -32.8, "namerica" : -63.0, "europe" : -58.1,
-       "oceania" : -23.0, "antarctica" : -89.2, "row" : -89.2}
-D_X = {"africa" : 55.0, "asia" : 53.9, "samerica" : 48.9, "namerica" : 56.7, "europe" : 48.0,
+       "oceania" : -25.6, "antarctica" : -89.2, "row" : -89.2}
+D_X = {"africa" : 55.0, "asia" : 53.9, "samerica" : 48.9, "namerica" : 56.7, "europe" : 48.8,
        "oceania" : 50.7, "antarctica" : 18.3, "row" : 56.7}
 D_N = {"africa" : -50., "asia" : -100., "samerica" : -60., "namerica" : -100., "europe" : -100.,
        "oceania" : -50., "antarctica" : -100., "row" : -100.}
@@ -36,8 +40,8 @@ W_X = {"africa" : 113.2, "asia" : 113.2, "samerica" : 113.2, "namerica" : 113.2,
        "oceania" : 113.2, "antarctica" : 113.2, "row" : 113.2}
 W_N = {"africa" : 0., "asia" : 0., "samerica" : 0., "namerica" : 0., "europe" : 0., "oceania" : 0.,
        "antarctica" : 0., "row" : 0.}
-S_X = {"africa" : 1083.3, "asia" : 1083.3, "samerica" : 1083.3, "namerica" : 1083.3, "europe" : 1083.3,
-       "oceania" : 1083.3, "antarctica" : 1083.3, "row" : 1083.3}
+S_X = {"africa" : 1089.1, "asia" : 1089.1, "samerica" : 1089.1, "namerica" : 1089.1, "europe" : 1089.1,
+       "oceania" : 1089.1, "antarctica" : 1089.1, "row" : 1089.1}
 S_N = {"africa" : 870., "asia" : 870., "samerica" : 870., "namerica" : 870., "europe" : 870.,
        "oceania" : 870., "antarctica" : 870., "row" : 870.}
 
