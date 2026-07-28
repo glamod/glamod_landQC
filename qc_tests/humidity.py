@@ -549,7 +549,7 @@ def twet_consistency_check(station: utils.Station,
         turn on diagnostic output
     """
 
-    # pull out the relative humidity information
+    # pull out the wet bulb information
     obs_twet = getattr(station, "wet_bulb_temperature")
     if len(obs_twet.data.compressed()) == 0:
         return

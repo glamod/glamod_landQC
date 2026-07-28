@@ -16,11 +16,11 @@ import setup
 UNIT_DICT = {"temperature" : "degrees C",
              "dew_point_temperature" :  "degrees C",
              "wet_bulb_temperature" :  "degrees C",
-             "relative_humidity" : "%",
+             "relative_humidity" : '% relative humidity',
              "wind_direction" :  "degrees",
              "wind_speed" : "meters per second",
-             "sea_level_pressure" : "hPa hectopascals",
-             "station_level_pressure" : "hPa hectopascals"}
+             "sea_level_pressure" : "hectopascals",
+             "station_level_pressure" : "hectopascals"}
 
 # Lowercase letters for flags which should exclude data
 # No information flags (the data are valid, but not necessarily adhering to conventions)

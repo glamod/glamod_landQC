@@ -141,6 +141,8 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
             print(station)
 
         try:
+            # Update station object with data, and return dataframe to hold
+            #    information for writing out to file later
             station, station_df = io.read_station(setup.SUBDAILY_MFF_DIR /
                                                   f"{station_id:11s}{setup.IN_SUFFIX}{setup.IN_COMPRESSION}",
                                                   station)
@@ -176,8 +178,8 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
 
         #*************************
         if test in ["all", "logic"]:
-            # incl lat, lon and elev checks
-
+            # Logical checks to ensure that most data falls within reasonable ranges.
+            #   includes metadata (e.g. lat, lon and elev) checks
             if diagnostics: print("Logic [l]", dt.datetime.now()-startT)
             good_metadata = qc_tests.logic_checks.lc(station, ["temperature",
                                                                "dew_point_temperature",
@@ -195,6 +197,7 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
                 continue
 
         if test in ["all", "odd_cluster"]:
+            # Checks for isolated short periods of data which are hard to compare against others.
             if diagnostics: print("OddClstr [o]", dt.datetime.now()-startT)
             # TODO - use suite config file to store all settings for tests
             qc_tests.odd_cluster.occ(station, ["temperature",
@@ -205,6 +208,7 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
 
         if test in ["all", "frequent"]:
             if diagnostics: print("Frequent [f]", dt.datetime.now()-startT)
+            # Explicitly leaving out relative humidity at the moment (rel 8.2, Jul 2026)
             qc_tests.frequent.fvc(station, ["temperature", "dew_point_temperature", "wet_bulb_temperature",
                                             "station_level_pressure", "sea_level_pressure"],
                                   config_dict, full=full, plots=plots, diagnostics=diagnostics)
@@ -212,28 +216,34 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
         # HadISD only runs on stations where latitude lower than 60(N/S)
         # Takes a long time, this one
         if test in ["all", "diurnal"]:
+            # Only runs on (dry bulb) temperature
             if diagnostics: print("Diurnal [u]", dt.datetime.now()-startT)
             if np.abs(station.lat < 60):
                 qc_tests.diurnal.dcc(station, config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "distribution"]:
+            # Considered including relative humidity in rel8.2 (Jul 2026), but hard
+            #   cutoffs at 0%rh and 100%rh need to be considered, so left out for now
             if diagnostics: print("Distribn [b,d]", dt.datetime.now()-startT)
             qc_tests.distribution_monthly.dgc(station, ["temperature",
-                                                        "dew_point_temperature", "wet_bulb_temperature", "relative_humidity",
+                                                        "dew_point_temperature", "wet_bulb_temperature",
                                                         "station_level_pressure", "sea_level_pressure"],
                                               config_dict, full=full, plots=plots, diagnostics=diagnostics)
             qc_tests.distribution_all.dgc(station, ["temperature",
-                                                    "dew_point_temperature", "wet_bulb_temperature", "relative_humidity",
+                                                    "dew_point_temperature", "wet_bulb_temperature",
                                                     "station_level_pressure", "sea_level_pressure"],
                                           config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "world_records"]:
+            # Checks against known and validated world records.
             if diagnostics: print("WldRecords [r]", dt.datetime.now()-startT)
             qc_tests.world_records.wrc(station, ["temperature", "dew_point_temperature", "wet_bulb_temperature",
                                                  "sea_level_pressure", "wind_speed"],
                                        full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "streaks"]:
+            # Not applied to relative humidity because may have real long streaks of 100%rh in foggy conditions
+            #    for some stations.  Calm wind speeds are masked and so not affected by this test.
             if diagnostics: print("Streaks [a,k,x]", dt.datetime.now()-startT)
             qc_tests.streaks.rsc(station, ["temperature", "dew_point_temperature", "wet_bulb_temperature",
                                            "station_level_pressure", "sea_level_pressure",
@@ -242,12 +252,14 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
 
         # not run on pressure data in HadISD.
         if test in ["all", "climatological"]:
+            # Checks against climatological expected values.
             if diagnostics: print("Climatol [c]", dt.datetime.now()-startT)
             qc_tests.climatological.clim_outlier(station, ["temperature",
                                                            "dew_point_temperature", "wet_bulb_temperature", "relative_humidity",],
                                                  config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "timestamp"]:
+            # Looks for identical (duplicate) timestamps with differing values.
             if diagnostics: print("Timestamp [t]", dt.datetime.now()-startT)
             qc_tests.timestamp.tsc(station, ["temperature",
                                              "dew_point_temperature", "wet_bulb_temperature", "relative_humidity",
@@ -256,12 +268,14 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
                                    config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "precision"]:
+            # Checks for periods where precision of paired variables is different
             if diagnostics: print("Precision [i]", dt.datetime.now()-startT)
             qc_tests.precision.pcc(station, [("temperature", "dew_point_temperature"),
                                              ("temperature", "wet_bulb_temperature")],
                                    config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "spike"]:
+            # Looks for spikes (up or down) in the data which are too large to be real.
             if diagnostics: print("Spike [s]", dt.datetime.now()-startT)
             qc_tests.spike.sc(station, ["temperature",
                                         "dew_point_temperature", "wet_bulb_temperature", "relative_humidity",
@@ -270,10 +284,12 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
                               config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "humidity"]:
+            #  Suite of checks on humidity related variables.
             if diagnostics: print("Humidity [m]", dt.datetime.now()-startT)
             qc_tests.humidity.hcc(station, config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "variance"]:
+            # Looks for periods of excess variability
             if diagnostics: print("Variance [v]", dt.datetime.now()-startT)
             qc_tests.variance.evc(station, ["temperature",
                                             "dew_point_temperature", "wet_bulb_temperature", "relative_humidity",
@@ -282,10 +298,12 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
                                   config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "pressure"]:
+            # Suite of checks comparing pressure variables and their expected range.
             if diagnostics: print("Pressure [p]", dt.datetime.now()-startT)
             qc_tests.pressure.pcc(station, config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "winds"]:
+            # Suite of checks on wind variables
             if diagnostics: print("Winds [w,z]", dt.datetime.now()-startT)
             fixed_locs = qc_tests.winds.wcc(station, config_dict, fix=setup.FIX_WINDDIR, full=full,
                                             plots=plots, diagnostics=diagnostics)
@@ -299,6 +317,7 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
 
 
         if test in ["all", "high_flag"]:
+            # Checks if high flagging rates in two or more variables, which suggests pervasive issues.
             if diagnostics: print("HighFlg [h]", dt.datetime.now()-startT)
             hfr_vars_set = qc_tests.high_flag.hfr(station, ["temperature",
                                                             "dew_point_temperature", "wet_bulb_temperature", "relative_humidity",
