@@ -32,7 +32,7 @@ D_X = {"africa" : 55.0, "asia" : 53.9, "samerica" : 48.9, "namerica" : 56.7, "eu
        "oceania" : 50.7, "antarctica" : 18.3, "row" : 56.7}
 D_N = {"africa" : -50., "asia" : -100., "samerica" : -60., "namerica" : -100., "europe" : -100.,
        "oceania" : -50., "antarctica" : -100., "row" : -100.}
-TW_X = {"africa" : 55.0, "asia" : 53.9, "samerica" : 48.9, "namerica" : 56.7, "europe" : 48.0,
+TW_X = {"africa" : 55.0, "asia" : 53.9, "samerica" : 48.9, "namerica" : 56.7, "europe" : 48.8,
        "oceania" : 50.7, "antarctica" : 18.3, "row" : 56.7}
 TW_N = {"africa" : -50., "asia" : -100., "samerica" : -60., "namerica" : -100., "europe" : -100.,
        "oceania" : -50., "antarctica" : -100., "row" : -100.}

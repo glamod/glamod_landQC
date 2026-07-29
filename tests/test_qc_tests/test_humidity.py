@@ -15,9 +15,9 @@ import utils
 def _setup_station() -> utils.Station:
 
     # set up the data
-    temps = np.ma.arange(10)
+    temps = np.ma.arange(10.)
     temps.mask = np.zeros(len(temps))
-    dewps = np.ma.arange(10)-1
+    dewps = np.ma.arange(10.)-1.
     dewps.mask = np.zeros(len(dewps))
 
     # make MetVars
@@ -52,7 +52,7 @@ def test_get_repeating_dpd_threshold_short_record(config_dict):
 
     humidity.get_repeating_dpd_threshold(temperature, dew_point_temperature, config_dict)
 
-    assert config_dict["HUMIDITY"]["DPD"] == -utils.MDI
+    assert config_dict["HUMIDITY"]["DPD-Td"] == -utils.MDI
 
 
 @pytest.mark.parametrize("config_dict", [{}, {"HUMIDITY" : {}}])
@@ -80,11 +80,12 @@ def test_get_repeating_dpd_threshold(config_dict):
 
     humidity.get_repeating_dpd_threshold(temperature, dew_point_temperature, config_dict)
 
-    assert config_dict["HUMIDITY"]["DPD"] == 7.0
+    assert config_dict["HUMIDITY"]["DPD-Td"] == 7.0
 
 
 # NOT TESTING PLOTTING
 
+@patch("utils.DATA_COUNT_THRESHOLD", 1)
 def test_super_saturation_check() -> None:
 
     station = _setup_station()
@@ -98,6 +99,26 @@ def test_super_saturation_check() -> None:
     np.testing.assert_array_equal(station.dew_point_temperature.flags, expected)
 
 
+@patch("utils.DATA_COUNT_THRESHOLD", 1)
+def test_super_saturation_check_under_tolerance() -> None:
+
+    station = _setup_station()
+    # increase the precision of the data to 0.5C
+    station.dew_point_temperature.data /= 2
+    station.temperature.data /= 2
+
+    # manually trigger the super saturation for he first 3, but final three below tolerance
+    station.dew_point_temperature.data[:3] = station.temperature.data[:3]+0.5
+    station.dew_point_temperature.data[-3:] = station.temperature.data[-3:]+0.1
+
+    expected = np.array(["m", "m", "m", "", "", "", "", "", "", ""])
+
+    humidity.super_saturation_check(station, station.temperature, station.dew_point_temperature)
+
+    np.testing.assert_array_equal(station.dew_point_temperature.flags, expected)
+
+
+@patch("utils.DATA_COUNT_THRESHOLD", 1)
 def test_super_saturation_check_w_mask() -> None:
 
     station = _setup_station()
@@ -115,6 +136,7 @@ def test_super_saturation_check_w_mask() -> None:
     np.testing.assert_array_equal(station.dew_point_temperature.flags, expected)
 
 
+@patch("utils.DATA_COUNT_THRESHOLD", 1)
 def test_super_saturation_check_proportion() -> None:
 
     station = _setup_station()
@@ -129,17 +151,21 @@ def test_super_saturation_check_proportion() -> None:
     np.testing.assert_array_equal(station.dew_point_temperature.flags, expected)
 
 
-def test_dew_point_depression_streak() -> None:
-
+@pytest.mark.parametrize("bias, flags", ([0, ["m", "m", "m", "m", "m", "m"]],  # identical, flagged
+                                         [0.3, ["m", "m", "m", "m", "m", "m"]], # within DPD Tolerance, flagged
+                                         [0.6, ["", "", "", "", "", ""]]))  # larger than tolerance, not flagged
+def test_dew_point_depression_streak(bias: float,
+                                     flags: list[str]) -> None:
+    """Test the dew point depression streak check, with a streak length of 5"""
     # streaks of length 5
-    config_dict = {"HUMIDITY" : {"DPD" : 5}}
+    config_dict = {"HUMIDITY" : {"DPD-Td" : 5}}
 
     # set up the data
     temps = np.arange(75)
     dewps = np.arange(75) - 2.
     # use same array as in utils unit test
     locs = np.array([0,
-                     10, 11, 12, 13, 14, 15,  # this set should be flagged
+                     10, 11, 12, 13, 14, 15,  # this set should be flagged if differnence < tolerance
                      20, 21, 22, 23,  # <-  all of these are too short
                      30, 31, 32, 33,
                      40, 41, 42,
@@ -148,10 +174,10 @@ def test_dew_point_depression_streak() -> None:
                      70])
 
     expected = np.array(["" for _ in range(75)])
-    expected[10:16] = "m"
+    expected[10:16] = flags
 
-    # create the DPD=0
-    dewps[locs] = temps[locs]
+    # create the DPD<0.35 data
+    dewps[locs] = temps[locs] - bias
 
     temperature = common.example_test_variable("temperature", temps)
     dewpoint = common.example_test_variable("dew_point_temperature", dewps)
@@ -166,7 +192,7 @@ def test_dew_point_depression_streak() -> None:
 
 
 def test_dew_point_depression_streak_dict() -> None:
-
+    """Test storing of configuration dictionary"""
     config_dict = {"HUMIDITY" : {}}
     # set up the data
     temps = np.arange(75)
@@ -181,7 +207,7 @@ def test_dew_point_depression_streak_dict() -> None:
 
     humidity.dew_point_depression_streak(times, temperature, dewpoint, config_dict)
 
-    assert config_dict["HUMIDITY"]["DPD"] == -utils.MDI
+    assert config_dict["HUMIDITY"]["DPD-Td"] == -utils.MDI
 
 
 # def test_calculate_e_v_wrt_water() -> None:

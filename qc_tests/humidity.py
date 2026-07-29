@@ -16,12 +16,29 @@ import qc_tests.qc_utils as qc_utils
 from qc_tests.pressure import plot_pressure_distribution
 
 HIGH_FLAGGING_THRESHOLD = 0.4
-TOLERANCE = 1.e-10
+
+# To account for greatest precisions we'd likely receive
+#    As an initial attempt, using about half the worst precision.
+SUPERSAT_TOLERANCE = {0.1: 0.05,
+                      0.5: 0.3,
+                      1.0: 0.5}
+
+# Dewpoint (or Twet) depression streak tolerance.
+#   From HadISDH, Willett et al, 2013 [10.5194/cp-9-657-2013] section 4.1,
+#           Tw uncertainty (1sigma) is 0.15C
+#   From HadCRUT, Brohan et al, 2006 [10.1029/2005JD006548] section 2.3.1.1 &
+#                 Folland et al, 2002, [10.1029/2001GL012877] p1 (2sigma=0.4C)
+#           T uncertainty (1sigma) is 0.2C
+DPD_STREAK_TOLERANCE = 0.35
 
 MIN_RH_DIFF_SPREAD = 1
 MIN_TWET_DIFF_SPREAD = 1
 RH_THRESHOLD = 2  # x IQR difference offset
 TWET_THRESHOLD = 2
+
+# To help distinguish between wet-temperatures in config dictionary keys
+DPD_DICT_NAME_LOOKUP = {"dew_point_temperature" : "Td",
+                        "wet_bulb_temperature" : "Tw"}
 
 #************************************************************************
 def get_repeating_dpd_threshold(temperatures: utils.MeteorologicalVariable,
@@ -39,11 +56,11 @@ def get_repeating_dpd_threshold(temperatures: utils.MeteorologicalVariable,
     :param bool diagnostics: turn on diagnostic output
     """
 
-    # identical equality
-    dpd = temperatures.data - wet_temperatures.data
+    # equality within measurement tolerance, so get absolute quanity (magnitude)
+    dpd = np.abs(temperatures.data - wet_temperatures.data)
 
-    # find only the DPD=0 locations, and then see if there are streaks
-    locs, = np.ma.nonzero(dpd == 0)
+    # find the DPD<Tolerance locations, and then see if there are streaks
+    locs, = np.ma.nonzero(dpd < DPD_STREAK_TOLERANCE)
 
     # only process further if there are enough locations
     if len(locs) > 1:
@@ -61,18 +78,18 @@ def get_repeating_dpd_threshold(temperatures: utils.MeteorologicalVariable,
 
         # write out the thresholds...
         try:
-            config_dict["HUMIDITY"]["DPD"] = threshold
+            config_dict["HUMIDITY"][f"DPD-{DPD_DICT_NAME_LOOKUP[wet_temperatures.name]}"] = threshold
         except KeyError:
             # ensuring that threshold is stored as a float, not an np.array.
-            CD_dpd = {"DPD" : float(threshold)}
+            CD_dpd = {f"DPD-{DPD_DICT_NAME_LOOKUP[wet_temperatures.name]}" : float(threshold)}
             config_dict["HUMIDITY"] = CD_dpd
 
     else:
         # store high value so threshold never reached (MDI already negative)
         try:
-            config_dict["HUMIDITY"]["DPD"] = -utils.MDI
+            config_dict["HUMIDITY"][f"DPD-{DPD_DICT_NAME_LOOKUP[wet_temperatures.name]}"] = -utils.MDI
         except KeyError:
-            CD_dpd = {"DPD" : float(-utils.MDI)}
+            CD_dpd = {f"DPD-{DPD_DICT_NAME_LOOKUP[wet_temperatures.name]}" : float(-utils.MDI)}
             config_dict["HUMIDITY"] = CD_dpd
 
     # repeating_dpd_threshold
@@ -173,22 +190,37 @@ def super_saturation_check(station: utils.Station,
 
     flags = np.array(["" for i in range(temperatures.data.shape[0])])
 
-    sss, = np.ma.nonzero(wet_temperatures.data > (temperatures.data + TOLERANCE))
 
-    flags[sss] = "m"
-
-    # and whole month of dewpoints if month has a high proportion (of dewpoint obs)
     for year in np.unique(station.years):
         for month in range(1, 13):
             month_locs, = np.nonzero(np.logical_and(station.years == year,
                                                     station.months == month,
                                                     wet_temperatures.data.mask == True))
-            if month_locs.shape[0] != 0:
-                flagged, = np.nonzero(flags[month_locs] == "m")
-                if (flagged.shape[0]/month_locs.shape[0]) > HIGH_FLAGGING_THRESHOLD:
-                    flags[month_locs] = "m"
 
-    # only flag the dewpoints
+            if month_locs.shape[0] == 0:
+                # no data in any variable
+                continue
+
+            if (len(temperatures.data[month_locs].compressed()) < utils.DATA_COUNT_THRESHOLD) or\
+                (len(wet_temperatures.data[month_locs].compressed()) < utils.DATA_COUNT_THRESHOLD):
+                # no data in either of the two variables
+                continue
+
+            # use precision information to set tolerance
+
+            temps_precision = qc_utils.reporting_accuracy(temperatures.data[month_locs])
+            wet_temps_precision = qc_utils.reporting_accuracy(wet_temperatures.data[month_locs])
+
+            sss, = np.ma.nonzero(wet_temperatures.data[month_locs] > \
+                (temperatures.data[month_locs] + SUPERSAT_TOLERANCE[max(temps_precision, wet_temps_precision)]))
+
+            flags[month_locs[sss]] = "m"
+
+            # and whole month of Tw/dewpoints if month has a high proportion (of dewpoint obs)
+            if (sss.shape[0]/month_locs.shape[0]) > HIGH_FLAGGING_THRESHOLD:
+                flags[month_locs] = "m"
+
+    # only flag the Tw/dewpoints
     wet_temperatures.store_flags(utils.insert_flags(wet_temperatures.flags, flags))
 
     # diagnostic plots
@@ -223,20 +255,20 @@ def dew_point_depression_streak(times: pd.Series,
 
     # retrieve the threshold and store in another dictionary
     try:
-        th = config_dict["HUMIDITY"]["DPD"]
+        th = config_dict["HUMIDITY"][f"DPD-{DPD_DICT_NAME_LOOKUP[wet_temperatures.name]}"]
         threshold = float(th)
     except KeyError:
         # no threshold set
         get_repeating_dpd_threshold(temperatures, wet_temperatures, config_dict,
                                     plots=plots, diagnostics=diagnostics)
-        th = config_dict["HUMIDITY"]["DPD"]
+        th = config_dict["HUMIDITY"][f"DPD-{DPD_DICT_NAME_LOOKUP[wet_temperatures.name]}"]
         threshold = float(th)
 
+    # equality within measurement tolerance, so get absolute quanity (magnitude)
+    dpd = np.abs(temperatures.data - wet_temperatures.data)
 
-    dpd = temperatures.data - wet_temperatures.data
-
-    # find only the DPD=0 locations, and then see if there are streaks
-    locs, = np.ma.nonzero(dpd == 0)
+    # find the DPD<Tolerance locations, and then see if there are streaks
+    locs, = np.ma.nonzero(dpd < DPD_STREAK_TOLERANCE)
 
     # only process further if there are enough locations
     if len(locs) > 1:
@@ -312,9 +344,9 @@ def _calculate_e_v_wrt_ice(temperature: np.ma.MaskedArray,
 
 
 #************************************************************************
-def _calculate_Tw(e_v: np.ma.MaskedArray,
-                  e_s: np.ma.MaskedArray,
-                  temperature: np.ma.MaskedArray) -> np.ma.MaskedArray:
+def _calculate_Tw_stull(e_v: np.ma.MaskedArray,
+                        e_s: np.ma.MaskedArray,
+                        temperature: np.ma.MaskedArray) -> np.ma.MaskedArray:
     '''
     Calculate the pseudo wetbulb temperature
 
@@ -335,7 +367,7 @@ def _calculate_Tw(e_v: np.ma.MaskedArray,
         np.arctan(temperature + rh) - np.arctan(rh - 1.676331) +\
         (0.00391838*((rh)**(3./2.)) * np.arctan(0.023101 * rh)) - 4.686035
 
-    return Tw # calculate_Tw
+    return Tw # calculate_Tw_stull
 
 #************************************************************************
 def get_vapor_pressures(temperatures: np.ma.MaskedArray,
@@ -361,15 +393,51 @@ def get_vapor_pressures(temperatures: np.ma.MaskedArray,
     e_s = _calculate_e_v_wrt_water(temperatures, station_pressure)
     e_s_ice = _calculate_e_v_wrt_ice(temperatures, station_pressure)
 
-    # get pseudo wet-bulb temperatures
-    calc_Tw = _calculate_Tw(e_v, e_s, temperatures)
-    #   calc_Tw_ice = _calculate_Tw(e_v_ice, e_s_ice, temperatures)
-
     # adjust for ice-bulbs
-    e_v[calc_Tw <= 0] = e_v_ice[calc_Tw <= 0]
-    e_s[calc_Tw <= 0] = e_s_ice[calc_Tw <= 0]
+    e_v[temperatures <= 0] = e_v_ice[temperatures <= 0]
+    e_s[temperatures <= 0] = e_s_ice[temperatures <= 0]
 
     return e_v, e_s
+
+
+def calculate_Tw(temperatures: np.ma.MaskedArray,
+                dewpoints: np.ma.MaskedArray,
+                station_pressure: np.ma.MaskedArray) -> np.ma.MaskedArray:
+    """Calculate wet bulb using Stull's formula, with adjustment
+    for ice-bulb if T<0
+
+    Parameters
+    ----------
+    temperatures : np.ma.MaskedArray
+        Dry-bulb temperatures (C)
+    dewpoints : np.ma.MaskedArray
+        Dew point temperatures (C)
+    station_pressure : np.ma.MaskedArray
+        Station pressure (hPa)
+
+    Returns
+    -------
+    np.ma.MaskedArray
+        Wet bulb temperatures (C)
+    """
+
+    # get vapour pressures
+    e_v = _calculate_e_v_wrt_water(dewpoints, station_pressure)
+    e_v_ice = _calculate_e_v_wrt_ice(dewpoints, station_pressure)
+
+    # saturation vapour_pressures
+    e_s = _calculate_e_v_wrt_water(temperatures, station_pressure)
+    e_s_ice = _calculate_e_v_wrt_ice(temperatures, station_pressure)
+
+    # get pseudo wet-bulb temperatures
+    calc_Tw = _calculate_Tw_stull(e_v, e_s, temperatures)
+    calc_Tw_ice = _calculate_Tw_stull(e_v_ice, e_s_ice, temperatures)
+
+    Tw = calc_Tw.copy()
+    # and set ice bulb
+    Tw[temperatures <= 0] = calc_Tw_ice[temperatures <= 0]
+
+    return Tw
 
 
 def get_noaa_rh(temperatures: np.ma.MaskedArray,
@@ -444,22 +512,42 @@ def to_inches_hg(indata: np.ma.MaskedArray) -> np.ma.MaskedArray:
 def get_noaa_twet(temperatures: np.ma.MaskedArray,
                   dewpoints: np.ma.MaskedArray,
                   station_pressure: np.ma.MaskedArray) -> np.ma.MaskedArray:
+    """Calculate wet bulb temperature from formula supplied by NOAA
 
+    Parameters
+    ----------
+    temperatures : np.ma.MaskedArray
+        Dry-bulb temperatures (C)
+    dewpoints : np.ma.MaskedArray
+        Dew point temperatures (C)
+    station_pressure : np.ma.MaskedArray
+        Station pressure (hPa)
 
+    Returns
+    -------
+    np.ma.MaskedArray
+        Wet bulb temperatures (C), to 0.1-degree precision
+    """
+
+    # convert to Fahrenheit and inches of mercury
     temperatureF = np.round(to_fahrenheit(temperatures))
     dewpointF = np.round(to_fahrenheit(dewpoints))
     mercury_stnp = np.round(to_inches_hg(station_pressure), 2)
 
+    # set up empty arryes
     wetbulbF = np.ma.zeros(temperatures.data.shape)
     wetbulbF.mask = np.ones(wetbulbF.shape)
 
+    # constants for formula
     a = (temperatureF - dewpointF) * 0.1
     b = a - 1.0
     c = a**2
 
+    # using above/below 0F as the threshold for the two different formulae
     below_zeroF, = np.nonzero(temperatureF < 0.)
     above_zeroF, = np.nonzero(temperatureF >= 0.)
 
+    # do calculation (in Fahrenheit)
     if len(below_zeroF > 0):
         wetbulbF[below_zeroF] = (temperatureF[below_zeroF] -
                                  ((0.034 * a[below_zeroF]) - (0.006 * c[below_zeroF])) *
@@ -471,12 +559,16 @@ def get_noaa_twet(temperatures: np.ma.MaskedArray,
                                  ((temperatureF[above_zeroF] + dewpointF[above_zeroF]) -
                                   (2.0 * mercury_stnp[above_zeroF]) + 108.0))
 
-    return np.round(to_celsius(wetbulbF), 1)  #  to 1dp
+    # return in Celsius, rounded to 1 decimal place
+    return np.round(to_celsius(wetbulbF), 1)
 
 
 def rh_consistency_check(station: utils.Station,
-                         plots: bool, diagnostics: bool) -> None:
+                                plots: bool,
+                                diagnostics: bool,
+                                check_derived_only: bool=True) -> None:
     """Compare recorded rh against that calculated from other metrics
+    using NOAA formulae [or alternative formulae - Future work]
 
     Parameters
     ----------
@@ -486,6 +578,8 @@ def rh_consistency_check(station: utils.Station,
         turn on plots
     diagnostics : bool
         turn on diagnostic output
+    check_derived_only : bool
+        If True, check using the NOAA formulae for derived values
     """
 
     # pull out the relative humidity information
@@ -498,46 +592,55 @@ def rh_consistency_check(station: utils.Station,
     # pull out the remaining variables
     temperatures = getattr(station, "temperature")
     dewpoints = getattr(station, "dew_point_temperature")
-    stnp = getattr(station, "station_level_pressure")
 
-    # get the vapor pressure and saturation v.p.
-    e_v, e_s = get_vapor_pressures(temperatures.data,
-                                   dewpoints.data,
-                                   stnp.data)
+    if check_derived_only:
+        # use NOAA formula to get rh
+        noaa_rh = get_noaa_rh(temperatures.data[dewpoints.is_derived],
+                              dewpoints.data[dewpoints.is_derived])
+        # differences between calculated and observed
+        diffs = obs_rh.data[dewpoints.is_derived] - noaa_rh
+    else:
+        stnp = getattr(station, "station_level_pressure")
+        # get the vapor pressure and saturation v.p.
+        e_v, e_s = get_vapor_pressures(temperatures.data,
+                                       dewpoints.data,
+                                       stnp.data)
 
-    # calculate rh from T & Td, and differences to observed
-    calc_rh = (e_v / e_s) * 100.
-    noaa_rh = get_noaa_rh(temperatures.data, dewpoints.data)
-
-    # differences between calculated (both methods) and observed
-    rh_diffs = obs_rh.data - calc_rh
-    noaa_diffs = obs_rh.data - noaa_rh
+        # calculate rh from T & Td, and differences to observed
+        calc_rh = (e_v / e_s) * 100.
+        diffs = obs_rh.data - calc_rh
 
     # find locations where rh differences are > N x spread
     #    increase spread if too small
-    spread = qc_utils.spread(rh_diffs)
+    spread = qc_utils.spread(diffs)
     if spread < MIN_RH_DIFF_SPREAD:
         spread = MIN_RH_DIFF_SPREAD
 
-    bad_locs, = np.nonzero(np.abs(rh_diffs) > RH_THRESHOLD * spread)
+    bad_locs, = np.nonzero(np.abs(diffs) > RH_THRESHOLD * spread)
 
     if plots:
-        plot_pressure_distribution(noaa_diffs, "RH Differences",
+        plot_pressure_distribution(diffs, "RH Differences",
                                    vmin=-RH_THRESHOLD * spread,
                                    vmax=RH_THRESHOLD * spread,
                                    units='%rh')
 
     if len(bad_locs) != 0 :
-        flags[bad_locs] = "m"
+        if check_derived_only:
+            flags[dewpoints.is_derived[bad_locs]] = "m"
+        else:
+            flags[bad_locs] = "m"
         obs_rh.store_flags(utils.insert_flags(obs_rh.flags, flags))
 
-    logger.info(f"Relative Humidity Consistency: {obs_rh.name}")
+    logger.info(f"Relative Humidity Consistency (Derived): {obs_rh.name}")
     logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
 
 def twet_consistency_check(station: utils.Station,
-                           plots: bool, diagnostics: bool) -> None:
+                                   plots: bool,
+                                   diagnostics: bool,
+                                   check_derived_only: bool=True) -> None:
     """Compare recorded twet against that calculated from other metrics
+    using the NOAA formulae [or alternative formulae - Future work]
 
     Parameters
     ----------
@@ -547,6 +650,8 @@ def twet_consistency_check(station: utils.Station,
         turn on plots
     diagnostics : bool
         turn on diagnostic output
+    check_derived_only : bool
+        If True, check using the NOAA formulae for derived values
     """
 
     # pull out the wet bulb information
@@ -561,28 +666,41 @@ def twet_consistency_check(station: utils.Station,
     dewpoints = getattr(station, "dew_point_temperature")
     stnp = getattr(station, "station_level_pressure")
 
-    # calculate twet from T & Td, and differences to observed
-    noaa_twet = get_noaa_twet(temperatures.data, dewpoints.data, stnp.data)
+    if check_derived_only:
+        # Compare against NOAA formulae when these have been used.
+        # calculate twet from T & Td, and differences to observed
+        noaa_twet = get_noaa_twet(temperatures.data[dewpoints.is_derived],
+                                  dewpoints.data[dewpoints.is_derived],
+                                  stnp.data[dewpoints.is_derived])
 
-    # differences between calculated (both methods) and observed
-    noaa_diffs = obs_twet.data - noaa_twet
+        # differences between calculated (both methods) and observed
+        diffs = obs_twet.data[dewpoints.is_derived] - noaa_twet
+
+    else:
+        # use alternative calculation of Twet for comparison
+        calc_twet = calculate_Tw(temperatures.data, dewpoints.data, stnp.data)
+        diffs = obs_twet.data - calc_twet
+
 
     # find locations where rh differences are > N x spread
     #    increase spread if too small
-    spread = qc_utils.spread(noaa_diffs)
+    spread = qc_utils.spread(diffs)
     if spread < MIN_TWET_DIFF_SPREAD:
         spread = MIN_TWET_DIFF_SPREAD
 
-    bad_locs, = np.nonzero(np.abs(noaa_diffs) > TWET_THRESHOLD * spread)
+    bad_locs, = np.nonzero(np.abs(diffs) > TWET_THRESHOLD * spread)
 
     if plots:
-        plot_pressure_distribution(noaa_diffs, "T_wet Differences",
+        plot_pressure_distribution(diffs, "T_wet Differences",
                                    vmin=-TWET_THRESHOLD * spread,
                                    vmax=TWET_THRESHOLD * spread,
                                    units='C')
 
     if len(bad_locs) != 0 :
-        flags[bad_locs] = "m"
+        if check_derived_only:
+            flags[dewpoints.is_derived[bad_locs]] = "m"
+        else:
+            flags[bad_locs] = "m"
         obs_twet.store_flags(utils.insert_flags(obs_twet.flags, flags))
 
     logger.info(f"Wet Bulb Temperature Consistency: {obs_twet.name}")
@@ -627,11 +745,16 @@ def hcc(station: utils.Station, config_dict: dict,
     #  greater chance of removing good observations
     #  18 July 2019 RJHD
 
-    # relative humidity consistency
-    #    use T, Td (and Tw?) to check rh is consistent
-
-    rh_consistency_check(station, plots=plots, diagnostics=diagnostics)
+    # consistency checks, for derived values
+    #    use T, Td to check rh and Tw are consistent with NOAA calculations
+    #    Just to make sure nothing has gone wrong with that derivation
+    rh_consistency_check(station, plots=plots,
+                                 diagnostics=diagnostics)
     twet_consistency_check(station, plots=plots, diagnostics=diagnostics)
+
+    # For future work
+    # Consistency checks against other calculation methods (e.g. NEWT)
+
 
 
     # hcc

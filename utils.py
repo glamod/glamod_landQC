@@ -366,6 +366,15 @@ def populate_station(station: Station, df: pd.DataFrame, obs_var_list: list, rea
             # invert mask and set to missing
             indata[~mask] = MDI
 
+        elif variable in ["wet_bulb_temperature", "relative_humidity"]:
+            # for these two only need measurement code to determine
+            #   if derived (D) or not
+            m_code = df[f"{variable}_Measurement_Code"]
+
+            derived = m_code.eq("D").to_numpy()
+
+            setattr(this_var, "is_derived", derived)
+
         this_var.store_data(np.ma.masked_where(indata == MDI, indata))
 
         if len(this_var.data.mask.shape) == 0:
