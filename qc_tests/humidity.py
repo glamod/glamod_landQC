@@ -19,7 +19,8 @@ HIGH_FLAGGING_THRESHOLD = 0.4
 
 # To account for greatest precisions we'd likely receive
 #    As an initial attempt, using about half the worst precision.
-SUPERSAT_TOLERANCE = {0.1: 0.05,
+#    But 0.1C at minimum
+SUPERSAT_TOLERANCE = {0.1: 0.1,
                       0.5: 0.3,
                       1.0: 0.5}
 
@@ -457,8 +458,8 @@ def get_noaa_rh(temperatures: np.ma.MaskedArray,
         Relative Humidity array
     """
 
-    return (((112.0 - (0.1 *temperatures) + dewpoints) /
-             (112.0 + (0.9 * temperatures)))**8) * 100.0
+    return np.round((((112.0 - (0.1 *temperatures) + dewpoints) /
+             (112.0 + (0.9 * temperatures)))**8) * 100.0, 0)
 
 
 def to_fahrenheit(indata: np.ma.MaskedArray) -> np.ma.MaskedArray:
@@ -563,10 +564,161 @@ def get_noaa_twet(temperatures: np.ma.MaskedArray,
     return np.round(to_celsius(wetbulbF), 1)
 
 
+def _calculate_rh_differences_noaa(temperatures: np.ndarray,
+                                   dewpoints: np.ndarray,
+                                   obs_rh: np.ndarray) -> np.ndarray:
+    """Calculated differences between RH in data files to that
+    from NOAA formulae
+
+    Parameters
+    ----------
+    temperatures : np.ndarray
+        Dry bulb temperature array
+    dewpoints : np.ndarray
+        Dew point temperature array
+    obs_rh : np.ndarray
+        Observed relative humidity array
+
+    Returns
+    -------
+    np.ndarray
+        Differences array (observed - NOAA derived)
+    """
+    # use NOAA formula to get rh
+    noaa_rh = get_noaa_rh(temperatures, dewpoints)
+    print(noaa_rh)
+
+    # differences between calculated and observed
+    diffs = obs_rh - noaa_rh
+
+    return diffs
+
+
+def _calculate_rh_differences_full(temperatures: np.ndarray,
+                                   dewpoints: np.ndarray,
+                                   stnp: np.ndarray,
+                                   obs_rh: np.ndarray) -> np.ndarray:
+    """Calculated differences between RH in data files to that
+    from standard formulae
+
+    Parameters
+    ----------
+    temperatures : np.ndarray
+        Dry bulb temperature array
+    dewpoints : np.ndarray
+        Dew point temperature array
+    stnp : np.ndarray
+        Station level pressure array
+    obs_rh : np.ndarray
+        Observed relative humidity array
+
+    Returns
+    -------
+    np.ndarray
+        Differences array (observed - derived)
+    """
+    # get the vapor pressure and saturation v.p.
+    e_v, e_s = get_vapor_pressures(temperatures, dewpoints, stnp)
+
+    # calculate rh from T & Td, and differences to observed
+    calc_rh = (e_v / e_s) * 100.
+    diffs = obs_rh - calc_rh
+
+    return diffs
+
+
+def _identify_and_store_rh_diffs_spread(diffs: np.ndarray,
+                                        config_dict: dict,
+                                        plots: bool,
+                                        is_noaa: bool):
+    """Determine the distribution of the differences between
+    the observed and derived RH, and store the spread in the
+    configuration dictionary, for suitable thresholds
+
+    Parameters
+    ----------
+    diffs : np.ndarray
+        Differences between observed and derived RH
+    config_dict : dict
+        Configuration dictionary to read critical values
+    plots : bool
+        Plots distribution of the differences
+    is_noaa : bool
+        If True, check using the NOAA formulae for derived values
+    """
+    key_name = "RH-FULL"
+    if is_noaa:
+        key_name = "RH-NOAA"
+
+    # e.g. if check_derived_only, but none are
+    if len(diffs) < utils.DATA_COUNT_THRESHOLD:
+        logger.info("Relative Humidity Consistency - insufficient data")
+        try:
+            config_dict["HUMIDITY"][key_name] = -utils.MDI
+        except KeyError:
+            CD_rh_diffs = {key_name : -utils.MDI}
+            config_dict["HUMIDITY"] = CD_rh_diffs
+        return
+
+    # find locations where rh differences are > N x spread
+    #    increase spread if too small
+    spread = qc_utils.spread(diffs)
+    if spread < MIN_RH_DIFF_SPREAD:
+        spread = MIN_RH_DIFF_SPREAD
+
+    if plots:
+        plot_pressure_distribution(diffs, "RH Differences",
+                                   vmin=-RH_THRESHOLD * spread,
+                                   vmax=RH_THRESHOLD * spread,
+                                   units='%rh')
+
+    try:
+        config_dict["HUMIDITY"][key_name] = spread
+    except KeyError:
+        CD_rh_diffs = {key_name : spread}
+        config_dict["HUMIDITY"] = CD_rh_diffs
+
+
+def _apply_rh_flags(diffs: np.ndarray,
+                    spread: float,
+                    obs_rh: utils.MeteorologicalVariable,
+                    flags: np.ndarray,
+                    check_derived_only: bool) -> None:
+    """Find locations where differences exceed threshold
+    and flag
+
+    Parameters
+    ----------
+    diffs : np.ndarray
+        Differences between observed and derived RH
+    spread : float
+        Spread of distribution of the differnces
+    obs_rh : utils.MeteorologicalVariable
+        Observed relative humidity object
+    flags : np.ndarray
+        Flags array to be updated
+    check_derived_only : bool
+        If True, check using the NOAA formulae for derived values
+    """
+
+    bad_locs, = np.nonzero(np.abs(diffs) > RH_THRESHOLD * spread)
+
+    if len(bad_locs) != 0 :
+        if check_derived_only:
+            derived_flags = flags[obs_rh.is_derived]
+            derived_flags[bad_locs] = "m"
+            flags[obs_rh.is_derived] = derived_flags
+        else:
+            flags[bad_locs] = "m"
+        obs_rh.store_flags(utils.insert_flags(obs_rh.flags, flags))
+
+
 def rh_consistency_check(station: utils.Station,
-                                plots: bool,
-                                diagnostics: bool,
-                                check_derived_only: bool=True) -> None:
+                        config_dict: dict,
+                        full: bool,
+                        plots: bool,
+                        diagnostics: bool,
+                        check_derived_only: bool=True) -> None:
     """Compare recorded rh against that calculated from other metrics
     using NOAA formulae [or alternative formulae - Future work]
 
@@ -574,6 +726,10 @@ def rh_consistency_check(station: utils.Station,
     ----------
     station : utils.Station
         Station object
+    config_dict : dict
+        configuration dictionary to store critical values
+    full : bool
+        run a full update and recalculate thresholds
     plots : bool
         turn on plots
     diagnostics : bool
@@ -593,43 +749,35 @@ def rh_consistency_check(station: utils.Station,
     temperatures = getattr(station, "temperature")
     dewpoints = getattr(station, "dew_point_temperature")
 
+    # get differences between derived and observed
     if check_derived_only:
-        # use NOAA formula to get rh
-        noaa_rh = get_noaa_rh(temperatures.data[dewpoints.is_derived],
-                              dewpoints.data[dewpoints.is_derived])
-        # differences between calculated and observed
-        diffs = obs_rh.data[dewpoints.is_derived] - noaa_rh
+        diffs = _calculate_rh_differences_noaa(temperatures.data[obs_rh.is_derived],
+                                               dewpoints.data[obs_rh.is_derived],
+                                               obs_rh.data[obs_rh.is_derived])
     else:
         stnp = getattr(station, "station_level_pressure")
-        # get the vapor pressure and saturation v.p.
-        e_v, e_s = get_vapor_pressures(temperatures.data,
-                                       dewpoints.data,
-                                       stnp.data)
+        diffs = _calculate_rh_differences_full(temperatures.data,
+                                               dewpoints.data,
+                                               stnp.data,
+                                               obs_rh.data)
 
-        # calculate rh from T & Td, and differences to observed
-        calc_rh = (e_v / e_s) * 100.
-        diffs = obs_rh.data - calc_rh
+    # find and store the spread
+    if full:
+        _identify_and_store_rh_diffs_spread(diffs, config_dict,
+                                            plots=plots,
+                                            is_noaa=check_derived_only)
 
-    # find locations where rh differences are > N x spread
-    #    increase spread if too small
-    spread = qc_utils.spread(diffs)
-    if spread < MIN_RH_DIFF_SPREAD:
-        spread = MIN_RH_DIFF_SPREAD
+    # read from the configuration dictionary
+    try:
+        spread = float(config_dict["HUMIDITY"][f"RH-NOAA"])
+    except KeyError:
+        # in case running full but no threshold available
+        _identify_and_store_rh_diffs_spread(diffs, config_dict,
+                                    plots=plots)
+        spread = float(config_dict["HUMIDITY"][f"RH-NOAA"])
 
-    bad_locs, = np.nonzero(np.abs(diffs) > RH_THRESHOLD * spread)
-
-    if plots:
-        plot_pressure_distribution(diffs, "RH Differences",
-                                   vmin=-RH_THRESHOLD * spread,
-                                   vmax=RH_THRESHOLD * spread,
-                                   units='%rh')
-
-    if len(bad_locs) != 0 :
-        if check_derived_only:
-            flags[dewpoints.is_derived[bad_locs]] = "m"
-        else:
-            flags[bad_locs] = "m"
-        obs_rh.store_flags(utils.insert_flags(obs_rh.flags, flags))
+    # apply the spread to identify and flag the bad observations
+    _apply_rh_flags(diffs, spread, obs_rh, flags, check_derived_only)
 
     logger.info(f"Relative Humidity Consistency (Derived): {obs_rh.name}")
     logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
@@ -669,18 +817,22 @@ def twet_consistency_check(station: utils.Station,
     if check_derived_only:
         # Compare against NOAA formulae when these have been used.
         # calculate twet from T & Td, and differences to observed
-        noaa_twet = get_noaa_twet(temperatures.data[dewpoints.is_derived],
-                                  dewpoints.data[dewpoints.is_derived],
-                                  stnp.data[dewpoints.is_derived])
+        noaa_twet = get_noaa_twet(temperatures.data[obs_twet.is_derived],
+                                  dewpoints.data[obs_twet.is_derived],
+                                  stnp.data[obs_twet.is_derived])
 
         # differences between calculated (both methods) and observed
-        diffs = obs_twet.data[dewpoints.is_derived] - noaa_twet
+        diffs = obs_twet.data[obs_twet.is_derived] - noaa_twet
 
     else:
         # use alternative calculation of Twet for comparison
         calc_twet = calculate_Tw(temperatures.data, dewpoints.data, stnp.data)
         diffs = obs_twet.data - calc_twet
 
+    # e.g. if check_derived_only, but none are
+    if len(diffs) < utils.DATA_COUNT_THRESHOLD:
+        logging.info("Wet Bulb Temperature Consistency check - insufficient data")
+        return
 
     # find locations where rh differences are > N x spread
     #    increase spread if too small
@@ -698,7 +850,9 @@ def twet_consistency_check(station: utils.Station,
 
     if len(bad_locs) != 0 :
         if check_derived_only:
-            flags[dewpoints.is_derived[bad_locs]] = "m"
+            derived_flags = flags[obs_twet.is_derived]
+            derived_flags[bad_locs] = "m"
+            flags[obs_twet.is_derived] = derived_flags
         else:
             flags[bad_locs] = "m"
         obs_twet.store_flags(utils.insert_flags(obs_twet.flags, flags))
@@ -748,8 +902,8 @@ def hcc(station: utils.Station, config_dict: dict,
     # consistency checks, for derived values
     #    use T, Td to check rh and Tw are consistent with NOAA calculations
     #    Just to make sure nothing has gone wrong with that derivation
-    rh_consistency_check(station, plots=plots,
-                                 diagnostics=diagnostics)
+    rh_consistency_check(station, config_dict, full=full, plots=plots,
+                         diagnostics=diagnostics)
     twet_consistency_check(station, plots=plots, diagnostics=diagnostics)
 
     # For future work

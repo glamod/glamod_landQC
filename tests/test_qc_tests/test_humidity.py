@@ -213,9 +213,7 @@ def test_dew_point_depression_streak_dict() -> None:
 # def test_calculate_e_v_wrt_water() -> None:
 # def test_calculate_e_v_wrt_ice() -> None:
 # def test_calculate_Tw() -> None:
-
 # def test_get_vapor_pressures() -> None:
-
 # def test_get_noaa_rh() -> None:
 
 @pytest.mark.parametrize("celsius, fahrenheit", ((0, 32),
@@ -254,10 +252,86 @@ def test_to_inches_hg(hpa: float,
     assert np.isclose(result, inches, atol=0.1)
 
 
-# def test_get_noaa_twet() -> None:
+def test_get_noaa_twet() -> None:
+    """Test NOAA Twet calculation for some example values"""
+
+    # using ACW00011647 as of R8.1 as source for test data
+    # 1958-1-1 0000 & 0600, + 2026-02-12 2100
+
+    result = humidity.get_noaa_twet(np.array([25.0, 24.4, 26.4]),
+                                    np.array([19.4, 20.0, 21.8]),
+                                    np.array([1014.2, 1014.2, 1013.6]))
+
+    np.testing.assert_array_almost_equal(result,
+                                         np.array([21.4, 21.5, 23.3]), decimal=1)
 
 
-# def test_rh_consistency_check() -> None:
+def test_calculate_rh_differences_noaa() -> None:
+    """Test calculation of differences to NOAA formula"""
+    result = humidity._calculate_rh_differences_noaa(np.array([25.0, 24.4, 26.4]),
+                                                    np.array([19.4, 20.0, 21.8]),
+                                                    np.array([71.0, 77.0, 76.0]))
+
+    np.testing.assert_array_almost_equal(result,
+                                         np.array([0, 0, 0]), decimal=1)
+
+
+# def test_calculate_rh_differences_full() -> None:
+
+
+def test_identify_and_store_rh_diffs_spread_little_data() -> None:
+    """Test function stores empty values if too little data"""
+    config_dict = {"HUMIDITY" : {}}
+    diffs = np.array([1.0, 2.0])  # Less than DATA_COUNT_THRESHOLD
+
+    humidity._identify_and_store_rh_diffs_spread(diffs, config_dict,
+                                                 plots=False, is_noaa=True)
+
+    assert config_dict["HUMIDITY"]["RH-NOAA"] == -utils.MDI
+
+
+@pytest.mark.parametrize("spread, stored", ([1.5, 1.5],
+                                            [1.0, 1.0],
+                                            [0.5, 1.0]))
+@patch("utils.DATA_COUNT_THRESHOLD", 1)
+@patch("humidity.qc_utils.spread")
+def test_identify_and_store_rh_diffs_spread(spread_mock: Mock,
+                                            spread: float,
+                                            stored: float)-> None:
+    """Test function stores mocked values, spoofing the data count threshold"""
+
+    config_dict = {"HUMIDITY" : {}}
+    diffs = np.array([1.0, 2.0])
+
+    spread_mock.return_value = spread
+
+    humidity._identify_and_store_rh_diffs_spread(diffs, config_dict,
+                                                 plots=False, is_noaa=True)
+
+    assert config_dict["HUMIDITY"]["RH-NOAA"] == stored
+
+
+def test_apply_rh_flags() -> None:
+    """Test the correct locations have flags set"""
+
+    # some sensible RHs, all derived
+    rhs = np.arange(55, 100, 5)
+    relhum = common.example_test_variable("relative_humidity", rhs)
+    setattr(relhum, "is_derived", np.ones(rhs.shape[0], dtype=bool))
+
+    # All match NOAA apart from 2nd entry
+    diffs = np.zeros(rhs.shape[0])
+    diffs[1] = 10  # this should be flagged
+    flags = np.array(["" for _ in range(rhs.shape[0])])
+
+    # and generate the expected flags
+    humidity._apply_rh_flags(diffs, 2, relhum, flags, True)
+    expected = flags[:]
+    expected[1] = "m"
+
+    np.testing.assert_array_equal(relhum.flags,
+                                  expected)
+
 
 # def test_twet_consistency_check() -> None:
 
