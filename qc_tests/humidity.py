@@ -586,10 +586,41 @@ def _calculate_rh_differences_noaa(temperatures: np.ndarray,
     """
     # use NOAA formula to get rh
     noaa_rh = get_noaa_rh(temperatures, dewpoints)
-    print(noaa_rh)
 
     # differences between calculated and observed
     diffs = obs_rh - noaa_rh
+
+    return diffs
+
+
+def _calculate_twet_differences_noaa(temperatures: np.ndarray,
+                                     dewpoints: np.ndarray,
+                                     stn_pressure: np.ndarray,
+                                     obs_twet: np.ndarray) -> np.ndarray:
+    """Calculated differences between Twet in data files to that
+    from NOAA formulae
+
+    Parameters
+    ----------
+    temperatures : np.ndarray
+        Dry bulb temperature array
+    dewpoints : np.ndarray
+        Dew point temperature array
+    stn_pressure : np.ndarray
+        Station level pressure array
+    obs_twet : np.ndarray
+        Observed wet bulb temperature array
+
+    Returns
+    -------
+    np.ndarray
+        Differences array (observed - NOAA derived)
+    """
+    # use NOAA formula to get Twet
+    noaa_twet = get_noaa_twet(temperatures, dewpoints, stn_pressure)
+
+    # differences between calculated and observed
+    diffs = obs_twet - noaa_twet
 
     return diffs
 
@@ -623,6 +654,36 @@ def _calculate_rh_differences_full(temperatures: np.ndarray,
     # calculate rh from T & Td, and differences to observed
     calc_rh = (e_v / e_s) * 100.
     diffs = obs_rh - calc_rh
+
+    return diffs
+
+
+def _calculate_twet_differences_full(temperatures: np.ndarray,
+                                     dewpoints: np.ndarray,
+                                     stnp: np.ndarray,
+                                     obs_twet: np.ndarray) -> np.ndarray:
+    """Calculated differences between Twet in data files to that
+    from standard formulae
+
+    Parameters
+    ----------
+    temperatures : np.ndarray
+        Dry bulb temperature array
+    dewpoints : np.ndarray
+        Dew point temperature array
+    stnp : np.ndarray
+        Station level pressure array
+    obs_twet : np.ndarray
+        Observed wet bulb temperature array
+
+    Returns
+    -------
+    np.ndarray
+        Differences array (observed - derived)
+    """
+    # get the vapor pressure and saturation v.p.
+    calc_twet = calculate_Tw(temperatures, dewpoints, stnp)
+    diffs = obs_twet - calc_twet
 
     return diffs
 
@@ -793,8 +854,10 @@ def rh_consistency_check(station: utils.Station,
         spread = float(config_dict["HUMIDITY"][f"RH-NOAA"])
     except KeyError:
         # in case running full but no threshold available
-        _identify_and_store_obs_diffs_spread(diffs, obs_rh.name, config_dict,
-                                            plots=plots)
+        _identify_and_store_obs_diffs_spread(diffs, obs_rh.name,
+                                             config_dict,
+                                             plots=plots,
+                                             is_noaa=check_derived_only)
         spread = float(config_dict["HUMIDITY"][f"RH-NOAA"])
 
     # apply the spread to identify and flag the bad observations
@@ -806,7 +869,8 @@ def rh_consistency_check(station: utils.Station,
 
 def twet_consistency_check(station: utils.Station,
                            config_dict: dict,
-                           full: bool,                                  plots: bool,
+                           full: bool,
+                           plots: bool,
                            diagnostics: bool,
                            check_derived_only: bool=True) -> None:
     """Compare recorded twet against that calculated from other metrics
@@ -843,17 +907,17 @@ def twet_consistency_check(station: utils.Station,
     if check_derived_only:
         # Compare against NOAA formulae when these have been used.
         # calculate twet from T & Td, and differences to observed
-        noaa_twet = get_noaa_twet(temperatures.data[obs_twet.is_derived],
-                                  dewpoints.data[obs_twet.is_derived],
-                                  stnp.data[obs_twet.is_derived])
-
-        # differences between calculated (both methods) and observed
-        diffs = obs_twet.data[obs_twet.is_derived] - noaa_twet
+        diffs = _calculate_twet_differences_noaa(temperatures.data[obs_twet.is_derived],
+                                                 dewpoints.data[obs_twet.is_derived],
+                                                 stnp.data[obs_twet.is_derived],
+                                                 obs_twet.data[obs_twet.is_derived])
 
     else:
         # use alternative calculation of Twet for comparison
-        calc_twet = calculate_Tw(temperatures.data, dewpoints.data, stnp.data)
-        diffs = obs_twet.data - calc_twet
+        diffs = _calculate_twet_differences_full(temperatures.data,
+                                                 dewpoints.data,
+                                                 stnp.data,
+                                                 obs_twet.data)
 
     # find and store the spread
     if full:
@@ -867,8 +931,10 @@ def twet_consistency_check(station: utils.Station,
         spread = float(config_dict["HUMIDITY"][f"TW-NOAA"])
     except KeyError:
         # in case running full but no threshold available
-        _identify_and_store_obs_diffs_spread(diffs, obs_twet.name, config_dict,
-                                             plots=plots)
+        _identify_and_store_obs_diffs_spread(diffs, obs_twet.name,
+                                             config_dict,
+                                             plots=plots,
+                                             is_noaa=check_derived_only)
         spread = float(config_dict["HUMIDITY"][f"TW-NOAA"])
 
     _apply_flags(diffs, spread, obs_twet, flags, check_derived_only)

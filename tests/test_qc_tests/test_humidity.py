@@ -269,8 +269,8 @@ def test_get_noaa_twet() -> None:
 def test_calculate_rh_differences_noaa() -> None:
     """Test calculation of differences to NOAA formula"""
     result = humidity._calculate_rh_differences_noaa(np.array([25.0, 24.4, 26.4]),
-                                                    np.array([19.4, 20.0, 21.8]),
-                                                    np.array([71.0, 77.0, 76.0]))
+                                                     np.array([19.4, 20.0, 21.8]),
+                                                     np.array([71.0, 77.0, 76.0]))
 
     np.testing.assert_array_almost_equal(result,
                                          np.array([0, 0, 0]), decimal=1)
@@ -278,6 +278,22 @@ def test_calculate_rh_differences_noaa() -> None:
 
 # def test_calculate_rh_differences_full() -> None:
 
+def test_calculate_twet_differences_noaa() -> None:
+    """Test calculations of differences to NOAA Twet formula"""
+
+    # using ACW00011647 as of R8.1 as source for test data
+    # 1958-1-1 0000 & 0600, + 2026-02-12 2100
+
+    result = humidity._calculate_twet_differences_noaa(np.array([25.0, 24.4, 26.4]),
+                                                       np.array([19.4, 20.0, 21.8]),
+                                                       np.array([1014.2, 1014.2, 1013.6]),
+                                                       np.array([21.4, 21.5, 23.3]))
+
+    np.testing.assert_array_almost_equal(result,
+                                         np.array([0, 0, 0]), decimal=1)
+
+
+# def test_calculate_twet_differences_full() -> None:
 
 def test_identify_and_store_obs_diffs_spread_little_data() -> None:
     """Test function stores empty values if too little data"""
