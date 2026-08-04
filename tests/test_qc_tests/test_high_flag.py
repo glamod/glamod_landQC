@@ -125,10 +125,10 @@ def test_high_flag_rate_humidity() -> None:
 
     # set enough flags to trigger the test if none are prec+hum, 3 precision
     flags = np.array(["" for i in dewpoint.data])
-    flags[:3] = "n"
+    flags[:3] = utils.QC_TEST_FLAGS["Precision"]
 
     # and set humidity flags
-    dewpoint.flags[:int(dewpoint.data.shape[0]*utils.HIGH_FLAGGING) + 1] = "m"
+    dewpoint.flags[:int(dewpoint.data.shape[0]*utils.HIGH_FLAGGING) + 1] = utils.QC_TEST_FLAGS["Humidity"]
     dewpoint.flags = np.char.add(dewpoint.flags, flags)
     # set flags so that when discounting the precision and humidity flags
     #  then the high-flag threshold not reached

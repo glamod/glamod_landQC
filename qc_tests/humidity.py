@@ -178,7 +178,7 @@ def plot_humidity_streak(times: pd.Series,
 def super_saturation_check(station: utils.Station,
                            temperatures: utils.MeteorologicalVariable,
                            wet_temperatures: utils.MeteorologicalVariable,
-                           tdplots: bool = False,
+                           tsplots: bool = False,
                            diagnostics: bool = False) -> None:
     """
     Flag locations where dewpoint or wet-bulb is greater than air temperature
