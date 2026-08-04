@@ -349,7 +349,7 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.ndar
     # flag if large enough fraction (>0.66)
     sufficient, = np.ma.nonzero(dubious_count > DUBIOUS_FRACTION*neighbour_count)
 
-    flags[sufficient] = "n"
+    flags[sufficient] = utils.QC_TEST_FLAGS["Neighbour"]
 
     if tsplots:
         for flag in sufficient:

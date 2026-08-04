@@ -140,7 +140,7 @@ def flag_large_offsets(station: utils.Station, month: int,
         # year ID for this set of calendar months
         locs, = np.nonzero(np.logical_and(station.months == month,
                                         station.years == all_years[bad_month_id]))
-        flags[locs] = "D"
+        flags[locs] = utils.QC_TEST_FLAGS["Distribution - monthly"]
 
 
 def walk_distribution(standardised_months: np.ndarray) -> np.ndarray:
@@ -255,7 +255,7 @@ def monthly_gap(obs_var: utils.MeteorologicalVariable, station: utils.Station,
             # year ID for this set of calendar months
             locs, = np.nonzero(np.logical_and(station.months == month,
                                             station.years == all_years[bad_month_id]))
-            flags[locs] = "D"
+            flags[locs] = utils.QC_TEST_FLAGS["Distribution - monthly"]
 
         if plots:
             bins = qc_utils.create_bins(standardised_months, MONTHlY_BIN_WIDTH, obs_var.name)

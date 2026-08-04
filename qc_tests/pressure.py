@@ -105,7 +105,7 @@ def pressure_logic(sealp: utils.MeteorologicalVariable,
     if len(bad_locs) != 0 :
         logger.info(f"Pressure {stnlp.name}")
 
-        flags[bad_locs] = "p"
+        flags[bad_locs] = utils.QC_TEST_FLAGS["Pressure"]
         logger.info(f"   Sea & station pressure inconsistent with elevation {len(bad_locs)}")
         if tsplots:
             for bad in bad_locs:
@@ -250,14 +250,14 @@ def pressure_offset(sealp: utils.MeteorologicalVariable,
                 logger.info(f"Pressure {stnlp.name}")
 
             if len(high) != 0:
-                flags[high] = "p"
+                flags[high] = utils.QC_TEST_FLAGS["Pressure"]
                 logger.info(f"   Number of high differences {len(high)}")
                 if tsplots:
                     for bad in high:
                         plot_pressure_timeseries(sealp, stnlp, times, bad)
 
             if len(low) != 0:
-                flags[low] = "p"
+                flags[low] = utils.QC_TEST_FLAGS["Pressure"]
                 logger.info(f"   Number of low differences {len(low)}")
                 if tsplots:
                     for bad in low:
@@ -313,7 +313,7 @@ def adjust_existing_flag_locs(var: utils.MeteorologicalVariable,
     :returns: updated flag array
     """
 
-    pre_exist = [i for i,item in enumerate(var.flags) if "p" in item]
+    pre_exist = [i for i,item in enumerate(var.flags) if utils.QC_TEST_FLAGS["Pressure"] in item]
     new_flags = np.copy(flags)
 
     # remove flags if "p" already in the existing flag so as not to duplicate
@@ -364,7 +364,7 @@ def pressure_station_theory(stnlp: utils.MeteorologicalVariable,
                                        vmax=STNLP_THEORY_THRESHOLD)
 
         if len(bad_locs) != 0:
-            flags[bad_locs] = "p"
+            flags[bad_locs] = utils.QC_TEST_FLAGS["Pressure"]
             logger.info(f"Pressure {stnlp.name}")
             logger.info(f"   Number of mismatches between expected and recorded station pressure {len(bad_locs)}")
             if tsplots:
@@ -423,7 +423,7 @@ def pressure_consistency_theory(sealp: utils.MeteorologicalVariable,
                                        vmax=SLP_THEORY_THRESHOLD)
 
         if len(bad_locs) != 0:
-            flags[bad_locs] = "p"
+            flags[bad_locs] = utils.QC_TEST_FLAGS["Pressure"]
             logger.info(f"Pressure {stnlp.name}")
             logger.info(f"   Number of mismatches between recorded and theoretical SLPs {len(bad_locs)}")
             if tsplots:

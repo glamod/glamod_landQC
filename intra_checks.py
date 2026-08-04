@@ -112,7 +112,7 @@ def run_checks(restart_id: str="", end_id: str="",
         logfile = setup.SUBDAILY_LOG_DIR / f"{station_id}_internal_checks.log"
         if logfile.exists():
             logfile.unlink()
-        logger = utils.custom_logger(logfile)
+        logger = utils.custom_logger(logfile, diagnostics=diagnostics)
         logger.info(f"Internal Checks on {station_id}")
         logger.info("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
 

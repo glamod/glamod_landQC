@@ -87,13 +87,12 @@ def precision_cross_check(station: utils.Station, primary: utils.MeteorologicalV
             if primary_precision != secondary_precision:
                 # flag secondary only
                 locs, = np.nonzero(secondary.data[month_locs].mask == False)
-                flags[month_locs[locs]] = "i"
+                flags[month_locs[locs]] = utils.QC_TEST_FLAGS["Precision"]
 
                 # diagnostic plots
                 if tsplots:
                     plot_flags(primary, secondary, station.times, month_locs)
-                if diagnostics:
-                    print(f" Precision stats for {year}/{month} : {primary_precision} vs {secondary_precision} : {len(locs)}")
+                logger.info(f" Precision stats for {year}/{month} : {primary_precision} vs {secondary_precision} : {len(locs)}")
 
 
     # only flag the secondary

@@ -46,6 +46,7 @@ QC_TESTS = {"a" : "Repeated Day streaks",  # repeAted day streaks
             "z" : "Wind logical - calm, masked zero direction",
 #            "," : "Timestamp - identical observation values",
             }
+QC_TEST_FLAGS = {v: k for k, v in QC_TESTS.items()}
 
 
 MDI = -1.e30
@@ -431,7 +432,8 @@ def find_continent(country_code: str) -> str:
 
 
 #************************************************************************
-def custom_logger(logfile: Path):
+def custom_logger(logfile: Path,
+                  diagnostics: bool=False):
 
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
@@ -443,14 +445,19 @@ def custom_logger(logfile: Path):
 
     # create console handler with a higher log level
     ch = logging.StreamHandler()
-    ch.setLevel(logging.WARNING)
+    if diagnostics:
+        # unless we want all the data for detailed info
+        ch.setLevel(logging.DEBUG)
+    else:
+        ch.setLevel(logging.WARNING)
+
 
     # create file handler to capture all output
     fh = logging.FileHandler(logfile, "w")
-    fh.setLevel(logging.DEBUG)
+    fh.setLevel(logging.INFO)
 
     # create formatter and add it to the handlers
-    logconsole_format = logging.Formatter('%(levelname)-8s %(message)s',
+    logconsole_format = logging.Formatter('%(asctime)s %(module)s %(levelname)-8s %(message)s',
                                           datefmt='%Y-%m-%d %H:%M:%S')
     ch.setFormatter(logconsole_format)
 

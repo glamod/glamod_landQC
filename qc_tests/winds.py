@@ -43,51 +43,42 @@ def logical_checks(speed: utils.MeteorologicalVariable,
     if fix:
         direction.data[fix_zero_direction] = 0
         direction.data.mask[fix_zero_direction] = False
-        if diagnostics:
-            print("  Zero direction : {}".format(len(fix_zero_direction)))
+        logger.info("  Zero direction fixed : {}".format(len(fix_zero_direction)))
     else:
-        dflags[fix_zero_direction] = "z"
-        if diagnostics:
-            print("  Zero direction : {}".format(len(fix_zero_direction)))
+        dflags[fix_zero_direction] = utils.QC_TEST_FLAGS["Wind logical - calm, masked zero direction"]
+        logger.info("  Zero direction : {}".format(len(fix_zero_direction)))
         # and set to empty as can be used in parent to copy values to dataframe
         fix_zero_direction = np.array([])
 
     # negative speeds (can't fix)
     negative_speed = np.ma.nonzero(speed.data < 0)
-    sflags[negative_speed] = "w"
+    sflags[negative_speed] = utils.QC_TEST_FLAGS["Winds"]
     logger.info(f"  Negative speed : {len(negative_speed[0])}")
 
     # negative directions (don't try to adjust)
     negative_direction = np.ma.nonzero(direction.data < 0)
-    dflags[negative_direction] = "w"
+    dflags[negative_direction] = utils.QC_TEST_FLAGS["Winds"]
     logger.info(f"  Negative direction : {len(negative_direction[0])}")
 
     # wrapped directions (don't try to adjust)
     wrapped_direction = np.ma.nonzero(direction.data > 360)
-    dflags[wrapped_direction] = "w"
+    dflags[wrapped_direction] = utils.QC_TEST_FLAGS["Winds"]
     logger.info(f"  Wrapped direction : {len(wrapped_direction[0])}")
 
     # no direction possible if speed == 0
     bad_direction = np.ma.nonzero(np.logical_and(speed.data == 0,
                                                direction.data != 0))
-    dflags[bad_direction] = "w"
+    dflags[bad_direction] = utils.QC_TEST_FLAGS["Winds"]
     logger.info(f"  Bad direction : {len(bad_direction[0])}")
 
     # northerlies given as 360, not 0 --> calm
     bad_speed = np.ma.nonzero(np.logical_and(direction.data == 0, speed.data != 0))
-    sflags[bad_speed] = "w"
+    sflags[bad_speed] = utils.QC_TEST_FLAGS["Winds"]
     logger.info(f"  Bad speed : {len(bad_speed[0])}")
 
     # copy flags into attribute
     speed.store_flags(utils.insert_flags(speed.flags, sflags))
     direction.store_flags(utils.insert_flags(direction.flags, dflags))
-
-    if diagnostics:
-
-        print("Wind Logical")
-        print(f"   Cumulative number of {speed.name} flags set: {np.count_nonzero(sflags != '')}")
-        print(f"   Cumulative number of {direction.name} flags set: {np.count_nonzero(dflags == 'w')}")
-        print(f"   Cumulative number of {direction.name} convention flags set: {np.count_nonzero(dflags == '1')}")
 
     logger.info("Wind Logical")
     logger.info(f"   Cumulative number of {speed.name} flags set: {np.count_nonzero(sflags != '')}")
