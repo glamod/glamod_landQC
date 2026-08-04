@@ -279,12 +279,13 @@ def test_calculate_rh_differences_noaa() -> None:
 # def test_calculate_rh_differences_full() -> None:
 
 
-def test_identify_and_store_rh_diffs_spread_little_data() -> None:
+def test_identify_and_store_obs_diffs_spread_little_data() -> None:
     """Test function stores empty values if too little data"""
     config_dict = {"HUMIDITY" : {}}
     diffs = np.array([1.0, 2.0])  # Less than DATA_COUNT_THRESHOLD
 
-    humidity._identify_and_store_rh_diffs_spread(diffs, config_dict,
+    humidity._identify_and_store_obs_diffs_spread(diffs, "relative_humidity",
+                                                 config_dict,
                                                  plots=False, is_noaa=True)
 
     assert config_dict["HUMIDITY"]["RH-NOAA"] == -utils.MDI
@@ -295,7 +296,7 @@ def test_identify_and_store_rh_diffs_spread_little_data() -> None:
                                             [0.5, 1.0]))
 @patch("utils.DATA_COUNT_THRESHOLD", 1)
 @patch("humidity.qc_utils.spread")
-def test_identify_and_store_rh_diffs_spread(spread_mock: Mock,
+def test_identify_and_store_obs_diffs_spread(spread_mock: Mock,
                                             spread: float,
                                             stored: float)-> None:
     """Test function stores mocked values, spoofing the data count threshold"""
@@ -305,13 +306,14 @@ def test_identify_and_store_rh_diffs_spread(spread_mock: Mock,
 
     spread_mock.return_value = spread
 
-    humidity._identify_and_store_rh_diffs_spread(diffs, config_dict,
+    humidity._identify_and_store_obs_diffs_spread(diffs, "relative_humidity",
+                                                 config_dict,
                                                  plots=False, is_noaa=True)
 
     assert config_dict["HUMIDITY"]["RH-NOAA"] == stored
 
 
-def test_apply_rh_flags() -> None:
+def test_apply_flags_rh() -> None:
     """Test the correct locations have flags set"""
 
     # some sensible RHs, all derived
@@ -325,7 +327,7 @@ def test_apply_rh_flags() -> None:
     flags = np.array(["" for _ in range(rhs.shape[0])])
 
     # and generate the expected flags
-    humidity._apply_rh_flags(diffs, 2, relhum, flags, True)
+    humidity._apply_flags(diffs, 2, relhum, flags, True)
     expected = flags[:]
     expected[1] = "m"
 

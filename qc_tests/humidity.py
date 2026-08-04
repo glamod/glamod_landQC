@@ -627,7 +627,8 @@ def _calculate_rh_differences_full(temperatures: np.ndarray,
     return diffs
 
 
-def _identify_and_store_rh_diffs_spread(diffs: np.ndarray,
+def _identify_and_store_obs_diffs_spread(diffs: np.ndarray,
+                                        varname: str,
                                         config_dict: dict,
                                         plots: bool,
                                         is_noaa: bool):
@@ -639,6 +640,8 @@ def _identify_and_store_rh_diffs_spread(diffs: np.ndarray,
     ----------
     diffs : np.ndarray
         Differences between observed and derived RH
+    varname : str
+        Name of the variable being checked
     config_dict : dict
         Configuration dictionary to read critical values
     plots : bool
@@ -646,44 +649,57 @@ def _identify_and_store_rh_diffs_spread(diffs: np.ndarray,
     is_noaa : bool
         If True, check using the NOAA formulae for derived values
     """
-    key_name = "RH-FULL"
+    if varname == "relative_humidity":
+        key_start = "RH"
+        min_spread = MIN_RH_DIFF_SPREAD
+        threshold = RH_THRESHOLD
+        longname = "Relative Humidity"
+        units = "%rh"
+    elif varname == "wet_bulb_temperature":
+        key_start = "TW"
+        min_spread = MIN_TWET_DIFF_SPREAD
+        threshold = TWET_THRESHOLD
+        longname = "Wet Bulb Temperature"
+        units = "C"
+
+    key_name = f"{key_start}-FULL"
     if is_noaa:
-        key_name = "RH-NOAA"
+        key_name = f"{key_start}-NOAA"
 
     # e.g. if check_derived_only, but none are
     if len(diffs) < utils.DATA_COUNT_THRESHOLD:
-        logger.info("Relative Humidity Consistency - insufficient data")
+        logger.info(f"{longname} Consistency - insufficient data")
         try:
             config_dict["HUMIDITY"][key_name] = -utils.MDI
         except KeyError:
-            CD_rh_diffs = {key_name : -utils.MDI}
-            config_dict["HUMIDITY"] = CD_rh_diffs
+            CD_diffs = {key_name : -utils.MDI}
+            config_dict["HUMIDITY"] = CD_diffs
         return
 
     # find locations where rh differences are > N x spread
     #    increase spread if too small
     spread = qc_utils.spread(diffs)
-    if spread < MIN_RH_DIFF_SPREAD:
-        spread = MIN_RH_DIFF_SPREAD
+    if spread < min_spread:
+        spread = min_spread
 
     if plots:
-        plot_pressure_distribution(diffs, "RH Differences",
-                                   vmin=-RH_THRESHOLD * spread,
-                                   vmax=RH_THRESHOLD * spread,
-                                   units='%rh')
+        plot_pressure_distribution(diffs, f"{longname} Differences",
+                                   vmin=-threshold * spread,
+                                   vmax=threshold * spread,
+                                   units=units)
 
     try:
         config_dict["HUMIDITY"][key_name] = spread
     except KeyError:
-        CD_rh_diffs = {key_name : spread}
-        config_dict["HUMIDITY"] = CD_rh_diffs
+        CD_diffs = {key_name : spread}
+        config_dict["HUMIDITY"] = CD_diffs
 
 
-def _apply_rh_flags(diffs: np.ndarray,
-                    spread: float,
-                    obs_rh: utils.MeteorologicalVariable,
-                    flags: np.ndarray,
-                    check_derived_only: bool) -> None:
+def _apply_flags(diffs: np.ndarray,
+                 spread: float,
+                 met_var: utils.MeteorologicalVariable,
+                 flags: np.ndarray,
+                 check_derived_only: bool) -> None:
     """Find locations where differences exceed threshold
     and flag
 
@@ -700,17 +716,21 @@ def _apply_rh_flags(diffs: np.ndarray,
     check_derived_only : bool
         If True, check using the NOAA formulae for derived values
     """
+    if met_var.name == "relative_humidity":
+        threshold = RH_THRESHOLD
+    elif met_var.name == "wet_bulb_temperature":
+        threshold = TWET_THRESHOLD
 
-    bad_locs, = np.nonzero(np.abs(diffs) > RH_THRESHOLD * spread)
+    bad_locs, = np.nonzero(np.abs(diffs) > threshold * spread)
 
     if len(bad_locs) != 0 :
         if check_derived_only:
-            derived_flags = flags[obs_rh.is_derived]
+            derived_flags = flags[met_var.is_derived]
             derived_flags[bad_locs] = "m"
-            flags[obs_rh.is_derived] = derived_flags
+            flags[met_var.is_derived] = derived_flags
         else:
             flags[bad_locs] = "m"
-        obs_rh.store_flags(utils.insert_flags(obs_rh.flags, flags))
+        met_var.store_flags(utils.insert_flags(met_var.flags, flags))
 
 
 def rh_consistency_check(station: utils.Station,
@@ -763,7 +783,8 @@ def rh_consistency_check(station: utils.Station,
 
     # find and store the spread
     if full:
-        _identify_and_store_rh_diffs_spread(diffs, config_dict,
+        _identify_and_store_obs_diffs_spread(diffs, obs_rh.name,
+                                            config_dict,
                                             plots=plots,
                                             is_noaa=check_derived_only)
 
@@ -772,21 +793,22 @@ def rh_consistency_check(station: utils.Station,
         spread = float(config_dict["HUMIDITY"][f"RH-NOAA"])
     except KeyError:
         # in case running full but no threshold available
-        _identify_and_store_rh_diffs_spread(diffs, config_dict,
-                                    plots=plots)
+        _identify_and_store_obs_diffs_spread(diffs, obs_rh.name, config_dict,
+                                            plots=plots)
         spread = float(config_dict["HUMIDITY"][f"RH-NOAA"])
 
     # apply the spread to identify and flag the bad observations
-    _apply_rh_flags(diffs, spread, obs_rh, flags, check_derived_only)
+    _apply_flags(diffs, spread, obs_rh, flags, check_derived_only)
 
     logger.info(f"Relative Humidity Consistency (Derived): {obs_rh.name}")
     logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
 
 
 def twet_consistency_check(station: utils.Station,
-                                   plots: bool,
-                                   diagnostics: bool,
-                                   check_derived_only: bool=True) -> None:
+                           config_dict: dict,
+                           full: bool,                                  plots: bool,
+                           diagnostics: bool,
+                           check_derived_only: bool=True) -> None:
     """Compare recorded twet against that calculated from other metrics
     using the NOAA formulae [or alternative formulae - Future work]
 
@@ -794,6 +816,10 @@ def twet_consistency_check(station: utils.Station,
     ----------
     station : utils.Station
         Station object
+    config_dict : dict
+        configuration dictionary to store critical values
+    full : bool
+        run a full update and recalculate thresholds
     plots : bool
         turn on plots
     diagnostics : bool
@@ -829,33 +855,23 @@ def twet_consistency_check(station: utils.Station,
         calc_twet = calculate_Tw(temperatures.data, dewpoints.data, stnp.data)
         diffs = obs_twet.data - calc_twet
 
-    # e.g. if check_derived_only, but none are
-    if len(diffs) < utils.DATA_COUNT_THRESHOLD:
-        logging.info("Wet Bulb Temperature Consistency check - insufficient data")
-        return
+    # find and store the spread
+    if full:
+        _identify_and_store_obs_diffs_spread(diffs, obs_twet.name,
+                                             config_dict,
+                                             plots=plots,
+                                             is_noaa=check_derived_only)
 
-    # find locations where rh differences are > N x spread
-    #    increase spread if too small
-    spread = qc_utils.spread(diffs)
-    if spread < MIN_TWET_DIFF_SPREAD:
-        spread = MIN_TWET_DIFF_SPREAD
+    # read from the configuration dictionary
+    try:
+        spread = float(config_dict["HUMIDITY"][f"TW-NOAA"])
+    except KeyError:
+        # in case running full but no threshold available
+        _identify_and_store_obs_diffs_spread(diffs, obs_twet.name, config_dict,
+                                             plots=plots)
+        spread = float(config_dict["HUMIDITY"][f"TW-NOAA"])
 
-    bad_locs, = np.nonzero(np.abs(diffs) > TWET_THRESHOLD * spread)
-
-    if plots:
-        plot_pressure_distribution(diffs, "T_wet Differences",
-                                   vmin=-TWET_THRESHOLD * spread,
-                                   vmax=TWET_THRESHOLD * spread,
-                                   units='C')
-
-    if len(bad_locs) != 0 :
-        if check_derived_only:
-            derived_flags = flags[obs_twet.is_derived]
-            derived_flags[bad_locs] = "m"
-            flags[obs_twet.is_derived] = derived_flags
-        else:
-            flags[bad_locs] = "m"
-        obs_twet.store_flags(utils.insert_flags(obs_twet.flags, flags))
+    _apply_flags(diffs, spread, obs_twet, flags, check_derived_only)
 
     logger.info(f"Wet Bulb Temperature Consistency: {obs_twet.name}")
     logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")
@@ -904,7 +920,8 @@ def hcc(station: utils.Station, config_dict: dict,
     #    Just to make sure nothing has gone wrong with that derivation
     rh_consistency_check(station, config_dict, full=full, plots=plots,
                          diagnostics=diagnostics)
-    twet_consistency_check(station, plots=plots, diagnostics=diagnostics)
+    twet_consistency_check(station, config_dict, full=full,
+                           plots=plots, diagnostics=diagnostics)
 
     # For future work
     # Consistency checks against other calculation methods (e.g. NEWT)
