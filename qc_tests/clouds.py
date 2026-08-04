@@ -1,5 +1,8 @@
-import numpy as np
+from sys import flags
 
+import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 import utils
 
 
@@ -64,6 +67,8 @@ def orphan_values(heights: np.ma.MaskedArray,
     suspect_locs = np.nonzero(np.logical_and(heights.mask != oktas.mask,
                                              np.logical_or(oktas.data <= 8,
                                                            oktas.mask==True)))
+    if len(suspect_locs[0]) > 0:
+        logger.info(f"Found {len(suspect_locs[0])} cloud height/okta orphan values")
 
     hflags[suspect_locs] = 1
     oflags[suspect_locs] = 1
@@ -95,11 +100,10 @@ def obscured_heights(heights: np.ma.MaskedArray,
     # Check for heights when have obscuration
     suspect_obscured_locs = np.nonzero(np.logical_and(oktas.data >= 9,
                                                       heights.mask==False))
+    if len(suspect_obscured_locs[0]) > 0:
+        logger.info(f"Found {len(suspect_obscured_locs[0])} cloud heights with obscured oktas")
 
     hflags[suspect_obscured_locs] = 1
-
-
-    # TODO: add logging/diagnostic info
 
 
 def process_erroneous_clouds(oktas: np.ma.MaskedArray,
@@ -141,6 +145,7 @@ def process_erroneous_clouds(oktas: np.ma.MaskedArray,
         hflags[tt, :] = np.ma.array(flags, mask=hflags.mask[tt])
         oflags[tt, :] = np.ma.array(flags, mask=oflags.mask[tt])
 
+    logger.info("Completed cloud logical checks for heights above full cloud layers")
 
 
 def process_multiple_layers(heights, oktas,
@@ -298,9 +303,13 @@ def clc(station: utils.Station, config_dict: dict, full: bool=False,
                             "sky_cover_layer_3",
                             "sky_cover_layer_4"):
         insert_cloud_flags(station, var, okta_flags[:, v])
+        logger.info(f"Cloud amount {var}")
+        logger.info(f"   Cumulative number of flags set: {np.count_nonzero(okta_flags[:, v] != '')}")
 
     for v, var in enumerate("sky_cover_layer_baseht_1",
                             "sky_cover_layer_baseht_2",
                             "sky_cover_layer_baseht_3",
                             "sky_cover_layer_baseht_4"):
         insert_cloud_flags(station, var, height_flags[:, v])
+        logger.info(f"Cloud height {var}")
+        logger.info(f"   Cumulative number of flags set: {np.count_nonzero(height_flags[:, v] != '')}")
