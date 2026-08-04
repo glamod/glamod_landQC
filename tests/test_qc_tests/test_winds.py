@@ -32,8 +32,6 @@ def test_logical_checks_zero_direction() -> None:
     np.testing.assert_array_equal(expected_direction_flags, directions.flags)
     np.testing.assert_array_equal(result, np.array([]))
 
-    return
-
 
 def test_logical_checks_zero_direction_fix() -> None:
 
@@ -57,8 +55,6 @@ def test_logical_checks_zero_direction_fix() -> None:
     np.testing.assert_array_equal(expected_direction_mask, directions.data.mask)
     np.testing.assert_array_equal(result, np.array([1]))
 
-    return
-
 
 def test_logical_checks_negative_speed() -> None:
 
@@ -73,8 +69,6 @@ def test_logical_checks_negative_speed() -> None:
     _ = winds.logical_checks(speeds, directions)
 
     np.testing.assert_array_equal(expected_speed_flags, speeds.flags)
-
-    return
 
 
 def test_logical_checks_negative_direction() -> None:
@@ -91,8 +85,6 @@ def test_logical_checks_negative_direction() -> None:
 
     np.testing.assert_array_equal(expected_direction_flags, directions.flags)
 
-    return
-
 
 def test_logical_checks_wrapped_direction() -> None:
 
@@ -107,8 +99,6 @@ def test_logical_checks_wrapped_direction() -> None:
     _ = winds.logical_checks(speeds, directions)
 
     np.testing.assert_array_equal(expected_direction_flags, directions.flags)
-
-    return
 
 
 def test_logical_checks_bad_direction() -> None:
@@ -125,8 +115,6 @@ def test_logical_checks_bad_direction() -> None:
 
     np.testing.assert_array_equal(expected_direction_flags, directions.flags)
 
-    return
-
 
 def test_logical_checks_bad_speed() -> None:
 
@@ -141,8 +129,6 @@ def test_logical_checks_bad_speed() -> None:
     _ = winds.logical_checks(speeds, directions)
 
     np.testing.assert_array_equal(expected_speed_flags, speeds.flags)
-
-    return
 
 
 def test_logical_checks_all() -> None:
@@ -172,19 +158,52 @@ def test_logical_checks_all() -> None:
     np.testing.assert_array_equal(expected_speed_flags, speeds.flags)
     np.testing.assert_array_equal(expected_direction_flags, directions.flags)
 
-    return
+
+def test_logical_gust_negative() -> None:
+
+    speed_data = np.array([0, 10, 10, 10, 10])
+    gust_data = np.array([10, -10, 20, 30, 40])
+    expected_gust_flags = np.array(["" for _ in gust_data])
+    expected_gust_flags[1] = "w"
+
+    speeds = common.example_test_variable("wind_speed", speed_data)
+    gusts = common.example_test_variable("wind_gust", gust_data)
+
+    _ = winds.logical_gust(speeds, gusts)
+
+    np.testing.assert_array_equal(expected_gust_flags, gusts.flags)
 
 
+def test_logical_gust_below_speed() -> None:
+
+    speed_data = np.array([0, 20, 10, 10, 10])
+    gust_data = np.array([10, 10, 20, 30, 40])
+    expected_gust_flags = np.array(["" for _ in gust_data])
+    expected_gust_flags[1] = "w"
+
+    speeds = common.example_test_variable("wind_speed", speed_data)
+    gusts = common.example_test_variable("wind_gust", gust_data)
+
+    _ = winds.logical_gust(speeds, gusts)
+
+    # flagging both speed and gust
+    np.testing.assert_array_equal(expected_gust_flags, gusts.flags)
+    np.testing.assert_array_equal(expected_gust_flags, speeds.flags)
+
+
+@patch("winds.logical_gust")
 @patch("winds.logical_checks")
-def test_wcc(logical_checks_mock: Mock) -> None:
+def test_wcc(logical_checks_mock: Mock,
+             logical_gust_mock: Mock) -> None:
 
     speeds = common.example_test_variable("wind_speed", np.arange(5))
     directions = common.example_test_variable("wind_direction", np.arange(5))
+    gusts = common.example_test_variable("wind_gust", np.arange(5))
     station = common.example_test_station(speeds)
     station.wind_direction  = directions
+    station.wind_gust  = gusts
 
     winds.wcc(station, {})
 
     logical_checks_mock.assert_called_once()
-
-    return
+    logical_gust_mock.assert_called_once()

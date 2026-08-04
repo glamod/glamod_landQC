@@ -28,7 +28,8 @@ Input arguments:
 --diagnostics       [False] Verbose output
 
 --test              ["all"] select a single test to run [climatological/distribution/diurnal
-                     frequent/humidity/odd_cluster/pressure/spike/streaks/timestamp/variance/winds/world_records/precision]
+                     frequent/humidity/odd_cluster/pressure/spike/streaks/timestamp/variance/
+                     winds/world_records/precision/cloud]
 
 --clobber           Overwrite output files if already existing.  If not set, will skip if output exists
 
@@ -73,7 +74,7 @@ def run_checks(restart_id: str="", end_id: str="",
 
     if test not in ["all", "logic", "climatological", "distribution", "diurnal", "frequent",
                     "humidity", "odd_cluster", "pressure", "spike", "streaks", "high_flag",
-                    "timestamp", "variance", "winds" ,"world_records", "precision"]:
+                    "timestamp", "variance", "winds" ,"world_records", "precision", "cloud"]:
         print("Invalid test selected")
         return
 
@@ -231,7 +232,7 @@ def run_checks(restart_id: str="", end_id: str="",
         if test in ["all", "world_records"]:
             if diagnostics: print("W", dt.datetime.now()-startT)
             qc_tests.world_records.wrc(station, ["temperature", "dew_point_temperature",
-                                                 "sea_level_pressure", "wind_speed"],
+                                                 "sea_level_pressure", "wind_speed", "wind_gust"],
                                        full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "streaks"]:
@@ -283,13 +284,16 @@ def run_checks(restart_id: str="", end_id: str="",
             fixed_locs = qc_tests.winds.wcc(station, config_dict, fix=setup.FIX_WINDDIR, full=full,
                                             plots=plots, diagnostics=diagnostics)
 
-            # Fix within winds routines only applies to obs_var within station,
+            # Fix within winds routines only applies to obs_var within station obj,
             #   not to dataframe, hence needing to copy over for wind directions
             if setup.FIX_WINDDIR and len(fixed_locs) > 0:
                 # take copy so could revert missing and other details if necessary in the future
                 wind_dir = np.copy(getattr(station, "wind_direction").data)
                 qc_tests.qc_utils.update_dataframe(station_df, wind_dir, fixed_locs, "wind_direction")
 
+        if test in ["all", "cloud"]:
+            if diagnostics: print("Cloud [y]", dt.datetime.now()-startT)
+            qc_tests.clouds.clc(station, config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "high_flag"]:
             if diagnostics: print("H", dt.datetime.now()-startT)
