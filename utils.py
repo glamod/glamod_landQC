@@ -19,8 +19,18 @@ UNIT_DICT = {"temperature" : "degrees C",
              "relative_humidity" : '% relative humidity',
              "wind_direction" :  "degrees",
              "wind_speed" : "meters per second",
+             "wind_gust" : "meters per second",
              "sea_level_pressure" : "hectopascals",
-             "station_level_pressure" : "hectopascals"}
+             "station_level_pressure" : "hectopascals",
+             "sky_cover_layer_1" : "oktas",
+             "sky_cover_layer_baseht_1" : "meters",
+             "sky_cover_layer_2" : "oktas",
+             "sky_cover_layer_baseht_2" : "meters",
+             "sky_cover_layer_3" : "oktas",
+             "sky_cover_layer_baseht_3" : "meters",
+             "sky_cover_layer_4" : "oktas",
+             "sky_cover_layer_baseht_4" : "meters",
+             }
 
 # Lowercase letters for flags which should exclude data
 # No information flags (the data are valid, but not necessarily adhering to conventions)
@@ -30,14 +40,17 @@ QC_TESTS = {"a" : "Repeated Day streaks",  # repeAted day streaks
             "d" : "Distribution - monthly",  # Distribution (monthly)
             "e" : "Clean Up",  # clEan up
             "f" : "Frequent Value",  # Frequent value
+            #"g" :
             "h" : "High Flag Rate",  # High flag rate
             "i" : "Precision",  # precIsion
+            #"j" :
             "k" : "Repeating Streaks",  # repeating streaKs
             "l" : "Logic",  # Logic
             "m" : "Humidity",  # huMidity
             "n" : "Neighbour",  # Neighbour
             "o" : "Odd Cluster",  # Odd cluster
             "p" : "Pressure",  # Pressure
+            #"q" :
             "r" : "World Records",  # world Records
             "s" : "Spike",  # Spike
             "t" : "Timestamp",  # Timestamp
@@ -45,9 +58,11 @@ QC_TESTS = {"a" : "Repeated Day streaks",  # repeAted day streaks
             "v" : "Variance",  # Variance
             "w" : "Winds",  # Winds
             "x" : "Excess streak proportion",  # eXcess streak proportion
+            "y" : "Clouds",  # CloudY
             "z" : "Wind logical - calm, masked zero direction",
 #            "," : "Timestamp - identical observation values",
             }
+QC_TEST_FLAGS = {v: k for k, v in QC_TESTS.items()}
 
 
 MDI = -1.e30
@@ -351,7 +366,23 @@ def populate_station(station: Station, df: pd.DataFrame, obs_var_list: list, rea
                                           "float")
 
         # store the data
-        indata = df[variable].fillna(MDI).to_numpy()
+        if variable in ("sky_cover_layer_1",
+                        "sky_cover_layer_2",
+                        "sky_cover_layer_3",
+                        "sky_cover_layer_4"):
+            layer_series = df[variable]
+            if layer_series.dropna().shape[0] > 0:
+                # If there is cloud information, process to just retain okta values
+
+                # For QC tests, just need to keep the numerical Okta values
+                # split the string on the ":" into two new columns, take the second
+                indata_df = df[variable].str.split(":", n=1, expand=True)[1]
+            else:
+                indata_df = df[variable]
+        else:
+            indata_df = df[variable]
+
+        indata = indata_df.fillna(MDI).to_numpy()
         indata = indata.astype(float)
 
         # For wind direction and speed only, account for some measurement flags
@@ -442,7 +473,8 @@ def find_continent(country_code: str) -> str:
 
 
 #************************************************************************
-def custom_logger(logfile: Path):
+def custom_logger(logfile: Path,
+                  diagnostics: bool=False):
 
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
@@ -454,14 +486,19 @@ def custom_logger(logfile: Path):
 
     # create console handler with a higher log level
     ch = logging.StreamHandler()
-    ch.setLevel(logging.WARNING)
+    if diagnostics:
+        # unless we want all the data for detailed info
+        ch.setLevel(logging.DEBUG)
+    else:
+        ch.setLevel(logging.WARNING)
+
 
     # create file handler to capture all output
     fh = logging.FileHandler(logfile, "w")
-    fh.setLevel(logging.DEBUG)
+    fh.setLevel(logging.INFO)
 
     # create formatter and add it to the handlers
-    logconsole_format = logging.Formatter('%(levelname)-8s %(message)s',
+    logconsole_format = logging.Formatter('%(asctime)s %(module)s %(levelname)-8s %(message)s',
                                           datefmt='%Y-%m-%d %H:%M:%S')
     ch.setFormatter(logconsole_format)
 

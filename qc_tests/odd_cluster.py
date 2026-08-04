@@ -72,7 +72,7 @@ def assess_start_cluster(station: utils.Station,
                          cluster: np.ma.MaskedArray,
                          cluster_start: int,
                          cluster_end: int,
-                         plots: bool = False) -> None:
+                         tsplots: bool = False) -> None:
     """Assess whether initial data points are an odd cluster
 
     Parameters
@@ -89,7 +89,7 @@ def assess_start_cluster(station: utils.Station,
         The index of the first cluster point
     cluster_end : int
         The index of the last cluster point
-    plots : bool, optional
+    tsplots : bool, optional
         Plot this cluster, by default False
     """
 
@@ -101,9 +101,9 @@ def assess_start_cluster(station: utils.Station,
         good_cluster_locs, = np.nonzero(cluster.mask == False)
 
         if len(flags[good_cluster_locs + cluster_start]) < MAX_LENGTH_OBS:
-            flags[good_cluster_locs + cluster_start] = "o"
+            flags[good_cluster_locs + cluster_start] = utils.QC_TEST_FLAGS["Odd Cluster"]
 
-            if plots:
+            if tsplots:
                 plot_cluster(station.times, obs_var,
                              0, cluster_end+1)
 
@@ -114,7 +114,7 @@ def assess_mid_cluster(station: utils.Station,
                          cluster: np.ma.MaskedArray,
                          cluster_start: int,
                          cluster_end: int,
-                         plots: bool = False) -> None:
+                         tsplots: bool = False) -> None:
     """Assess whether data points are an odd cluster
 
     Parameters
@@ -131,7 +131,7 @@ def assess_mid_cluster(station: utils.Station,
         The index of the first cluster point
     cluster_end : int
         The index of the last cluster point
-    plots : bool, optional
+    tsplots : bool, optional
         Plot this cluster, by default False
     """
 
@@ -143,9 +143,9 @@ def assess_mid_cluster(station: utils.Station,
         good_cluster_locs, = np.nonzero(cluster.mask == False)
 
         if len(flags[good_cluster_locs + cluster_start]) < MAX_LENGTH_OBS:
-            flags[good_cluster_locs + cluster_start] = "o"
+            flags[good_cluster_locs + cluster_start] = utils.QC_TEST_FLAGS["Odd Cluster"]
 
-            if plots:
+            if tsplots:
                 plot_cluster(station.times, obs_var,
                              cluster_start, cluster_end+1)
 
@@ -155,7 +155,7 @@ def assess_end_cluster(station: utils.Station,
                        flags: np.ndarray,
                        cluster: np.ma.MaskedArray,
                        cluster_end: int,
-                       plots: bool = False) -> None:
+                       tsplots: bool = False) -> None:
     """Assess whether final data points are an odd cluster
 
     Parameters
@@ -170,7 +170,7 @@ def assess_end_cluster(station: utils.Station,
         The masked times corresponding to the cluster
     cluster_end : int
         The final index of the previous cluster
-    plots : bool, optional
+    tsplots : bool, optional
         Plot this cluster, by default False
     """
     # And determine length from the compressed array (if single point, length == 0)
@@ -181,15 +181,15 @@ def assess_end_cluster(station: utils.Station,
         good_cluster_locs, = np.nonzero(cluster.mask == False)
 
         if len(flags[good_cluster_locs + cluster_end + 1]) < MAX_LENGTH_OBS:
-            flags[good_cluster_locs + cluster_end + 1] = "o"
+            flags[good_cluster_locs + cluster_end + 1] = utils.QC_TEST_FLAGS["Odd Cluster"]
 
-            if plots:
+            if tsplots:
                 plot_cluster(station.times, obs_var, cluster_end, -1)
 
 
 #************************************************************************
 def flag_clusters(obs_var: utils.MeteorologicalVariable, station: utils.Station,
-                  plots: bool = False, diagnostics: bool = False) -> None:
+                  tsplots: bool = False, diagnostics: bool = False) -> None:
     """
     Go through the clusters of data and flag if meet requirements
 
@@ -225,7 +225,7 @@ def flag_clusters(obs_var: utils.MeteorologicalVariable, station: utils.Station,
             cluster = these_times[good_locs[0]: cluster_end+1]
             assess_start_cluster(station, obs_var, flags,
                                  cluster, good_locs[0], cluster_end,
-                                 plots=plots)
+                                 tsplots=tsplots)
 
         elif ce > 0:
             # Check for cluster in middle of series.
@@ -234,7 +234,7 @@ def flag_clusters(obs_var: utils.MeteorologicalVariable, station: utils.Station,
             cluster = these_times[cluster_start: cluster_end+1]
             assess_mid_cluster(station, obs_var, flags,
                                cluster, cluster_start, cluster_end,
-                               plots=plots)
+                               tsplots=tsplots)
 
 
         # Additionally
@@ -245,7 +245,7 @@ def flag_clusters(obs_var: utils.MeteorologicalVariable, station: utils.Station,
             cluster = these_times[cluster_end+1: ]
             assess_end_cluster(station, obs_var, flags,
                                cluster, cluster_end,
-                               plots=plots)
+                               tsplots=tsplots)
 
     # append flags to object
     obs_var.store_flags(utils.insert_flags(obs_var.flags, flags))
@@ -258,7 +258,7 @@ def flag_clusters(obs_var: utils.MeteorologicalVariable, station: utils.Station,
 
 #************************************************************************
 def occ(station: utils.Station, var_list: list, config_dict: dict,
-        full: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
+        full: bool = False, tsplots: bool = False, diagnostics: bool = False) -> None:
     """
     Run through the variables and pass to the Odd Cluster Check
 
@@ -266,7 +266,7 @@ def occ(station: utils.Station, var_list: list, config_dict: dict,
     :param list var_list: list of variables to test
     :param dict config_dict: dictionary for settings (unused at the moment)
     :param bool full: run a full update (unused at the moment)
-    :param bool plots: turn on plots
+    :param bool tsplots: turn on plots
     :param bool diagnostics: turn on diagnostic output
     """
 
@@ -274,7 +274,7 @@ def occ(station: utils.Station, var_list: list, config_dict: dict,
 
         obs_var = getattr(station, var)
 
-        flag_clusters(obs_var, station, plots=plots, diagnostics=diagnostics)
+        flag_clusters(obs_var, station, tsplots=tsplots, diagnostics=diagnostics)
 
 
     # occ

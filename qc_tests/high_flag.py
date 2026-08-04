@@ -38,7 +38,7 @@ def set_synergistic_flags(station: utils.Station, var: str) -> None:
         # require sufficient observations to make a flagged fraction useful.
 
         # As synergistically flagged, add to all flags.
-        new_flags[obs_locs] = "h"
+        new_flags[obs_locs] = utils.QC_TEST_FLAGS["High Flag Rate"]
 
     obs_var.store_flags(utils.insert_flags(obs_var.flags, new_flags))
 
@@ -67,7 +67,7 @@ def high_flag_rate(obs_var: utils.MeteorologicalVariable,
         # If already flagged on internal run, return with dummy results.
         flag_set = np.unique(old_flags[obs_locs]) # Flags per obs.
         unique_flags = set("".join(flag_set)) # Unique set of flag letters.
-        if "h" in unique_flags:
+        if utils.QC_TEST_FLAGS["High Flag Rate"] in unique_flags:
             # This test has been run before on this variable, so don't do again.
             return new_flags, any_flags_set
 
@@ -77,8 +77,10 @@ def high_flag_rate(obs_var: utils.MeteorologicalVariable,
         # precision issues can cause excess dewpoint temperature flags from humidity check
         if obs_var.name == "dewpoint_temperature":
             # find the locations where *ONLY* humidity *AND* precision set [either order]
-            hum_and_prec_locs, = np.nonzero((old_flags[obs_locs] == "nm") |
-                                            (old_flags[obs_locs] == "mn"))
+            hum_and_prec_locs, = np.nonzero(
+                (old_flags[obs_locs] == f"{utils.QC_TEST_FLAGS['Humidity']}{utils.QC_TEST_FLAGS['Precision']}") |
+                (old_flags[obs_locs] == f"{utils.QC_TEST_FLAGS['Precision']}{utils.QC_TEST_FLAGS['Humidity']}")
+                )
 
             # if both have been set, adjust the flagged_fraction
             if hum_and_prec_locs.shape[0] > 0:
@@ -94,11 +96,11 @@ def high_flag_rate(obs_var: utils.MeteorologicalVariable,
                 print(f"   Flagging remaining {obs_var.name} obs")
             # Set flags only obs currently unflagged.
             unflagged, = np.nonzero(old_flags[obs_locs] == "")
-            new_flags[obs_locs[unflagged]] = "h"
+            new_flags[obs_locs[unflagged]] = utils.QC_TEST_FLAGS["High Flag Rate"]
             any_flags_set = True
 
     logger.info(f"High Flag Rate {obs_var.name}")
-    logger.info(f"   Cumulative number of flags set: {np.count_nonzero(new_flags == 'h')}")
+    logger.info(f"   Cumulative number of flags set: {np.count_nonzero(new_flags == utils.QC_TEST_FLAGS['High Flag Rate'])}")
 
     return new_flags, any_flags_set # high_flag_rate
 
@@ -130,7 +132,7 @@ def hfr(station: utils.Station, var_list: list,
         if any_set:
             vars_set += [var]
 
-    # Now double check the list of variables where "H" flags have been set.
+    # Now double check the list of variables where "h" flags have been set.
     #  If one of a synergistic pair is, then do the other (wind speed/direction,
     #  sea/station level pressure).
     # Using exclusive or.  This only passes if one is True and the other is False.

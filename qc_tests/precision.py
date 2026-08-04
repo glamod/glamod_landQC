@@ -53,7 +53,7 @@ def plot_flags(primary: utils. MeteorologicalVariable,
 
 #************************************************************************
 def precision_cross_check(station: utils.Station, primary: utils.MeteorologicalVariable,
-                          secondary: utils.MeteorologicalVariable, plots: bool=False,
+                          secondary: utils.MeteorologicalVariable, tsplots: bool=False,
                           diagnostics: bool=False) -> None:
     """
     Flag locations where precision of secondary is different from primary
@@ -61,7 +61,7 @@ def precision_cross_check(station: utils.Station, primary: utils.MeteorologicalV
     :param Station station: Station Object for the station
     :param MetVar primary: primary meteorological variable object
     :param MetVar secondary: secondary meteorological variable object
-    :param bool plots: turn on plots
+    :param bool tsplots: turn on timeseries plots
     :param bool diagnostics: turn on diagnostic output
     """
 
@@ -87,13 +87,12 @@ def precision_cross_check(station: utils.Station, primary: utils.MeteorologicalV
             if primary_precision != secondary_precision:
                 # flag secondary only
                 locs, = np.nonzero(secondary.data[month_locs].mask == False)
-                flags[month_locs[locs]] = "i"
+                flags[month_locs[locs]] = utils.QC_TEST_FLAGS["Precision"]
 
                 # diagnostic plots
-                if plots:
+                if tsplots:
                     plot_flags(primary, secondary, station.times, month_locs)
-                if diagnostics:
-                    print(f" Precision stats for {year}/{month} : {primary_precision} vs {secondary_precision} : {len(locs)}")
+                logger.info(f" Precision stats for {year}/{month} : {primary_precision} vs {secondary_precision} : {len(locs)}")
 
 
     # only flag the secondary
@@ -108,7 +107,7 @@ def precision_cross_check(station: utils.Station, primary: utils.MeteorologicalV
 #************************************************************************
 def pcc(station: utils.Station, pairs: list[tuple[str, str]],
         config_dict: dict, full: bool = False,
-        plots: bool = False, diagnostics: bool = False) -> None:
+        tsplots: bool = False, diagnostics: bool = False) -> None:
     """
     Extract the variables and pass to the Precision Cross Check
 
@@ -116,7 +115,7 @@ def pcc(station: utils.Station, pairs: list[tuple[str, str]],
     :param list[tuple[str, str]] pairs: pairs of (primary, secondary) variables
     :param str config_dict: dictionary for configuration settings (unused here)
     :param bool full: run a full update (unused here)
-    :param bool plots: turn on plots
+    :param bool tsplots: turn on timeseries plots
     :param bool diagnostics: turn on diagnostic output
     """
 
@@ -126,7 +125,7 @@ def pcc(station: utils.Station, pairs: list[tuple[str, str]],
         primary = getattr(station, primary_var)
         secondary = getattr(station, secondary_var)
         precision_cross_check(station, primary, secondary,
-                              plots=plots, diagnostics=diagnostics)
+                              tsplots=tsplots, diagnostics=diagnostics)
 
     # pcc
 

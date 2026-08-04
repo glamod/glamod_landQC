@@ -6,6 +6,7 @@ import pandas as pd
 from unittest.mock import patch, Mock
 import pytest
 
+import setup
 import convert_to_yearly_parquet
 
 EXAMPLE_FILES = [f for f in (Path(__file__).parent / "example_data").glob("*.qff")]
@@ -106,7 +107,7 @@ def test_write_pqt(setup_mock: Mock,
     written_df = pd.read_parquet(expected_outlocation / "qff_1985.parquet",
                                  engine="pyarrow")
 
-    assert written_df.shape == (40, 335)
+    assert written_df.shape == (40, 329+len(setup.obs_var_list))
 
 
 @patch("convert_to_yearly_parquet.write_pqt")

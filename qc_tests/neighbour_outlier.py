@@ -290,7 +290,8 @@ def adjust_pressure_for_tropical_storms(dubious: np.ma.MaskedArray, initial_neig
 def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.ndarray,
                       all_buddies: dict, variable: str,
                       diagnostics: bool = False,
-                      plots: bool = False, full: bool = False) -> None:
+                      plots: bool = False, tsplots: bool=False,
+                      full: bool = False) -> None:
     """
     Works on a single station and variable.  Reads in neighbour's data,
     finds locations where sufficent are sufficiently different.
@@ -301,6 +302,7 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.ndar
     :param str variable: obs variable being run on
     :param bool diagnostics: print extra material to screen
     :param bool plots: create plots from each test
+    :param bool tsplots: create timeseries plots
     :param bool full: run full reprocessing rather than using stored values.
     """
 
@@ -347,9 +349,9 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.ndar
     # flag if large enough fraction (>0.66)
     sufficient, = np.ma.nonzero(dubious_count > DUBIOUS_FRACTION*neighbour_count)
 
-    flags[sufficient] = "n"
+    flags[sufficient] = utils.QC_TEST_FLAGS["Neighbour"]
 
-    if plots:
+    if tsplots:
         for flag in sufficient:
             plot_neighbour_flags(target_station.times, flag, obs_var, all_buddy_data)
 
@@ -363,7 +365,8 @@ def neighbour_outlier(target_station: utils.Station, initial_neighbours: np.ndar
 
 #************************************************************************
 def noc(target_station: utils.Station, initial_neighbours: np.ndarray, var_list: list,
-        full: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
+        full: bool = False, plots: bool = False,
+        tsplots: bool=False, diagnostics: bool = False) -> None:
     """
     Run through the variables and pass to the Neighbour Outlier Check
 
@@ -391,7 +394,7 @@ def noc(target_station: utils.Station, initial_neighbours: np.ndarray, var_list:
                                       diagnostics=diagnostics, plots=plots)
         for var in var_list:
             neighbour_outlier(target_station, initial_neighbours, all_buddies, var,
-                              diagnostics=diagnostics, plots=plots, full=full)
+                              diagnostics=diagnostics, plots=plots, tsplots=tsplots, full=full)
 
     # noc
 

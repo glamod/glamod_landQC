@@ -73,7 +73,8 @@ def read_neighbours(restart_id: str = "", end_id: str = "") -> np.ndarray:
     return all_entries # read_neighbours
 
 #************************************************************************
-def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, plots: bool = False,
+def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False,
+               plots: bool = False, tsplots: bool=False,
                full: bool = False, test: str = "all", clobber: bool = False) -> None:
     """
     Main script.  Reads in station data, populates internal objects and passes to the tests.
@@ -82,6 +83,7 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
     :param str end_id: which station to end on
     :param bool diagnostics: print extra material to screen
     :param bool plots: create plots from each test
+    :param bool tsplots: create timeseries plots
     :param bool full: run full reprocessing rather than using stored values.
     :param str test: specify a single test to run (useful for diagnostics) [neighbour/clean_up/high_flag]
     :param bool clobbber: overwrite output file if exists
@@ -121,7 +123,7 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
         logfile = setup.SUBDAILY_LOG_DIR / f"{target_station_id}_external_checks.log"
         if logfile.exists():
             logfile.unlink()
-        logger = utils.custom_logger(logfile)
+        logger = utils.custom_logger(logfile, diagnostics=diagnostics)
         logger.info(f"External (Buddy) Checks on {target_station_id}")
         logger.info("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
 
@@ -164,7 +166,7 @@ def run_checks(restart_id:str = "", end_id:str = "", diagnostics:bool = False, p
                                                 "dew_point_temperature", "wet_bulb_temperature", "relative_humidity",
                                                 "wind_speed",
                                                 "station_level_pressure", "sea_level_pressure"],
-                                               full=full, plots=plots, diagnostics=diagnostics)
+                                               full=full, plots=plots, tsplots=tsplots, diagnostics=diagnostics)
 
         if test in ["all", "clean_up"]:
             if diagnostics: print("CleanUp [e]", dt.datetime.now()-startT)

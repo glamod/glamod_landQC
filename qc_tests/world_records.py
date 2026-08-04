@@ -40,6 +40,8 @@ W_X = {"africa" : 113.2, "asia" : 113.2, "samerica" : 113.2, "namerica" : 113.2,
        "oceania" : 113.2, "antarctica" : 113.2, "row" : 113.2}
 W_N = {"africa" : 0., "asia" : 0., "samerica" : 0., "namerica" : 0., "europe" : 0., "oceania" : 0.,
        "antarctica" : 0., "row" : 0.}
+G_X = {"africa" : 150., "asia" : 150., "samerica" : 150., "namerica" : 150., "europe" : 150.,
+       "oceania" : 150., "antarctica" : 150., "row" : 150.}
 S_X = {"africa" : 1083.3, "asia" : 1083.3, "samerica" : 1083.3, "namerica" : 1083.3, "europe" : 1083.3,
        "oceania" : 1083.3, "antarctica" : 1083.3, "row" : 1083.3}
 S_N = {"africa" : 870., "asia" : 870., "samerica" : 870., "namerica" : 870., "europe" : 870.,
@@ -50,13 +52,14 @@ maxes = {"temperature" : T_X,
          "dew_point_temperature" : D_X,
          "wet_bulb_temperature" : TW_X,
          "wind_speed" : W_X,
+         "wind_gust" : G_X,
          "sea_level_pressure" : S_X}
 mins = {"temperature" : T_N,
         "dew_point_temperature" : D_N,
         "wet_bulb_temperature" : TW_N,
         "wind_speed" : W_N,
+        "wind_gust" : W_N,  #  reusing wind speed for minimum
         "sea_level_pressure" : S_N}
-
 
 
 #************************************************************************
@@ -88,8 +91,8 @@ def record_check(obs_var: utils.MeteorologicalVariable, continent: str,
         too_high, = np.ma.nonzero(obs_var.data > maxes[obs_var.name]["row"])
         too_low, = np.ma.nonzero(obs_var.data < mins[obs_var.name]["row"])
 
-    flags[too_high] = "r"
-    flags[too_low] = "r"
+    flags[too_high] = utils.QC_TEST_FLAGS["World Records"]
+    flags[too_low] = utils.QC_TEST_FLAGS["World Records"]
 
     logger.info(f"World Records {obs_var.name} ({continent})")
     logger.info(f"   Cumulative number of flags set: {np.count_nonzero(flags != '')}")

@@ -43,59 +43,89 @@ def logical_checks(speed: utils.MeteorologicalVariable,
     if fix:
         direction.data[fix_zero_direction] = 0
         direction.data.mask[fix_zero_direction] = False
-        if diagnostics:
-            print(f"  Zero direction : {len(fix_zero_direction)}")
+        logger.info(f"  Zero direction fixed : {len(fix_zero_direction)}")
     else:
-        dflags[fix_zero_direction] = "z"
-        if diagnostics:
-            print(f"  Zero direction : {len(fix_zero_direction)}")
+        dflags[fix_zero_direction] = utils.QC_TEST_FLAGS["Wind logical - calm, masked zero direction"]
+        logger.info(f"  Zero direction : {len(fix_zero_direction)}")
         # and set to empty as can be used in parent to copy values to dataframe
         fix_zero_direction = np.array([])
 
     # negative speeds (can't fix)
     negative_speed = np.ma.nonzero(speed.data < 0)
-    sflags[negative_speed] = "w"
+    sflags[negative_speed] = utils.QC_TEST_FLAGS["Winds"]
     logger.info(f"  Negative speed : {len(negative_speed[0])}")
 
     # negative directions (don't try to adjust)
     negative_direction = np.ma.nonzero(direction.data < 0)
-    dflags[negative_direction] = "w"
+    dflags[negative_direction] = utils.QC_TEST_FLAGS["Winds"]
     logger.info(f"  Negative direction : {len(negative_direction[0])}")
 
     # wrapped directions (don't try to adjust)
     wrapped_direction = np.ma.nonzero(direction.data > 360)
-    dflags[wrapped_direction] = "w"
+    dflags[wrapped_direction] = utils.QC_TEST_FLAGS["Winds"]
     logger.info(f"  Wrapped direction : {len(wrapped_direction[0])}")
 
     # no direction possible if speed == 0
     bad_direction = np.ma.nonzero(np.logical_and(speed.data == 0,
                                                direction.data != 0))
-    dflags[bad_direction] = "w"
+    dflags[bad_direction] = utils.QC_TEST_FLAGS["Winds"]
     logger.info(f"  Bad direction : {len(bad_direction[0])}")
 
     # northerlies given as 360, not 0 --> calm
     bad_speed = np.ma.nonzero(np.logical_and(direction.data == 0, speed.data != 0))
-    sflags[bad_speed] = "w"
+    sflags[bad_speed] = utils.QC_TEST_FLAGS["Winds"]
     logger.info(f"  Bad speed : {len(bad_speed[0])}")
 
     # copy flags into attribute
     speed.store_flags(utils.insert_flags(speed.flags, sflags))
     direction.store_flags(utils.insert_flags(direction.flags, dflags))
 
-    if diagnostics:
-
-        print("Wind Logical")
-        print(f"   Cumulative number of {speed.name} flags set: {np.count_nonzero(sflags != '')}")
-        print(f"   Cumulative number of {direction.name} flags set: {np.count_nonzero(dflags == 'w')}")
-        print(f"   Cumulative number of {direction.name} convention flags set: {np.count_nonzero(dflags == '1')}")
-
     logger.info("Wind Logical")
     logger.info(f"   Cumulative number of {speed.name} flags set: {np.count_nonzero(sflags != '')}")
     logger.info(f"   Cumulative number of {direction.name} flags set: {np.count_nonzero(dflags == 'w')}")
     logger.info(f"   Cumulative number of {direction.name} convention flags set: {np.count_nonzero(dflags == '1')}")
 
-
     return fix_zero_direction # logical_checks
+
+
+def logical_gust(speed: utils.MeteorologicalVariable,
+                 gust: utils.MeteorologicalVariable,
+                 plots: bool=False,
+                 diagnostics: bool=False) -> None:
+    """Logical checks on wind gust compared tow ind speed
+
+    Parameters
+    ----------
+    speed : utils.MeteorologicalVariable
+        Wind speed data
+    gust : utils.MeteorologicalVariable
+        Wind gust data
+    plots : bool, optional
+        Do plots, by default False
+    diagnostics : bool, optional
+        Diagnostic output, by default False
+    """
+
+    gflags = np.array(["" for i in range(gust.data.shape[0])])
+    sflags = np.array(["" for i in range(speed.data.shape[0])])
+
+    # any gusts below zero
+    below_zero = np.ma.nonzero(gust.data < 0)
+    gflags[below_zero] = "w"
+    logger.info(f"  Negative wind gust : {len(below_zero[0])}")
+
+    # any gusts above speed - not clear which is at fault
+    low_gust = np.ma.nonzero(speed.data > gust.data)
+    gflags[low_gust] = "w"
+    sflags[low_gust] = "w"
+    logger.info(f"  Wind gust below wind speed: {len(low_gust[0])}")
+
+    gust.store_flags(utils.insert_flags(gust.flags, gflags))
+    speed.store_flags(utils.insert_flags(speed.flags, sflags))
+
+    logger.info("Wind Logical - Gust")
+    logger.info(f"   Cumulative number of {gust.name} flags set: {np.count_nonzero(gflags != '')}")
+
 
 #************************************************************************
 def wcc(station: utils.Station, config_dict: dict,
@@ -116,8 +146,11 @@ def wcc(station: utils.Station, config_dict: dict,
 
     speed = getattr(station, "wind_speed")
     direction = getattr(station, "wind_direction")
+    gust = getattr(station, "wind_gust")
 
     corrected_locs = logical_checks(speed, direction, fix=fix,
                                     plots=plots, diagnostics=diagnostics)
+
+    logical_gust(speed, gust, plots=plots, diagnostics=diagnostics)
 
     return corrected_locs # pcc

@@ -333,7 +333,8 @@ def generate_differences(times: pd.Series,
 #************************************************************************
 def identify_spikes(obs_var: utils.MeteorologicalVariable,
                     times: pd.Series, config_dict: dict,
-                    plots: bool = False, diagnostics: bool = False) -> None:
+                    plots: bool = False, tsplots: bool=False,
+                    diagnostics: bool = False) -> None:
     """
     Use config_dict to read in critical values, and then assess to find spikes
 
@@ -341,6 +342,7 @@ def identify_spikes(obs_var: utils.MeteorologicalVariable,
     :param Series times: array of times (usually in minutes)
     :param str config_dict: configuration dictionary to store critical values
     :param bool plots: turn on plots
+    :param bool tsplots: turn on timeseries plots
     :param bool diagnostics: turn on diagnostic output
     """
 
@@ -392,10 +394,10 @@ def identify_spikes(obs_var: utils.MeteorologicalVariable,
 
             # if the spike is still set, set the flags
             if is_spike:
-                compressed_flags[possible_in_spike : possible_in_spike+spike_len] = "s"
+                compressed_flags[possible_in_spike : possible_in_spike+spike_len] = utils.QC_TEST_FLAGS["Spike"]
 
                 # diagnostic plots
-                if plots:
+                if tsplots:
                     plot_spike(times, obs_var, possible_in_spike+1, spike_len)
 
         # Uncompress the flags & insert
@@ -414,7 +416,8 @@ def identify_spikes(obs_var: utils.MeteorologicalVariable,
 
 #************************************************************************
 def sc(station: utils.Station, var_list: list, config_dict: dict,
-       full: bool = False, plots: bool = False, diagnostics: bool = False) -> None:
+       full: bool = False, plots: bool = False,
+       tsplots: bool = False, diagnostics: bool = False) -> None:
     """
     Run through the variables and pass to the Spike Check
 
@@ -423,6 +426,7 @@ def sc(station: utils.Station, var_list: list, config_dict: dict,
     :param str configfile: dictionary for configuration settings
     :param bool full: run a full update (recalculate thresholds)
     :param bool plots: turn on plots
+    :param bool tsplots: turn on timeseries plots
     :param bool diagnostics: turn on diagnostic output
     """
     for var in var_list:
@@ -431,9 +435,11 @@ def sc(station: utils.Station, var_list: list, config_dict: dict,
 
         # decide whether to recalculate
         if full:
-            calculate_critical_values(obs_var, station.times, config_dict, plots=plots, diagnostics=diagnostics)
+            calculate_critical_values(obs_var, station.times, config_dict,
+                                      plots=plots, diagnostics=diagnostics)
 
-        identify_spikes(obs_var, station.times, config_dict, plots=plots, diagnostics=diagnostics)
+        identify_spikes(obs_var, station.times, config_dict, plots=plots,
+                        tsplots=tsplots, diagnostics=diagnostics)
 
     # sc
 

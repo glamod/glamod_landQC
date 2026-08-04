@@ -28,7 +28,8 @@ Input arguments:
 --diagnostics       [False] Verbose output
 
 --test              ["all"] select a single test to run [climatological/distribution/diurnal
-                     frequent/humidity/odd_cluster/pressure/spike/streaks/timestamp/variance/winds/world_records/precision]
+                     frequent/humidity/odd_cluster/pressure/spike/streaks/timestamp/variance/
+                     winds/world_records/precision/cloud]
 
 --clobber           Overwrite output files if already existing.  If not set, will skip if output exists
 
@@ -53,15 +54,18 @@ import qc_tests
 import setup
 
 #************************************************************************
-def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False, plots: bool = False,
-               full: bool = False, test: str = "all", clobber: bool = False) -> None:
+def run_checks(restart_id: str="", end_id: str="",
+               diagnostics: bool=False, plots: bool=False,
+               tsplots: bool=False, full: bool=False,
+               test: str="all", clobber: bool=False) -> None:
     """
     Main script.  Reads in station data, populates internal objects and passes to the tests.
 
     :param str restart_id: which station to start on
     :param str end_id: which station to end on
     :param bool diagnostics: print extra material to screen
-    :param bool plots: create plots from each test
+    :param bool plots: create plots from each test of distributions etc
+    :param bool plots: show plots of flagged values in timeseries
     :param bool full: run full reprocessing rather than using stored values.
     :param str test: specify a single test to run (useful for diagnostics) [climatological/distribution/diurnal
                      frequent/humidity/odd_cluster/pressure/spike/streaks/timestamp/variance/winds/world_records/precision]
@@ -70,7 +74,7 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
 
     if test not in ["all", "logic", "climatological", "distribution", "diurnal", "frequent",
                     "humidity", "odd_cluster", "pressure", "spike", "streaks", "high_flag",
-                    "timestamp", "variance", "winds" ,"world_records", "precision"]:
+                    "timestamp", "variance", "winds" ,"world_records", "precision", "cloud"]:
         print("Invalid test selected")
         return
 
@@ -106,7 +110,7 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
         logfile = setup.SUBDAILY_LOG_DIR / f"{station_id}_internal_checks.log"
         if logfile.exists():
             logfile.unlink()
-        logger = utils.custom_logger(logfile)
+        logger = utils.custom_logger(logfile, diagnostics=diagnostics)
         logger.info(f"Internal Checks on {station_id}")
         logger.info("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
 
@@ -204,7 +208,7 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
                                                "dew_point_temperature", "wet_bulb_temperature", "relative_humidity",
                                                "station_level_pressure", "sea_level_pressure",
                                                "wind_speed"],
-                                     config_dict, full=full, plots=plots, diagnostics=diagnostics)
+                                     config_dict, full=full, tsplots=tsplots, diagnostics=diagnostics)
 
         if test in ["all", "frequent"]:
             if diagnostics: print("Frequent [f]", dt.datetime.now()-startT)
@@ -238,7 +242,8 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
             # Checks against known and validated world records.
             if diagnostics: print("WldRecords [r]", dt.datetime.now()-startT)
             qc_tests.world_records.wrc(station, ["temperature", "dew_point_temperature", "wet_bulb_temperature",
-                                                 "sea_level_pressure", "wind_speed"],
+                                                 "sea_level_pressure",
+                                                 "wind_speed", "wind_gust"],
                                        full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "streaks"]:
@@ -248,7 +253,8 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
             qc_tests.streaks.rsc(station, ["temperature", "dew_point_temperature", "wet_bulb_temperature",
                                            "station_level_pressure", "sea_level_pressure",
                                            "wind_speed", "wind_direction"],
-                                 config_dict, full=full, plots=plots, diagnostics=diagnostics)
+                                 config_dict, full=full, 
+                                 plots=plots, tsplots=tsplots, diagnostics=diagnostics)
 
         # not run on pressure data in HadISD.
         if test in ["all", "climatological"]:
@@ -272,7 +278,8 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
             if diagnostics: print("Precision [i]", dt.datetime.now()-startT)
             qc_tests.precision.pcc(station, [("temperature", "dew_point_temperature"),
                                              ("temperature", "wet_bulb_temperature")],
-                                   config_dict, full=full, plots=plots, diagnostics=diagnostics)
+                                   config_dict, full=full, 
+                                   plots=plots, tsplots=tsplots, diagnostics=diagnostics)
 
         if test in ["all", "spike"]:
             # Looks for spikes (up or down) in the data which are too large to be real.
@@ -281,12 +288,14 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
                                         "dew_point_temperature", "wet_bulb_temperature", "relative_humidity",
                                         "station_level_pressure",  "sea_level_pressure",
                                         "wind_speed"],
-                              config_dict, full=full, plots=plots, diagnostics=diagnostics)
+                              config_dict, full=full,
+                              plots=plots, tsplots=tsplots, diagnostics=diagnostics)
 
         if test in ["all", "humidity"]:
             #  Suite of checks on humidity related variables.
             if diagnostics: print("Humidity [m]", dt.datetime.now()-startT)
-            qc_tests.humidity.hcc(station, config_dict, full=full, plots=plots, diagnostics=diagnostics)
+            qc_tests.humidity.hcc(station, config_dict, full=full, plots=plots,
+                                  tsplots=tsplots, diagnostics=diagnostics)
 
         if test in ["all", "variance"]:
             # Looks for periods of excess variability
@@ -308,13 +317,16 @@ def run_checks(restart_id: str = "", end_id: str = "", diagnostics: bool = False
             fixed_locs = qc_tests.winds.wcc(station, config_dict, fix=setup.FIX_WINDDIR, full=full,
                                             plots=plots, diagnostics=diagnostics)
 
-            # Fix within winds routines only applies to obs_var within station,
+            # Fix within winds routines only applies to obs_var within station obj,
             #   not to dataframe, hence needing to copy over for wind directions
             if setup.FIX_WINDDIR and len(fixed_locs) > 0:
                 # take copy so could revert missing and other details if necessary in the future
                 wind_dir = np.copy(getattr(station, "wind_direction").data)
                 qc_tests.qc_utils.update_dataframe(station_df, wind_dir, fixed_locs, "wind_direction")
 
+        if test in ["all", "cloud"]:
+            if diagnostics: print("Cloud [y]", dt.datetime.now()-startT)
+            qc_tests.clouds.clc(station, config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "high_flag"]:
             # Checks if high flagging rates in two or more variables, which suggests pervasive issues.
@@ -401,7 +413,9 @@ if __name__ == "__main__":
     parser.add_argument('--diagnostics', dest='diagnostics', action='store_true', default=False,
                         help='Run diagnostics (will not write out file)')
     parser.add_argument('--plots', dest='plots', action='store_true', default=False,
-                        help='Run plots (will not write out file)')
+                        help='Run summary plots of tests (will not write out file)')
+    parser.add_argument('--tsplots', dest='plots', action='store_true', default=False,
+                        help='Show timeseries plots of flagged values (will not write out file)')
     parser.add_argument('--test', dest='test', action='store', default="all",
                         help='Select single test [climatological/distribution/diurnal/frequent/humidity/odd_cluster/pressure/spike/streaks/timestamp/variance/winds/world_records]')
     parser.add_argument('--clobber', dest='clobber', action='store_true', default=False,
@@ -413,6 +427,7 @@ if __name__ == "__main__":
                end_id=args.end_id,
                diagnostics=args.diagnostics,
                plots=args.plots,
+               tsplots=args.tsplots,
                full=args.full,
                test=args.test,
                clobber=args.clobber,

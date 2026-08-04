@@ -230,6 +230,52 @@ def convert_wind_flags(station_df: pd.DataFrame,
             combined_mask = (station_df[f"{variable_name}_Measurement_Code"] == flag) &\
                             (station_df[variable_name] == mdi)
             station_df.loc[combined_mask, variable_name] = np.nan
+            if len(combined_mask) > 0:
+                logger.warning(f"Replacing {mdi} in {variable_name}")
+
+
+def replace_mdis(station_df: pd.DataFrame,
+                 variable_name: str,
+                 mdi: float=-999.) -> None:
+    """Converts data equalling specified MDI to NaNs (missing)
+
+    Parameters
+    ----------
+    station_df : pd.DataFrame
+        Dataframe for whole station, changed in situ
+    variable_name : str, optional
+        Variable name to process
+    mdi : float, default=-999.
+        Which missing data indicator to remove.
+    """
+    mask = (station_df[variable_name] == mdi)
+    station_df.loc[mask, variable_name] = np.nan
+
+    if len(mask) > 0:
+        logger.warning(f"Replacing {mdi} in {variable_name}")
+
+
+def process_any_mdis(station_df: pd.DataFrame) -> None:
+    """Handle replacement of any missing data indicators (mdi).
+    These are by default remaining -999s in the the data fields
+    Wind direction values only changed if associated with appropriate
+    Measurement Code value.
+
+    Parameters
+    ----------
+    station_df : pd.DataFrame
+        Dataframe of observations to process
+    """
+
+    for var_name in setup.obs_var_list:
+        # wind direction corrections done depending on measurement code
+        if var_name in ("wind_direction"):
+            # convert any remaining wind flags
+            convert_wind_flags(station_df)
+        else:
+            # all other metrics just a blanket replacement
+            #  Using -999 as default, but option of adding more later
+            replace_mdis(station_df, var_name)
 
 
 #************************************************************************
@@ -259,8 +305,9 @@ def read_station(stationfile: Path, station: Station,
     # calculate datetime series
     datetimes = calculate_datetimes(station_df)
 
-    # convert any remaining wind flags
-    convert_wind_flags(station_df)
+    # catch any remaining -999 or 999 values
+    # (wind direction handled differently to other metrics)
+    process_any_mdis(station_df)
 
     # convert dataframe to station and MetVar objects for internal processing
     populate_station(station, station_df, setup.obs_var_list, read_flags=read_flags)
@@ -350,7 +397,7 @@ def write(outfile: Path, df: pd.DataFrame,
         df[column] = pd.Series([fmt.format(val) for val in df[column]], index = df.index)
 
         # Latitude & Longitude = {:7.4f}
-        # Monthy, Day, Hour, & Minute = {:0.2d}
+        # Month, Day, Hour, & Minute = {:0.2d}
 
     print(outfile)
     # for .psv
@@ -408,9 +455,7 @@ def flag_write(outfilename: Path, df: pd.DataFrame,
             outfile.write(f"{var} : All : {proportion_flagged}\n")
             outfile.write(f"{var} : All_counts : {flagged.shape[0]}\n")
 
-            logging.info(f"{var} - {flagged.shape[0]}")
-            if diagnostics:
-                print(f"{var} - {flagged.shape[0]} [{100*proportion_flagged:.1f}%]")
+            logging.info(f"{var} - {flagged.shape[0]} [{100*proportion_flagged:.1f}%]")
 
     # flag_write
 

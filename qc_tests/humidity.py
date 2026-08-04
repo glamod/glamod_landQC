@@ -178,19 +178,19 @@ def plot_humidity_streak(times: pd.Series,
 def super_saturation_check(station: utils.Station,
                            temperatures: utils.MeteorologicalVariable,
                            wet_temperatures: utils.MeteorologicalVariable,
-                           plots: bool = False, diagnostics: bool = False) -> None:
+                           tdplots: bool = False,
+                           diagnostics: bool = False) -> None:
     """
     Flag locations where dewpoint or wet-bulb is greater than air temperature
 
     :param Station station: Station Object for the station
     :param MetVar temperatures: temperatures object
-    :param MetVar wet_temperatures: dewpoints object
-    :param bool plots: turn on plots
+    :param MetVar wet_temperatures: dewpoints or wetbulbs object
+    :param bool tplots: turn on timeseries plots
     :param bool diagnostics: turn on diagnostic output
     """
 
     flags = np.array(["" for i in range(temperatures.data.shape[0])])
-
 
     for year in np.unique(station.years):
         for month in range(1, 13):
@@ -215,17 +215,17 @@ def super_saturation_check(station: utils.Station,
             sss, = np.ma.nonzero(wet_temperatures.data[month_locs] > \
                 (temperatures.data[month_locs] + SUPERSAT_TOLERANCE[max(temps_precision, wet_temps_precision)]))
 
-            flags[month_locs[sss]] = "m"
+            flags[month_locs[sss]] = utils.QC_TEST_FLAGS["Humidity"]
 
             # and whole month of Tw/dewpoints if month has a high proportion (of dewpoint obs)
             if (sss.shape[0]/month_locs.shape[0]) > HIGH_FLAGGING_THRESHOLD:
-                flags[month_locs] = "m"
+                flags[month_locs] = utils.QC_TEST_FLAGS["Humidity"]
 
     # only flag the Tw/dewpoints
     wet_temperatures.store_flags(utils.insert_flags(wet_temperatures.flags, flags))
 
     # diagnostic plots
-    if plots:
+    if tsplots:
         for bad in sss:
             plot_humidities(temperatures, wet_temperatures, station.times, bad)
 
@@ -240,6 +240,7 @@ def dew_point_depression_streak(times: pd.Series,
                                 wet_temperatures: utils.MeteorologicalVariable,
                                 config_dict: dict,
                                 plots: bool = False,
+                                tsplots: bool = False,
                                 diagnostics: bool = False) -> None:
     """
     Flag locations where dewpoint or wet-bulb equals air temperature
@@ -249,6 +250,7 @@ def dew_point_depression_streak(times: pd.Series,
     :param MetVar wet_temperatures: dewpoints or wet-bulb temperatures object
     :param str config_dict: configuration dictionary to store critical values
     :param bool plots: turn on plots
+    :param bool tsplots: turn on timeseries plots
     :param bool diagnostics: turn on diagnostic output
     """
 
@@ -284,9 +286,9 @@ def dew_point_depression_streak(times: pd.Series,
         for streak in bad:
             start = int(np.sum(grouped_diffs[:streaks[streak], 1]))
             end = start + int(grouped_diffs[streaks[streak], 1]) + 1
-            flags[locs[start : end]] = "m"
+            flags[locs[start : end]] = utils.QC_TEST_FLAGS["Humidity"]
 
-            if plots:
+            if tsplots:
                 plot_humidity_streak(times, temperatures, wet_temperatures, locs[start: end])
 
         # only flag the dewpoints
@@ -947,6 +949,7 @@ def twet_consistency_check(station: utils.Station,
 #************************************************************************
 def hcc(station: utils.Station, config_dict: dict,
         full: bool = False, plots: bool = False,
+        tsplots: bool=False,
         diagnostics:bool = False) -> None:
     """
     Extract the variables and pass to the Humidity Cross Checks
@@ -955,6 +958,7 @@ def hcc(station: utils.Station, config_dict: dict,
     :param str config_dict: dictionary for configuration settings
     :param bool full: run a full update (unused here)
     :param bool plots: turn on plots
+    :param bool tsplots: turn on timeseries plots
     :param bool diagnostics: turn on diagnostic output
     """
 
@@ -965,7 +969,7 @@ def hcc(station: utils.Station, config_dict: dict,
 
         # Super Saturation check
         super_saturation_check(station, temperatures, comparison_temperatures,
-                               plots=plots, diagnostics=diagnostics)
+                               tsplots=tsplots, diagnostics=diagnostics)
 
         # Dew Point Depression
         #    Note, won't have cloud-base or past-significant-weather
@@ -975,7 +979,7 @@ def hcc(station: utils.Station, config_dict: dict,
             get_repeating_dpd_threshold(temperatures, comparison_temperatures,
                                         config_dict, plots=plots, diagnostics=diagnostics)
         dew_point_depression_streak(station.times, temperatures, comparison_temperatures,
-                                    config_dict, plots=plots, diagnostics=diagnostics)
+                                    config_dict, plots=plots, tsplots=tsplots, diagnostics=diagnostics)
 
     # dew point cut-offs (HadISD) not run
     #  greater chance of removing good observations
