@@ -151,14 +151,15 @@ def plot_humidity_streak(times: pd.Series,
 def super_saturation_check(station: utils.Station,
                            temperatures: utils.MeteorologicalVariable,
                            dewpoints: utils.MeteorologicalVariable,
-                           plots: bool = False, diagnostics: bool = False) -> None:
+                           tsplots: bool = False,
+                           diagnostics: bool = False) -> None:
     """
     Flag locations where dewpoint is greater than air temperature
 
     :param Station station: Station Object for the station
     :param MetVar temperatures: temperatures object
     :param MetVar dewpoints: dewpoints object
-    :param bool plots: turn on plots
+    :param bool tsplots: turn on timeseries plots
     :param bool diagnostics: turn on diagnostic output
     """
 
@@ -183,7 +184,7 @@ def super_saturation_check(station: utils.Station,
     dewpoints.store_flags(utils.insert_flags(dewpoints.flags, flags))
 
     # diagnostic plots
-    if plots:
+    if tsplots:
         for bad in sss:
             plot_humidities(temperatures, dewpoints, station.times, bad)
 
@@ -198,6 +199,7 @@ def dew_point_depression_streak(times: pd.Series,
                                 dewpoints: utils.MeteorologicalVariable,
                                 config_dict: dict,
                                 plots: bool = False,
+                                tsplots: bool = False,
                                 diagnostics: bool = False) -> None:
     """
     Flag locations where dewpoint equals air temperature
@@ -207,6 +209,7 @@ def dew_point_depression_streak(times: pd.Series,
     :param MetVar dewpoints: dewpoints object
     :param str config_dict: configuration dictionary to store critical values
     :param bool plots: turn on plots
+    :param bool tsplots: turn on timeseries plots
     :param bool diagnostics: turn on diagnostic output
     """
 
@@ -241,7 +244,7 @@ def dew_point_depression_streak(times: pd.Series,
             end = start + int(grouped_diffs[streaks[streak], 1]) + 1
             flags[locs[start : end]] = "m"
 
-            if plots:
+            if tsplots:
                 plot_humidity_streak(times, temperatures, dewpoints, locs[start: end])
 
         # only flag the dewpoints
@@ -255,6 +258,7 @@ def dew_point_depression_streak(times: pd.Series,
 #************************************************************************
 def hcc(station: utils.Station, config_dict: dict,
         full: bool = False, plots: bool = False,
+        tsplots: bool=False,
         diagnostics:bool = False) -> None:
     """
     Extract the variables and pass to the Humidity Cross Checks
@@ -263,6 +267,7 @@ def hcc(station: utils.Station, config_dict: dict,
     :param str config_dict: dictionary for configuration settings
     :param bool full: run a full update (unused here)
     :param bool plots: turn on plots
+    :param bool tsplots: turn on timeseries plots
     :param bool diagnostics: turn on diagnostic output
     """
 
@@ -270,14 +275,16 @@ def hcc(station: utils.Station, config_dict: dict,
     dewpoints = getattr(station, "dew_point_temperature")
 
     # Super Saturation
-    super_saturation_check(station, temperatures, dewpoints, plots=plots, diagnostics=diagnostics)
+    super_saturation_check(station, temperatures, dewpoints,
+                           tsplots=tsplots, diagnostics=diagnostics)
 
     # Dew Point Depression
     #    Note, won't have cloud-base or past-significant-weather
     #    Note, currently don't have precipitation information
     if full:
         get_repeating_dpd_threshold(temperatures, dewpoints, config_dict, plots=plots, diagnostics=diagnostics)
-    dew_point_depression_streak(station.times, temperatures, dewpoints, config_dict, plots=plots, diagnostics=diagnostics)
+    dew_point_depression_streak(station.times, temperatures, dewpoints, config_dict,
+                                plots=plots, tsplots=tsplots, diagnostics=diagnostics)
 
     # dew point cut-offs (HadISD) not run
     #  greater chance of removing good observations

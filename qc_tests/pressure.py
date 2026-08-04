@@ -71,7 +71,7 @@ def pressure_logic(sealp: utils.MeteorologicalVariable,
                    stnlp: utils.MeteorologicalVariable,
                    times: pd.Series, elevation: float,
                    rtol: float=1.e-4,
-                   plots: bool=False, diagnostics: bool=False) -> None:
+                   tsplots: bool=False, diagnostics: bool=False) -> None:
 
     """
     Flag locations where difference between station and sea-level pressure
@@ -82,7 +82,7 @@ def pressure_logic(sealp: utils.MeteorologicalVariable,
     :param Series times: datetime array (corresponding to the Sea & Station pressure obs)
     :param float elevation: station elevation
     :param float rtol: relative tolerance (1.e-4)
-    :param bool plots: turn on plots
+    :param bool tsplots: turn on timeseries plots
     :param bool diagnostics: turn on diagnostic output
     """
 
@@ -107,7 +107,7 @@ def pressure_logic(sealp: utils.MeteorologicalVariable,
 
         flags[bad_locs] = "p"
         logger.info(f"   Sea & station pressure inconsistent with elevation {len(bad_locs)}")
-        if plots:
+        if tsplots:
             for bad in bad_locs:
                 plot_pressure_timeseries(sealp, stnlp, times, bad)
 
@@ -196,7 +196,9 @@ def identify_values(sealp: utils.MeteorologicalVariable,
 def pressure_offset(sealp: utils.MeteorologicalVariable,
                     stnlp: utils.MeteorologicalVariable,
                     times: pd.Series, config_dict: dict,
-                    plots: bool=False, diagnostics: bool=False) -> None:
+                    plots: bool=False,
+                    tsplots: bool=False,
+                    diagnostics: bool=False) -> None:
 
     """
     Flag locations where difference between station and sea-level pressure
@@ -207,6 +209,7 @@ def pressure_offset(sealp: utils.MeteorologicalVariable,
     :param array times: datetime array
     :param str config_dict: dictionary for configuration settings
     :param bool plots: turn on plots
+    :param bool tsplots: turn on timeseries plots
     :param bool diagnostics: turn on diagnostic output
     """
 
@@ -239,7 +242,7 @@ def pressure_offset(sealp: utils.MeteorologicalVariable,
 
             # diagnostic plots
             if plots:
-                plot_pressure_distribution(difference, "Offset",
+                plot_pressure_distribution(difference, "Statistical Pressure Offset",
                                            vmin=(average + (THRESHOLD*spread)),
                                            vmax=(average - (THRESHOLD*spread)))
 
@@ -249,14 +252,14 @@ def pressure_offset(sealp: utils.MeteorologicalVariable,
             if len(high) != 0:
                 flags[high] = "p"
                 logger.info(f"   Number of high differences {len(high)}")
-                if plots:
+                if tsplots:
                     for bad in high:
                         plot_pressure_timeseries(sealp, stnlp, times, bad)
 
             if len(low) != 0:
                 flags[low] = "p"
                 logger.info(f"   Number of low differences {len(low)}")
-                if plots:
+                if tsplots:
                     for bad in low:
                         plot_pressure_timeseries(sealp, stnlp, times, bad)
 
@@ -323,7 +326,8 @@ def adjust_existing_flag_locs(var: utils.MeteorologicalVariable,
 def pressure_station_theory(stnlp: utils.MeteorologicalVariable,
                             temperature: utils.MeteorologicalVariable,
                             times: pd.Series, elevation: float,
-                            plots: bool=False, diagnostics: bool=False) -> None:
+                            plots: bool=False, tsplots: bool=False,
+                            diagnostics: bool=False) -> None:
     """
     Flag locations where difference between recorded and expected station-level pressure
     falls outside of bounds
@@ -340,6 +344,7 @@ def pressure_station_theory(stnlp: utils.MeteorologicalVariable,
     :param Series times: datetime array
     :param float elevation: station elevation (m)
     :param bool plots: turn on plots
+    :param bool tsplots: turn on timeseries plots
     :param bool diagnostics: turn on diagnostic output
     """
 
@@ -362,7 +367,7 @@ def pressure_station_theory(stnlp: utils.MeteorologicalVariable,
             flags[bad_locs] = "p"
             logger.info(f"Pressure {stnlp.name}")
             logger.info(f"   Number of mismatches between expected and recorded station pressure {len(bad_locs)}")
-            if plots:
+            if tsplots:
                 for bad in bad_locs:
                     theory_stnlp = utils.MeteorologicalVariable("Theory StnLP",
                                                                 utils.MDI,
@@ -385,7 +390,9 @@ def pressure_consistency_theory(sealp: utils.MeteorologicalVariable,
                                 stnlp: utils.MeteorologicalVariable,
                                 temperature: utils.MeteorologicalVariable,
                                 times: pd.Series, elevation: float,
-                                plots: bool=False, diagnostics: bool=False) -> None:
+                                plots: bool=False,
+                                tsplots: bool=False,
+                                diagnostics: bool=False) -> None:
     """
     Flag locations where difference between recorded and calculated sea-level pressure
     falls outside of bounds
@@ -396,6 +403,7 @@ def pressure_consistency_theory(sealp: utils.MeteorologicalVariable,
     :param Series times: datetime array
     :param float elevation: station elevation (m)
     :param bool plots: turn on plots
+    :param bool tsplots: turn on timeseries plots
     :param bool diagnostics: turn on diagnostic output
     """
 
@@ -418,7 +426,7 @@ def pressure_consistency_theory(sealp: utils.MeteorologicalVariable,
             flags[bad_locs] = "p"
             logger.info(f"Pressure {stnlp.name}")
             logger.info(f"   Number of mismatches between recorded and theoretical SLPs {len(bad_locs)}")
-            if plots:
+            if tsplots:
                 for bad in bad_locs:
                     plot_pressure_timeseries(sealp, stnlp, times, bad)
 
@@ -434,7 +442,8 @@ def pressure_consistency_theory(sealp: utils.MeteorologicalVariable,
 
 #************************************************************************
 def pcc(station: utils.Station, config_dict: dict, full: bool = False,
-        plots: bool = False, diagnostics: bool = False) -> None:
+        plots: bool = False, tsplots: bool=False,
+        diagnostics: bool = False) -> None:
     """
     Extract the variables and pass to the Pressure Cross Checks
 
@@ -442,6 +451,7 @@ def pcc(station: utils.Station, config_dict: dict, full: bool = False,
     :param str config_dict: dictionary for configuration settings
     :param bool full: run a full update
     :param bool plots: turn on plots
+    :param bool tsplots: turn on timeseries plots
     :param bool diagnostics: turn on diagnostic output
     """
 
@@ -454,13 +464,13 @@ def pcc(station: utils.Station, config_dict: dict, full: bool = False,
         logger.warning("   SeaLP/StnLP logic check not run.")
     else:
         pressure_logic(sealp, stnlp, station.times, station.elev,
-                       plots=plots, diagnostics=diagnostics)
+                       plots=plots, tsplots=tsplots, diagnostics=diagnostics)
 
     if full:
         identify_values(sealp, stnlp, config_dict, plots=plots,
                         diagnostics=diagnostics)
     pressure_offset(sealp, stnlp, station.times, config_dict,
-                    plots=plots, diagnostics=diagnostics)
+                    plots=plots, tsplots=tsplots, diagnostics=diagnostics)
 
     temperature = getattr(station, "temperature")
     if str(station.elev)[:4] in utils.ALLOWED_MISSING_ELEVATIONS:
@@ -469,10 +479,12 @@ def pcc(station: utils.Station, config_dict: dict, full: bool = False,
         logger.warning("   Theoretical SLP/StnLP cross check not run.")
     else:
         pressure_consistency_theory(sealp, stnlp, temperature, station.times,
-                                    station.elev, plots=plots, diagnostics=diagnostics)
+                                    station.elev, plots=plots, tsplots=tsplots,
+                                    diagnostics=diagnostics)
 
         pressure_station_theory(stnlp, temperature, station.times,
-                                station.elev, plots=plots, diagnostics=diagnostics)
+                                station.elev, plots=plots, tsplots=tsplots,
+                                diagnostics=diagnostics)
 
 
     # pcc
