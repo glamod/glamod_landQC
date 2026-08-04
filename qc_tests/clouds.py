@@ -242,7 +242,7 @@ def insert_cloud_flags(station: utils.Station,
     """
     # make the character flag array, and copy over flags
     character_flags = np.array(["" for i in range(binary_flags.shape[0])])
-    character_flags[binary_flags == 1] = "y" # TODO update with centralised
+    character_flags[binary_flags == 1] = utils.QC_TEST_FLAGS["Clouds"]
 
     # get the variablel and store the flags
     this_variable = getattr(station, variable)

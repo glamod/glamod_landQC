@@ -2,7 +2,6 @@
 Contains tests for clouds.py
 """
 import numpy as np
-import pytest
 from unittest.mock import patch, Mock
 
 import clouds
