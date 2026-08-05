@@ -15,11 +15,13 @@ import setup
 
 UNIT_DICT = {"temperature" : "degrees C",
              "dew_point_temperature" :  "degrees C",
+             "wet_bulb_temperature" :  "degrees C",
+             "relative_humidity" : '% relative humidity',
              "wind_direction" :  "degrees",
              "wind_speed" : "meters per second",
              "wind_gust" : "meters per second",
-             "sea_level_pressure" : "hPa hectopascals",
-             "station_level_pressure" : "hPa hectopascals",
+             "sea_level_pressure" : "hectopascals",
+             "station_level_pressure" : "hectopascals",
              "sky_cover_layer_1" : "oktas",
              "sky_cover_layer_baseht_1" : "meters",
              "sky_cover_layer_2" : "oktas",
@@ -419,6 +421,15 @@ def populate_station(station: Station, df: pd.DataFrame, obs_var_list: list, rea
 
             # invert mask and set to missing
             indata[~mask] = MDI
+
+        elif variable in ["wet_bulb_temperature", "relative_humidity"]:
+            # for these two only need measurement code to determine
+            #   if derived (D) or not
+            m_code = df[f"{variable}_Measurement_Code"]
+
+            derived = m_code.eq("D").to_numpy()
+
+            setattr(this_var, "is_derived", derived)
 
         this_var.store_data(np.ma.masked_where(indata == MDI, indata))
 

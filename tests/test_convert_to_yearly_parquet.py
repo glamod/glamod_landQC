@@ -93,7 +93,7 @@ def test_write_pqt(setup_mock: Mock,
 
     setup_mock.ROOT_DIR = tmp_path
     expected_outlocation = tmp_path / "pqt" / setup_mock.DATESTAMP
-
+    print(EXAMPLE_FILES)
     yearly_data = convert_to_yearly_parquet.process_files(EXAMPLE_FILES)
     convert_to_yearly_parquet.write_pqt(yearly_data)
 

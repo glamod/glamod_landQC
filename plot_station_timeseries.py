@@ -160,18 +160,13 @@ def main(station_id: str,
                             station_list.elevation[this_station])
 
     # TODO: to set this as a selectable choice
+    infilename = f"{station_id:11s}{setup.OUT_SUFFIX}{setup.OUT_COMPRESSION}"
     if "internal" =="internal":
-        station, station_df = io.read_station(setup.SUBDAILY_PROC_DIR /
-                                                "{:11s}{}{}".format(station_id,
-                                                                    setup.OUT_SUFFIX,
-                                                                    setup.OUT_COMPRESSION),
-                                                station)
+        station, station_df = io.read_station(setup.SUBDAILY_PROC_DIR /infilename,
+                                              station)
     else:
-        station, station_df = io.read_station(setup.SUBDAILY_OUT_DIR /
-                                                "{:11s}{}{}".format(station_id,
-                                                                    setup.OUT_SUFFIX,
-                                                                    setup.OUT_COMPRESSION),
-                                                station)
+        station, station_df = io.read_station(setup.SUBDAILY_OUT_DIR / infilename,
+                                              station)
 
     # add datetime column for plotting
     datetimes = io.calculate_datetimes(station_df)

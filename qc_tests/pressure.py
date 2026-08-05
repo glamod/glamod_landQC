@@ -125,7 +125,8 @@ def pressure_logic(sealp: utils.MeteorologicalVariable,
 def plot_pressure_distribution(difference: np.ma.MaskedArray,
                                title: str,
                                vmin: float = -1.,
-                               vmax: float = 1.) -> None:  # pragma: no cover
+                               vmax: float = 1.,
+                               units: str="hPa") -> None:  # pragma: no cover
     '''
     Plot distribution and include the upper and lower thresholds
 
@@ -147,7 +148,7 @@ def plot_pressure_distribution(difference: np.ma.MaskedArray,
     plt.xlim([bins[0] - 1, bins[-1] + 1])
     plt.ylabel("Observations (logscale)")
     plt.yscale("log")
-    plt.xlabel("Difference (hPa)")
+    plt.xlabel(f"Difference ({units})")
     plt.title(title)
     plt.show()
 

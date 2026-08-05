@@ -91,7 +91,9 @@ def test_pcc(cross_check_mock: Mock) -> None:
     cross_check_mock.return_value = True
 
     # Do the call
-    precision.pcc(station, {})
+    precision.pcc(station,
+                  [("temperature", "dew_point_temperature"),],
+                  {})
 
     # Mock to check call occurs as expected with right return
     cross_check_mock.assert_called_once()

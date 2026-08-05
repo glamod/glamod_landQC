@@ -86,6 +86,8 @@ def read_psv(infile: Path, separator: str) -> pd.DataFrame:
         logger.warning(f"Dtype error - likely header row missing: {str(e)}")
         print(str(e))
         raise RuntimeError
+    print(len(df.columns))
+    print(329+len(setup.obs_var_list))
 
     # Number of columns at August 2025, or after adding flag columns
     assert len(df.columns) in [329, 329+len(setup.obs_var_list)]
