@@ -14,9 +14,10 @@ import subprocess
 import shlex
 import warnings
 import logging
+
 logger = logging.getLogger(__name__)
 
-from utils import Station, populate_station, MDI, QC_TESTS
+from utils import Station, populate_station, MDI, QC_TESTS, read_cloud_oktas
 
 #************************************************************************
 def count_skip_rows(infile: Path) -> list:
@@ -429,7 +430,16 @@ def flag_write(outfilename: Path, df: pd.DataFrame,
             flags = df[f"{var}_QC_flag"].fillna("")
 
             # Pull out the actual observations
-            this_var_data = df[var].fillna(MDI).to_numpy().astype(float)
+            if var in ("sky_cover_layer_1",
+                        "sky_cover_layer_2",
+                        "sky_cover_layer_3",
+                        "sky_cover_layer_4"):
+                # just retain the Okta values
+                this_var_data = read_cloud_oktas(df, var)
+            else:
+                this_var_data = df[var]
+
+            this_var_data = this_var_data.fillna(MDI).to_numpy().astype(float)
             this_var_data = np.ma.masked_where(this_var_data == MDI, this_var_data)
 
             # write out for all tests, regardless if set for this variable or not

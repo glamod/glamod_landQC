@@ -255,8 +255,10 @@ def run_checks(restart_id: str="", end_id: str="",
                                    config_dict, full=full, plots=plots, diagnostics=diagnostics)
 
         if test in ["all", "precision"]:
-            if diagnostics: print("n", dt.datetime.now()-startT)
-            qc_tests.precision.pcc(station, config_dict, full=full, tsplots=tsplots, diagnostics=diagnostics)
+            # Checks for periods where precision of paired variables is different
+            if diagnostics: print("i", dt.datetime.now()-startT)
+            qc_tests.precision.pcc(station, config_dict, full=full,
+                                   tsplots=tsplots, diagnostics=diagnostics)
 
         if test in ["all", "spike"]:
             if diagnostics: print("S", dt.datetime.now()-startT)
@@ -266,7 +268,8 @@ def run_checks(restart_id: str="", end_id: str="",
 
         if test in ["all", "humidity"]:
             if diagnostics: print("h", dt.datetime.now()-startT)
-            qc_tests.humidity.hcc(station, config_dict, full=full, plots=plots, tsplot=tsplots,
+            qc_tests.humidity.hcc(station, config_dict, full=full,
+                                  plots=plots, tsplots=tsplots,
                                   diagnostics=diagnostics)
 
         if test in ["all", "variance"]:
@@ -277,7 +280,8 @@ def run_checks(restart_id: str="", end_id: str="",
 
         if test in ["all", "pressure"]:
             if diagnostics: print("P", dt.datetime.now()-startT)
-            qc_tests.pressure.pcc(station, config_dict, full=full, plots=plots, diagnostics=diagnostics)
+            qc_tests.pressure.pcc(station, config_dict, full=full,
+                                  plots=plots, tsplots=tsplots, diagnostics=diagnostics)
 
         if test in ["all", "winds"]:
             if diagnostics: print("w", dt.datetime.now()-startT)
@@ -385,7 +389,7 @@ if __name__ == "__main__":
                         help='Run diagnostics (will not write out file)')
     parser.add_argument('--plots', dest='plots', action='store_true', default=False,
                         help='Run summary plots of tests (will not write out file)')
-    parser.add_argument('--tsplots', dest='plots', action='store_true', default=False,
+    parser.add_argument('--tsplots', dest='tsplots', action='store_true', default=False,
                         help='Show timeseries plots of flagged values (will not write out file)')
     parser.add_argument('--test', dest='test', action='store', default="all",
                         help='Select single test [climatological/distribution/diurnal/frequent/humidity/odd_cluster/pressure/spike/streaks/timestamp/variance/winds/world_records]')
