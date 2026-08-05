@@ -31,7 +31,8 @@ def get_heights_and_oktas(station: utils.Station) -> tuple[np.ma.MaskedArray,
                           station.sky_cover_layer_3.data,
                           station.sky_cover_layer_4.data,))
 
-    return heights, oktas
+    # return Transpose so that the shape is (time x layer)
+    return heights.T, oktas.T
 
 
 def orphan_values(heights: np.ma.MaskedArray,
@@ -101,6 +102,7 @@ def obscured_heights(heights: np.ma.MaskedArray,
     if len(suspect_obscured_locs[0]) > 0:
         logger.info(f"Found {len(suspect_obscured_locs[0])} cloud heights with obscured oktas")
 
+    # don't flag oktas as being obscured is a valid value
     hflags[suspect_obscured_locs] = 1
 
 
@@ -129,9 +131,9 @@ def process_erroneous_clouds(oktas: np.ma.MaskedArray,
         flags = np.zeros(4)
 
         # find values at heights above the 8-okta level
-        above_full = oktas[tt, ll:]
+        full_and_above = oktas[tt, ll:]
 
-        if len(above_full.compressed()) == 1:
+        if len(full_and_above.compressed()) == 1:
             # If only have the 8 okta value and no measurements
             #    above that, then all fine
             continue
@@ -140,8 +142,8 @@ def process_erroneous_clouds(oktas: np.ma.MaskedArray,
         #    set the flags on a temporary array
         flags[ll+1:] = 1
         # retain the masks when copying over
-        hflags[tt, :] = np.ma.array(flags, mask=hflags.mask[tt])
-        oflags[tt, :] = np.ma.array(flags, mask=oflags.mask[tt])
+        hflags[tt, :] = np.ma.array(flags, mask=hflags.mask[tt, :])
+        oflags[tt, :] = np.ma.array(flags, mask=oflags.mask[tt, :])
 
     logger.info("Completed cloud logical checks for heights above full cloud layers")
 
@@ -296,18 +298,18 @@ def clc(station: utils.Station, config_dict: dict, full: bool=False,
     logical_cross_check(heights, oktas, height_flags, okta_flags)
 
     # need to insert flags
-    for v, var in enumerate("sky_cover_layer_1",
-                            "sky_cover_layer_2",
-                            "sky_cover_layer_3",
-                            "sky_cover_layer_4"):
+    for v, var in enumerate(("sky_cover_layer_1",
+                             "sky_cover_layer_2",
+                             "sky_cover_layer_3",
+                             "sky_cover_layer_4")):
         insert_cloud_flags(station, var, okta_flags[:, v])
         logger.info(f"Cloud amount {var}")
-        logger.info(f"   Cumulative number of flags set: {np.count_nonzero(okta_flags[:, v] != '')}")
+        logger.info(f"   Cumulative number of flags set: {np.count_nonzero(okta_flags[:, v] == 1.0)}")
 
-    for v, var in enumerate("sky_cover_layer_baseht_1",
-                            "sky_cover_layer_baseht_2",
-                            "sky_cover_layer_baseht_3",
-                            "sky_cover_layer_baseht_4"):
+    for v, var in enumerate(("sky_cover_layer_baseht_1",
+                             "sky_cover_layer_baseht_2",
+                             "sky_cover_layer_baseht_3",
+                             "sky_cover_layer_baseht_4")):
         insert_cloud_flags(station, var, height_flags[:, v])
         logger.info(f"Cloud height {var}")
-        logger.info(f"   Cumulative number of flags set: {np.count_nonzero(height_flags[:, v] != '')}")
+        logger.info(f"   Cumulative number of flags set: {np.count_nonzero(height_flags[:, v] == 1.0)}")

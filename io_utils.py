@@ -429,7 +429,16 @@ def flag_write(outfilename: Path, df: pd.DataFrame,
             flags = df[f"{var}_QC_flag"].fillna("")
 
             # Pull out the actual observations
-            this_var_data = df[var].fillna(MDI).to_numpy().astype(float)
+            if var in ("sky_cover_layer_1",
+                        "sky_cover_layer_2",
+                        "sky_cover_layer_3",
+                        "sky_cover_layer_4"):
+                # just retain the Okta values
+                this_var_data = df[var].str.split(":", n=1, expand=True)[1]
+            else:
+                this_var_data = df[var]
+
+            this_var_data = this_var_data.fillna(MDI).to_numpy().astype(float)
             this_var_data = np.ma.masked_where(this_var_data == MDI, this_var_data)
 
             # write out for all tests, regardless if set for this variable or not

@@ -39,15 +39,18 @@ def test_get_heights_and_oktas() -> None:
 
     heights, oktas = clouds.get_heights_and_oktas(station)
 
-    # in this test only ensuring structure.
-    expected_oktas = np.ma.array([[0, 1, 2, 3, 4],
-                                    [1, 2, 3, 4, 5],
-                                    [2, 3, 4, 5, 6],
-                                    [3, 4, 5, 6, 7]])
-    expected_heights = np.ma.array([[0, 10, 20, 30, 40],
-                                  [0, 20, 40, 60, 80],
-                                  [0, 30, 60, 90, 120],
-                                  [0, 40, 80, 120, 160]])
+    # in this test only ensuring structure,
+    #   5 rows of timestamps, 4 columns of layers. Asymmetric
+    expected_oktas = np.ma.array([[0, 1, 2, 3],
+                                  [1, 2, 3, 4],
+                                  [2, 3, 4, 5],
+                                  [3, 4, 5, 6],
+                                  [4, 5, 6, 7]])
+    expected_heights = np.ma.array([[0, 0, 0, 0],
+                                    [10, 20, 30, 40],
+                                    [20, 40, 60, 80],
+                                    [30, 60, 90, 120],
+                                    [40, 80, 120, 160]])
 
     np.testing.assert_array_equal(expected_heights, heights)
     np.testing.assert_array_equal(expected_oktas, oktas)
@@ -57,7 +60,7 @@ def test_orphan_values() -> None:
     """Check to see that test identifies heights or okta values
     which do not have a corresponding value in the other quantity"""
 
-    # set up example arrays
+    # set up example arrays (5 timestamps, 4 layers)
     heights = np.array([[50, 100, 150, 200],   # normal
                         [50, -100, 150, 200],  # no corresponding mask in oktas
                         [50, 100, 150, 200],
@@ -99,7 +102,7 @@ def test_obscured_heights() ->  None:
     """Check to see if routine identify height values
     which should not be possible given obscured okta code"""
 
-    # set up example arrays
+    # set up example arrays (3 timestamps, 4 layers)
     heights = np.array([[50, 100, 150, -200],
                         [50, 100, 150, 200],
                         [50, 100, 150, -200]])
@@ -129,11 +132,12 @@ def test_process_erroneous_clouds() -> None:
     This routine expects height ordered data, so looking for
     values to the right of an 8"""
 
-    # set up example arrays
-    oktas = np.array([[1, 2, 8, -1],
-                      [1, 2, 8, 4],
-                      [1, 2, 3, 4],
-                      [1, 8, 2, -1]])
+    # set up example arrays (5 timestamps, 4 layers)
+    oktas = np.array([[1, 2, 8, -1], # OK
+                      [1, 2, 8, 4], # bad
+                      [1, 2, 3, 4], # OK
+                      [0, 8, 1, -1], # bad
+                      [1, 8, 2, -1]]) # bad
     oktas = np.ma.masked_where(oktas < 0, oktas)
 
     hflags = np.ma.zeros(oktas.shape)
@@ -146,12 +150,14 @@ def test_process_erroneous_clouds() -> None:
     expected_hflags = np.ma.array([[0, 0, 0, 0],
                                    [0, 0, 0, 1],
                                    [0, 0, 0, 0],
+                                   [0, 0, 1, 1],
                                    [0, 0, 1, 0]])
     expected_hflags.mask = oktas.mask
 
     expected_oflags = np.ma.array([[0, 0, 0, 0],
                                    [0, 0, 0, 1],
                                    [0, 0, 0, 0],
+                                   [0, 0, 1, 1],
                                    [0, 0, 1, 0]])
     expected_oflags.mask = oktas.mask
 
@@ -167,14 +173,14 @@ def test_process_multiple_layers_calls(process_clouds_mock: Mock) -> None:
     The okta values are ordered by the height values, and then
     used to call, so check these are done corretly
     """
-    # set up example arrays
+    # set up example arrays (3 timestamps, 4 layers)
     oktas = np.array([[1, 2, 3, 4],
                       [1, 2, 3, 4],
-                      [1, 2, -1, 4]])
+                      [1, 2, -1, 4]]) # to test masked values, but Oktas OK
 
     heights = np.array([[50, 100, 150, 200],
-                        [50, 100, 200, 150],
-                        [50, 200, -1, 100]])
+                        [50, 100, 200, 150], # wrong order
+                        [50, 200, -1, 100]]) # wrong order and with mask
     heights = np.ma.masked_where(heights < 0, heights)
     oktas = np.ma.masked_where(oktas < 0, oktas)
 
@@ -183,6 +189,8 @@ def test_process_multiple_layers_calls(process_clouds_mock: Mock) -> None:
 
     clouds.process_multiple_layers(heights, oktas, hflags, oflags)
 
+    # this is what we expect the call to look like, oktas
+    #    rearranged in height order
     expected_oktas = np.array([[1, 2, 3, 4],
                                [1, 2, 4, 3],
                                [1, 4, -1, 2]])
@@ -219,6 +227,8 @@ def test_logical_cross_check_calls(proc_layers_mock: Mock) -> None:
 
     proc_layers_mock.assert_called_once()
 
+    # only expect second timestamp to be passed into child as this has
+    #    more than 1 layer. Check call arguments
     calls = proc_layers_mock.call_args_list[0]
     np.testing.assert_array_equal(calls.args[0],
                                   heights[[1]])
@@ -234,12 +244,12 @@ def test_logical_cross_check() -> None:
     """Full test of logical cross check in clouds to
     ensure that flags set correctly."""
 
-    # set up example arrays
+    # set up example arrays (5 timestamps, 4 layers)
     oktas = np.array([[1, -1, -1, -1], #  1 layer only
                       [1, 2, 3, -1],   #  more than 1 layer
                       [1, 2, 8, -1],   #  full but no measurements above
                       [1, 2, 8, 3],   # should trigger flag
-                      [1, 2, 8, 3]])  # heights in non numerical, is OK
+                      [1, 2, 8, 3]])  # heights in non numerical, but reordered oktas OK
 
     heights = np.array([[50, -1, -1, -1],
                         [50, 100, 150, -1],
