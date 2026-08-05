@@ -279,7 +279,7 @@ def run_checks(restart_id: str="", end_id: str="",
             qc_tests.precision.pcc(station, [("temperature", "dew_point_temperature"),
                                              ("temperature", "wet_bulb_temperature")],
                                    config_dict, full=full, 
-                                   plots=plots, tsplots=tsplots, diagnostics=diagnostics)
+                                   tsplots=tsplots, diagnostics=diagnostics)
 
         if test in ["all", "spike"]:
             # Looks for spikes (up or down) in the data which are too large to be real.
@@ -309,7 +309,8 @@ def run_checks(restart_id: str="", end_id: str="",
         if test in ["all", "pressure"]:
             # Suite of checks comparing pressure variables and their expected range.
             if diagnostics: print("Pressure [p]", dt.datetime.now()-startT)
-            qc_tests.pressure.pcc(station, config_dict, full=full, plots=plots, diagnostics=diagnostics)
+            qc_tests.pressure.pcc(station, config_dict, full=full, 
+                                  plots=plots, tsplots=tsplots, diagnostics=diagnostics)
 
         if test in ["all", "winds"]:
             # Suite of checks on wind variables
@@ -414,7 +415,7 @@ if __name__ == "__main__":
                         help='Run diagnostics (will not write out file)')
     parser.add_argument('--plots', dest='plots', action='store_true', default=False,
                         help='Run summary plots of tests (will not write out file)')
-    parser.add_argument('--tsplots', dest='plots', action='store_true', default=False,
+    parser.add_argument('--tsplots', dest='tsplots', action='store_true', default=False,
                         help='Show timeseries plots of flagged values (will not write out file)')
     parser.add_argument('--test', dest='test', action='store', default="all",
                         help='Select single test [climatological/distribution/diurnal/frequent/humidity/odd_cluster/pressure/spike/streaks/timestamp/variance/winds/world_records]')

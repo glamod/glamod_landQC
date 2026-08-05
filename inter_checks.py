@@ -235,6 +235,8 @@ if __name__ == "__main__":
                         help='Run diagnostics (will not write out file)')
     parser.add_argument('--plots', dest='plots', action='store_true', default=False,
                         help='Run plots (will not write out file)')
+    parser.add_argument('--tsplots', dest='tsplots', action='store_true', default=False,
+                        help='Run timeseries plots (will not write out file)')
     parser.add_argument('--test', dest='test', action='store', default="all",
                         help='Select single test [neighbour/clean_up/high_flag]')
     parser.add_argument('--clobber', dest='clobber', action='store_true', default=False,
@@ -247,6 +249,7 @@ if __name__ == "__main__":
                end_id=args.end_id,
                diagnostics=args.diagnostics,
                plots=args.plots,
+               tsplots=args.tsplots,
                full=args.full,
                test=args.test,
                clobber=args.clobber,

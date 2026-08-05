@@ -348,6 +348,39 @@ def get_measurement_code_mask(ds: pd.Series,
     return mask
 
 
+def read_cloud_oktas(df: pd.DataFrame,
+                     variable: str) -> pd.DataFrame:
+    """Read cloud information only - parse oktas from full
+    string (e.g. "FEW:01, SCT:03, BKN:05, OVC:08") and return
+    just the okta values (e.g. 1, 3, 5, 8).
+    If no cloud information, return the original data (e.g. NaN or MDI)
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame of all input data
+    variable : str
+        Which variable to process (e.g. sky_cover_layer_1, sky_cover_layer_2, etc.)
+
+    Returns
+    -------
+    pd.DataFrame
+        DatafFrame of just okta values pulled from string values in original
+    """
+
+    layer_series = df[variable]
+    if layer_series.dropna().shape[0] > 0:
+        # If there is cloud information, process to just retain okta values
+
+        # For QC tests, just need to keep the numerical Okta values
+        # split the string on the ":" into two new columns, take the second
+        outdata = df[variable].str.split(":", n=1, expand=True)[1]
+    else:
+        outdata = df[variable]
+
+    return outdata
+
+
 #************************************************************************
 def populate_station(station: Station, df: pd.DataFrame, obs_var_list: list, read_flags: bool = False) -> None:
     """
@@ -370,15 +403,7 @@ def populate_station(station: Station, df: pd.DataFrame, obs_var_list: list, rea
                         "sky_cover_layer_2",
                         "sky_cover_layer_3",
                         "sky_cover_layer_4"):
-            layer_series = df[variable]
-            if layer_series.dropna().shape[0] > 0:
-                # If there is cloud information, process to just retain okta values
-
-                # For QC tests, just need to keep the numerical Okta values
-                # split the string on the ":" into two new columns, take the second
-                indata_df = df[variable].str.split(":", n=1, expand=True)[1]
-            else:
-                indata_df = df[variable]
+            indata_df = read_cloud_oktas(df, variable)
         else:
             indata_df = df[variable]
 

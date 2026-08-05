@@ -465,7 +465,7 @@ def pcc(station: utils.Station, config_dict: dict, full: bool = False,
         logger.warning("   SeaLP/StnLP logic check not run.")
     else:
         pressure_logic(sealp, stnlp, station.times, station.elev,
-                       plots=plots, tsplots=tsplots, diagnostics=diagnostics)
+                       tsplots=tsplots, diagnostics=diagnostics)
 
     if full:
         identify_values(sealp, stnlp, config_dict, plots=plots,
