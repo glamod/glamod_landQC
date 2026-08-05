@@ -171,7 +171,7 @@ def test_process_multiple_layers_calls(process_clouds_mock: Mock) -> None:
     is called with, hence the mocking.
 
     The okta values are ordered by the height values, and then
-    used to call, so check these are done corretly
+    used to call, so check these are done correctly
     """
     # set up example arrays (3 timestamps, 4 layers)
     oktas = np.array([[1, 2, 3, 4],

@@ -268,7 +268,8 @@ def run_checks(restart_id: str="", end_id: str="",
 
         if test in ["all", "humidity"]:
             if diagnostics: print("h", dt.datetime.now()-startT)
-            qc_tests.humidity.hcc(station, config_dict, full=full, plots=plots,
+            qc_tests.humidity.hcc(station, config_dict, full=full,
+                                  plots=plots, tsplots=tsplots,
                                   diagnostics=diagnostics)
 
         if test in ["all", "variance"]:

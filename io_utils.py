@@ -14,9 +14,10 @@ import subprocess
 import shlex
 import warnings
 import logging
+
 logger = logging.getLogger(__name__)
 
-from utils import Station, populate_station, MDI, QC_TESTS
+from utils import Station, populate_station, MDI, QC_TESTS, read_cloud_oktas
 
 #************************************************************************
 def count_skip_rows(infile: Path) -> list:
@@ -434,7 +435,7 @@ def flag_write(outfilename: Path, df: pd.DataFrame,
                         "sky_cover_layer_3",
                         "sky_cover_layer_4"):
                 # just retain the Okta values
-                this_var_data = df[var].str.split(":", n=1, expand=True)[1]
+                this_var_data = read_cloud_oktas(df, var)
             else:
                 this_var_data = df[var]
 

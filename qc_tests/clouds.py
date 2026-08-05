@@ -102,7 +102,7 @@ def obscured_heights(heights: np.ma.MaskedArray,
     if len(suspect_obscured_locs[0]) > 0:
         logger.info(f"Found {len(suspect_obscured_locs[0])} cloud heights with obscured oktas")
 
-    # don't flag oktas as being obscured is a valid value
+    # Don't flag oktas values, as being obscured is a valid case for these obs.
     hflags[suspect_obscured_locs] = 1
 
 
