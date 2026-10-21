@@ -41,7 +41,7 @@ QC_TESTS = {"a" : "Repeated Day streaks",  # repeAted day streaks
             #"g" :
             "h" : "High Flag Rate",  # High flag rate
             "i" : "Precision",  # precIsion
-            #"j" :
+            "j" : "Message",  # "messaj" (contrived)
             "k" : "Repeating Streaks",  # repeating streaKs
             "l" : "Logic",  # Logic
             "m" : "Humidity",  # huMidity

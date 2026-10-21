@@ -68,13 +68,14 @@ def run_checks(restart_id: str="", end_id: str="",
     :param bool plots: show plots of flagged values in timeseries
     :param bool full: run full reprocessing rather than using stored values.
     :param str test: specify a single test to run (useful for diagnostics) [climatological/distribution/diurnal
-                     frequent/humidity/odd_cluster/pressure/spike/streaks/timestamp/variance/winds/world_records/precision]
+                     frequent/humidity/odd_cluster/pressure/spike/streaks/timestamp/variance/winds/world_records/
+                     precision/message/cloud]
     :param bool clobbber: overwrite output file if exists
     """
 
     if test not in ["all", "logic", "climatological", "distribution", "diurnal", "frequent",
                     "humidity", "odd_cluster", "pressure", "spike", "streaks", "high_flag",
-                    "timestamp", "variance", "winds" ,"world_records", "precision", "cloud"]:
+                    "timestamp", "variance", "winds" ,"world_records", "precision", "message", "cloud"]:
         print("Invalid test selected")
         return
 
@@ -259,6 +260,12 @@ def run_checks(restart_id: str="", end_id: str="",
             if diagnostics: print("i", dt.datetime.now()-startT)
             qc_tests.precision.pcc(station, config_dict, full=full,
                                    tsplots=tsplots, diagnostics=diagnostics)
+
+        if test in ["all", "message"]:
+            if diagnostics: print("j", dt.datetime.now()-startT)
+            qc_tests.message.mcc(station, station_df, ["temperature", "dew_point_temperature",
+                                                        "sea_level_pressure", "wind_speed", "wind_gust"],
+                                 config_dict, full=full, tsplots=tsplots, diagnostics=diagnostics)
 
         if test in ["all", "spike"]:
             if diagnostics: print("S", dt.datetime.now()-startT)

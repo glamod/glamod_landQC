@@ -30,9 +30,9 @@ brotli-bin=1.1.0=hb03c661_4
 brotli-python=1.1.0=py311h1ddb823_4
 bzip2=1.0.8=h4bc722e_7
 c-ares=1.34.5=hb9d3cd8_0
-ca-certificates=2025.8.3=hbd8a1cb_0
+ca-certificates=2026.10.19=hbd8a1cb_0
 cartopy=0.25.0=py311hed34c8f_1
-certifi=2025.8.3=pyhd8ed1ab_0
+certifi=2026.10.19=pyhd8ed1ab_0
 cf-units=3.3.0=py311h0372a8f_1
 cffi=1.17.1=py311h5b438cf_1
 cftime=1.6.4=py311h0372a8f_2
@@ -139,13 +139,14 @@ lz4-c=1.10.0=h5888daf_1
 markupsafe=3.0.2=py311h2dc5d0c_1
 matplotlib-base=3.10.5=py311h0f3be63_0
 matplotlib-inline=0.1.7=pyhd8ed1ab_1
+metar=2.0.1=pyh5ded981_0
 munkres=1.1.4=pyhd8ed1ab_1
 ncurses=6.5=h2d0b736_3
 netcdf4=1.7.2=nompi_py311h0b29842_103
 nlohmann_json=3.12.0=h3f2d84a_0
 numpy=1.25.0=py311h64a7726_0
 openjpeg=2.5.3=h55fea9a_1
-openssl=3.5.2=h26f9b46_0
+openssl=3.6.5=h781a0a9_0
 orc=2.2.0=h1bc01a4_0
 packaging=25.0=pyh29332c3_1
 pandas=1.5.3=py311h2872171_1
@@ -167,6 +168,7 @@ pyarrow-core=21.0.0=py311h342b5a4_0_cpu
 pycparser=2.22=pyh29332c3_1
 pyflakes=3.0.1=pyhd8ed1ab_0
 pygments=2.19.2=pyhd8ed1ab_0
+pymetdecoder=0.2.2=pypi_0
 pyparsing=3.2.3=pyhe01879c_2
 pyproj=3.7.1=py311h0960b38_1
 pyshp=3.0.0=pyhd8ed1ab_0
