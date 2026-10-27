@@ -263,8 +263,14 @@ def run_checks(restart_id: str="", end_id: str="",
 
         if test in ["all", "message"]:
             if diagnostics: print("j", dt.datetime.now()-startT)
+            # test as many of the variables against the message fields as possible
             qc_tests.message.mcc(station, station_df, ["temperature", "dew_point_temperature",
-                                                        "sea_level_pressure", "wind_speed", "wind_gust"],
+                                                       "sea_level_pressure", "station_level_pressure",
+                                                       "wind_speed", "wind_direction", "wind_gust",
+                                                       "sky_cover_layer_1", "sky_cover_layer_2",
+                                                       "sky_cover_layer_3", "sky_cover_layer_4",
+                                                       "sky_cover_layer_baseht_1", "sky_cover_layer_baseht_2",
+                                                       "sky_cover_layer_baseht_3", "sky_cover_layer_baseht_4"],
                                  config_dict, full=full, tsplots=tsplots, diagnostics=diagnostics)
 
         if test in ["all", "spike"]:
