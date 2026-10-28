@@ -14,6 +14,8 @@ temperature : h : 0.0
 temperature : h_counts : 0
 temperature : i : 0.0
 temperature : i_counts : 0
+temperature : j : 0.0
+temperature : j_counts : 0
 temperature : k : 0.0
 temperature : k_counts : 0
 temperature : l : 0.0
